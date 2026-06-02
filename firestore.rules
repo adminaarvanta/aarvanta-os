@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Module 1 uses Firebase Admin SDK on the server.
+    // Deny direct client access until Firebase Auth is wired in the browser.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

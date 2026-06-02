@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { CHANNEL_LABELS } from "@/lib/constants";
+import { apiFetch } from "@/lib/api/client-fetch";
 import type { Channel } from "@/types/communication";
 
 export function ReplyForm({
@@ -16,6 +17,8 @@ export function ReplyForm({
   const router = useRouter();
   const [content, setContent] = useState("");
   const [channel, setChannel] = useState<Channel>(channels[0] ?? "whatsapp");
+  const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function send(e: React.FormEvent) {
@@ -23,11 +26,27 @@ export function ReplyForm({
     if (!content.trim()) return;
 
     startTransition(async () => {
-      await fetch(`/api/conversations/${conversationId}/messages`, {
+      setError(null);
+      setWarning(null);
+
+      const result = await apiFetch<{
+        conversation?: unknown;
+        warning?: { message?: string };
+      }>(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: content.trim(), channel }),
       });
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
+      if (result.data.warning?.message) {
+        setWarning(result.data.warning.message);
+      }
+
       setContent("");
       router.refresh();
     });
@@ -63,6 +82,16 @@ export function ReplyForm({
           {pending ? "Sending…" : "Send"}
         </Button>
       </div>
+      {warning && (
+        <p className="text-xs text-amber-700" role="status">
+          Saved to inbox, but delivery failed: {warning}
+        </p>
+      )}
+      {error && (
+        <p className="text-xs text-red-600" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

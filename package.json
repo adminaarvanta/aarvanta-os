@@ -6,13 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:firestore": "node --env-file=.env.local scripts/seed-firestore.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "firebase": "^12.14.0",
     "firebase-admin": "^13.10.0",
+    "jose": "^6.2.3",
     "lucide-react": "^1.17.0",
     "next": "16.2.7",
     "openai": "^6.41.0",

@@ -6,6 +6,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isProductionMode } from "@/lib/config/app-mode";
 
 const nav = [
   { href: "/inbox", label: "Unified Inbox", icon: Inbox, active: true },
@@ -35,6 +36,8 @@ const nav = [
 ];
 
 export function AppSidebar() {
+  const production = isProductionMode();
+
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-[#EDE6D6] bg-white">
       <div className="border-b border-[#EDE6D6] px-4 py-5">
@@ -84,8 +87,22 @@ export function AppSidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-[#EDE6D6] p-4 text-[10px] text-[#6B6356]">
-        Demo workspace · Firebase & auth coming next
+      <div className="border-t border-[#EDE6D6] p-4 text-[10px] text-[#6B6356] space-y-2">
+        <p>
+          {production
+            ? "Production · Firestore persistence"
+            : "Demo mode · in-memory data"}
+        </p>
+        {production && (
+          <form action="/api/auth/logout" method="post">
+            <button
+              type="submit"
+              className="text-[#C29B40] hover:underline"
+            >
+              Sign out
+            </button>
+          </form>
+        )}
       </div>
     </aside>
   );

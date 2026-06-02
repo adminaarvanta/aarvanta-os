@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { ConversationList } from "@/components/inbox/conversation-list";
-import { getConversation, listConversations } from "@/lib/data/store";
+import { getRepository } from "@/lib/data/repository";
+import { getTenantScope } from "@/lib/tenant/context";
 import { ChevronLeft } from "lucide-react";
 
 export default async function ConversationPage({
@@ -11,9 +12,11 @@ export default async function ConversationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const scope = await getTenantScope();
+  const repo = getRepository();
   const [conversation, conversations] = await Promise.all([
-    getConversation(id),
-    listConversations(),
+    repo.getConversation(id, scope),
+    repo.listConversations(scope),
   ]);
 
   if (!conversation) notFound();

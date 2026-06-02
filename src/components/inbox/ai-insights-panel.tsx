@@ -1,22 +1,31 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SentimentBadge } from "@/components/inbox/sentiment-badge";
+import { apiFetch } from "@/lib/api/client-fetch";
 import { formatRelative } from "@/lib/utils";
 import type { Conversation } from "@/types/communication";
 
 export function AiInsightsPanel({ conversation }: { conversation: Conversation }) {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function refreshInsights() {
     startTransition(async () => {
-      await fetch(`/api/conversations/${conversation.id}/summarize`, {
+      setError(null);
+      const result = await apiFetch(`/api/conversations/${conversation.id}/summarize`, {
         method: "POST",
       });
+
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+
       router.refresh();
     });
   }
@@ -55,6 +64,11 @@ export function AiInsightsPanel({ conversation }: { conversation: Conversation }
       >
         {pending ? "Analyzing…" : "Refresh summary & sentiment"}
       </Button>
+      {error && (
+        <p className="text-xs text-red-600" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

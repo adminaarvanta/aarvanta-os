@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
+import { isProductionMode } from "@/lib/config/app-mode";
+import { getRepository } from "@/lib/data/repository";
+import { getProductionTenantScope } from "@/lib/tenant/context";
+import {
+  isWebhookProcessed,
+  markWebhookProcessed,
+} from "@/lib/webhooks/idempotency";
+import {
+  parseWhatsAppInbound,
+  verifyWhatsAppSignature,
+} from "@/lib/webhooks/whatsapp";
 
-/**
- * WhatsApp Cloud API webhook stub.
- * Verify token + ingest inbound messages once Meta credentials are configured.
- */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get("hub.mode");
@@ -21,8 +28,49 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const payload = await req.json();
-  // TODO: map payload → conversation/message in Firestore
-  console.info("[whatsapp webhook]", JSON.stringify(payload).slice(0, 500));
-  return NextResponse.json({ received: true });
+  const rawBody = await req.text();
+
+  if (isProductionMode()) {
+    const appSecret = process.env.WHATSAPP_APP_SECRET;
+    if (!appSecret) {
+      return NextResponse.json(
+        { error: "WhatsApp app secret not configured" },
+        { status: 500 }
+      );
+    }
+
+    const signature = req.headers.get("x-hub-signature-256");
+    if (!verifyWhatsAppSignature(rawBody, signature, appSecret)) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const scope = getProductionTenantScope();
+  const repo = getRepository();
+  const inbound = parseWhatsAppInbound(payload);
+
+  for (const message of inbound) {
+    if (await isWebhookProcessed("whatsapp", message.messageId)) continue;
+
+    await repo.addInboundMessage(
+      {
+        phone: message.phone,
+        contactName: message.contactName,
+        channel: "whatsapp",
+        content: message.content,
+      },
+      scope
+    );
+
+    await markWebhookProcessed("whatsapp", message.messageId, scope);
+  }
+
+  return NextResponse.json({ received: true, processed: inbound.length });
 }

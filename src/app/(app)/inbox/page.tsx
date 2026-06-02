@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ConversationList } from "@/components/inbox/conversation-list";
-import { listConversations } from "@/lib/data/store";
+import { getRepository } from "@/lib/data/repository";
+import { getTenantScope } from "@/lib/tenant/context";
 import { Inbox } from "lucide-react";
 
 export default async function InboxPage() {
-  const conversations = await listConversations();
+  const scope = await getTenantScope();
+  const conversations = await getRepository().listConversations(scope);
   const first = conversations[0];
 
   return (

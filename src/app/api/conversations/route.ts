@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
-import { listConversations } from "@/lib/data/store";
+import { getRepository } from "@/lib/data/repository";
+import { getTenantScope } from "@/lib/tenant/context";
+import { unauthorized } from "@/lib/api/request";
 
 export async function GET() {
-  const conversations = await listConversations();
+  let scope;
+  try {
+    scope = await getTenantScope();
+  } catch {
+    return unauthorized();
+  }
+
+  const conversations = await getRepository().listConversations(scope);
   return NextResponse.json({ conversations });
 }
