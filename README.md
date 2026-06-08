@@ -116,13 +116,41 @@ npm run seed:firestore
    - Subscribe to **messages**
 6. Add test recipient numbers in Meta (dev mode)
 
-### 8. Twilio SMS
+### 8. Twilio SMS & Voice
 
 1. [twilio.com/console](https://www.twilio.com/console) → copy Account SID + Auth Token
 2. Buy an SMS-capable number → `TWILIO_PHONE_NUMBER`
 3. **Phone Numbers → your number → Messaging**:
    - Webhook: `https://YOUR-DOMAIN/api/webhooks/twilio` (HTTP POST)
-4. Trial accounts: verify recipient numbers first
+4. **Voice**: same webhook URL for call status; outbound calls use `/api/webhooks/twilio/twiml`
+5. Trial accounts: verify recipient numbers first
+
+### 9. Email (Resend)
+
+1. [resend.com](https://resend.com) → API key → `RESEND_API_KEY`
+2. Set `EMAIL_FROM` (verified domain or `onboarding@resend.dev` for testing)
+3. **Resend → Webhooks** → `https://YOUR-DOMAIN/api/webhooks/email` (event: `email.received`)
+
+### 10. Website chat
+
+- Visitor UI: `/chat` (link in sidebar)
+- API: `POST /api/chat/session`, `POST|GET /api/chat/messages`
+- No external provider — works out of the box
+
+## All channels (dev)
+
+With `CHANNELS_SIMULATE=true` or `APP_MODE=demo`, external delivery is simulated (logged, not sent).
+
+Test all inbound channels locally:
+
+```bash
+npm run dev
+npm run simulate:channels
+```
+
+Open `/inbox` — you should see WhatsApp, SMS, voice, email, and website chat conversations.
+
+Check channel status: `GET /api/health` → `channels` object (`live` | `simulate` | `not_configured`).
 
 ## Scripts
 
@@ -131,25 +159,22 @@ npm run seed:firestore
 | `npm run dev` | Local development |
 | `npm run build` | Production build |
 | `npm run seed:firestore` | Add a test conversation to Firestore |
+| `npm run simulate:channels` | Simulate inbound on all 5 channels |
 | `firebase deploy --only firestore:indexes` | Deploy Firestore indexes |
 
+## Module 1 features
 
-| Feature | Demo | Production |
-|--------|------|------------|
-| Unified inbox | ✅ | ✅ |
-| Conversation timeline | ✅ | ✅ |
-| Internal notes | ✅ | ✅ |
-| Tags | ✅ | ✅ |
-| AI summaries | ✅ | ✅ |
-| Sentiment | ✅ | ✅ |
-| Reply UI | ✅ local only | ✅ + WhatsApp/SMS send |
-| WhatsApp / Twilio webhooks | 🔌 log only | ✅ validated + persisted |
-| Firebase persistence | in-memory | ✅ Firestore |
-| Auth | open | ✅ session login |
+| Channel | Inbound | Outbound | Provider |
+|---------|---------|----------|----------|
+| WhatsApp | ✅ webhook | ✅ | Meta Cloud API |
+| SMS | ✅ webhook | ✅ | Twilio |
+| Voice | ✅ webhook | ✅ call + TTS | Twilio |
+| Email | ✅ webhook | ✅ | Resend |
+| Website chat | ✅ `/chat` | ✅ inbox reply | Built-in |
 
 ## API
 
-- `GET /api/health`
+- `GET /api/health` — includes per-channel status
 - `POST /api/auth/login` · `POST /api/auth/logout`
 - `GET /api/conversations`
 - `GET|PATCH /api/conversations/:id` — tags
@@ -157,7 +182,10 @@ npm run seed:firestore
 - `POST /api/conversations/:id/notes`
 - `POST /api/conversations/:id/summarize`
 - `GET|POST /api/webhooks/whatsapp`
-- `POST /api/webhooks/twilio`
+- `POST /api/webhooks/twilio` — SMS + voice status
+- `GET /api/webhooks/twilio/twiml` — voice message TwiML
+- `POST /api/webhooks/email` — Resend inbound
+- `POST /api/chat/session` · `POST|GET /api/chat/messages`
 
 ## Stack
 

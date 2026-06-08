@@ -1,4 +1,5 @@
 import type {
+  Channel,
   Conversation,
   ConversationTag,
   CreateMessageInput,
@@ -16,9 +17,29 @@ export interface ConversationRepository {
     phone: string,
     scope: TenantScope
   ): Promise<Conversation | null>;
+  findConversationByEmail(
+    email: string,
+    scope: TenantScope
+  ): Promise<Conversation | null>;
+  findConversationByChatSession(
+    sessionId: string,
+    scope: TenantScope
+  ): Promise<Conversation | null>;
   addMessage(
     conversationId: string,
     input: CreateMessageInput,
+    scope: TenantScope,
+    author?: { name: string; id?: string }
+  ): Promise<Conversation | null>;
+  addOutboundEmail(
+    conversationId: string,
+    input: { subject: string; content: string },
+    scope: TenantScope,
+    author?: { name: string; id?: string }
+  ): Promise<Conversation | null>;
+  addOutboundCall(
+    conversationId: string,
+    input: { summary: string },
     scope: TenantScope,
     author?: { name: string; id?: string }
   ): Promise<Conversation | null>;
@@ -26,7 +47,34 @@ export interface ConversationRepository {
     input: {
       phone: string;
       contactName?: string;
-      channel: CreateMessageInput["channel"];
+      channel: Channel;
+      content: string;
+    },
+    scope: TenantScope
+  ): Promise<Conversation>;
+  addInboundEmail(
+    input: {
+      email: string;
+      contactName?: string;
+      subject: string;
+      body: string;
+    },
+    scope: TenantScope
+  ): Promise<Conversation>;
+  addInboundCall(
+    input: {
+      phone: string;
+      contactName?: string;
+      durationSeconds: number;
+      summary?: string;
+      recordingUrl?: string;
+    },
+    scope: TenantScope
+  ): Promise<Conversation>;
+  addInboundChat(
+    input: {
+      sessionId: string;
+      visitorName?: string;
       content: string;
     },
     scope: TenantScope

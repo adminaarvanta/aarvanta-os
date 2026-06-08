@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getRepository } from "@/lib/data/repository";
-import { getProductionTenantScope } from "@/lib/tenant/context";
+import { getWebhookTenantScope } from "@/lib/tenant/context";
 import {
   isWebhookProcessed,
   markWebhookProcessed,
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const scope = getProductionTenantScope();
+  const scope = getWebhookTenantScope();
   const repo = getRepository();
   const inbound = parseWhatsAppInbound(payload);
 

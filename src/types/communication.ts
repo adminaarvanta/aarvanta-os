@@ -33,6 +33,7 @@ export interface ContactRef {
   name: string;
   email?: string;
   phone?: string;
+  chatSessionId?: string;
 }
 
 interface TimelineBase {
@@ -105,6 +106,7 @@ export interface Conversation extends TenantScope {
 export type CreateMessageInput = {
   content: string;
   channel: Channel;
+  subject?: string;
 };
 
 export type CreateNoteInput = {

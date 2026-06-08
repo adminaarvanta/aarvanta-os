@@ -25,3 +25,9 @@ export function getProductionTenantScope(): TenantScope {
     companyId: process.env.COMPANY_ID!,
   };
 }
+
+/** Webhooks use demo tenant in demo mode so inbound events appear in the inbox. */
+export function getWebhookTenantScope(): TenantScope {
+  if (isDemoMode()) return DEMO_TENANT;
+  return getProductionTenantScope();
+}

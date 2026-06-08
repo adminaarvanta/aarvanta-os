@@ -42,6 +42,7 @@ export function ConversationDetail({ conversation }: { conversation: Conversatio
 
         <ReplyForm
           conversationId={conversation.id}
+          contact={conversation.contact}
           channels={conversation.channels}
         />
       </section>

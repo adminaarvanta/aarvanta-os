@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deliverOutboundMessage } from "@/lib/channels/outbound";
+import { deliverOutbound } from "@/lib/channels/deliver";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
 import { getSessionFromCookies } from "@/lib/auth/session";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import type { Conversation, TimelineEmail } from "@/types/communication";
+
+function lastEmailSubject(conversation: Conversation): string | undefined {
+  const emails = conversation.timeline.filter(
+    (e): e is TimelineEmail => e.type === "email"
+  );
+  const last = emails[emails.length - 1];
+  return last?.subject;
+}
 
 const schema = z.object({
   content: z.string().min(1),
   channel: z.enum(["whatsapp", "email", "voice", "sms", "website_chat"]),
+  subject: z.string().optional(),
 });
 
 export async function POST(
@@ -31,6 +41,7 @@ export async function POST(
   }
 
   const session = await getSessionFromCookies();
+  const author = session ? { name: session.name, id: session.email } : undefined;
   const { id } = await params;
   const repo = getRepository();
 
@@ -39,22 +50,41 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const conversation = await repo.addMessage(
-    id,
-    parsed.data,
-    scope,
-    session ? { name: session.name, id: session.email } : undefined
-  );
+  let conversation: Conversation | null = null;
+  const { channel, content, subject } = parsed.data;
+
+  if (channel === "email") {
+    conversation = await repo.addOutboundEmail(
+      id,
+      { subject: subject ?? "Message from Aarvanta", content },
+      scope,
+      author
+    );
+  } else if (channel === "voice") {
+    conversation = await repo.addOutboundCall(
+      id,
+      { summary: content },
+      scope,
+      author
+    );
+  } else {
+    conversation = await repo.addMessage(id, parsed.data, scope, author);
+  }
+
   if (!conversation) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   try {
-    await deliverOutboundMessage(
-      parsed.data.channel,
-      existing.contact.phone,
-      parsed.data.content
-    );
+    await deliverOutbound({
+      channel,
+      contact: existing.contact,
+      content,
+      subject:
+        channel === "email"
+          ? (subject ?? lastEmailSubject(existing) ?? "Message from Aarvanta")
+          : subject,
+    });
   } catch (error) {
     return NextResponse.json(
       {

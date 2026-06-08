@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:firestore": "node --env-file=.env.local scripts/seed-firestore.mjs"
+    "seed:firestore": "node --env-file=.env.local scripts/seed-firestore.mjs",
+    "simulate:channels": "node --env-file=.env.local scripts/simulate-channels.mjs",
+    "seed:email": "node --env-file=.env.local scripts/seed-email-test.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

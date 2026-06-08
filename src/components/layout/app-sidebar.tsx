@@ -88,6 +88,13 @@ export function AppSidebar() {
         })}
       </nav>
       <div className="border-t border-[#EDE6D6] p-4 text-[10px] text-[#6B6356] space-y-2">
+        <Link
+          href="/chat"
+          target="_blank"
+          className="block text-[#C29B40] hover:underline"
+        >
+          Open website chat (test)
+        </Link>
         <p>
           {production
             ? "Production · Firestore persistence"

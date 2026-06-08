@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getRepository } from "@/lib/data/repository";
-import { getProductionTenantScope } from "@/lib/tenant/context";
+import { getWebhookTenantScope } from "@/lib/tenant/context";
 import {
   isWebhookProcessed,
   markWebhookProcessed,
 } from "@/lib/webhooks/idempotency";
 import { parseTwilioSms, verifyTwilioSignature } from "@/lib/webhooks/twilio";
+import { parseTwilioVoiceStatus } from "@/lib/webhooks/twilio-voice";
 
 async function parseTwilioBody(req: Request) {
   const contentType = req.headers.get("content-type") ?? "";
@@ -50,25 +51,40 @@ export async function POST(req: Request) {
     }
   }
 
+  const scope = getWebhookTenantScope();
+  const repo = getRepository();
+
   const sms = parseTwilioSms(data);
-  if (!sms) {
-    return NextResponse.json({ received: true, processed: 0 });
+  if (sms) {
+    if (await isWebhookProcessed("twilio_sms", sms.messageId)) {
+      return NextResponse.json({ received: true, processed: 0, duplicate: true });
+    }
+
+    await repo.addInboundMessage(
+      { phone: sms.phone, channel: "sms", content: sms.content },
+      scope
+    );
+    await markWebhookProcessed("twilio_sms", sms.messageId, scope);
+    return NextResponse.json({ received: true, processed: 1, type: "sms" });
   }
 
-  if (await isWebhookProcessed("twilio", sms.messageId)) {
-    return NextResponse.json({ received: true, processed: 0, duplicate: true });
+  const call = parseTwilioVoiceStatus(data);
+  if (call) {
+    if (await isWebhookProcessed("twilio_voice", call.callSid)) {
+      return NextResponse.json({ received: true, processed: 0, duplicate: true });
+    }
+
+    await repo.addInboundCall(
+      {
+        phone: call.phone,
+        durationSeconds: call.durationSeconds,
+        summary: call.summary,
+      },
+      scope
+    );
+    await markWebhookProcessed("twilio_voice", call.callSid, scope);
+    return NextResponse.json({ received: true, processed: 1, type: "voice" });
   }
 
-  const scope = getProductionTenantScope();
-  await getRepository().addInboundMessage(
-    {
-      phone: sms.phone,
-      channel: "sms",
-      content: sms.content,
-    },
-    scope
-  );
-  await markWebhookProcessed("twilio", sms.messageId, scope);
-
-  return NextResponse.json({ received: true, processed: 1 });
+  return NextResponse.json({ received: true, processed: 0 });
 }

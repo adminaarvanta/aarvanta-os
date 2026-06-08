@@ -1,3 +1,16 @@
+import {
+  appendInboundCall,
+  appendInboundEmail,
+  appendInboundMessage,
+  appendOutboundCall,
+  appendOutboundEmail,
+  appendOutboundMessage,
+  createConversation,
+  inScope,
+  newId,
+  normalizeEmail,
+  normalizePhone,
+} from "@/lib/data/conversation-helpers";
 import type { ConversationRepository } from "@/lib/data/repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type {
@@ -12,28 +25,15 @@ import type {
 
 const COLLECTION = "conversations";
 
-function inScope(c: Conversation, scope: TenantScope) {
-  return (
-    c.tenantId === scope.tenantId &&
-    c.workspaceId === scope.workspaceId &&
-    c.companyId === scope.companyId
-  );
-}
-
-function newId(prefix: string) {
-  return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
-}
-
-function normalizePhone(phone: string) {
-  return phone.replace(/\s+/g, "").replace(/^\+/, "");
-}
-
 function getDb() {
   const db = getAdminFirestore();
-  if (!db) {
-    throw new Error("Firestore is not configured for production mode.");
-  }
+  if (!db) throw new Error("Firestore is not configured for production mode.");
   return db;
+}
+
+async function save(conv: Conversation) {
+  await getDb().collection(COLLECTION).doc(conv.id).set(conv);
+  return conv;
 }
 
 async function getScopedConversation(id: string, scope: TenantScope) {
@@ -44,17 +44,24 @@ async function getScopedConversation(id: string, scope: TenantScope) {
   return data;
 }
 
+async function listScoped(scope: TenantScope) {
+  const snap = await getDb()
+    .collection(COLLECTION)
+    .where("tenantId", "==", scope.tenantId)
+    .where("workspaceId", "==", scope.workspaceId)
+    .where("companyId", "==", scope.companyId)
+    .get();
+  return snap.docs.map((doc) => doc.data() as Conversation);
+}
+
 export const firestoreRepository: ConversationRepository = {
   async listConversations(scope) {
-    const snap = await getDb()
-      .collection(COLLECTION)
-      .where("tenantId", "==", scope.tenantId)
-      .where("workspaceId", "==", scope.workspaceId)
-      .where("companyId", "==", scope.companyId)
-      .orderBy("lastActivityAt", "desc")
-      .get();
-
-    return snap.docs.map((doc) => doc.data() as Conversation);
+    const items = await listScoped(scope);
+    return items.sort(
+      (a, b) =>
+        new Date(b.lastActivityAt).getTime() -
+        new Date(a.lastActivityAt).getTime()
+    );
   },
 
   async getConversation(id, scope) {
@@ -63,53 +70,47 @@ export const firestoreRepository: ConversationRepository = {
 
   async findConversationByPhone(phone, scope) {
     const normalized = normalizePhone(phone);
-    const snap = await getDb()
-      .collection(COLLECTION)
-      .where("tenantId", "==", scope.tenantId)
-      .where("workspaceId", "==", scope.workspaceId)
-      .where("companyId", "==", scope.companyId)
-      .get();
-
-    const found = snap.docs
-      .map((doc) => doc.data() as Conversation)
-      .find(
+    const items = await listScoped(scope);
+    return (
+      items.find(
         (c) => c.contact.phone && normalizePhone(c.contact.phone) === normalized
-      );
+      ) ?? null
+    );
+  },
 
-    return found ?? null;
+  async findConversationByEmail(email, scope) {
+    const normalized = normalizeEmail(email);
+    const items = await listScoped(scope);
+    return (
+      items.find(
+        (c) => c.contact.email && normalizeEmail(c.contact.email) === normalized
+      ) ?? null
+    );
+  },
+
+  async findConversationByChatSession(sessionId, scope) {
+    const items = await listScoped(scope);
+    return (
+      items.find((c) => c.contact.chatSessionId === sessionId) ?? null
+    );
   },
 
   async addMessage(conversationId, input, scope, author) {
     const conv = await getScopedConversation(conversationId, scope);
     if (!conv) return null;
+    return save(appendOutboundMessage(conv, input, author));
+  },
 
-    const now = new Date().toISOString();
-    const message: TimelineMessage = {
-      id: newId("evt"),
-      type: "message",
-      direction: "outbound",
-      channel: input.channel,
-      content: input.content,
-      occurredAt: now,
-      authorName: author?.name ?? "You",
-      authorId: author?.id,
-    };
+  async addOutboundEmail(conversationId, input, scope, author) {
+    const conv = await getScopedConversation(conversationId, scope);
+    if (!conv) return null;
+    return save(appendOutboundEmail(conv, input, author));
+  },
 
-    const channels = conv.channels.includes(input.channel)
-      ? conv.channels
-      : [...conv.channels, input.channel];
-
-    const updated: Conversation = {
-      ...conv,
-      channels,
-      timeline: [...conv.timeline, message],
-      lastActivityAt: now,
-      updatedAt: now,
-      unreadCount: 0,
-    };
-
-    await getDb().collection(COLLECTION).doc(conversationId).set(updated);
-    return updated;
+  async addOutboundCall(conversationId, input, scope, author) {
+    const conv = await getScopedConversation(conversationId, scope);
+    if (!conv) return null;
+    return save(appendOutboundCall(conv, input, author));
   },
 
   async addInboundMessage(input, scope) {
@@ -129,43 +130,152 @@ export const firestoreRepository: ConversationRepository = {
     };
 
     if (existing) {
-      const channels = existing.channels.includes(input.channel)
-        ? existing.channels
-        : [...existing.channels, input.channel];
-
-      const updated: Conversation = {
-        ...existing,
-        channels,
-        timeline: [...existing.timeline, message],
-        lastActivityAt: now,
-        updatedAt: now,
-        unreadCount: existing.unreadCount + 1,
-      };
-
-      await getDb().collection(COLLECTION).doc(existing.id).set(updated);
-      return updated;
+      return save(
+        appendInboundMessage(existing, {
+          channel: input.channel,
+          content: input.content,
+          authorName: input.contactName ?? input.phone,
+        })
+      );
     }
 
-    const conversation: Conversation = {
-      ...scope,
-      id: newId("conv"),
-      contact: {
-        id: newId("contact"),
-        name: input.contactName ?? input.phone,
-        phone: input.phone,
-      },
-      channels: [input.channel],
-      tags: [],
-      sentiment: "neutral",
-      unreadCount: 1,
-      lastActivityAt: now,
-      createdAt: now,
-      updatedAt: now,
-      timeline: [message],
-    };
+    return save(
+      createConversation(
+        scope,
+        {
+          id: newId("contact"),
+          name: input.contactName ?? input.phone,
+          phone: input.phone,
+        },
+        input.channel,
+        [message]
+      )
+    );
+  },
 
-    await getDb().collection(COLLECTION).doc(conversation.id).set(conversation);
-    return conversation;
+  async addInboundEmail(input, scope) {
+    const existing = await firestoreRepository.findConversationByEmail(
+      input.email,
+      scope
+    );
+
+    if (existing) {
+      return save(
+        appendInboundEmail(existing, {
+          subject: input.subject,
+          body: input.body,
+          authorName: input.contactName ?? input.email,
+        })
+      );
+    }
+
+    const now = new Date().toISOString();
+    return save(
+      createConversation(
+        scope,
+        {
+          id: newId("contact"),
+          name: input.contactName ?? input.email,
+          email: input.email,
+        },
+        "email",
+        [
+          {
+            id: newId("evt"),
+            type: "email",
+            direction: "inbound",
+            subject: input.subject,
+            bodyPreview: input.body,
+            occurredAt: now,
+            authorName: input.contactName ?? input.email,
+          },
+        ]
+      )
+    );
+  },
+
+  async addInboundCall(input, scope) {
+    const existing = await firestoreRepository.findConversationByPhone(
+      input.phone,
+      scope
+    );
+
+    if (existing) {
+      return save(
+        appendInboundCall(existing, {
+          durationSeconds: input.durationSeconds,
+          summary: input.summary,
+          recordingUrl: input.recordingUrl,
+          authorName: input.contactName ?? input.phone,
+        })
+      );
+    }
+
+    const now = new Date().toISOString();
+    return save(
+      createConversation(
+        scope,
+        {
+          id: newId("contact"),
+          name: input.contactName ?? input.phone,
+          phone: input.phone,
+        },
+        "voice",
+        [
+          {
+            id: newId("evt"),
+            type: "call",
+            direction: "inbound",
+            durationSeconds: input.durationSeconds,
+            summary: input.summary,
+            recordingUrl: input.recordingUrl,
+            occurredAt: now,
+            authorName: input.contactName ?? input.phone,
+          },
+        ]
+      )
+    );
+  },
+
+  async addInboundChat(input, scope) {
+    const existing = await firestoreRepository.findConversationByChatSession(
+      input.sessionId,
+      scope
+    );
+
+    if (existing) {
+      return save(
+        appendInboundMessage(existing, {
+          channel: "website_chat",
+          content: input.content,
+          authorName: input.visitorName ?? "Website visitor",
+        })
+      );
+    }
+
+    const now = new Date().toISOString();
+    return save(
+      createConversation(
+        scope,
+        {
+          id: newId("contact"),
+          name: input.visitorName ?? "Website visitor",
+          chatSessionId: input.sessionId,
+        },
+        "website_chat",
+        [
+          {
+            id: newId("evt"),
+            type: "message",
+            direction: "inbound",
+            channel: "website_chat",
+            content: input.content,
+            occurredAt: now,
+            authorName: input.visitorName ?? "Website visitor",
+          },
+        ]
+      )
+    );
   },
 
   async addInternalNote(conversationId, input, scope, author) {
@@ -183,45 +293,30 @@ export const firestoreRepository: ConversationRepository = {
       authorId: author?.id,
     };
 
-    const updated: Conversation = {
+    return save({
       ...conv,
       timeline: [...conv.timeline, note],
       lastActivityAt: now,
       updatedAt: now,
-    };
-
-    await getDb().collection(COLLECTION).doc(conversationId).set(updated);
-    return updated;
+    });
   },
 
   async setTags(conversationId, tags, scope) {
     const conv = await getScopedConversation(conversationId, scope);
     if (!conv) return null;
-
-    const updated: Conversation = {
-      ...conv,
-      tags,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await getDb().collection(COLLECTION).doc(conversationId).set(updated);
-    return updated;
+    return save({ ...conv, tags, updatedAt: new Date().toISOString() });
   },
 
   async updateAiInsights(conversationId, data, scope) {
     const conv = await getScopedConversation(conversationId, scope);
     if (!conv) return null;
-
     const now = new Date().toISOString();
-    const updated: Conversation = {
+    return save({
       ...conv,
       aiSummary: data.aiSummary,
       sentiment: data.sentiment,
       aiSummaryUpdatedAt: now,
       updatedAt: now,
-    };
-
-    await getDb().collection(COLLECTION).doc(conversationId).set(updated);
-    return updated;
+    });
   },
 };
