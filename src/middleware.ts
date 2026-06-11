@@ -39,13 +39,15 @@ export async function middleware(request: NextRequest) {
   const needsAuth =
     pathname.startsWith("/inbox") ||
     pathname.startsWith("/crm") ||
+    pathname.startsWith("/workforce") ||
     pathname.startsWith("/api/conversations") ||
     pathname.startsWith("/api/contacts") ||
     pathname.startsWith("/api/companies") ||
     pathname.startsWith("/api/pipelines") ||
     pathname.startsWith("/api/deals") ||
     pathname.startsWith("/api/tasks") ||
-    pathname.startsWith("/api/activities");
+    pathname.startsWith("/api/activities") ||
+    pathname.startsWith("/api/workforce");
 
   if (!needsAuth) {
     return NextResponse.next();
@@ -71,6 +73,7 @@ export const config = {
   matcher: [
     "/inbox/:path*",
     "/crm/:path*",
+    "/workforce/:path*",
     "/api/conversations",
     "/api/conversations/:path*",
     "/api/contacts",
@@ -85,5 +88,7 @@ export const config = {
     "/api/tasks/:path*",
     "/api/activities",
     "/api/activities/:path*",
+    "/api/workforce",
+    "/api/workforce/:path*",
   ],
 };
