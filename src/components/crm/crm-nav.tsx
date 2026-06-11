@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { PendingLink } from "@/components/layout/navigation-provider";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -26,9 +26,10 @@ export function CrmNav() {
             ? pathname === link.href
             : pathname.startsWith(link.href);
           return (
-            <Link
+            <PendingLink
               key={link.href}
               href={link.href}
+              pendingClassName="opacity-60"
               className={cn(
                 "whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors",
                 active
@@ -37,7 +38,7 @@ export function CrmNav() {
               )}
             >
               {link.label}
-            </Link>
+            </PendingLink>
           );
         })}
       </div>
