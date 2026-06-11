@@ -137,6 +137,26 @@ npm run seed:firestore
 - API: `POST /api/chat/session`, `POST|GET /api/chat/messages`
 - No external provider — works out of the box
 
+### 11. AI summaries & sentiment (OpenAI)
+
+1. Get an API key from [platform.openai.com](https://platform.openai.com/api-keys)
+2. Add to `.env.local`:
+   ```bash
+   OPENAI_API_KEY=sk-...
+   OPENAI_MODEL=gpt-4o-mini
+   ```
+3. Restart the dev server
+4. Verify: `GET /api/health` → `ai.status` should be `"live"`
+
+**Behavior:**
+- Summaries and sentiment use the OpenAI Chat Completions API (JSON mode).
+- **Automatic:** after each inbound message (webhook or website chat), the conversation is re-analyzed in the background.
+- **Manual:** use “Refresh summary & sentiment” in the inbox AI panel, or `POST /api/conversations/:id/summarize`.
+
+Set `AI_AUTO_SUMMARIZE=false` to disable automatic updates. In demo mode without a key, keyword heuristics are used; in production, missing `OPENAI_API_KEY` returns `503 AI_NOT_CONFIGURED`.
+
+> **Note:** Cursor’s API is for coding agents (repo tasks), not inbox summarization. Use OpenAI for Communication Hub AI.
+
 ## All channels (dev)
 
 With `CHANNELS_SIMULATE=true` or `APP_MODE=demo`, external delivery is simulated (logged, not sent).
@@ -150,7 +170,7 @@ npm run simulate:channels
 
 Open `/inbox` — you should see WhatsApp, SMS, voice, email, and website chat conversations.
 
-Check channel status: `GET /api/health` → `channels` object (`live` | `simulate` | `not_configured`).
+Check channel status: `GET /api/health` → `channels` object (`live` | `simulate` | `not_configured`) and `ai` object (`live` | `heuristic` | `disabled`).
 
 ## Scripts
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BrandLogo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 
 type ChatMessage = {
@@ -78,18 +79,18 @@ export default function WebsiteChatPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FCF9F2] p-4">
-      <div className="flex h-[32rem] w-full max-w-md flex-col rounded-2xl border border-[#EDE6D6] bg-white shadow-sm">
-        <header className="border-b border-[#EDE6D6] px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#C29B40]">
-            Aarvanta OS
-          </p>
-          <h1 className="text-sm font-semibold text-[#2A2418]">Website chat</h1>
+    <div className="flex min-h-[100dvh] flex-col bg-black p-3 sm:items-center sm:justify-center sm:p-4">
+      <div className="flex min-h-0 flex-1 w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#3d3528] bg-[#0a0a0a] shadow-lg shadow-[#D4AF37]/5 sm:h-[32rem] sm:flex-none">
+        <header className="shrink-0 border-b border-[#3d3528] px-4 py-4">
+          <div className="flex justify-center">
+            <BrandLogo size="sm" />
+          </div>
+          <h1 className="mt-2 text-center text-sm font-medium text-[#A89878]">Website chat</h1>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-3">
           {messages.length === 0 && (
-            <p className="text-sm text-[#6B6356]">
+            <p className="text-sm text-[#A89878]">
               Send a message — it will appear in the agent inbox.
             </p>
           )}
@@ -98,12 +99,12 @@ export default function WebsiteChatPage() {
               key={m.id}
               className={
                 m.direction === "inbound"
-                  ? "ml-0 mr-8 rounded-xl bg-[#FCF9F2] px-3 py-2 text-sm"
-                  : "ml-8 mr-0 rounded-xl bg-[#E8D4A8]/50 px-3 py-2 text-sm"
+                  ? "mr-4 rounded-xl bg-[#141414] ring-1 ring-[#3d3528] px-3 py-2 text-sm text-[#F5E6C8] sm:mr-8"
+                  : "ml-4 rounded-xl bg-[#D4AF37]/20 ring-1 ring-[#D4AF37]/40 px-3 py-2 text-sm text-[#F5E6C8] sm:ml-8"
               }
             >
               {m.direction === "outbound" && (
-                <p className="text-[10px] font-medium text-[#9A7A32] mb-0.5">
+                <p className="text-[10px] font-medium text-[#F9E076] mb-0.5">
                   {m.authorName ?? "Agent"}
                 </p>
               )}
@@ -113,29 +114,33 @@ export default function WebsiteChatPage() {
           <div ref={bottomRef} />
         </div>
 
-        <form onSubmit={send} className="border-t border-[#EDE6D6] p-3 space-y-2">
+        <form
+          onSubmit={send}
+          className="shrink-0 border-t border-[#3d3528] p-3 space-y-2"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
           {!visitorName && (
             <input
               type="text"
               placeholder="Your name (optional)"
               value={visitorName}
               onChange={(e) => setVisitorName(e.target.value)}
-              className="w-full rounded-lg border border-[#EDE6D6] px-3 py-1.5 text-sm"
+              className="w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-base text-[#F5E6C8] sm:text-sm"
             />
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               placeholder="Type a message…"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="flex-1 rounded-lg border border-[#EDE6D6] px-3 py-2 text-sm"
+              className="min-w-0 flex-1 rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2.5 text-base text-[#F5E6C8] sm:text-sm"
             />
-            <Button type="submit" disabled={loading || !sessionId}>
+            <Button type="submit" disabled={loading || !sessionId} className="w-full sm:w-auto">
               Send
             </Button>
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-400">{error}</p>}
         </form>
       </div>
     </div>

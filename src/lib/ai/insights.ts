@@ -1,5 +1,12 @@
-import { getOpenAI, isOpenAIConfigured } from "@/lib/ai/client";
+import { getAiConfig, isAiConfigured } from "@/lib/ai/config";
+import {
+  AiNotConfiguredError,
+  AiRequestError,
+  completeJson,
+} from "@/lib/ai/provider";
 import type { Conversation, Sentiment, TimelineEvent } from "@/types/communication";
+
+const MAX_TRANSCRIPT_CHARS = 14_000;
 
 function timelineToText(timeline: TimelineEvent[]): string {
   return timeline
@@ -22,6 +29,24 @@ function timelineToText(timeline: TimelineEvent[]): string {
     .join("\n");
 }
 
+function truncateTranscript(timeline: TimelineEvent[]): string {
+  const full = timelineToText(timeline);
+  if (full.length <= MAX_TRANSCRIPT_CHARS) return full;
+
+  const lines = full.split("\n");
+  const tail: string[] = [];
+  let size = 0;
+
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const line = lines[i];
+    if (size + line.length + 1 > MAX_TRANSCRIPT_CHARS) break;
+    tail.unshift(line);
+    size += line.length + 1;
+  }
+
+  return `[Earlier timeline truncated]\n${tail.join("\n")}`;
+}
+
 function heuristicSentiment(text: string): Sentiment {
   const lower = text.toLowerCase();
   if (
@@ -30,9 +55,7 @@ function heuristicSentiment(text: string): Sentiment {
   ) {
     return "urgent";
   }
-  if (
-    /\bfrustrat|angry|disappoint|failed|broken|unhappy/i.test(lower)
-  ) {
+  if (/\bfrustrat|angry|disappoint|failed|broken|unhappy/i.test(lower)) {
     return "frustrated";
   }
   if (/\bthanks|great|excited|looking forward|perfect\b/i.test(lower)) {
@@ -54,55 +77,79 @@ function heuristicSummary(conversation: Conversation): string {
   return `Conversation with ${contact} across ${conversation.channels.join(", ")}. ${conversation.timeline.length} events on the timeline.`;
 }
 
+function fallbackInsights(
+  conversation: Conversation,
+  transcript: string
+): { summary: string; sentiment: Sentiment } {
+  return {
+    summary: heuristicSummary(conversation),
+    sentiment: heuristicSentiment(transcript),
+  };
+}
+
+const INSIGHTS_SYSTEM_PROMPT = `You analyze business communication timelines for Aarvanta OS Communication Hub.
+Summarize what the customer wants, what was promised, blockers, and recommended next action.
+Return JSON only:
+{
+  "summary": "2-3 concise sentences for a sales or support agent",
+  "sentiment": "positive" | "neutral" | "frustrated" | "urgent"
+}
+Use "urgent" when time-sensitive or escalation is implied. Use "frustrated" for complaints or repeated issues.`;
+
+type InsightsResponse = { summary?: string; sentiment?: string };
+
 export async function generateConversationInsights(
   conversation: Conversation
-): Promise<{ summary: string; sentiment: Sentiment }> {
-  const transcript = timelineToText(conversation.timeline);
+): Promise<{ summary: string; sentiment: Sentiment; source: "openai" | "heuristic" }> {
+  const transcript = truncateTranscript(conversation.timeline);
+  const { allowHeuristicFallback } = getAiConfig();
 
-  if (!isOpenAIConfigured()) {
-    return {
-      summary: heuristicSummary(conversation),
-      sentiment: heuristicSentiment(transcript),
-    };
-  }
-
-  const openai = getOpenAI()!;
-  const completion = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content: `You analyze business communication timelines for Aarvanta OS Communication Hub.
-Return JSON: { "summary": string (2-3 sentences), "sentiment": "positive"|"neutral"|"frustrated"|"urgent" }`,
-      },
-      {
-        role: "user",
-        content: `Contact: ${conversation.contact.name}\nTags: ${conversation.tags.join(", ") || "none"}\n\nTimeline:\n${transcript}`,
-      },
-    ],
-  });
-
-  const raw = completion.choices[0]?.message?.content;
-  if (!raw) {
-    return {
-      summary: heuristicSummary(conversation),
-      sentiment: heuristicSentiment(transcript),
-    };
+  if (!isAiConfigured()) {
+    if (!allowHeuristicFallback) {
+      throw new AiNotConfiguredError();
+    }
+    const fallback = fallbackInsights(conversation, transcript);
+    return { ...fallback, source: "heuristic" };
   }
 
   try {
-    const parsed = JSON.parse(raw) as { summary?: string; sentiment?: Sentiment };
-    const sentiment = parsed.sentiment ?? heuristicSentiment(transcript);
+    const parsed = await completeJson<InsightsResponse>({
+      system: INSIGHTS_SYSTEM_PROMPT,
+      user: `Contact: ${conversation.contact.name}
+Channels: ${conversation.channels.join(", ")}
+Tags: ${conversation.tags.join(", ") || "none"}
+Current sentiment: ${conversation.sentiment}
+
+Timeline:
+${transcript}`,
+    });
+
     const valid: Sentiment[] = ["positive", "neutral", "frustrated", "urgent"];
+    const sentiment = parsed.sentiment as Sentiment;
+    const resolvedSentiment = valid.includes(sentiment)
+      ? sentiment
+      : heuristicSentiment(transcript);
+
     return {
-      summary: parsed.summary ?? heuristicSummary(conversation),
-      sentiment: valid.includes(sentiment) ? sentiment : "neutral",
+      summary: parsed.summary?.trim() || heuristicSummary(conversation),
+      sentiment: resolvedSentiment,
+      source: "openai",
     };
-  } catch {
-    return {
-      summary: heuristicSummary(conversation),
-      sentiment: heuristicSentiment(transcript),
-    };
+  } catch (error) {
+    if (!allowHeuristicFallback) {
+      if (error instanceof AiNotConfiguredError || error instanceof AiRequestError) {
+        throw error;
+      }
+      throw new AiRequestError(
+        error instanceof Error ? error.message : "Failed to generate insights"
+      );
+    }
+
+    console.warn(
+      "[ai:insights] OpenAI failed, using heuristic fallback:",
+      error instanceof Error ? error.message : error
+    );
+    const fallback = fallbackInsights(conversation, transcript);
+    return { ...fallback, source: "heuristic" };
   }
 }

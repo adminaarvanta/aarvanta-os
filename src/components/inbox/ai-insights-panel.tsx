@@ -17,9 +17,10 @@ export function AiInsightsPanel({ conversation }: { conversation: Conversation }
   function refreshInsights() {
     startTransition(async () => {
       setError(null);
-      const result = await apiFetch(`/api/conversations/${conversation.id}/summarize`, {
-        method: "POST",
-      });
+      const result = await apiFetch<{ source?: string }>(
+        `/api/conversations/${conversation.id}/summarize`,
+        { method: "POST" }
+      );
 
       if (!result.ok) {
         setError(result.message);
@@ -33,23 +34,24 @@ export function AiInsightsPanel({ conversation }: { conversation: Conversation }
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[#2A2418]">
-          <Sparkles className="h-4 w-4 text-[#C29B40]" />
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[#F5E6C8]">
+          <Sparkles className="h-4 w-4 text-[#D4AF37]" />
           AI insights
         </h3>
         <SentimentBadge sentiment={conversation.sentiment} />
       </div>
 
-      <div className="rounded-xl bg-[#FCF9F2] border border-[#EDE6D6] p-3 text-sm text-[#2A2418] leading-relaxed">
+      <div className="rounded-xl border border-[#3d3528] bg-[#141414] p-3 text-sm text-[#F5E6C8] leading-relaxed">
         {conversation.aiSummary ?? (
-          <span className="text-[#6B6356]">
-            No summary yet. Generate one from the conversation timeline.
+          <span className="text-[#A89878]">
+            No summary yet. Send a message or wait for an inbound event — summaries
+            generate automatically when OpenAI is configured.
           </span>
         )}
       </div>
 
       {conversation.aiSummaryUpdatedAt && (
-        <p className="text-[10px] text-[#6B6356]">
+        <p className="text-[10px] text-[#A89878]">
           Updated {formatRelative(conversation.aiSummaryUpdatedAt)}
         </p>
       )}
@@ -62,13 +64,18 @@ export function AiInsightsPanel({ conversation }: { conversation: Conversation }
         disabled={pending}
         onClick={refreshInsights}
       >
-        {pending ? "Analyzing…" : "Refresh summary & sentiment"}
+        {pending ? "Analyzing with OpenAI…" : "Refresh summary & sentiment"}
       </Button>
       {error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-red-400" role="alert">
           {error}
         </p>
       )}
+      <p className="text-[10px] text-[#A89878] leading-relaxed">
+        Requires <code className="text-[#D4AF37]">OPENAI_API_KEY</code>. Check{" "}
+        <code className="text-[#D4AF37]">/api/health</code> →{" "}
+        <code className="text-[#D4AF37]">ai.status</code>.
+      </p>
     </div>
   );
 }

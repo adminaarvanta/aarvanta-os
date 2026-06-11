@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 import type { Sentiment } from "@/types/communication";
 
 const styles: Record<Sentiment, string> = {
-  positive: "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  neutral: "bg-slate-50 text-slate-700 ring-slate-200",
-  frustrated: "bg-amber-50 text-amber-900 ring-amber-200",
-  urgent: "bg-red-50 text-red-800 ring-red-200",
+  positive: "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50",
+  neutral: "bg-zinc-800/80 text-zinc-300 ring-zinc-600/50",
+  frustrated: "bg-amber-950/60 text-amber-300 ring-amber-700/50",
+  urgent: "bg-red-950/60 text-red-300 ring-red-700/50",
 };
 
 export function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {

@@ -87,23 +87,21 @@ export function ReplyForm({
   return (
     <form
       onSubmit={send}
-      className="border-t border-[#EDE6D6] bg-white p-4 space-y-2"
+      className="border-t border-[#3d3528] bg-[#0a0a0a] p-3 space-y-2 sm:p-4"
     >
-      <div className="flex gap-2">
-        <select
-          value={channel}
-          onChange={(e) => setChannel(e.target.value as Channel)}
-          className="rounded-lg border border-[#EDE6D6] bg-[#FCF9F2] px-2 py-1.5 text-xs text-[#2A2418]"
-        >
-          {ALL_CHANNELS.map((ch) => (
-            <option key={ch} value={ch}>
-              {CHANNEL_LABELS[ch]}
-            </option>
-          ))}
-        </select>
-      </div>
+      <select
+        value={channel}
+        onChange={(e) => setChannel(e.target.value as Channel)}
+        className="w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] sm:w-auto sm:text-xs"
+      >
+        {ALL_CHANNELS.map((ch) => (
+          <option key={ch} value={ch}>
+            {CHANNEL_LABELS[ch]}
+          </option>
+        ))}
+      </select>
       {hint && (
-        <p className="text-xs text-amber-700" role="status">
+        <p className="text-xs text-amber-400" role="status">
           {hint}
         </p>
       )}
@@ -113,15 +111,15 @@ export function ReplyForm({
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Email subject"
-          className="w-full rounded-lg border border-[#EDE6D6] px-3 py-1.5 text-sm"
+          className="w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-1.5 text-sm text-[#F5E6C8]"
         />
       )}
       {channel === "voice" ? (
-        <p className="text-xs text-[#6B6356]">
+        <p className="text-xs text-[#A89878]">
           Initiates a voice call and speaks your message to the contact.
         </p>
       ) : null}
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -130,20 +128,24 @@ export function ReplyForm({
               ? "Message to speak on the call…"
               : "Reply via selected channel…"
           }
-          rows={2}
-          className="flex-1 resize-none rounded-xl border border-[#EDE6D6] px-3 py-2 text-sm text-[#2A2418] placeholder:text-[#6B6356]/60 focus:border-[#C29B40] focus:outline-none focus:ring-1 focus:ring-[#C29B40]/30"
+          rows={3}
+          className="min-h-[4.5rem] flex-1 resize-none rounded-xl border border-[#3d3528] bg-[#141414] px-3 py-2 text-base text-[#F5E6C8] placeholder:text-[#A89878]/60 focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/30 sm:min-h-0 sm:text-sm"
         />
-        <Button type="submit" disabled={pending || !content.trim()}>
+        <Button
+          type="submit"
+          disabled={pending || !content.trim()}
+          className="w-full shrink-0 sm:w-auto"
+        >
           {pending ? "Sending…" : channel === "voice" ? "Call" : "Send"}
         </Button>
       </div>
       {warning && (
-        <p className="text-xs text-amber-700" role="status">
+        <p className="text-xs text-amber-400" role="status">
           Saved to inbox, but delivery failed: {warning}
         </p>
       )}
       {error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-red-400" role="alert">
           {error}
         </p>
       )}

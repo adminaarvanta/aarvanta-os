@@ -1,3 +1,4 @@
+import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
 import {
   appendInboundCall,
   appendInboundEmail,
@@ -34,6 +35,12 @@ function getDb() {
 async function save(conv: Conversation) {
   await getDb().collection(COLLECTION).doc(conv.id).set(conv);
   return conv;
+}
+
+async function saveInbound(conv: Conversation, scope: TenantScope) {
+  const saved = await save(conv);
+  scheduleAiInsightsRefresh(saved.id, scope);
+  return saved;
 }
 
 async function getScopedConversation(id: string, scope: TenantScope) {
@@ -130,16 +137,17 @@ export const firestoreRepository: ConversationRepository = {
     };
 
     if (existing) {
-      return save(
+      return saveInbound(
         appendInboundMessage(existing, {
           channel: input.channel,
           content: input.content,
           authorName: input.contactName ?? input.phone,
-        })
+        }),
+        scope
       );
     }
 
-    return save(
+    return saveInbound(
       createConversation(
         scope,
         {
@@ -149,7 +157,8 @@ export const firestoreRepository: ConversationRepository = {
         },
         input.channel,
         [message]
-      )
+      ),
+      scope
     );
   },
 
@@ -160,17 +169,18 @@ export const firestoreRepository: ConversationRepository = {
     );
 
     if (existing) {
-      return save(
+      return saveInbound(
         appendInboundEmail(existing, {
           subject: input.subject,
           body: input.body,
           authorName: input.contactName ?? input.email,
-        })
+        }),
+        scope
       );
     }
 
     const now = new Date().toISOString();
-    return save(
+    return saveInbound(
       createConversation(
         scope,
         {
@@ -190,7 +200,8 @@ export const firestoreRepository: ConversationRepository = {
             authorName: input.contactName ?? input.email,
           },
         ]
-      )
+      ),
+      scope
     );
   },
 
@@ -201,18 +212,19 @@ export const firestoreRepository: ConversationRepository = {
     );
 
     if (existing) {
-      return save(
+      return saveInbound(
         appendInboundCall(existing, {
           durationSeconds: input.durationSeconds,
           summary: input.summary,
           recordingUrl: input.recordingUrl,
           authorName: input.contactName ?? input.phone,
-        })
+        }),
+        scope
       );
     }
 
     const now = new Date().toISOString();
-    return save(
+    return saveInbound(
       createConversation(
         scope,
         {
@@ -233,7 +245,8 @@ export const firestoreRepository: ConversationRepository = {
             authorName: input.contactName ?? input.phone,
           },
         ]
-      )
+      ),
+      scope
     );
   },
 
@@ -244,17 +257,18 @@ export const firestoreRepository: ConversationRepository = {
     );
 
     if (existing) {
-      return save(
+      return saveInbound(
         appendInboundMessage(existing, {
           channel: "website_chat",
           content: input.content,
           authorName: input.visitorName ?? "Website visitor",
-        })
+        }),
+        scope
       );
     }
 
     const now = new Date().toISOString();
-    return save(
+    return saveInbound(
       createConversation(
         scope,
         {
@@ -274,7 +288,8 @@ export const firestoreRepository: ConversationRepository = {
             authorName: input.visitorName ?? "Website visitor",
           },
         ]
-      )
+      ),
+      scope
     );
   },
 

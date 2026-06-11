@@ -11,24 +11,24 @@ export default async function InboxPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#EDE6D6] bg-white px-6 py-4">
-        <h2 className="text-xl font-semibold text-[#2A2418]">Unified Inbox</h2>
-        <p className="text-sm text-[#6B6356]">
+      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">Unified Inbox</h2>
+        <p className="text-xs text-[#A89878] sm:text-sm">
           WhatsApp, email, voice, SMS, and website chat in one place.
         </p>
       </header>
-      <div className="flex flex-1 min-h-0">
-        <div className="w-80 shrink-0 overflow-y-auto border-r border-[#EDE6D6] bg-white">
+      <div className="flex min-h-0 flex-1">
+        <div className="w-full shrink-0 overflow-y-auto bg-[#101010] md:w-80 md:border-r md:border-[#3d3528]">
           <ConversationList conversations={conversations} />
         </div>
-        <section className="flex flex-1 flex-col items-center justify-center bg-white text-[#6B6356]">
+        <section className="hidden flex-1 flex-col items-center justify-center bg-[#101010] text-[#A89878] md:flex">
           {first ? (
             <div className="text-center space-y-3">
-              <Inbox className="mx-auto h-12 w-12 text-[#C29B40]/60" />
+              <Inbox className="mx-auto h-12 w-12 text-[#D4AF37]/60" />
               <p className="text-sm">Select a conversation or open the latest</p>
               <Link
                 href={`/inbox/${first.id}`}
-                className="inline-flex rounded-lg bg-[#C29B40] px-4 py-2 text-sm font-medium text-white hover:bg-[#9A7A32]"
+                className="inline-flex rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black hover:bg-[#F9E076]"
               >
                 Open {first.contact.name}
               </Link>

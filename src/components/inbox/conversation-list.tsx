@@ -34,7 +34,7 @@ export function ConversationList({
   activeId?: string;
 }) {
   return (
-    <ul className="divide-y divide-[#EDE6D6]/80">
+    <ul className="divide-y divide-[#3d3528]/80">
       {conversations.map((conv) => {
         const isActive = conv.id === activeId;
         return (
@@ -42,23 +42,23 @@ export function ConversationList({
             <Link
               href={`/inbox/${conv.id}`}
               className={cn(
-                "block px-4 py-3.5 transition-colors hover:bg-[#FCF9F2]",
-                isActive && "bg-[#E8D4A8]/35"
+                "block px-4 py-3.5 transition-colors hover:bg-[#1a1714]",
+                isActive && "bg-[#D4AF37]/10"
               )}
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-[#2A2418]">{conv.contact.name}</p>
+                <p className="font-medium text-[#F5E6C8]">{conv.contact.name}</p>
                 {conv.unreadCount > 0 && (
-                  <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#1e293b] px-1.5 text-[10px] font-medium text-white">
+                  <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] px-1.5 text-[10px] font-medium text-black">
                     {conv.unreadCount}
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 line-clamp-2 text-xs text-[#6B6356]">
+              <p className="mt-0.5 line-clamp-2 text-xs text-[#A89878]">
                 {lastPreview(conv)}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <Badge className="bg-white text-[#6B6356] ring-[#EDE6D6] text-[10px]">
+                <Badge className="bg-[#101010] text-[#A89878] ring-[#3d3528] text-[10px]">
                   {CHANNEL_LABELS[conv.channels[0]]}
                   {conv.channels.length > 1 && ` +${conv.channels.length - 1}`}
                 </Badge>
@@ -66,13 +66,13 @@ export function ConversationList({
                 {conv.tags.slice(0, 1).map((t) => (
                   <Badge
                     key={t}
-                    className="bg-[#C29B40]/10 text-[#9A7A32] ring-[#C29B40]/25 text-[10px]"
+                    className="bg-[#D4AF37]/10 text-[#996515] ring-[#D4AF37]/25 text-[10px]"
                   >
                     {TAG_LABELS[t]}
                   </Badge>
                 ))}
               </div>
-              <p className="mt-1 text-[10px] text-[#6B6356]/80">
+              <p className="mt-1 text-[10px] text-[#A89878]/80">
                 {formatRelative(conv.lastActivityAt)}
               </p>
             </Link>

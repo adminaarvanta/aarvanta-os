@@ -1,3 +1,4 @@
+import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
 import { DEMO_CONVERSATIONS } from "@/lib/data/demo-seed";
 import {
   appendInboundCall,
@@ -27,6 +28,11 @@ let conversations: Conversation[] = structuredClone(DEMO_CONVERSATIONS);
 
 function findIndex(id: string, scope: TenantScope) {
   return conversations.findIndex((c) => c.id === id && inScope(c, scope));
+}
+
+function finishInbound(conv: Conversation, scope: TenantScope): Conversation {
+  scheduleAiInsightsRefresh(conv.id, scope);
+  return structuredClone(conv);
 }
 
 export const memoryRepository: ConversationRepository = {
@@ -118,7 +124,7 @@ export const memoryRepository: ConversationRepository = {
         content: input.content,
         authorName: input.contactName ?? input.phone,
       });
-      return structuredClone(conversations[idx]);
+      return finishInbound(conversations[idx], scope);
     }
 
     const conversation = createConversation(
@@ -132,7 +138,7 @@ export const memoryRepository: ConversationRepository = {
       [message]
     );
     conversations.push(conversation);
-    return structuredClone(conversation);
+    return finishInbound(conversation, scope);
   },
 
   async addInboundEmail(input, scope) {
@@ -148,7 +154,7 @@ export const memoryRepository: ConversationRepository = {
         body: input.body,
         authorName: input.contactName ?? input.email,
       });
-      return structuredClone(conversations[idx]);
+      return finishInbound(conversations[idx], scope);
     }
 
     const now = new Date().toISOString();
@@ -173,7 +179,7 @@ export const memoryRepository: ConversationRepository = {
       ]
     );
     conversations.push(conversation);
-    return structuredClone(conversation);
+    return finishInbound(conversation, scope);
   },
 
   async addInboundCall(input, scope) {
@@ -190,7 +196,7 @@ export const memoryRepository: ConversationRepository = {
         recordingUrl: input.recordingUrl,
         authorName: input.contactName ?? input.phone,
       });
-      return structuredClone(conversations[idx]);
+      return finishInbound(conversations[idx], scope);
     }
 
     const now = new Date().toISOString();
@@ -216,7 +222,7 @@ export const memoryRepository: ConversationRepository = {
       ]
     );
     conversations.push(conversation);
-    return structuredClone(conversation);
+    return finishInbound(conversation, scope);
   },
 
   async addInboundChat(input, scope) {
@@ -232,7 +238,7 @@ export const memoryRepository: ConversationRepository = {
         content: input.content,
         authorName: input.visitorName ?? "Website visitor",
       });
-      return structuredClone(conversations[idx]);
+      return finishInbound(conversations[idx], scope);
     }
 
     const now = new Date().toISOString();
@@ -257,7 +263,7 @@ export const memoryRepository: ConversationRepository = {
       ]
     );
     conversations.push(conversation);
-    return structuredClone(conversation);
+    return finishInbound(conversation, scope);
   },
 
   async addInternalNote(conversationId, input, scope, author) {

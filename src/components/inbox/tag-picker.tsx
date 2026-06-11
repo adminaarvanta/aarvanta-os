@@ -58,8 +58,8 @@ export function TagPicker({
                 className={cn(
                   "cursor-pointer transition-colors",
                   active
-                    ? "bg-[#C29B40]/15 text-[#9A7A32] ring-[#C29B40]/40"
-                    : "bg-white text-[#6B6356] ring-[#EDE6D6] hover:bg-[#FCF9F2]"
+                    ? "bg-[#D4AF37]/20 text-[#F9E076] ring-[#D4AF37]/50"
+                    : "bg-[#141414] text-[#A89878] ring-[#3d3528] hover:bg-[#1a1714] hover:text-[#F5E6C8]"
                 )}
               >
                 {TAG_LABELS[tag]}
@@ -69,7 +69,7 @@ export function TagPicker({
         })}
       </div>
       {error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-red-400" role="alert">
           {error}
         </p>
       )}

@@ -1,63 +1,57 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Inbox,
-  MessageSquare,
+  LayoutDashboard,
   Settings,
   Sparkles,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
-import { isProductionMode } from "@/lib/config/app-mode";
 
 const nav = [
-  { href: "/inbox", label: "Unified Inbox", icon: Inbox, active: true },
-  {
-    href: "#",
-    label: "CRM",
-    icon: MessageSquare,
-    active: false,
-    disabled: true,
-    hint: "Module 2",
-  },
+  { href: "/inbox", label: "Unified Inbox", icon: Inbox, module: "Module 1" },
+  { href: "/crm", label: "CRM", icon: LayoutDashboard, module: "Module 2" },
   {
     href: "#",
     label: "AI Workforce",
     icon: Sparkles,
-    active: false,
     disabled: true,
-    hint: "Module 3",
+    module: "Module 3",
   },
   {
     href: "#",
     label: "Settings",
     icon: Settings,
-    active: false,
     disabled: true,
   },
 ];
 
-export function AppSidebar() {
-  const production = isProductionMode();
+export function AppSidebar({ production }: { production: boolean }) {
+  const pathname = usePathname();
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-[#EDE6D6] bg-white">
-      <div className="border-b border-[#EDE6D6] px-4 py-5">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#C29B40]">
-          Aarvanta OS
-        </p>
-        <h1 className="mt-1 text-lg font-semibold text-[#2A2418]">
-          Communication Hub
-        </h1>
-        <p className="mt-0.5 text-xs text-[#6B6356]">Module 1</p>
+    <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-[#3d3528] bg-[#0a0a0a]">
+      <div className="border-b border-[#3d3528] px-4 py-5">
+        <BrandLogo href="/inbox" fullWidth />
+        <p className="mt-3 text-xs text-[#A89878]">Modules 1–2</p>
       </div>
       <nav className="flex-1 p-3 space-y-1">
         {nav.map((item) => {
           const Icon = item.icon;
+          const active =
+            !item.disabled &&
+            (item.href === "/crm"
+              ? pathname.startsWith("/crm")
+              : pathname.startsWith(item.href));
           const content = (
             <>
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{item.label}</span>
-              {item.hint && (
-                <span className="text-[10px] text-[#6B6356]">{item.hint}</span>
+              {item.module && (
+                <span className="text-[10px] text-[#A89878]">{item.module}</span>
               )}
             </>
           );
@@ -65,7 +59,7 @@ export function AppSidebar() {
             return (
               <span
                 key={item.label}
-                className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#6B6356]/60"
+                className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#A89878]/40"
               >
                 {content}
               </span>
@@ -77,9 +71,9 @@ export function AppSidebar() {
               href={item.href}
               className={cn(
                 "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                item.active
-                  ? "bg-[#E8D4A8]/50 text-[#2A2418]"
-                  : "text-[#6B6356] hover:bg-[#FCF9F2]"
+                active
+                  ? "bg-[#D4AF37]/15 text-[#F9E076] ring-1 ring-[#D4AF37]/30"
+                  : "text-[#A89878] hover:bg-[#1a1714] hover:text-[#F5E6C8]"
               )}
             >
               {content}
@@ -87,11 +81,11 @@ export function AppSidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-[#EDE6D6] p-4 text-[10px] text-[#6B6356] space-y-2">
+      <div className="border-t border-[#3d3528] p-4 text-[10px] text-[#A89878] space-y-2">
         <Link
           href="/chat"
           target="_blank"
-          className="block text-[#C29B40] hover:underline"
+          className="block text-[#D4AF37] hover:text-[#F9E076] hover:underline"
         >
           Open website chat (test)
         </Link>
@@ -104,7 +98,7 @@ export function AppSidebar() {
           <form action="/api/auth/logout" method="post">
             <button
               type="submit"
-              className="text-[#C29B40] hover:underline"
+              className="text-[#D4AF37] hover:text-[#F9E076] hover:underline"
             >
               Sign out
             </button>

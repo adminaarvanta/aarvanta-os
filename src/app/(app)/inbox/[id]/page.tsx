@@ -4,6 +4,8 @@ import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
+import { Badge } from "@/components/ui/badge";
+import { CHANNEL_LABELS } from "@/lib/constants";
 import { ChevronLeft } from "lucide-react";
 
 export default async function ConversationPage({
@@ -23,22 +25,40 @@ export default async function ConversationPage({
 
   return (
     <>
-      <header className="shrink-0 flex items-center gap-3 border-b border-[#EDE6D6] bg-white px-4 py-3 lg:px-6">
+      <header className="shrink-0 flex items-center gap-3 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6">
         <Link
           href="/inbox"
-          className="lg:hidden rounded-lg p-1.5 text-[#6B6356] hover:bg-[#FCF9F2]"
+          className="rounded-lg p-1.5 text-[#A89878] hover:bg-[#141414] lg:hidden"
+          aria-label="Back to inbox"
         >
           <ChevronLeft className="h-5 w-5" />
         </Link>
-        <div>
-          <h2 className="text-lg font-semibold text-[#2A2418]">Unified Inbox</h2>
-          <p className="text-xs text-[#6B6356] hidden sm:block">
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-base font-semibold text-[#F5E6C8] sm:text-lg">
+            {conversation.contact.name}
+          </h2>
+          <div className="mt-0.5 flex flex-wrap items-center gap-1 lg:hidden">
+            {conversation.contact.email && (
+              <span className="truncate text-xs text-[#A89878]">
+                {conversation.contact.email}
+              </span>
+            )}
+            {conversation.channels.slice(0, 2).map((ch) => (
+              <Badge
+                key={ch}
+                className="bg-[#141414] text-[#A89878] ring-[#3d3528] text-[10px]"
+              >
+                {CHANNEL_LABELS[ch]}
+              </Badge>
+            ))}
+          </div>
+          <p className="text-xs text-[#A89878] hidden sm:block">
             Conversation timeline · notes · tags · AI
           </p>
         </div>
       </header>
-      <div className="flex flex-1 min-h-0">
-        <div className="hidden lg:block w-80 shrink-0 overflow-y-auto border-r border-[#EDE6D6] bg-white">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+        <div className="hidden lg:block w-80 shrink-0 overflow-y-auto border-r border-[#3d3528] bg-[#101010]">
           <ConversationList
             conversations={conversations}
             activeId={conversation.id}

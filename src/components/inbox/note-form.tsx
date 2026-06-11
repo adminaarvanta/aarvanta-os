@@ -35,19 +35,19 @@ export function NoteForm({ conversationId }: { conversationId: string }) {
 
   return (
     <form onSubmit={submit} className="space-y-2">
-      <label className="text-xs font-medium text-[#6B6356]">Internal note</label>
+      <label className="text-xs font-medium text-[#A89878]">Internal note</label>
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Visible to team only…"
         rows={2}
-        className="w-full resize-none rounded-lg border border-[#EDE6D6] bg-[#FCF9F2] px-3 py-2 text-sm focus:border-[#C29B40] focus:outline-none"
+        className="w-full resize-none rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] focus:border-[#D4AF37] focus:outline-none"
       />
       <Button type="submit" size="sm" variant="secondary" disabled={pending}>
         {pending ? "Saving…" : "Add note"}
       </Button>
       {error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-red-400" role="alert">
           {error}
         </p>
       )}

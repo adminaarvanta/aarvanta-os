@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { BrandLogo } from "@/components/brand/logo";
 
 function LoginForm() {
   const router = useRouter();
@@ -40,7 +41,7 @@ function LoginForm() {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-[#2A2418]"
+          className="block text-sm font-medium text-[#F5E6C8]"
         >
           Email
         </label>
@@ -50,13 +51,13 @@ function LoginForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-[#EDE6D6] px-3 py-2 text-sm outline-none focus:border-[#C29B40]"
+          className="mt-1 w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30"
         />
       </div>
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-[#2A2418]"
+          className="block text-sm font-medium text-[#F5E6C8]"
         >
           Password
         </label>
@@ -66,12 +67,12 @@ function LoginForm() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-[#EDE6D6] px-3 py-2 text-sm outline-none focus:border-[#C29B40]"
+          className="mt-1 w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-red-400" role="alert">
           {error}
         </p>
       )}
@@ -79,7 +80,7 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-[#C29B40] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#9A7A32] disabled:opacity-60"
+        className="w-full rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-semibold text-black hover:bg-[#F9E076] disabled:opacity-60"
       >
         {loading ? "Signing in…" : "Sign in"}
       </button>
@@ -89,19 +90,16 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FCF9F2] px-4">
-      <div className="w-full max-w-md rounded-2xl border border-[#EDE6D6] bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#C29B40]">
-          Aarvanta OS
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-[#2A2418]">
-          Communication Hub
-        </h1>
-        <p className="mt-1 text-sm text-[#6B6356]">
-          Sign in to access Module 1 in production mode.
+    <div className="flex min-h-[100dvh] items-center justify-center bg-black px-4 py-6">
+      <div className="w-full max-w-md rounded-2xl border border-[#3d3528] bg-[#0a0a0a] p-6 shadow-lg shadow-[#D4AF37]/5 sm:p-8">
+        <div className="flex justify-center">
+          <BrandLogo size="md" />
+        </div>
+        <p className="mt-4 text-center text-sm text-[#A89878]">
+          Sign in to access your business operating system.
         </p>
 
-        <Suspense fallback={<p className="mt-8 text-sm text-[#6B6356]">Loading…</p>}>
+        <Suspense fallback={<p className="mt-8 text-sm text-[#A89878]">Loading…</p>}>
           <LoginForm />
         </Suspense>
       </div>
