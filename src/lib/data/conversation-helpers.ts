@@ -232,7 +232,7 @@ export function createConversation(
     channels: [channel],
     tags: [],
     sentiment: "neutral",
-    unreadCount: 1,
+    unreadCount: timeline.length > 0 ? 1 : 0,
     lastActivityAt: now,
     createdAt: now,
     updatedAt: now,

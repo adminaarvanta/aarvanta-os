@@ -1,5 +1,9 @@
 import { generateConversationInsights } from "@/lib/ai/insights";
-import { shouldAutoSummarize } from "@/lib/ai/config";
+import { shouldProcessInboundAi } from "@/lib/ai/config";
+import {
+  qualifyAndCreateCrmLead,
+  syncInboundToExistingCrmContact,
+} from "@/lib/data/inbound-crm-bridge";
 import { getRepository } from "@/lib/data/repository";
 import type { TenantScope } from "@/types/communication";
 
@@ -11,27 +15,41 @@ export async function refreshConversationAiInsights(
   const conversation = await repo.getConversation(conversationId, scope);
   if (!conversation) return;
 
-  const { summary, sentiment } =
-    await generateConversationInsights(conversation);
+  const insights = await generateConversationInsights(conversation);
 
   await repo.updateAiInsights(
     conversationId,
-    { aiSummary: summary, sentiment },
+    {
+      aiSummary: insights.summary,
+      sentiment: insights.sentiment,
+      aiIntent: insights.intent,
+      aiQualificationScore: insights.qualificationScore,
+    },
     scope
   );
+
+  const updated = await repo.getConversation(conversationId, scope);
+  if (!updated) return;
+
+  await qualifyAndCreateCrmLead(updated, scope, {
+    intent: insights.intent,
+    qualificationScore: insights.qualificationScore,
+  });
 }
 
-/** Fire-and-forget AI refresh after inbound events — does not block webhooks. */
+/** Fire-and-forget AI + CRM qualification after inbound — does not block webhooks. */
 export function scheduleAiInsightsRefresh(
   conversationId: string,
   scope: TenantScope
 ): void {
-  if (!shouldAutoSummarize()) return;
+  if (!shouldProcessInboundAi()) return;
 
   void refreshConversationAiInsights(conversationId, scope).catch((error) => {
     console.error(
-      `[ai:auto-summarize] conversation=${conversationId}`,
+      `[ai:inbound-processing] conversation=${conversationId}`,
       error instanceof Error ? error.message : error
     );
   });
 }
+
+export { syncInboundToExistingCrmContact };

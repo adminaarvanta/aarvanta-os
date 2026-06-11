@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ApplyActionButton } from "@/components/workforce/apply-action-button";
 import { getAgentDefinition } from "@/lib/workforce/agents";
+import { serializeAgentAction } from "@/lib/workforce/serialize";
 import { getWorkforceRepository } from "@/lib/data/workforce-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { formatRelative } from "@/lib/utils";
@@ -18,6 +19,8 @@ export default async function RunDetailPage({
   if (!run) notFound();
 
   const agent = getAgentDefinition(run.agentType);
+  const recommendations = run.recommendations ?? [];
+  const actions = run.actions ?? [];
 
   return (
     <>
@@ -65,13 +68,13 @@ export default async function RunDetailPage({
           </section>
         )}
 
-        {run.recommendations.length > 0 && (
+        {recommendations.length > 0 && (
           <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
             <h3 className="text-sm font-semibold text-[#F5E6C8]">
               Recommendations
             </h3>
             <ul className="mt-3 space-y-2">
-              {run.recommendations.map((rec) => (
+              {recommendations.map((rec) => (
                 <li
                   key={rec}
                   className="flex gap-2 text-sm text-[#A89878]"
@@ -84,11 +87,11 @@ export default async function RunDetailPage({
           </section>
         )}
 
-        {run.actions.length > 0 && (
+        {actions.length > 0 && (
           <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
             <h3 className="text-sm font-semibold text-[#F5E6C8]">Actions</h3>
             <ul className="mt-3 space-y-4">
-              {run.actions.map((action) => (
+              {actions.map((action) => (
                 <li
                   key={action.id}
                   className="rounded-lg border border-[#3d3528] bg-[#141414] p-4"
@@ -116,7 +119,10 @@ export default async function RunDetailPage({
                         </p>
                       )}
                     </div>
-                    <ApplyActionButton runId={run.id} action={action} />
+                    <ApplyActionButton
+                      runId={run.id}
+                      action={serializeAgentAction(action)}
+                    />
                   </div>
                 </li>
               ))}

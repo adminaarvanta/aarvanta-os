@@ -97,7 +97,12 @@ export interface ConversationRepository {
   ): Promise<Conversation | null>;
   updateAiInsights(
     conversationId: string,
-    data: { aiSummary: string; sentiment: Conversation["sentiment"] },
+    data: {
+      aiSummary: string;
+      sentiment: Conversation["sentiment"];
+      aiIntent?: Conversation["aiIntent"];
+      aiQualificationScore?: number;
+    },
     scope: TenantScope
   ): Promise<Conversation | null>;
   markAsRead(

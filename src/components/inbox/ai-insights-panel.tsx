@@ -51,6 +51,15 @@ export function AiInsightsPanel({
   }
 
   const aiLive = aiStatus.status === "live";
+  const qualificationThreshold = 50;
+  const qualification =
+    conversation.aiIntent !== undefined &&
+    conversation.aiQualificationScore !== undefined
+      ? {
+          intent: conversation.aiIntent,
+          qualificationScore: conversation.aiQualificationScore,
+        }
+      : null;
 
   return (
     <div className="space-y-4">
@@ -81,6 +90,29 @@ export function AiInsightsPanel({
         </p>
       )}
 
+      {qualification ? (
+        <div className="rounded-lg border border-[#3d3528] bg-[#101010] px-3 py-2 text-xs text-[#A89878]">
+          <p>
+            Intent:{" "}
+            <span className="capitalize text-[#F5E6C8]">{qualification.intent}</span>
+            {" · "}
+            Score:{" "}
+            <span className="text-[#F5E6C8]">
+              {qualification.qualificationScore}/{qualificationThreshold}
+            </span>
+          </p>
+          <p className="mt-1">
+            CRM lead:{" "}
+            {qualification.intent === "sales" &&
+            qualification.qualificationScore >= qualificationThreshold ? (
+              <span className="text-emerald-400">qualified</span>
+            ) : (
+              <span className="text-[#A89878]">inbox only</span>
+            )}
+          </p>
+        </div>
+      ) : null}
+
       <Button
         type="button"
         variant="secondary"
@@ -92,7 +124,7 @@ export function AiInsightsPanel({
         {pending
           ? "Analyzing…"
           : aiLive
-            ? "Refresh summary & sentiment"
+            ? "Refresh summary & qualification"
             : "Refresh (AI unavailable)"}
       </Button>
       {error && (

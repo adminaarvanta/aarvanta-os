@@ -81,7 +81,10 @@ export default async function ContactsPage() {
             />
           ))}
           {contacts.length === 0 && (
-            <p className="py-8 text-center text-sm text-[#A89878]">No contacts yet.</p>
+            <p className="py-8 text-center text-sm text-[#A89878]">
+              No contacts yet. Qualified inbound conversations create CRM contacts
+              automatically.
+            </p>
           )}
         </div>
 
@@ -132,9 +135,8 @@ export default async function ContactsPage() {
           </div>
           {contacts.length === 0 && (
             <p className="p-8 text-center text-sm text-[#A89878]">
-              No contacts yet. Run{" "}
-              <code className="rounded bg-[#141414] px-1">npm run seed:crm</code>{" "}
-              in production.
+              No contacts yet. Qualified inbound conversations in the inbox create
+              CRM contacts automatically.
             </p>
           )}
         </div>

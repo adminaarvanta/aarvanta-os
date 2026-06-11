@@ -125,9 +125,7 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
     }
     case "email": {
       if (!ctx.contact.email) throw new Error("Contact has no email address.");
-      const subject = ctx.subject?.startsWith("Re:")
-        ? ctx.subject
-        : `Re: ${ctx.subject ?? "Message from Aarvanta"}`;
+      const subject = ctx.subject?.trim() || "Message from Aarvanta";
       await sendViaResend({
         to: ctx.contact.email,
         subject,

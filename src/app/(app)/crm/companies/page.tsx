@@ -79,8 +79,7 @@ export default async function CompaniesPage() {
         </div>
         {companies.length === 0 && (
           <p className="text-center text-sm text-[#A89878]">
-            No companies yet. Run{" "}
-            <code className="rounded bg-[#101010] px-1">npm run seed:crm</code>.
+            No companies yet. Companies are added from CRM as your pipeline grows.
           </p>
         )}
       </div>

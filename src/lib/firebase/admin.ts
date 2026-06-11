@@ -1,8 +1,12 @@
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getFirestore } from "firebase-admin/firestore";
+
+declare global {
+  // Next.js may load multiple server bundles; guard settings() to once per process.
+  var __aarvantaFirestoreSettings: boolean | undefined;
+}
 
 let app: App | undefined;
-let firestore: Firestore | undefined;
 
 export function isFirebaseConfigured() {
   return Boolean(
@@ -31,9 +35,20 @@ export function getAdminApp() {
 export function getAdminFirestore() {
   const adminApp = getAdminApp();
   if (!adminApp) return null;
-  if (!firestore) {
-    firestore = getFirestore(adminApp);
-    firestore.settings({ ignoreUndefinedProperties: true });
+
+  const db = getFirestore(adminApp);
+
+  if (!globalThis.__aarvantaFirestoreSettings) {
+    try {
+      db.settings({ ignoreUndefinedProperties: true });
+    } catch (error) {
+      console.warn(
+        "[firebase] Firestore settings skipped:",
+        error instanceof Error ? error.message : error
+      );
+    }
+    globalThis.__aarvantaFirestoreSettings = true;
   }
-  return firestore;
+
+  return db;
 }

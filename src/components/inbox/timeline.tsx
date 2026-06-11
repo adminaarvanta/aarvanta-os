@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import {
   Bot,
   Calendar,
@@ -138,15 +141,24 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
 }
 
 export function ConversationTimeline({ events }: { events: TimelineEvent[] }) {
+  const bottomRef = useRef<HTMLDivElement>(null);
   const sorted = [...events].sort(
     (a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime()
   );
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: sorted.length > 1 ? "smooth" : "auto",
+      block: "end",
+    });
+  }, [sorted.length, sorted.at(-1)?.id]);
 
   return (
     <div className="space-y-4">
       {sorted.map((event) => (
         <TimelineItem key={event.id} event={event} />
       ))}
+      <div ref={bottomRef} className="h-px shrink-0" aria-hidden />
     </div>
   );
 }

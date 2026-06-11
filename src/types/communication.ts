@@ -21,6 +21,8 @@ export type ConversationTag =
 
 export type Sentiment = "positive" | "neutral" | "frustrated" | "urgent";
 
+export type ConversationIntent = "sales" | "support" | "spam" | "other";
+
 export type TimelineEventType =
   | "message"
   | "call"
@@ -99,6 +101,8 @@ export interface Conversation extends TenantScope {
   sentiment: Sentiment;
   aiSummary?: string;
   aiSummaryUpdatedAt?: string;
+  aiIntent?: ConversationIntent;
+  aiQualificationScore?: number;
   unreadCount: number;
   lastActivityAt: string;
   assignedTo?: string;

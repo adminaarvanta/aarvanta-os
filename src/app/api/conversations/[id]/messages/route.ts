@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { deliverOutbound } from "@/lib/channels/deliver";
-import { generateOutboundMessageId } from "@/lib/data/email-threading";
+import {
+  conversationHasEmailThread,
+  formatEmailReplySubject,
+  generateOutboundMessageId,
+} from "@/lib/data/email-threading";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
 import { getSessionFromCookies } from "@/lib/auth/session";
@@ -63,8 +67,17 @@ export async function POST(
   try {
     let conversation: Conversation | null = null;
     const { channel, content, subject } = parsed.data;
+    const hasEmailThread = conversationHasEmailThread(existing);
     const emailSubject =
-      subject ?? lastEmailSubject(existing) ?? "Message from Aarvanta";
+      channel === "email"
+        ? subject?.trim()
+          ? hasEmailThread
+            ? formatEmailReplySubject(subject)
+            : subject.trim()
+          : hasEmailThread && lastEmailSubject(existing)
+            ? formatEmailReplySubject(lastEmailSubject(existing)!)
+            : "Message from Aarvanta"
+        : undefined;
     const outboundMessageId =
       channel === "email" ? generateOutboundMessageId(id) : undefined;
 
@@ -72,7 +85,7 @@ export async function POST(
       conversation = await repo.addOutboundEmail(
         id,
         {
-          subject: emailSubject,
+          subject: emailSubject ?? "Message from Aarvanta",
           content,
           messageId: outboundMessageId,
         },

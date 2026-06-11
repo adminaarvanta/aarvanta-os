@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateConversationInsights } from "@/lib/ai/insights";
+import { refreshConversationAiInsights } from "@/lib/ai/refresh-conversation-insights";
 import { AiNotConfiguredError, AiRequestError } from "@/lib/ai/provider";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -24,15 +24,14 @@ export async function POST(
   }
 
   try {
-    const { summary, sentiment, source } =
-      await generateConversationInsights(conversation);
-    const updated = await repo.updateAiInsights(
-      id,
-      { aiSummary: summary, sentiment },
-      scope
-    );
+    await refreshConversationAiInsights(id, scope);
+    const updated = await repo.getConversation(id, scope);
 
-    return NextResponse.json({ conversation: updated, source });
+    return NextResponse.json({
+      conversation: updated,
+      intent: updated?.aiIntent,
+      qualificationScore: updated?.aiQualificationScore,
+    });
   } catch (error) {
     if (error instanceof AiNotConfiguredError) {
       return NextResponse.json(

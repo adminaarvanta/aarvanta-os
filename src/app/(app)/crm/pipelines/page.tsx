@@ -24,8 +24,7 @@ export default async function PipelinesPage({
   if (!activePipeline) {
     return (
       <div className="p-8 text-sm text-[#A89878]">
-        No pipelines configured. Run{" "}
-        <code className="rounded bg-[#101010] px-1">npm run seed:crm</code>.
+        No pipelines configured yet. Pipelines are created when you add deals from qualified leads.
       </div>
     );
   }

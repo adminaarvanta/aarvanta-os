@@ -30,7 +30,7 @@ export default async function ConversationPage({
 
   return (
     <>
-      <header className="shrink-0 flex items-center gap-3 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6">
+      <header className="flex shrink-0 items-center gap-3 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6">
         <Link
           href="/inbox"
           className="rounded-lg p-1.5 text-[#A89878] hover:bg-[#141414] lg:hidden"

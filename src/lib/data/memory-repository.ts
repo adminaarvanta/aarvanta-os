@@ -1,5 +1,6 @@
 import { findConversationForInboundEmail } from "@/lib/data/email-threading";
 import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
+import { syncInboundToExistingCrmContact } from "@/lib/data/inbound-crm-bridge";
 import { DEMO_CONVERSATIONS } from "@/lib/data/demo-seed";
 import {
   appendInboundCall,
@@ -31,8 +32,9 @@ function findIndex(id: string, scope: TenantScope) {
   return conversations.findIndex((c) => c.id === id && inScope(c, scope));
 }
 
-function finishInbound(conv: Conversation, scope: TenantScope): Conversation {
+async function finishInbound(conv: Conversation, scope: TenantScope) {
   scheduleAiInsightsRefresh(conv.id, scope);
+  await syncInboundToExistingCrmContact(conv, scope);
   return structuredClone(conv);
 }
 
@@ -319,6 +321,12 @@ export const memoryRepository: ConversationRepository = {
     const now = new Date().toISOString();
     conversations[idx].aiSummary = data.aiSummary;
     conversations[idx].sentiment = data.sentiment;
+    if (data.aiIntent !== undefined) {
+      conversations[idx].aiIntent = data.aiIntent;
+    }
+    if (data.aiQualificationScore !== undefined) {
+      conversations[idx].aiQualificationScore = data.aiQualificationScore;
+    }
     conversations[idx].aiSummaryUpdatedAt = now;
     conversations[idx].updatedAt = now;
     return structuredClone(conversations[idx]);

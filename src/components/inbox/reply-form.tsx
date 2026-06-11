@@ -87,7 +87,7 @@ export function ReplyForm({
   return (
     <form
       onSubmit={send}
-      className="border-t border-[#3d3528] bg-[#0a0a0a] p-3 space-y-2 sm:p-4"
+      className="shrink-0 border-t border-[#3d3528] bg-[#0a0a0a] p-3 space-y-2 sm:p-4"
     >
       <select
         value={channel}

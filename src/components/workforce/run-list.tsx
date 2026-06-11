@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatRelative } from "@/lib/utils";
-import { getAgentDefinition } from "@/lib/workforce/agents";
+import { getAgentDefinition, isAgentType } from "@/lib/workforce/agents";
 import type { AgentRun } from "@/types/workforce";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,7 +22,9 @@ export function RunList({ runs }: { runs: AgentRun[] }) {
   return (
     <ul className="divide-y divide-[#3d3528] rounded-xl border border-[#3d3528] bg-[#101010]">
       {runs.map((run) => {
+        if (!isAgentType(run.agentType)) return null;
         const agent = getAgentDefinition(run.agentType);
+        const actions = run.actions ?? [];
         return (
           <li key={run.id}>
             <Link
@@ -40,7 +42,7 @@ export function RunList({ runs }: { runs: AgentRun[] }) {
               </div>
               <p className="mt-2 text-[10px] text-[#A89878]/80">
                 {formatRelative(run.createdAt)}
-                {run.actions.length > 0 && ` · ${run.actions.length} action(s)`}
+                {actions.length > 0 && ` · ${actions.length} action(s)`}
               </p>
             </Link>
           </li>

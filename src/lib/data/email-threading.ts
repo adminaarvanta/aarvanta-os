@@ -9,6 +9,21 @@ export function normalizeEmailSubject(subject: string): string {
     .toLowerCase();
 }
 
+/** Strip repeated Re:/Fwd: prefixes for display and first-send subjects. */
+export function cleanEmailSubject(subject: string): string {
+  return subject.replace(/^(?:(?:re|fwd|fw):\s*)+/gi, "").trim();
+}
+
+/** Add a single Re: prefix when replying in an existing email thread. */
+export function formatEmailReplySubject(subject: string): string {
+  const base = cleanEmailSubject(subject) || "Message from Aarvanta";
+  return `Re: ${base}`;
+}
+
+export function conversationHasEmailThread(conversation: Conversation): boolean {
+  return conversation.timeline.some((event) => event.type === "email");
+}
+
 export function normalizeMessageId(value: string): string {
   return value.replace(/^<|>$/g, "").trim().toLowerCase();
 }

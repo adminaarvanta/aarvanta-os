@@ -1,5 +1,6 @@
 import { findConversationForInboundEmail } from "@/lib/data/email-threading";
 import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
+import { syncInboundToExistingCrmContact } from "@/lib/data/inbound-crm-bridge";
 import {
   appendInboundCall,
   appendInboundEmail,
@@ -41,6 +42,7 @@ async function save(conv: Conversation) {
 async function saveInbound(conv: Conversation, scope: TenantScope) {
   const saved = await save(conv);
   scheduleAiInsightsRefresh(saved.id, scope);
+  await syncInboundToExistingCrmContact(saved, scope);
   return saved;
 }
 
@@ -344,6 +346,10 @@ export const firestoreRepository: ConversationRepository = {
       ...conv,
       aiSummary: data.aiSummary,
       sentiment: data.sentiment,
+      ...(data.aiIntent !== undefined ? { aiIntent: data.aiIntent } : {}),
+      ...(data.aiQualificationScore !== undefined
+        ? { aiQualificationScore: data.aiQualificationScore }
+        : {}),
       aiSummaryUpdatedAt: now,
       updatedAt: now,
     });

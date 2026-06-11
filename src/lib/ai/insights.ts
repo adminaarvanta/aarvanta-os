@@ -1,10 +1,19 @@
 import { getAiConfig, isAiConfigured } from "@/lib/ai/config";
 import {
+  heuristicQualification,
+  type QualificationResult,
+} from "@/lib/ai/qualification";
+import {
   AiNotConfiguredError,
   AiRequestError,
   completeJson,
 } from "@/lib/ai/provider";
-import type { Conversation, Sentiment, TimelineEvent } from "@/types/communication";
+import type {
+  Conversation,
+  ConversationIntent,
+  Sentiment,
+  TimelineEvent,
+} from "@/types/communication";
 
 const MAX_TRANSCRIPT_CHARS = 14_000;
 
@@ -80,27 +89,90 @@ function heuristicSummary(conversation: Conversation): string {
 function fallbackInsights(
   conversation: Conversation,
   transcript: string
-): { summary: string; sentiment: Sentiment } {
+): {
+  summary: string;
+  sentiment: Sentiment;
+  intent: ConversationIntent;
+  qualificationScore: number;
+} {
+  const sentiment = heuristicSentiment(transcript);
+  const { intent, qualificationScore } = heuristicQualification(
+    transcript,
+    sentiment
+  );
+
   return {
     summary: heuristicSummary(conversation),
-    sentiment: heuristicSentiment(transcript),
+    sentiment,
+    intent,
+    qualificationScore,
   };
 }
 
 const INSIGHTS_SYSTEM_PROMPT = `You analyze business communication timelines for Aarvanta OS Communication Hub.
 Summarize what the customer wants, what was promised, blockers, and recommended next action.
+Classify whether this thread is a sales lead, support request, spam, or other.
+Score sales intent from 0-100 (0 = not a lead, 100 = ready to buy).
+
 Return JSON only:
 {
   "summary": "2-3 concise sentences for a sales or support agent",
-  "sentiment": "positive" | "neutral" | "frustrated" | "urgent"
+  "sentiment": "positive" | "neutral" | "frustrated" | "urgent",
+  "intent": "sales" | "support" | "spam" | "other",
+  "qualificationScore": number
 }
-Use "urgent" when time-sensitive or escalation is implied. Use "frustrated" for complaints or repeated issues.`;
+Use "urgent" when time-sensitive or escalation is implied. Use "frustrated" for complaints or repeated issues.
+Use intent "spam" for marketing junk, scams, or irrelevant bulk mail. Use "sales" for pricing, demos, partnerships, or buying interest.`;
 
-type InsightsResponse = { summary?: string; sentiment?: string };
+export type ConversationInsights = {
+  summary: string;
+  sentiment: Sentiment;
+  intent: ConversationIntent;
+  qualificationScore: number;
+  source: "openai" | "heuristic";
+};
+
+type InsightsResponse = {
+  summary?: string;
+  sentiment?: string;
+  intent?: string;
+  qualificationScore?: number;
+};
+
+const VALID_SENTIMENTS: Sentiment[] = [
+  "positive",
+  "neutral",
+  "frustrated",
+  "urgent",
+];
+const VALID_INTENTS: ConversationIntent[] = [
+  "sales",
+  "support",
+  "spam",
+  "other",
+];
+
+function resolveQualification(
+  parsed: InsightsResponse,
+  transcript: string,
+  sentiment: Sentiment
+): QualificationResult {
+  const intent = VALID_INTENTS.includes(parsed.intent as ConversationIntent)
+    ? (parsed.intent as ConversationIntent)
+    : heuristicQualification(transcript, sentiment).intent;
+
+  const rawScore = parsed.qualificationScore;
+  const qualificationScore =
+    typeof rawScore === "number" && Number.isFinite(rawScore)
+      ? Math.min(100, Math.max(0, Math.round(rawScore)))
+      : heuristicQualification(transcript, sentiment).qualificationScore;
+
+  return { intent, qualificationScore };
+}
 
 export async function generateConversationInsights(
   conversation: Conversation
-): Promise<{ summary: string; sentiment: Sentiment; source: "openai" | "heuristic" }> {
+): Promise<ConversationInsights> {
   const transcript = truncateTranscript(conversation.timeline);
   const { allowHeuristicFallback } = getAiConfig();
 
@@ -124,15 +196,20 @@ Timeline:
 ${transcript}`,
     });
 
-    const valid: Sentiment[] = ["positive", "neutral", "frustrated", "urgent"];
-    const sentiment = parsed.sentiment as Sentiment;
-    const resolvedSentiment = valid.includes(sentiment)
-      ? sentiment
+    const sentiment = VALID_SENTIMENTS.includes(parsed.sentiment as Sentiment)
+      ? (parsed.sentiment as Sentiment)
       : heuristicSentiment(transcript);
+    const { intent, qualificationScore } = resolveQualification(
+      parsed,
+      transcript,
+      sentiment
+    );
 
     return {
       summary: parsed.summary?.trim() || heuristicSummary(conversation),
-      sentiment: resolvedSentiment,
+      sentiment,
+      intent,
+      qualificationScore,
       source: "openai",
     };
   } catch (error) {

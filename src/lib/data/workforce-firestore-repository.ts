@@ -1,6 +1,7 @@
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
 import type { WorkforceRepository } from "@/lib/data/workforce-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { normalizeAgentRun } from "@/lib/workforce/serialize";
 import type { TenantScope } from "@/types/communication";
 import type { AgentRun } from "@/types/workforce";
 
@@ -19,13 +20,13 @@ async function listScoped(scope: TenantScope): Promise<AgentRun[]> {
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as AgentRun);
+  return snap.docs.map((doc) => normalizeAgentRun(doc.data() as AgentRun));
 }
 
 async function getScoped(id: string, scope: TenantScope): Promise<AgentRun | null> {
   const snap = await getDb().collection(COLLECTION).doc(id).get();
   if (!snap.exists) return null;
-  const data = snap.data() as AgentRun;
+  const data = normalizeAgentRun(snap.data() as AgentRun);
   return inCrmScope(data, scope) ? data : null;
 }
 

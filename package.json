@@ -11,7 +11,7 @@
     "simulate:channels": "node --env-file=.env.local scripts/simulate-channels.mjs",
     "seed:email": "node --env-file=.env.local scripts/seed-email-test.mjs",
     "seed:inbox-email": "node --env-file=.env.local scripts/reset-inbox-email.mjs",
-    "seed:crm": "node --env-file=.env.local scripts/seed-crm.mjs"
+    "reset:crm-workforce": "node --env-file=.env.local scripts/reset-crm-workforce.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
