@@ -7,9 +7,28 @@ import { Button } from "@/components/ui/button";
 import { SentimentBadge } from "@/components/inbox/sentiment-badge";
 import { apiFetch } from "@/lib/api/client-fetch";
 import { formatRelative } from "@/lib/utils";
+import type { AiRuntimeStatus } from "@/lib/ai/config";
 import type { Conversation } from "@/types/communication";
 
-export function AiInsightsPanel({ conversation }: { conversation: Conversation }) {
+function emptySummaryMessage(ai: AiRuntimeStatus): string {
+  if (ai.status === "live") {
+    return ai.autoSummarize
+      ? "No summary yet. Summaries generate automatically when new messages arrive — or refresh below."
+      : "No summary yet. Click refresh below to generate a summary and sentiment with OpenAI.";
+  }
+  if (ai.status === "heuristic") {
+    return "No summary yet. Demo mode uses keyword heuristics — set OPENAI_API_KEY for full AI summaries.";
+  }
+  return "No summary yet. Add OPENAI_API_KEY in production to enable AI summaries.";
+}
+
+export function AiInsightsPanel({
+  conversation,
+  aiStatus,
+}: {
+  conversation: Conversation;
+  aiStatus: AiRuntimeStatus;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -31,6 +50,8 @@ export function AiInsightsPanel({ conversation }: { conversation: Conversation }
     });
   }
 
+  const aiLive = aiStatus.status === "live";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -41,12 +62,16 @@ export function AiInsightsPanel({ conversation }: { conversation: Conversation }
         <SentimentBadge sentiment={conversation.sentiment} />
       </div>
 
+      {aiLive && (
+        <p className="text-[10px] text-[#A89878]">
+          OpenAI · {aiStatus.model}
+          {aiStatus.autoSummarize ? " · auto-updates on new messages" : ""}
+        </p>
+      )}
+
       <div className="rounded-xl border border-[#3d3528] bg-[#141414] p-3 text-sm text-[#F5E6C8] leading-relaxed">
         {conversation.aiSummary ?? (
-          <span className="text-[#A89878]">
-            No summary yet. Send a message or wait for an inbound event — summaries
-            generate automatically when OpenAI is configured.
-          </span>
+          <span className="text-[#A89878]">{emptySummaryMessage(aiStatus)}</span>
         )}
       </div>
 
@@ -61,21 +86,32 @@ export function AiInsightsPanel({ conversation }: { conversation: Conversation }
         variant="secondary"
         size="sm"
         className="w-full"
-        disabled={pending}
+        disabled={pending || aiStatus.status === "disabled"}
         onClick={refreshInsights}
       >
-        {pending ? "Analyzing with OpenAI…" : "Refresh summary & sentiment"}
+        {pending
+          ? "Analyzing…"
+          : aiLive
+            ? "Refresh summary & sentiment"
+            : "Refresh (AI unavailable)"}
       </Button>
       {error && (
         <p className="text-xs text-red-400" role="alert">
           {error}
         </p>
       )}
-      <p className="text-[10px] text-[#A89878] leading-relaxed">
-        Requires <code className="text-[#D4AF37]">OPENAI_API_KEY</code>. Check{" "}
-        <code className="text-[#D4AF37]">/api/health</code> →{" "}
-        <code className="text-[#D4AF37]">ai.status</code>.
-      </p>
+      {aiStatus.status === "heuristic" && (
+        <p className="text-[10px] text-[#A89878] leading-relaxed">
+          Using keyword heuristics in demo mode. Production without an API key returns an error on
+          refresh.
+        </p>
+      )}
+      {aiStatus.status === "disabled" && (
+        <p className="text-[10px] text-amber-400/90 leading-relaxed">
+          AI is disabled. Set <code className="text-[#D4AF37]">OPENAI_API_KEY</code> on the server
+          and redeploy.
+        </p>
+      )}
     </div>
   );
 }

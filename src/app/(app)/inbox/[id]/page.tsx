@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { getRepository } from "@/lib/data/repository";
+import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getTenantScope } from "@/lib/tenant/context";
 import { Badge } from "@/components/ui/badge";
 import { CHANNEL_LABELS } from "@/lib/constants";
@@ -16,12 +17,16 @@ export default async function ConversationPage({
   const { id } = await params;
   const scope = await getTenantScope();
   const repo = getRepository();
-  const [conversation, conversations] = await Promise.all([
-    repo.getConversation(id, scope),
-    repo.listConversations(scope),
-  ]);
-
+  let conversation = await repo.getConversation(id, scope);
   if (!conversation) notFound();
+
+  if (conversation.unreadCount > 0) {
+    conversation = (await repo.markAsRead(id, scope)) ?? conversation;
+  }
+
+  const conversations = await repo.listConversations(scope);
+
+  const aiStatus = getAiRuntimeStatus();
 
   return (
     <>
@@ -64,7 +69,7 @@ export default async function ConversationPage({
             activeId={conversation.id}
           />
         </div>
-        <ConversationDetail conversation={conversation} />
+        <ConversationDetail conversation={conversation} aiStatus={aiStatus} />
       </div>
     </>
   );

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ConversationList } from "@/components/inbox/conversation-list";
+import { OpenConversationLink } from "@/components/inbox/open-conversation-link";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
 import { Inbox } from "lucide-react";
@@ -26,12 +26,10 @@ export default async function InboxPage() {
             <div className="text-center space-y-3">
               <Inbox className="mx-auto h-12 w-12 text-[#D4AF37]/60" />
               <p className="text-sm">Select a conversation or open the latest</p>
-              <Link
-                href={`/inbox/${first.id}`}
-                className="inline-flex rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black hover:bg-[#F9E076]"
-              >
-                Open {first.contact.name}
-              </Link>
+              <OpenConversationLink
+                conversationId={first.id}
+                label={first.contact.name}
+              />
             </div>
           ) : (
             <p className="text-sm">No conversations yet</p>

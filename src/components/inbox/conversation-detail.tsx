@@ -1,15 +1,24 @@
 import { AiInsightsPanel } from "@/components/inbox/ai-insights-panel";
+import { MarkReadOnView } from "@/components/inbox/mark-read-on-view";
 import { ConversationTimeline } from "@/components/inbox/timeline";
 import { NoteForm } from "@/components/inbox/note-form";
 import { ReplyForm } from "@/components/inbox/reply-form";
 import { TagPicker } from "@/components/inbox/tag-picker";
 import { Badge } from "@/components/ui/badge";
 import { CHANNEL_LABELS } from "@/lib/constants";
+import type { AiRuntimeStatus } from "@/lib/ai/config";
 import type { Conversation } from "@/types/communication";
 
-export function ConversationDetail({ conversation }: { conversation: Conversation }) {
+export function ConversationDetail({
+  conversation,
+  aiStatus,
+}: {
+  conversation: Conversation;
+  aiStatus: AiRuntimeStatus;
+}) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+      <MarkReadOnView conversationId={conversation.id} />
       <section className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#0a0a0a] lg:overflow-hidden">
         <header className="hidden shrink-0 border-b border-[#3d3528] px-4 py-3 sm:px-6 sm:py-4 lg:block">
           <h2 className="text-base font-semibold text-[#F5E6C8] sm:text-lg">
@@ -58,7 +67,7 @@ export function ConversationDetail({ conversation }: { conversation: Conversatio
           />
         </div>
 
-        <AiInsightsPanel conversation={conversation} />
+        <AiInsightsPanel conversation={conversation} aiStatus={aiStatus} />
 
         <div className="border-t border-[#3d3528] pt-4">
           <NoteForm conversationId={conversation.id} />
