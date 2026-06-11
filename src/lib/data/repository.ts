@@ -33,7 +33,7 @@ export interface ConversationRepository {
   ): Promise<Conversation | null>;
   addOutboundEmail(
     conversationId: string,
-    input: { subject: string; content: string },
+    input: { subject: string; content: string; messageId?: string; providerId?: string },
     scope: TenantScope,
     author?: { name: string; id?: string }
   ): Promise<Conversation | null>;
@@ -58,6 +58,11 @@ export interface ConversationRepository {
       contactName?: string;
       subject: string;
       body: string;
+      inReplyTo?: string[];
+      references?: string[];
+      to?: string[];
+      providerId?: string;
+      messageId?: string;
     },
     scope: TenantScope
   ): Promise<Conversation>;
@@ -93,6 +98,10 @@ export interface ConversationRepository {
   updateAiInsights(
     conversationId: string,
     data: { aiSummary: string; sentiment: Conversation["sentiment"] },
+    scope: TenantScope
+  ): Promise<Conversation | null>;
+  markAsRead(
+    conversationId: string,
     scope: TenantScope
   ): Promise<Conversation | null>;
 }

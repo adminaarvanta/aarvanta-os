@@ -4,11 +4,17 @@ export interface ResendReceivedEmail {
   subject: string;
   from: string;
   messageId?: string;
+  inReplyTo: string[];
+  references: string[];
+  to: string[];
 }
 
 export interface ResendSendResult {
   id: string;
+  messageId: string;
 }
+
+export type ResendReceivingAccess = "ok" | "restricted" | "not_configured";
 
 function getApiKey() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -23,6 +29,28 @@ export function getEmailReplyToAddress(): string {
     process.env.EMAIL_FROM ??
     ""
   );
+}
+
+/** Verify the API key can call the Receiving API (required for inbound email body). */
+export async function checkResendReceivingAccess(): Promise<ResendReceivingAccess> {
+  if (!process.env.RESEND_API_KEY) return "not_configured";
+
+  try {
+    const response = await fetch("https://api.resend.com/emails/receiving", {
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+    });
+
+    if (response.ok) return "ok";
+
+    const text = await response.text();
+    if (response.status === 401 && text.includes("restricted")) {
+      return "restricted";
+    }
+
+    return "restricted";
+  } catch {
+    return "restricted";
+  }
 }
 
 /** Fetch full body + headers — Resend webhooks only send metadata. */
@@ -47,6 +75,7 @@ export async function fetchResendReceivedEmail(
     html?: string;
     subject?: string;
     from?: string;
+    to?: string | string[];
     headers?: Record<string, string | string[]>;
   };
 
@@ -62,12 +91,30 @@ export async function fetchResendReceivedEmail(
       ? messageIdHeader
       : messageIdHeader?.[0];
 
+  const inReplyTo = parseMessageIdHeader(
+    data.headers?.["in-reply-to"] ?? data.headers?.["In-Reply-To"]
+  );
+  const references = parseMessageIdHeader(
+    data.headers?.references ?? data.headers?.References
+  );
+
+  const toHeader = data.headers?.to ?? data.headers?.To ?? data.to;
+  const toValues = Array.isArray(toHeader)
+    ? toHeader
+    : toHeader
+      ? [toHeader]
+      : [];
+  const to = toValues.flatMap((entry) => parseEmailList(String(entry)));
+
   return {
     text: data.text ?? data.html ?? "",
     html: data.html,
     subject: data.subject ?? "(no subject)",
     from: parseEmailAddress(from),
     messageId,
+    inReplyTo,
+    references,
+    to,
   };
 }
 
@@ -76,12 +123,18 @@ export async function sendResendEmail(input: {
   subject: string;
   text: string;
   inReplyTo?: string;
+  messageId?: string;
 }): Promise<ResendSendResult> {
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM is not configured.");
 
   const replyTo = getEmailReplyToAddress();
   const headers: Record<string, string> = {};
+  const domain = from.split("@")[1] ?? "aarvanta.co";
+  const messageId =
+    input.messageId ?? `<${crypto.randomUUID()}@${domain}>`;
+
+  headers["Message-ID"] = messageId;
 
   if (input.inReplyTo) {
     headers["In-Reply-To"] = input.inReplyTo;
@@ -112,7 +165,27 @@ export async function sendResendEmail(input: {
   }
 
   const result = (await response.json()) as { id?: string };
-  return { id: result.id ?? "" };
+  return { id: result.id ?? "", messageId };
+}
+
+function parseMessageIdHeader(
+  raw: string | string[] | undefined
+): string[] {
+  if (!raw) return [];
+  const values = Array.isArray(raw) ? raw : [raw];
+  return values.flatMap((entry) =>
+    entry
+      .split(/\s+/)
+      .map((part) => part.replace(/^<|>$/g, "").trim())
+      .filter(Boolean)
+  );
+}
+
+function parseEmailList(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((part) => parseEmailAddress(part))
+    .filter(Boolean);
 }
 
 function parseEmailAddress(raw: string): string {

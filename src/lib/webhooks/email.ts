@@ -2,11 +2,15 @@ export function parseResendWebhookEvent(payload: unknown): Array<{
   messageId: string;
   from: string;
   subject: string;
+  to: string[];
+  rfcMessageId?: string;
 }> {
   const results: Array<{
     messageId: string;
     from: string;
     subject: string;
+    to: string[];
+    rfcMessageId?: string;
   }> = [];
 
   if (!payload || typeof payload !== "object") return results;
@@ -17,6 +21,8 @@ export function parseResendWebhookEvent(payload: unknown): Array<{
       email_id?: string;
       from?: string;
       subject?: string;
+      to?: string[];
+      message_id?: string;
     };
   };
 
@@ -26,6 +32,8 @@ export function parseResendWebhookEvent(payload: unknown): Array<{
     messageId: record.data.email_id,
     from: parseEmailAddress(record.data.from ?? ""),
     subject: record.data.subject ?? "(no subject)",
+    to: (record.data.to ?? []).map(parseEmailAddress),
+    rfcMessageId: record.data.message_id,
   });
 
   return results;

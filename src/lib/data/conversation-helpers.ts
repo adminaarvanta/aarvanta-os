@@ -61,7 +61,7 @@ export function appendOutboundMessage(
 
 export function appendOutboundEmail(
   conv: Conversation,
-  input: { subject: string; content: string },
+  input: { subject: string; content: string; messageId?: string; providerId?: string },
   author?: { name: string; id?: string }
 ): Conversation {
   const now = new Date().toISOString();
@@ -74,6 +74,8 @@ export function appendOutboundEmail(
     occurredAt: now,
     authorName: author?.name ?? "You",
     authorId: author?.id,
+    messageId: input.messageId,
+    providerId: input.providerId,
   };
 
   return {
@@ -144,7 +146,13 @@ export function appendInboundMessage(
 
 export function appendInboundEmail(
   conv: Conversation,
-  input: { subject: string; body: string; authorName: string }
+  input: {
+    subject: string;
+    body: string;
+    authorName: string;
+    messageId?: string;
+    providerId?: string;
+  }
 ): Conversation {
   const now = new Date().toISOString();
   const email: TimelineEmail = {
@@ -155,6 +163,8 @@ export function appendInboundEmail(
     bodyPreview: input.body,
     occurredAt: now,
     authorName: input.authorName,
+    messageId: input.messageId,
+    providerId: input.providerId,
   };
 
   return {

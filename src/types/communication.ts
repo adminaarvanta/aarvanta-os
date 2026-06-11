@@ -65,6 +65,10 @@ export interface TimelineEmail extends TimelineBase {
   direction: "inbound" | "outbound";
   subject: string;
   bodyPreview: string;
+  /** RFC Message-ID for email threading */
+  messageId?: string;
+  /** Provider id (e.g. Resend send/receive id) */
+  providerId?: string;
 }
 
 export interface TimelineNote extends TimelineBase {

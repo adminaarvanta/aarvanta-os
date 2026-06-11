@@ -1,3 +1,4 @@
+import { findConversationForInboundEmail } from "@/lib/data/email-threading";
 import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
 import {
   appendInboundCall,
@@ -88,10 +89,15 @@ export const firestoreRepository: ConversationRepository = {
   async findConversationByEmail(email, scope) {
     const normalized = normalizeEmail(email);
     const items = await listScoped(scope);
+    const matches = items.filter(
+      (c) => c.contact.email && normalizeEmail(c.contact.email) === normalized
+    );
     return (
-      items.find(
-        (c) => c.contact.email && normalizeEmail(c.contact.email) === normalized
-      ) ?? null
+      matches.sort(
+        (a, b) =>
+          new Date(b.lastActivityAt).getTime() -
+          new Date(a.lastActivityAt).getTime()
+      )[0] ?? null
     );
   },
 
@@ -163,20 +169,26 @@ export const firestoreRepository: ConversationRepository = {
   },
 
   async addInboundEmail(input, scope) {
-    const existing = await firestoreRepository.findConversationByEmail(
-      input.email,
-      scope
-    );
+    const normalizedEmail = normalizeEmail(input.email);
+    const items = await listScoped(scope);
+    const existing = findConversationForInboundEmail(items, {
+      fromEmail: normalizedEmail,
+      subject: input.subject,
+      inReplyTo: input.inReplyTo,
+      references: input.references,
+      to: input.to,
+    });
+
+    const emailPayload = {
+      subject: input.subject,
+      body: input.body,
+      authorName: input.contactName ?? normalizedEmail.split("@")[0],
+      messageId: input.messageId,
+      providerId: input.providerId,
+    };
 
     if (existing) {
-      return saveInbound(
-        appendInboundEmail(existing, {
-          subject: input.subject,
-          body: input.body,
-          authorName: input.contactName ?? input.email,
-        }),
-        scope
-      );
+      return saveInbound(appendInboundEmail(existing, emailPayload), scope);
     }
 
     const now = new Date().toISOString();
@@ -185,8 +197,8 @@ export const firestoreRepository: ConversationRepository = {
         scope,
         {
           id: newId("contact"),
-          name: input.contactName ?? input.email,
-          email: input.email,
+          name: input.contactName ?? normalizedEmail.split("@")[0],
+          email: normalizedEmail,
         },
         "email",
         [
@@ -197,7 +209,9 @@ export const firestoreRepository: ConversationRepository = {
             subject: input.subject,
             bodyPreview: input.body,
             occurredAt: now,
-            authorName: input.contactName ?? input.email,
+            authorName: input.contactName ?? normalizedEmail.split("@")[0],
+            messageId: input.messageId,
+            providerId: input.providerId,
           },
         ]
       ),
@@ -332,6 +346,17 @@ export const firestoreRepository: ConversationRepository = {
       sentiment: data.sentiment,
       aiSummaryUpdatedAt: now,
       updatedAt: now,
+    });
+  },
+
+  async markAsRead(conversationId, scope) {
+    const conv = await getScopedConversation(conversationId, scope);
+    if (!conv) return null;
+    if (conv.unreadCount === 0) return conv;
+    return save({
+      ...conv,
+      unreadCount: 0,
+      updatedAt: new Date().toISOString(),
     });
   },
 };

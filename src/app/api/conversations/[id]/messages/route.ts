@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { deliverOutbound } from "@/lib/channels/deliver";
+import { generateOutboundMessageId } from "@/lib/data/email-threading";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
 import { getSessionFromCookies } from "@/lib/auth/session";
@@ -13,6 +14,15 @@ function lastEmailSubject(conversation: Conversation): string | undefined {
   );
   const last = emails[emails.length - 1];
   return last?.subject;
+}
+
+function lastInboundEmailMessageId(
+  conversation: Conversation
+): string | undefined {
+  const emails = conversation.timeline.filter(
+    (e): e is TimelineEmail => e.type === "email" && e.direction === "inbound"
+  );
+  return emails[emails.length - 1]?.messageId;
 }
 
 const schema = z.object({
@@ -52,11 +62,19 @@ export async function POST(
 
   let conversation: Conversation | null = null;
   const { channel, content, subject } = parsed.data;
+  const emailSubject =
+    subject ?? lastEmailSubject(existing) ?? "Message from Aarvanta";
+  const outboundMessageId =
+    channel === "email" ? generateOutboundMessageId(id) : undefined;
 
   if (channel === "email") {
     conversation = await repo.addOutboundEmail(
       id,
-      { subject: subject ?? "Message from Aarvanta", content },
+      {
+        subject: emailSubject,
+        content,
+        messageId: outboundMessageId,
+      },
       scope,
       author
     );
@@ -80,10 +98,9 @@ export async function POST(
       channel,
       contact: existing.contact,
       content,
-      subject:
-        channel === "email"
-          ? (subject ?? lastEmailSubject(existing) ?? "Message from Aarvanta")
-          : subject,
+      subject: channel === "email" ? emailSubject : subject,
+      emailInReplyTo: lastInboundEmailMessageId(existing),
+      emailMessageId: outboundMessageId,
     });
   } catch (error) {
     return NextResponse.json(

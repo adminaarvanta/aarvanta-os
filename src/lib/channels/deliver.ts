@@ -11,6 +11,7 @@ export interface DeliveryContext {
   content: string;
   subject?: string;
   emailInReplyTo?: string;
+  emailMessageId?: string;
 }
 
 async function sendWhatsAppMessage(to: string, text: string) {
@@ -132,6 +133,7 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
         subject,
         text: ctx.content,
         inReplyTo: ctx.emailInReplyTo,
+        messageId: ctx.emailMessageId,
       });
       return;
     }

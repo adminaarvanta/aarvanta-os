@@ -1,3 +1,4 @@
+import { findConversationForInboundEmail } from "@/lib/data/email-threading";
 import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
 import { DEMO_CONVERSATIONS } from "@/lib/data/demo-seed";
 import {
@@ -64,12 +65,17 @@ export const memoryRepository: ConversationRepository = {
 
   async findConversationByEmail(email, scope) {
     const normalized = normalizeEmail(email);
-    const found = conversations.find(
+    const matches = conversations.filter(
       (c) =>
         inScope(c, scope) &&
         c.contact.email &&
         normalizeEmail(c.contact.email) === normalized
     );
+    const found = matches.sort(
+      (a, b) =>
+        new Date(b.lastActivityAt).getTime() -
+        new Date(a.lastActivityAt).getTime()
+    )[0];
     return found ? structuredClone(found) : null;
   },
 
@@ -142,18 +148,27 @@ export const memoryRepository: ConversationRepository = {
   },
 
   async addInboundEmail(input, scope) {
-    const existing = await memoryRepository.findConversationByEmail(
-      input.email,
-      scope
-    );
+    const normalizedEmail = normalizeEmail(input.email);
+    const items = conversations.filter((c) => inScope(c, scope));
+    const existing = findConversationForInboundEmail(items, {
+      fromEmail: normalizedEmail,
+      subject: input.subject,
+      inReplyTo: input.inReplyTo,
+      references: input.references,
+      to: input.to,
+    });
+
+    const emailPayload = {
+      subject: input.subject,
+      body: input.body,
+      authorName: input.contactName ?? normalizedEmail.split("@")[0],
+      messageId: input.messageId,
+      providerId: input.providerId,
+    };
 
     if (existing) {
       const idx = findIndex(existing.id, scope);
-      conversations[idx] = appendInboundEmail(conversations[idx], {
-        subject: input.subject,
-        body: input.body,
-        authorName: input.contactName ?? input.email,
-      });
+      conversations[idx] = appendInboundEmail(conversations[idx], emailPayload);
       return finishInbound(conversations[idx], scope);
     }
 
@@ -162,8 +177,8 @@ export const memoryRepository: ConversationRepository = {
       scope,
       {
         id: newId("contact"),
-        name: input.contactName ?? input.email,
-        email: input.email,
+        name: input.contactName ?? normalizedEmail.split("@")[0],
+        email: normalizedEmail,
       },
       "email",
       [
@@ -174,7 +189,9 @@ export const memoryRepository: ConversationRepository = {
           subject: input.subject,
           bodyPreview: input.body,
           occurredAt: now,
-          authorName: input.contactName ?? input.email,
+          authorName: input.contactName ?? normalizedEmail.split("@")[0],
+          messageId: input.messageId,
+          providerId: input.providerId,
         },
       ]
     );
@@ -304,6 +321,17 @@ export const memoryRepository: ConversationRepository = {
     conversations[idx].sentiment = data.sentiment;
     conversations[idx].aiSummaryUpdatedAt = now;
     conversations[idx].updatedAt = now;
+    return structuredClone(conversations[idx]);
+  },
+
+  async markAsRead(conversationId, scope) {
+    const idx = findIndex(conversationId, scope);
+    if (idx === -1) return null;
+    if (conversations[idx].unreadCount === 0) {
+      return structuredClone(conversations[idx]);
+    }
+    conversations[idx].unreadCount = 0;
+    conversations[idx].updatedAt = new Date().toISOString();
     return structuredClone(conversations[idx]);
   },
 };
