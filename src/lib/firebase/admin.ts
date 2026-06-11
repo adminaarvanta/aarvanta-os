@@ -1,7 +1,8 @@
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 let app: App | undefined;
+let firestore: Firestore | undefined;
 
 export function isFirebaseConfigured() {
   return Boolean(
@@ -30,5 +31,9 @@ export function getAdminApp() {
 export function getAdminFirestore() {
   const adminApp = getAdminApp();
   if (!adminApp) return null;
-  return getFirestore(adminApp);
+  if (!firestore) {
+    firestore = getFirestore(adminApp);
+    firestore.settings({ ignoreUndefinedProperties: true });
+  }
+  return firestore;
 }

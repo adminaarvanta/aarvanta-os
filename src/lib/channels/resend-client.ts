@@ -22,13 +22,32 @@ function getApiKey() {
   return apiKey;
 }
 
+function getEmailFromDomain(): string {
+  const from = process.env.EMAIL_FROM ?? "";
+  return from.split("@")[1] ?? "";
+}
+
+/** Reply-to / inbound address for threading. Must be on a domain with Resend receiving enabled. */
 export function getEmailReplyToAddress(): string {
-  return (
-    process.env.EMAIL_REPLY_TO ??
-    process.env.EMAIL_INBOUND_ADDRESS ??
-    process.env.EMAIL_FROM ??
-    ""
-  );
+  if (process.env.EMAIL_REPLY_TO) return process.env.EMAIL_REPLY_TO;
+  if (process.env.EMAIL_INBOUND_ADDRESS) return process.env.EMAIL_INBOUND_ADDRESS;
+
+  const domain = getEmailFromDomain();
+  if (domain) return `reply@${domain}`;
+
+  return process.env.EMAIL_FROM ?? "";
+}
+
+export function getEmailInboundConfig() {
+  const from = process.env.EMAIL_FROM ?? null;
+  const replyTo = getEmailReplyToAddress() || null;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? null;
+
+  return {
+    from,
+    replyTo,
+    webhookUrl: appUrl ? `${appUrl}/api/webhooks/email` : null,
+  };
 }
 
 /** Verify the API key can call the Receiving API (required for inbound email body). */

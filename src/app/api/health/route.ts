@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getAllChannelStatuses } from "@/lib/channels/config";
-import { checkResendReceivingAccess } from "@/lib/channels/resend-client";
+import {
+  checkResendReceivingAccess,
+  getEmailInboundConfig,
+} from "@/lib/channels/resend-client";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { isProductionMode } from "@/lib/config/app-mode";
 
@@ -9,7 +12,8 @@ export async function GET() {
   const mode = isProductionMode() ? "production" : "demo";
   const channels = getAllChannelStatuses();
   const ai = getAiRuntimeStatus();
-  const emailReceiving = await checkResendReceivingAccess();
+  const receivingStatus = await checkResendReceivingAccess();
+  const emailInbound = { ...getEmailInboundConfig(), receivingStatus };
 
   if (!isProductionMode()) {
     return NextResponse.json({
@@ -18,7 +22,8 @@ export async function GET() {
       datastore: "memory",
       channels,
       ai,
-      emailReceiving,
+      emailReceiving: receivingStatus,
+      emailInbound,
     });
   }
 
@@ -33,7 +38,8 @@ export async function GET() {
           firestore: "not_configured",
           channels,
           ai,
-          emailReceiving,
+          emailReceiving: receivingStatus,
+          emailInbound,
         },
         { status: 503 }
       );
@@ -48,7 +54,8 @@ export async function GET() {
       firestore: "connected",
       channels,
       ai,
-      emailReceiving,
+      emailReceiving: receivingStatus,
+      emailInbound,
     });
   } catch (error) {
     return NextResponse.json(
@@ -59,7 +66,8 @@ export async function GET() {
         firestore: "error",
         channels,
         ai,
-        emailReceiving,
+        emailReceiving: receivingStatus,
+        emailInbound,
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 503 }

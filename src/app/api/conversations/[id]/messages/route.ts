@@ -60,61 +60,76 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  let conversation: Conversation | null = null;
-  const { channel, content, subject } = parsed.data;
-  const emailSubject =
-    subject ?? lastEmailSubject(existing) ?? "Message from Aarvanta";
-  const outboundMessageId =
-    channel === "email" ? generateOutboundMessageId(id) : undefined;
-
-  if (channel === "email") {
-    conversation = await repo.addOutboundEmail(
-      id,
-      {
-        subject: emailSubject,
-        content,
-        messageId: outboundMessageId,
-      },
-      scope,
-      author
-    );
-  } else if (channel === "voice") {
-    conversation = await repo.addOutboundCall(
-      id,
-      { summary: content },
-      scope,
-      author
-    );
-  } else {
-    conversation = await repo.addMessage(id, parsed.data, scope, author);
-  }
-
-  if (!conversation) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   try {
-    await deliverOutbound({
-      channel,
-      contact: existing.contact,
-      content,
-      subject: channel === "email" ? emailSubject : subject,
-      emailInReplyTo: lastInboundEmailMessageId(existing),
-      emailMessageId: outboundMessageId,
-    });
+    let conversation: Conversation | null = null;
+    const { channel, content, subject } = parsed.data;
+    const emailSubject =
+      subject ?? lastEmailSubject(existing) ?? "Message from Aarvanta";
+    const outboundMessageId =
+      channel === "email" ? generateOutboundMessageId(id) : undefined;
+
+    if (channel === "email") {
+      conversation = await repo.addOutboundEmail(
+        id,
+        {
+          subject: emailSubject,
+          content,
+          messageId: outboundMessageId,
+        },
+        scope,
+        author
+      );
+    } else if (channel === "voice") {
+      conversation = await repo.addOutboundCall(
+        id,
+        { summary: content },
+        scope,
+        author
+      );
+    } else {
+      conversation = await repo.addMessage(id, parsed.data, scope, author);
+    }
+
+    if (!conversation) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    try {
+      await deliverOutbound({
+        channel,
+        contact: existing.contact,
+        content,
+        subject: channel === "email" ? emailSubject : subject,
+        emailInReplyTo: lastInboundEmailMessageId(existing),
+        emailMessageId: outboundMessageId,
+      });
+    } catch (error) {
+      return NextResponse.json(
+        {
+          conversation,
+          warning: {
+            code: "DELIVERY_FAILED",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Outbound delivery failed",
+          },
+        },
+        { status: 202 }
+      );
+    }
+
+    return NextResponse.json({ conversation });
   } catch (error) {
+    console.error(`[messages:send] conversation=${id}`, error);
     return NextResponse.json(
       {
-        conversation,
-        warning: {
-          code: "DELIVERY_FAILED",
+        error: {
           message:
-            error instanceof Error ? error.message : "Outbound delivery failed",
+            error instanceof Error ? error.message : "Failed to send message",
         },
       },
-      { status: 202 }
+      { status: 500 }
     );
   }
-
-  return NextResponse.json({ conversation });
 }

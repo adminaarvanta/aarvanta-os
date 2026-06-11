@@ -127,9 +127,17 @@ npm run seed:firestore
 
 ### 9. Email (Resend)
 
-1. [resend.com](https://resend.com) → API key → `RESEND_API_KEY`
-2. Set `EMAIL_FROM` (verified domain or `onboarding@resend.dev` for testing)
-3. **Resend → Webhooks** → `https://YOUR-DOMAIN/api/webhooks/email` (event: `email.received`)
+1. [resend.com](https://resend.com) → create an API key with **Full access** (send-only keys cannot load inbound email bodies) → `RESEND_API_KEY`
+2. Verify your domain in Resend and enable **Receiving** (add the MX record Resend provides)
+3. Set `EMAIL_FROM` to an address on that verified domain (e.g. `notifications@yourdomain.com`)
+4. Set `EMAIL_REPLY_TO` to an address on the **same verified receiving domain** (e.g. `reply@yourdomain.com`). Gmail replies go to this address — if it is on an unverified subdomain, replies will never reach Resend. When unset, defaults to `reply@<your EMAIL_FROM domain>`.
+5. **Resend → Webhooks** → `https://YOUR-DOMAIN/api/webhooks/email` (event: `email.received` only)
+6. Verify: `GET /api/health` → `emailInbound.replyTo`, `emailInbound.receivingStatus: "ok"`
+
+**Common pitfalls:**
+- Reply-To on a subdomain without Resend receiving enabled (use the root verified domain instead)
+- Send-only API key (inbound messages fail body fetch; webhook skips saving until fixed)
+- Webhook subscribed to `email.sent` / `email.delivered` instead of `email.received`
 
 ### 10. Website chat
 

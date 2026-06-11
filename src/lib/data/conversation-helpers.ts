@@ -32,6 +32,17 @@ function withChannel(channels: Channel[], channel: Channel): Channel[] {
   return channels.includes(channel) ? channels : [...channels, channel];
 }
 
+function optionalAuthor(author?: { name: string; id?: string }) {
+  return author?.id ? { authorId: author.id } : {};
+}
+
+function optionalEmailIds(input: { messageId?: string; providerId?: string }) {
+  return {
+    ...(input.messageId ? { messageId: input.messageId } : {}),
+    ...(input.providerId ? { providerId: input.providerId } : {}),
+  };
+}
+
 export function appendOutboundMessage(
   conv: Conversation,
   input: { channel: Channel; content: string },
@@ -46,7 +57,7 @@ export function appendOutboundMessage(
     content: input.content,
     occurredAt: now,
     authorName: author?.name ?? "You",
-    authorId: author?.id,
+    ...optionalAuthor(author),
   };
 
   return {
@@ -73,9 +84,8 @@ export function appendOutboundEmail(
     bodyPreview: input.content,
     occurredAt: now,
     authorName: author?.name ?? "You",
-    authorId: author?.id,
-    messageId: input.messageId,
-    providerId: input.providerId,
+    ...optionalAuthor(author),
+    ...optionalEmailIds(input),
   };
 
   return {
@@ -102,7 +112,7 @@ export function appendOutboundCall(
     summary: input.summary,
     occurredAt: now,
     authorName: author?.name ?? "You",
-    authorId: author?.id,
+    ...optionalAuthor(author),
   };
 
   return {
@@ -163,8 +173,7 @@ export function appendInboundEmail(
     bodyPreview: input.body,
     occurredAt: now,
     authorName: input.authorName,
-    messageId: input.messageId,
-    providerId: input.providerId,
+    ...optionalEmailIds(input),
   };
 
   return {

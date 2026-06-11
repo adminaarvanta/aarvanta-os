@@ -210,8 +210,8 @@ export const firestoreRepository: ConversationRepository = {
             bodyPreview: input.body,
             occurredAt: now,
             authorName: input.contactName ?? normalizedEmail.split("@")[0],
-            messageId: input.messageId,
-            providerId: input.providerId,
+            ...(input.messageId ? { messageId: input.messageId } : {}),
+            ...(input.providerId ? { providerId: input.providerId } : {}),
           },
         ]
       ),

@@ -10,8 +10,8 @@ import {
 } from "@/lib/webhooks/idempotency";
 import { parseResendWebhookEvent } from "@/lib/webhooks/email";
 
-const METADATA_ONLY_BODY =
-  "Email body could not be loaded. Use a Resend API key with Full access (not send-only) on your server.";
+const RESEND_EMAIL_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: Request) {
   const rawBody = await req.text();
@@ -56,37 +56,32 @@ export async function POST(req: Request) {
       continue;
     }
 
-    try {
-      let fromEmail = normalizeEmail(event.from);
-      let subject = event.subject;
-      let body = METADATA_ONLY_BODY;
-      let inReplyTo: string[] = [];
-      let references: string[] = [];
-      let to: string[] = event.to ?? [];
+    if (!RESEND_EMAIL_ID_RE.test(event.messageId)) {
+      errors.push({
+        messageId: event.messageId,
+        error: "Invalid email_id — expected a Resend UUID",
+      });
+      continue;
+    }
 
-      try {
-        const full = await fetchResendReceivedEmail(event.messageId);
-        fromEmail = normalizeEmail(full.from || event.from);
-        subject = full.subject || event.subject;
-        body = full.text || METADATA_ONLY_BODY;
-        inReplyTo = full.inReplyTo;
-        references = full.references;
-        to = full.to.length > 0 ? full.to : to;
-      } catch (fetchError) {
-        const message =
-          fetchError instanceof Error ? fetchError.message : String(fetchError);
-        console.error(
-          "[email webhook] fetch failed, using metadata fallback",
-          event.messageId,
-          message
-        );
-        errors.push({ messageId: event.messageId, error: message });
-      }
+    try {
+      const full = await fetchResendReceivedEmail(event.messageId);
+      const fromEmail = normalizeEmail(full.from || event.from);
 
       if (!fromEmail) {
         errors.push({
           messageId: event.messageId,
           error: "Missing sender address",
+        });
+        continue;
+      }
+
+      const body = full.text?.trim();
+      if (!body) {
+        errors.push({
+          messageId: event.messageId,
+          error:
+            "Email body empty — ensure RESEND_API_KEY has Full access (not send-only)",
         });
         continue;
       }
@@ -99,11 +94,11 @@ export async function POST(req: Request) {
         {
           email: fromEmail,
           contactName: fromEmail.split("@")[0],
-          subject,
+          subject: full.subject || event.subject,
           body,
-          inReplyTo,
-          references,
-          to,
+          inReplyTo: full.inReplyTo,
+          references: full.references,
+          to: full.to.length > 0 ? full.to : (event.to ?? []),
           providerId: event.messageId,
           messageId: inboundMessageId,
         },
