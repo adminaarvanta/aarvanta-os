@@ -52,11 +52,16 @@ export type FounderCommandId =
   | "open_inbox"
   | "open_crm"
   | "open_leads"
+  | "open_pipelines"
   | "open_workforce"
   | "open_knowledge"
   | "open_projects"
   | "open_workflows"
-  | "open_pipelines";
+  | "open_team"
+  | "open_integrations"
+  | "open_communications"
+  | "open_analytics"
+  | "open_settings";
 
 export interface FounderCommand {
   id: FounderCommandId;
