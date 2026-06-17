@@ -7,7 +7,7 @@ import { BrandLogo } from "@/components/brand/logo";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/inbox";
+  const next = searchParams.get("next") ?? "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -102,6 +102,16 @@ export default function LoginPage() {
         <Suspense fallback={<p className="mt-8 text-sm text-[#A89878]">Loading…</p>}>
           <LoginForm />
         </Suspense>
+
+        <p className="mt-6 text-center text-xs text-[#A89878]">
+          <a href="/" className="text-[#D4AF37] hover:underline">
+            ← Back to home
+          </a>
+          {" · "}
+          <a href="/inbox" className="text-[#D4AF37] hover:underline">
+            Try demo without signing in
+          </a>
+        </p>
       </div>
     </div>
   );

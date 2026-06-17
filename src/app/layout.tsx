@@ -16,11 +16,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Aarvanta OS — Communication Hub",
+    default: "Aarvanta OS — AI Workforce & Business Operating System",
     template: "%s | Aarvanta OS",
   },
   description:
-    "Unified inbox, conversation timeline, AI summaries, and sentiment for SME teams.",
+    "AI employees, CRM, knowledge hub, projects, and unified inbox — one platform for modern SMEs.",
   icons: {
     icon: "/aarvanta-logo.png",
     apple: "/aarvanta-logo.png",
