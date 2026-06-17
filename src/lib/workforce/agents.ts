@@ -2,56 +2,74 @@ import type { AgentDefinition, AgentType } from "@/types/workforce";
 
 export const AGENT_DEFINITIONS: AgentDefinition[] = [
   {
-    type: "sales",
-    name: "AI Sales Agent",
-    tagline: "Qualify leads, follow up, and move deals forward.",
+    type: "ceo",
+    name: "AI CEO",
+    title: "Chief Executive Officer",
+    department: "leadership",
+    tagline: "Daily business briefing, KPI tracking, and growth recommendations.",
+    primaryFunction: "Daily Briefing",
     responsibilities: [
-      "Qualify leads from CRM and inbox signals",
+      "Monitor business health and revenue trends",
+      "Deliver daily executive briefings",
+      "Track KPIs and flag risks early",
+      "Recommend strategic growth actions",
+    ],
+  },
+  {
+    type: "coo",
+    name: "AI COO",
+    title: "Chief Operating Officer",
+    department: "operations",
+    tagline: "Operations review, process optimization, and bottleneck detection.",
+    primaryFunction: "Operations Review",
+    responsibilities: [
+      "Review operational workload and task backlog",
+      "Identify process bottlenecks",
+      "Suggest workflow improvements",
+      "Surface overdue actions across teams",
+    ],
+  },
+  {
+    type: "sales_manager",
+    name: "AI Sales Manager",
+    title: "Sales Director",
+    department: "sales",
+    tagline: "Pipeline review, lead scoring, and follow-up automation.",
+    primaryFunction: "Pipeline Review",
+    responsibilities: [
+      "Review pipeline health and deal velocity",
+      "Score and prioritise hot leads",
       "Suggest follow-up messages and next steps",
-      "Recommend meeting booking and objection handling",
+      "Draft proposals and meeting outreach",
     ],
     requiresContact: true,
   },
   {
-    type: "support",
-    name: "AI Support Agent",
-    tagline: "Resolve issues faster with FAQ and escalation guidance.",
+    type: "marketing_manager",
+    name: "AI Marketing Manager",
+    title: "Marketing Director",
+    department: "marketing",
+    tagline: "Campaign suggestions, content ideas, and channel recommendations.",
+    primaryFunction: "Campaign Suggestions",
     responsibilities: [
-      "Answer FAQs from conversation context",
-      "Troubleshoot customer issues",
-      "Recommend when to escalate to a human",
-    ],
-    requiresConversation: true,
-  },
-  {
-    type: "account_manager",
-    name: "AI Account Manager",
-    tagline: "Protect revenue with retention and upsell insights.",
-    responsibilities: [
-      "Identify at-risk accounts",
-      "Suggest renewal and check-in outreach",
-      "Spot upsell opportunities from purchase history",
-    ],
-    requiresContact: true,
-  },
-  {
-    type: "operations",
-    name: "AI Operations Assistant",
-    tagline: "Keep the team on track with tasks and reminders.",
-    responsibilities: [
-      "Create follow-up tasks from inbox and CRM",
-      "Surface overdue or missing actions",
-      "Summarise operational workload",
+      "Propose marketing campaigns and content themes",
+      "Suggest LinkedIn, email, and ad copy angles",
+      "Recommend SEO and social scheduling priorities",
+      "Analyse audience segments from CRM data",
     ],
   },
   {
-    type: "executive",
-    name: "AI Executive Assistant",
-    tagline: "Daily business pulse, pipeline, and revenue alerts.",
+    type: "hr_manager",
+    name: "AI HR Manager",
+    title: "HR Director",
+    department: "hr",
+    tagline: "Recruitment assistant, JD creation, and onboarding support.",
+    primaryFunction: "Recruitment Assistant",
     responsibilities: [
-      "Summarise pipeline and forecast",
-      "Highlight hot leads and urgent conversations",
-      "Flag revenue risks and opportunities",
+      "Draft job descriptions and role requirements",
+      "Screen candidate profiles and suggest interview questions",
+      "Plan employee onboarding checklists",
+      "Track hiring pipeline and team capacity",
     ],
   },
 ];
@@ -64,4 +82,15 @@ export function getAgentDefinition(type: AgentType): AgentDefinition {
 
 export function isAgentType(value: string): value is AgentType {
   return AGENT_DEFINITIONS.some((a) => a.type === value);
+}
+
+export function agentDepartmentLabel(department: AgentDefinition["department"]) {
+  const labels: Record<AgentDefinition["department"], string> = {
+    leadership: "Leadership",
+    operations: "Operations",
+    sales: "Sales",
+    marketing: "Marketing",
+    hr: "Human Resources",
+  };
+  return labels[department];
 }

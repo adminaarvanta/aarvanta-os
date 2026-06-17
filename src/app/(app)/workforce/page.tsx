@@ -1,17 +1,23 @@
 import { Sparkles } from "lucide-react";
 import { AgentCard } from "@/components/workforce/agent-card";
+import { AgentDirectory } from "@/components/workforce/agent-directory";
 import { RunList } from "@/components/workforce/run-list";
 import { WorkforceNav } from "@/components/workforce/workforce-nav";
+import { WorkforceUpgradePanel } from "@/components/workforce/workforce-upgrade-panel";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getWorkforceRepository } from "@/lib/data/workforce-store";
+import { getWorkforceUpgradeRepository } from "@/lib/data/workforce-upgrade-store";
 import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
 import { getTenantScope } from "@/lib/tenant/context";
 
 export default async function WorkforcePage() {
   const scope = await getTenantScope();
-  const [runs, ai] = await Promise.all([
+  const upgradeRepo = getWorkforceUpgradeRepository();
+  const [runs, ai, sharedMemory, collaborations] = await Promise.all([
     getWorkforceRepository().listRuns(scope, { limit: 10 }),
     Promise.resolve(getAiRuntimeStatus()),
+    upgradeRepo.listSharedMemory(scope),
+    upgradeRepo.listCollaborations(scope),
   ]);
 
   return (
@@ -24,8 +30,7 @@ export default async function WorkforcePage() {
               AI Workforce
             </h2>
             <p className="text-xs text-[#A89878] sm:text-sm">
-              Module 3 — autonomous agents for sales, support, accounts, ops, and
-              leadership.
+              AI Employee Directory — shared memory, collaboration, chat, and task assignment.
             </p>
           </div>
           <div className="rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-xs text-[#A89878]">
@@ -43,12 +48,29 @@ export default async function WorkforcePage() {
       <WorkforceNav />
       <div className="flex-1 overflow-y-auto p-4 space-y-8 sm:p-6">
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">Your AI team</h3>
+          <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">
+            AI Employee Directory
+          </h3>
+          <AgentDirectory />
+        </section>
+
+        <section>
+          <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">Quick access</h3>
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {AGENT_DEFINITIONS.map((agent) => (
               <AgentCard key={agent.type} agent={agent} />
             ))}
           </div>
+        </section>
+
+        <section>
+          <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">
+            Shared memory & agent collaboration
+          </h3>
+          <WorkforceUpgradePanel
+            sharedMemory={sharedMemory}
+            collaborations={collaborations}
+          />
         </section>
 
         <section>

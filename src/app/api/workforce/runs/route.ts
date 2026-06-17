@@ -4,6 +4,7 @@ import { AiNotConfiguredError, AiRequestError } from "@/lib/ai/provider";
 import { isAgentType } from "@/lib/workforce/agents";
 import { buildWorkforceContext } from "@/lib/workforce/context";
 import { executeAgentRun } from "@/lib/workforce/run-agent";
+import { saveRunToAgentMemory } from "@/lib/workforce/save-run-memory";
 import { getWorkforceRepository } from "@/lib/data/workforce-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
@@ -94,6 +95,10 @@ export async function POST(req: Request) {
       },
       scope
     );
+
+    if (completed) {
+      await saveRunToAgentMemory(completed, scope);
+    }
 
     return NextResponse.json({ run: completed }, { status: 201 });
   } catch (error) {

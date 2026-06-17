@@ -53,13 +53,19 @@ export async function POST(
     );
     const updated = await repo.updateRun(id, { actions: updatedActions }, scope);
     return NextResponse.json({
-      result: await applyAgentAction(action, scope),
+      result: await applyAgentAction(action, scope, {
+        agentType: run.agentType,
+        runId: run.id,
+      }),
       run: updated,
     });
   }
 
   try {
-    const result = await applyAgentAction(action, scope);
+    const result = await applyAgentAction(action, scope, {
+      agentType: run.agentType,
+      runId: run.id,
+    });
     const updatedActions = run.actions.map((a) =>
       a.id === action.id
         ? { ...a, applied: true, appliedAt: crmNow() }

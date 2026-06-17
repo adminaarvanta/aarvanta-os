@@ -1,21 +1,21 @@
 import Link from "next/link";
 import {
   Briefcase,
-  Headphones,
-  LineChart,
+  Crown,
+  Megaphone,
   Settings2,
-  UserCheck,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { RunAgentButton } from "@/components/workforce/run-agent-button";
-import type { AgentDefinition } from "@/types/workforce";
+import type { AgentDefinition, AgentType } from "@/types/workforce";
 
-const icons: Record<AgentDefinition["type"], LucideIcon> = {
-  sales: Briefcase,
-  support: Headphones,
-  account_manager: UserCheck,
-  operations: Settings2,
-  executive: LineChart,
+const icons: Record<AgentType, LucideIcon> = {
+  ceo: Crown,
+  coo: Settings2,
+  sales_manager: Briefcase,
+  marketing_manager: Megaphone,
+  hr_manager: Users,
 };
 
 export function AgentCard({ agent }: { agent: AgentDefinition }) {
@@ -29,11 +29,12 @@ export function AgentCard({ agent }: { agent: AgentDefinition }) {
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-[#F5E6C8]">{agent.name}</h3>
+          <p className="text-[10px] text-[#D4AF37]">{agent.primaryFunction}</p>
           <p className="mt-1 text-xs text-[#A89878]">{agent.tagline}</p>
         </div>
       </div>
       <ul className="mt-4 flex-1 space-y-1.5 text-xs text-[#A89878]">
-        {agent.responsibilities.map((item) => (
+        {agent.responsibilities.slice(0, 3).map((item) => (
           <li key={item} className="flex gap-2">
             <span className="text-[#D4AF37]">·</span>
             <span>{item}</span>
@@ -46,7 +47,7 @@ export function AgentCard({ agent }: { agent: AgentDefinition }) {
           href={`/workforce/${agent.type}`}
           className="inline-flex items-center justify-center rounded-lg border border-[#3d3528] px-4 py-2 text-sm font-medium text-[#A89878] hover:border-[#D4AF37]/40 hover:text-[#F5E6C8]"
         >
-          Details
+          Profile
         </Link>
       </div>
     </article>

@@ -27,7 +27,9 @@ const ACTION_TYPES: AgentActionType[] = [
 ];
 
 function agentSystemPrompt(type: AgentType): string {
-  const base = `You are an AI agent in Aarvanta OS — a multi-tenant business operating system for SMEs.
+  const agent = getAgentDefinition(type);
+  const base = `You are ${agent.name} (${agent.title}) in Aarvanta OS — a multi-tenant business operating system.
+Primary function: ${agent.primaryFunction}.
 Respond ONLY with valid JSON:
 {
   "summary": "2-4 sentence executive summary of your analysis",
@@ -50,11 +52,11 @@ Action payload schemas:
 Include 1-3 concrete actions when appropriate. Use contactId/conversationId from context when provided.`;
 
   const roles: Record<AgentType, string> = {
-    sales: `${base}\n\nRole: AI Sales Agent. Qualify leads, suggest follow-ups, handle objections, recommend booking meetings.`,
-    support: `${base}\n\nRole: AI Support Agent. Answer FAQs, troubleshoot, recommend escalation when needed. Prefer suggest_reply for draft responses.`,
-    account_manager: `${base}\n\nRole: AI Account Manager. Focus on retention, renewals, upsells for existing customers.`,
-    operations: `${base}\n\nRole: AI Operations Assistant. Create tasks, surface reminders, reduce manual admin. Prefer create_task actions.`,
-    executive: `${base}\n\nRole: AI Executive Assistant. Business-wide summary, pipeline health, revenue alerts. Use alert for risks.`,
+    ceo: `${base}\n\nRole: AI CEO. Deliver a daily business briefing covering revenue, pipeline, risks, and strategic priorities. Use alert for critical business risks.`,
+    coo: `${base}\n\nRole: AI COO. Review operations, task backlog, bottlenecks, and process efficiency. Prefer create_task for operational follow-ups.`,
+    sales_manager: `${base}\n\nRole: AI Sales Manager. Review pipeline, qualify leads, suggest follow-ups, and recommend deal actions.`,
+    marketing_manager: `${base}\n\nRole: AI Marketing Manager. Suggest campaigns, content themes, channel priorities, and audience targeting from CRM data.`,
+    hr_manager: `${base}\n\nRole: AI HR Manager. Support recruitment, onboarding, JD drafting, and hiring pipeline review.`,
   };
 
   return roles[type];
@@ -102,19 +104,33 @@ function heuristicRun(
     }
   }
 
-  if (type === "executive") {
+  if (type === "ceo") {
     recs.push(
       `Pipeline: £${context.business.pipelineValue.toLocaleString()} across ${context.business.openDealCount} open deals.`
     );
-    recs.push(`${context.business.hotLeadCount} hot leads and ${context.business.urgentConversationCount} urgent threads.`);
+    recs.push(
+      `${context.business.hotLeadCount} hot leads and ${context.business.urgentConversationCount} urgent threads.`
+    );
   }
 
-  if (type === "operations" && context.business.openTaskCount > 0) {
-    recs.push(`${context.business.openTaskCount} open tasks — review priorities.`);
+  if (type === "coo" && context.business.openTaskCount > 0) {
+    recs.push(`${context.business.openTaskCount} open tasks — review priorities and bottlenecks.`);
+  }
+
+  if (type === "sales_manager" && context.business.openDealCount > 0) {
+    recs.push(`Review ${context.business.openDealCount} open deals in the pipeline.`);
+  }
+
+  if (type === "marketing_manager") {
+    recs.push("Consider a LinkedIn campaign targeting your top prospect segments.");
+  }
+
+  if (type === "hr_manager") {
+    recs.push("Review open roles and candidate pipeline for upcoming interviews.");
   }
 
   if (recs.length === 0) {
-    recs.push("Limited context available — run with a contact or conversation selected.");
+    recs.push("Limited context available — run with a contact selected or review business-wide metrics.");
   }
 
   return {
@@ -156,6 +172,7 @@ export async function executeAgentRun(input: {
       system: agentSystemPrompt(agentType),
       user: JSON.stringify({
         agent: agent.name,
+        primaryFunction: agent.primaryFunction,
         context,
       }),
     });

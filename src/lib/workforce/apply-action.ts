@@ -4,7 +4,8 @@ import type { AgentAction } from "@/types/workforce";
 
 export async function applyAgentAction(
   action: AgentAction,
-  scope: TenantScope
+  scope: TenantScope,
+  options?: { agentType?: string; runId?: string }
 ): Promise<{ kind: string; id?: string; message: string }> {
   const crm = getCrmRepository();
 
@@ -29,6 +30,8 @@ export async function applyAgentAction(
           contactId: p.contactId,
           accountId: p.accountId,
           dealId: p.dealId,
+          assignedAgentType: options?.agentType,
+          agentRunId: options?.runId,
           source: "ai",
         },
         scope

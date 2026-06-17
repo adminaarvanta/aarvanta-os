@@ -45,7 +45,7 @@ export function AgentRunPanel({
         </div>
       )}
 
-      {(needsConversation || agent.type === "support") && conversations.length > 0 && (
+      {(needsConversation || needsContact) && conversations.length > 0 && (
         <div>
           <label className="block text-xs font-medium text-[#A89878]">
             Conversation {needsConversation ? "(required)" : "(optional)"}

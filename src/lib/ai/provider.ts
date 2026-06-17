@@ -72,3 +72,38 @@ export async function completeJson<T>(input: {
     throw new AiRequestError("OpenAI returned invalid JSON.");
   }
 }
+
+export async function completeText(input: {
+  system: string;
+  messages: { role: "user" | "assistant"; content: string }[];
+  temperature?: number;
+}): Promise<string> {
+  const { model } = getAiConfig();
+  const openai = getOpenAIClient();
+
+  let completion: OpenAI.Chat.Completions.ChatCompletion;
+  try {
+    completion = await openai.chat.completions.create({
+      model,
+      temperature: input.temperature ?? 0.3,
+      messages: [
+        { role: "system", content: input.system },
+        ...input.messages.map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+      ],
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown AI provider error";
+    throw new AiRequestError(`OpenAI request failed: ${message}`, error);
+  }
+
+  const raw = completion.choices[0]?.message?.content?.trim();
+  if (!raw) {
+    throw new AiRequestError("OpenAI returned an empty response.");
+  }
+
+  return raw;
+}

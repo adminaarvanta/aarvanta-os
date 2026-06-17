@@ -2,15 +2,16 @@
 
 import { usePathname } from "next/navigation";
 import { PendingLink } from "@/components/layout/navigation-provider";
+import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/workforce", label: "Overview", exact: true },
-  { href: "/workforce/sales", label: "Sales" },
-  { href: "/workforce/support", label: "Support" },
-  { href: "/workforce/account_manager", label: "Accounts" },
-  { href: "/workforce/operations", label: "Operations" },
-  { href: "/workforce/executive", label: "Executive" },
+  { href: "/workforce", label: "Directory", exact: true },
+  ...AGENT_DEFINITIONS.map((agent) => ({
+    href: `/workforce/${agent.type}`,
+    label: agent.name.replace("AI ", ""),
+    exact: false,
+  })),
 ];
 
 export function WorkforceNav() {
