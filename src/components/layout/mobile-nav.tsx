@@ -1,14 +1,18 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Inbox, LayoutDashboard, MessageCircle, LogOut, Sparkles } from "lucide-react";
+import { Brain, Inbox, Kanban, LayoutDashboard, LogOut, MessageCircle, Sparkles, Workflow } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { cn } from "@/lib/utils";
 
 const links = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, match: (p: string) => p.startsWith("/dashboard") },
   { href: "/inbox", label: "Inbox", icon: Inbox, match: (p: string) => p.startsWith("/inbox") },
   { href: "/crm", label: "CRM", icon: LayoutDashboard, match: (p: string) => p.startsWith("/crm") },
   { href: "/workforce", label: "AI", icon: Sparkles, match: (p: string) => p.startsWith("/workforce") },
+  { href: "/knowledge", label: "Brain", icon: Brain, match: (p: string) => p.startsWith("/knowledge") },
+  { href: "/projects", label: "Projects", icon: Kanban, match: (p: string) => p.startsWith("/projects") },
+  { href: "/workflows", label: "Flows", icon: Workflow, match: (p: string) => p.startsWith("/workflows") },
   { href: "/chat", label: "Chat", icon: MessageCircle, match: () => false },
 ];
 

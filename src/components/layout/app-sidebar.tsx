@@ -1,63 +1,98 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
+  Bell,
+  Brain,
   Inbox,
+  Kanban,
   LayoutDashboard,
+  Plug,
   Settings,
   Sparkles,
+  Users,
+  Workflow,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand/logo";
 import { PendingLink } from "@/components/layout/navigation-provider";
+import { WorkspaceSwitcher } from "@/components/tenant/workspace-switcher";
 import { cn } from "@/lib/utils";
+import type { Organization, Workspace } from "@/types/tenant";
 
 const nav = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Unified Inbox", icon: Inbox },
   { href: "/crm", label: "CRM", icon: LayoutDashboard },
   { href: "/workforce", label: "AI Workforce", icon: Sparkles },
-  {
-    href: "#",
-    label: "Settings",
-    icon: Settings,
-    disabled: true,
-  },
+  { href: "/knowledge", label: "Knowledge Hub", icon: Brain },
+  { href: "/projects", label: "Projects", icon: Kanban },
+  { href: "/workflows", label: "Workflows", icon: Workflow },
+  { href: "/team", label: "Team", icon: Users },
+  { href: "/integrations", label: "Integrations", icon: Plug },
+  { href: "/communications", label: "Communications", icon: Bell },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function AppSidebar({ production }: { production: boolean }) {
+export function AppSidebar({
+  production,
+  tenant,
+}: {
+  production: boolean;
+  tenant?: {
+    organization: Organization;
+    workspace: Workspace;
+    workspaces: Workspace[];
+  } | null;
+}) {
   const pathname = usePathname();
 
   return (
     <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-[#3d3528] bg-[#0a0a0a]">
       <div className="border-b border-[#3d3528] px-4 py-5">
-        <BrandLogo href="/inbox" fullWidth />
+        <BrandLogo href="/dashboard" fullWidth />
       </div>
+      {tenant && (
+        <WorkspaceSwitcher
+          organization={tenant.organization}
+          workspace={tenant.workspace}
+          workspaces={tenant.workspaces}
+        />
+      )}
       <nav className="flex-1 p-3 space-y-1">
         {nav.map((item) => {
           const Icon = item.icon;
           const active =
-            !item.disabled &&
-            (item.href === "/crm"
-              ? pathname.startsWith("/crm")
-              : item.href === "/workforce"
-                ? pathname.startsWith("/workforce")
-                : pathname.startsWith(item.href));
+            item.href === "/dashboard"
+              ? pathname.startsWith("/dashboard")
+              : item.href === "/crm"
+                ? pathname.startsWith("/crm")
+                : item.href === "/workforce"
+                  ? pathname.startsWith("/workforce")
+                  : item.href === "/knowledge"
+                    ? pathname.startsWith("/knowledge")
+                    : item.href === "/projects"
+                      ? pathname.startsWith("/projects")
+                      : item.href === "/workflows"
+                        ? pathname.startsWith("/workflows")
+                        : item.href === "/team"
+                          ? pathname.startsWith("/team")
+                          : item.href === "/integrations"
+                            ? pathname.startsWith("/integrations")
+                            : item.href === "/communications"
+                              ? pathname.startsWith("/communications")
+                              : item.href === "/analytics"
+                                ? pathname.startsWith("/analytics")
+                                : item.href === "/settings"
+                                  ? pathname.startsWith("/settings")
+                                  : pathname.startsWith(item.href);
           const content = (
             <>
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{item.label}</span>
             </>
           );
-          if (item.disabled) {
-            return (
-              <span
-                key={item.label}
-                className="flex cursor-not-allowed items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#A89878]/40"
-              >
-                {content}
-              </span>
-            );
-          }
           return (
             <PendingLink
               key={item.href}
