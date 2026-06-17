@@ -27,6 +27,8 @@ export function validateCredentials(
   return {
     email,
     name: email.split("@")[0] ?? "Agent",
+    userId: process.env.AUTH_USER_ID ?? "user_prod",
+    role: "owner",
     tenantId,
     workspaceId,
     companyId,

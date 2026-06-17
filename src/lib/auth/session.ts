@@ -1,12 +1,15 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { TenantScope } from "@/types/communication";
+import type { MemberRole } from "@/types/tenant";
 
 export const SESSION_COOKIE = "aarvanta_session";
 
 export interface SessionPayload {
   email: string;
   name: string;
+  userId: string;
+  role: MemberRole;
   tenantId: string;
   workspaceId: string;
   companyId: string;
@@ -38,6 +41,8 @@ export async function verifySessionToken(
     if (
       typeof payload.email !== "string" ||
       typeof payload.name !== "string" ||
+      typeof payload.userId !== "string" ||
+      typeof payload.role !== "string" ||
       typeof payload.tenantId !== "string" ||
       typeof payload.workspaceId !== "string" ||
       typeof payload.companyId !== "string"
@@ -47,6 +52,8 @@ export async function verifySessionToken(
     return {
       email: payload.email,
       name: payload.name,
+      userId: payload.userId,
+      role: payload.role as MemberRole,
       tenantId: payload.tenantId,
       workspaceId: payload.workspaceId,
       companyId: payload.companyId,
