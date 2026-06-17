@@ -1,0 +1,131 @@
+import { DEMO_TENANT } from "@/lib/tenant/demo-context";
+import { crmNow } from "@/lib/data/crm-helpers";
+import type { Project, ProjectTask } from "@/types/project";
+
+const now = crmNow();
+
+export const DEMO_PROJECTS: Project[] = [
+  {
+    ...DEMO_TENANT,
+    id: "proj_meridian_onboard",
+    name: "Meridian Consulting — Onboarding",
+    description: "Implement Aarvanta OS for Meridian Consulting post-sale.",
+    status: "active",
+    color: "#D4AF37",
+    startDate: "2026-06-01",
+    dueDate: "2026-07-01",
+    contactId: "contact_sarah",
+    dealId: "deal_meridian",
+    tags: ["onboarding", "enterprise"],
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    ...DEMO_TENANT,
+    id: "proj_website_launch",
+    name: "Aarvanta OS Public Launch",
+    description: "Marketing site, demo polish, and Vercel deployment.",
+    status: "active",
+    color: "#60a5fa",
+    startDate: "2026-06-10",
+    dueDate: "2026-06-30",
+    tags: ["marketing", "launch"],
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    ...DEMO_TENANT,
+    id: "proj_northstar_upsell",
+    name: "Northstar AI Workforce Rollout",
+    description: "Deploy AI Sales and Marketing agents for Northstar Digital.",
+    status: "on_hold",
+    color: "#a78bfa",
+    dueDate: "2026-08-15",
+    contactId: "contact_james",
+    dealId: "deal_northstar_upsell",
+    tags: ["upsell", "ai-workforce"],
+    createdAt: now,
+    updatedAt: now,
+  },
+];
+
+export const DEMO_PROJECT_TASKS: ProjectTask[] = [
+  {
+    ...DEMO_TENANT,
+    id: "ptask_1",
+    projectId: "proj_meridian_onboard",
+    title: "Configure workspace & CRM import",
+    status: "done",
+    priority: "high",
+    order: 0,
+    assignee: "AI COO",
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    ...DEMO_TENANT,
+    id: "ptask_2",
+    projectId: "proj_meridian_onboard",
+    title: "Train team on unified inbox",
+    status: "in_progress",
+    priority: "high",
+    order: 1,
+    dueDate: "2026-06-20",
+    assignee: "Sarah Chen",
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    ...DEMO_TENANT,
+    id: "ptask_3",
+    projectId: "proj_meridian_onboard",
+    title: "Enable AI CEO daily briefing",
+    status: "todo",
+    priority: "medium",
+    order: 2,
+    assignee: "AI CEO",
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    ...DEMO_TENANT,
+    id: "ptask_4",
+    projectId: "proj_website_launch",
+    title: "Landing page & pricing",
+    status: "done",
+    priority: "high",
+    order: 0,
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    ...DEMO_TENANT,
+    id: "ptask_5",
+    projectId: "proj_website_launch",
+    title: "Demo data polish",
+    status: "in_progress",
+    priority: "medium",
+    order: 1,
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    ...DEMO_TENANT,
+    id: "ptask_6",
+    projectId: "proj_website_launch",
+    title: "Deploy to Vercel + custom domain",
+    status: "todo",
+    priority: "high",
+    order: 2,
+    dueDate: "2026-06-25",
+    createdAt: now,
+    updatedAt: now,
+  },
+];
+
+export function buildDemoProjectSeed() {
+  return {
+    projects: structuredClone(DEMO_PROJECTS),
+    tasks: structuredClone(DEMO_PROJECT_TASKS),
+  };
+}
