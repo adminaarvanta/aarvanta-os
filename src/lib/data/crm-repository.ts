@@ -90,7 +90,10 @@ export interface CrmRepository {
     scope: TenantScope
   ): Promise<CrmDeal | null>;
 
-  listTasks(scope: TenantScope, filters?: { status?: TaskStatus }): Promise<CrmTask[]>;
+  listTasks(
+    scope: TenantScope,
+    filters?: { status?: TaskStatus; assignedAgentType?: string }
+  ): Promise<CrmTask[]>;
   getTask(id: string, scope: TenantScope): Promise<CrmTask | null>;
   createTask(input: CreateTaskInput, scope: TenantScope): Promise<CrmTask>;
   updateTask(
@@ -107,6 +110,8 @@ export interface CrmRepository {
         | "accountId"
         | "dealId"
         | "assignedTo"
+        | "assignedAgentType"
+        | "agentRunId"
       >
     >,
     scope: TenantScope
@@ -167,6 +172,8 @@ export type CreateTaskInput = {
   accountId?: string;
   dealId?: string;
   assignedTo?: string;
+  assignedAgentType?: string;
+  agentRunId?: string;
   source?: TaskSource;
 };
 

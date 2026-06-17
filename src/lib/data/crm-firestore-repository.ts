@@ -186,6 +186,9 @@ export const crmFirestoreRepository: CrmRepository = {
   async listTasks(scope, filters) {
     let items = await listScoped<CrmTask>(COLLECTIONS.tasks, scope);
     if (filters?.status) items = items.filter((t) => t.status === filters.status);
+    if (filters?.assignedAgentType) {
+      items = items.filter((t) => t.assignedAgentType === filters.assignedAgentType);
+    }
     return items.sort((a, b) => {
       if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();

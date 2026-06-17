@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/crm", label: "Overview", exact: true },
+  { href: "/crm/leads", label: "Leads" },
   { href: "/crm/contacts", label: "Contacts" },
   { href: "/crm/companies", label: "Companies" },
   { href: "/crm/pipelines", label: "Pipelines" },

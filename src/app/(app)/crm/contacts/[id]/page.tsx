@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { format } from "date-fns";
+import { CrmAiInsightsPanel } from "@/components/crm/crm-ai-insights-panel";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { ScoreContactButton } from "@/components/crm/score-contact-button";
@@ -74,6 +75,8 @@ export default async function ContactDetailPage({
       </header>
       <CrmNav />
       <div className="flex-1 overflow-y-auto p-4 space-y-6 sm:p-6">
+        <CrmAiInsightsPanel contactId={contact.id} />
+
         <div className="grid gap-6 lg:grid-cols-3">
           <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5 lg:col-span-1">
             <h3 className="text-sm font-semibold text-[#F5E6C8]">Details</h3>

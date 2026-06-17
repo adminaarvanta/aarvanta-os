@@ -51,16 +51,16 @@ export default async function CrmOverviewPage() {
       label: "Hot leads (70+)",
       value: hotLeads.length,
       icon: Target,
-      href: "/crm/contacts",
+      href: "/crm/leads",
     },
   ];
 
   return (
     <>
       <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">CRM Engine</h2>
+        <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">CRM</h2>
         <p className="text-xs text-[#A89878] sm:text-sm">
-          Contacts, companies, pipelines, lead scoring, and tasks.
+          Module 3 — leads, contacts, companies, deals, AI scoring, and insights.
         </p>
       </header>
       <CrmNav />

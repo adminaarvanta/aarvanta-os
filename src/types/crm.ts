@@ -102,6 +102,8 @@ export interface CrmTask extends TenantScope {
   accountId?: string;
   dealId?: string;
   assignedTo?: string;
+  assignedAgentType?: string;
+  agentRunId?: string;
   source: TaskSource;
   createdAt: string;
   updatedAt: string;
