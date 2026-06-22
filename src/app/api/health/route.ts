@@ -6,6 +6,7 @@ import {
   getEmailInboundConfig,
 } from "@/lib/channels/resend-client";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
+import { getActiveDatastore, ensureDatastoreReady } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
 
 export async function GET() {
@@ -20,6 +21,24 @@ export async function GET() {
       status: "ok",
       mode,
       datastore: "memory",
+      channels,
+      ai,
+      emailReceiving: receivingStatus,
+      emailInbound,
+    });
+  }
+
+  await ensureDatastoreReady();
+  const activeDatastore = getActiveDatastore();
+
+  if (activeDatastore === "memory") {
+    return NextResponse.json({
+      status: "degraded",
+      mode,
+      datastore: "memory",
+      firestore: "fallback",
+      message:
+        "Firestore unavailable (quota or connectivity). Serving demo data from memory until Firestore recovers.",
       channels,
       ai,
       emailReceiving: receivingStatus,

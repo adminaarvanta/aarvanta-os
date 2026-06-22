@@ -6,7 +6,7 @@ import type {
   CreateNoteInput,
   TenantScope,
 } from "@/types/communication";
-import { isProductionMode } from "@/lib/config/app-mode";
+import { useMemoryDatastore } from "@/lib/data/datastore";
 import { firestoreRepository } from "@/lib/data/firestore-repository";
 import { memoryRepository } from "@/lib/data/memory-repository";
 
@@ -112,5 +112,5 @@ export interface ConversationRepository {
 }
 
 export function getRepository(): ConversationRepository {
-  return isProductionMode() ? firestoreRepository : memoryRepository;
+  return useMemoryDatastore() ? memoryRepository : firestoreRepository;
 }

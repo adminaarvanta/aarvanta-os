@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext } from "@/lib/tenant/context";
@@ -8,6 +9,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
+  await ensureDatastoreReady();
   const production = isProductionMode();
   let tenant = null;
 

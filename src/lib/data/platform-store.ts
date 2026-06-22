@@ -1,4 +1,4 @@
-import { isProductionMode } from "@/lib/config/app-mode";
+import { useMemoryDatastore } from "@/lib/data/datastore";
 import {
   BILLING_PLANS,
   MARKETPLACE_AGENTS,
@@ -78,7 +78,7 @@ function createCrudStore<T extends ScopedEntity>(
   idPrefix: string
 ): ScopedCrudStore<T> {
   const activeStore = () =>
-    isProductionMode() ? repository.firestore : repository.memory;
+    useMemoryDatastore() ? repository.memory : repository.firestore;
 
   return {
     list(scope) {

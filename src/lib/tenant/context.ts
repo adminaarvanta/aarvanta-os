@@ -1,5 +1,6 @@
 import { isDemoMode } from "@/lib/config/app-mode";
 import { getSessionFromCookies, sessionToScope } from "@/lib/auth/session";
+import { ensureDatastoreReady, resolveDataScope } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import {
   DEMO_TENANT,
@@ -41,18 +42,24 @@ async function getDemoScopeFromCookie(): Promise<TenantScope> {
 }
 
 export async function getTenantScope(): Promise<TenantScope> {
-  if (isDemoMode()) return getDemoScopeFromCookie();
+  await ensureDatastoreReady();
+
+  if (isDemoMode()) {
+    return resolveDataScope(await getDemoScopeFromCookie());
+  }
 
   const session = await getSessionFromCookies();
   if (!session) {
     throw new Error("Unauthorized");
   }
-  return sessionToScope(session);
+  return resolveDataScope(sessionToScope(session));
 }
 
 export async function getSessionContext(): Promise<SessionContext> {
+  await ensureDatastoreReady();
+
   if (isDemoMode()) {
-    const scope = await getDemoScopeFromCookie();
+    const scope = resolveDataScope(await getDemoScopeFromCookie());
     const repo = getTenantRepository();
     const member =
       (await repo.getMemberByUser(DEMO_USER.userId, scope)) ?? null;
@@ -71,7 +78,7 @@ export async function getSessionContext(): Promise<SessionContext> {
     throw new Error("Unauthorized");
   }
 
-  const scope = sessionToScope(session);
+  const scope = resolveDataScope(sessionToScope(session));
   const repo = getTenantRepository();
   const member = await repo.getMemberByUser(session.userId, scope);
 
@@ -109,5 +116,5 @@ export function getProductionTenantScope(): TenantScope {
 /** Webhooks use demo tenant in demo mode so inbound events appear in the inbox. */
 export function getWebhookTenantScope(): TenantScope {
   if (isDemoMode()) return DEMO_TENANT;
-  return getProductionTenantScope();
+  return resolveDataScope(getProductionTenantScope());
 }
