@@ -23,7 +23,7 @@ export function BrandLogo({
       width={fullWidth ? 400 : Math.round(height * 1.6)}
       height={fullWidth ? 250 : height}
       className={cn(
-        "object-contain",
+        "object-contain bg-transparent",
         fullWidth ? "h-auto w-full" : "h-auto w-auto",
         className
       )}
