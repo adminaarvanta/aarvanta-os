@@ -5,14 +5,18 @@ export type AgentType =
   | "coo"
   | "sales_manager"
   | "marketing_manager"
-  | "hr_manager";
+  | "hr_manager"
+  | "cfo"
+  | "customer_success_manager";
 
 export type AgentDepartment =
   | "leadership"
   | "operations"
   | "sales"
   | "marketing"
-  | "hr";
+  | "hr"
+  | "finance"
+  | "customer_success";
 
 export type AgentRunStatus = "running" | "completed" | "failed";
 

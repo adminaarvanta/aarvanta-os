@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ROLE_LABELS, type WorkspaceMember } from "@/types/tenant";
-import type { ActivityFeedItem, TeamComment, TeamNote } from "@/types/team";
+import type { ActivityFeedItem, TeamChannel, TeamComment, TeamNote } from "@/types/team";
 import { formatRelative } from "@/lib/utils";
 
 const roleBadge: Record<string, string> = {
@@ -21,16 +21,20 @@ export function TeamClient({
   notes,
   comments,
   activity,
+  channels,
   currentUserId,
 }: {
   members: WorkspaceMember[];
   notes: TeamNote[];
   comments: TeamComment[];
   activity: ActivityFeedItem[];
+  channels: TeamChannel[];
   currentUserId: string;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"directory" | "notes" | "activity">("directory");
+  const [tab, setTab] = useState<"directory" | "channels" | "notes" | "activity">(
+    "directory"
+  );
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -59,6 +63,7 @@ export function TeamClient({
 
   const tabs = [
     { id: "directory" as const, label: "Directory" },
+    { id: "channels" as const, label: "Channels" },
     { id: "notes" as const, label: "Internal Notes" },
     { id: "activity" as const, label: "Activity Feed" },
   ];
@@ -102,6 +107,36 @@ export function TeamClient({
                 <Badge className={roleBadge[m.role] ?? roleBadge.member}>
                   {ROLE_LABELS[m.role]}
                 </Badge>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {tab === "channels" && (
+        <ul className="space-y-3">
+          {channels.map((channel) => (
+            <li
+              key={channel.id}
+              className="rounded-xl border border-[#3d3528] bg-[#101010] p-4"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-medium text-[#F5E6C8]">{channel.name}</p>
+                  <p className="mt-0.5 text-xs text-[#A89878]">{channel.description}</p>
+                  <p className="mt-2 text-sm text-[#A89878]">
+                    {channel.lastMessagePreview}
+                  </p>
+                  <p className="mt-1 text-[10px] text-[#A89878]/70">
+                    {channel.memberCount} members ·{" "}
+                    {formatRelative(channel.lastMessageAt)}
+                  </p>
+                </div>
+                {channel.unreadCount > 0 && (
+                  <Badge className="bg-[#D4AF37]/20 text-[#F9E076] ring-[#D4AF37]/40">
+                    {channel.unreadCount} new
+                  </Badge>
+                )}
               </div>
             </li>
           ))}

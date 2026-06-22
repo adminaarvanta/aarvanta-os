@@ -16,11 +16,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Aarvanta OS — AI Workforce & Business Operating System",
+    default: "Aarvanta OS — Hire Your First AI Workforce",
     template: "%s | Aarvanta OS",
   },
   description:
-    "AI employees, CRM, knowledge hub, projects, and unified inbox — one platform for modern SMEs.",
+    "Run sales, marketing, operations and customer support from one dashboard. CRM, projects, AI employees, and automation for SMEs.",
   icons: {
     icon: "/aarvanta-logo.png",
     apple: "/aarvanta-logo.png",
@@ -34,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full dark`}>
-      <body className="min-h-full bg-black text-[#F5E6C8] antialiased">{children}</body>
+      <body className="h-full min-h-full overflow-x-hidden bg-black text-[#F5E6C8] antialiased">{children}</body>
     </html>
   );
 }

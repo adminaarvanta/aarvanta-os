@@ -19,7 +19,7 @@ export default async function CompaniesPage() {
         </p>
       </header>
       <CrmNav />
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {companies.map((company) => {
             const companyContacts = contacts.filter(

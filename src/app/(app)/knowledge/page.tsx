@@ -41,7 +41,7 @@ export default async function KnowledgePage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-8 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
         <KnowledgeUploadForm />
 
         <section className="grid gap-6 xl:grid-cols-2">

@@ -31,9 +31,9 @@ export function AgentProfileView({
   const [tab, setTab] = useState<AgentProfileTab>("run");
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <AgentProfileTabs active={tab} onChange={setTab} />
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
         {tab === "run" && (
           <>
             <AgentRunPanel

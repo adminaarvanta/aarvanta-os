@@ -44,7 +44,13 @@ export default function PricingPage() {
               ))}
             </ul>
             <Link
-              href={tier.id === "enterprise" ? "/contact" : "/inbox"}
+              href={
+                tier.id === "white-label"
+                  ? "/contact"
+                  : tier.id === "growth"
+                    ? "/demo"
+                    : "/dashboard"
+              }
               className={cn(
                 "mt-6 block rounded-lg py-2.5 text-center text-sm font-semibold",
                 tier.highlighted

@@ -43,7 +43,7 @@ export default async function WorkflowRunPage({
           {run.context.contactName ? ` · ${run.context.contactName}` : ""}
         </p>
       </header>
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
         <ApproveWorkflowButton run={run} />
 
         {run.error && (

@@ -2,28 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody } from "@/lib/api/request";
 import { runAgentCollaboration } from "@/lib/workforce/collaboration";
+import { agentTypeSchema } from "@/lib/workforce/agent-schema";
 import { getSessionContext } from "@/lib/tenant/context";
 
 const schema = z.object({
   title: z.string().min(1),
-  leadAgent: z.enum([
-    "ceo",
-    "coo",
-    "sales_manager",
-    "marketing_manager",
-    "hr_manager",
-  ]),
-  participantAgents: z
-    .array(
-      z.enum([
-        "ceo",
-        "coo",
-        "sales_manager",
-        "marketing_manager",
-        "hr_manager",
-      ])
-    )
-    .min(1),
+  leadAgent: agentTypeSchema,
+  participantAgents: z.array(agentTypeSchema).min(1),
 });
 
 export async function POST(req: Request) {

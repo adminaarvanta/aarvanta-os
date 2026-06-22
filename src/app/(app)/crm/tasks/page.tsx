@@ -20,7 +20,7 @@ export default async function TasksPage() {
         </p>
       </header>
       <CrmNav />
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
         <div className="grid gap-6 lg:grid-cols-3">
           <section>
             <h3 className="mb-2 text-sm font-semibold text-[#F5E6C8]">

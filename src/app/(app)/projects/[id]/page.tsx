@@ -37,7 +37,7 @@ export default async function ProjectDetailPage({
           <p className="mt-1 text-xs text-[#A89878] sm:text-sm">{project.description}</p>
         )}
       </header>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         <ProjectKanbanBoard projectId={project.id} tasks={tasks} />
       </div>
     </>

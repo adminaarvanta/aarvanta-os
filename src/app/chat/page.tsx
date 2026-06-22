@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BrandLogo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
+import { scrollContainerToBottom } from "@/lib/scroll";
 
 type ChatMessage = {
   id: string;
@@ -19,7 +20,7 @@ export default function WebsiteChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/chat/session", { method: "POST" })
@@ -44,7 +45,7 @@ export default function WebsiteChatPage() {
   }, [sessionId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollContainerToBottom(scrollRef.current, messages.length > 0 ? "smooth" : "auto");
   }, [messages]);
 
   async function send(e: React.FormEvent) {
@@ -88,7 +89,11 @@ export default function WebsiteChatPage() {
           <h1 className="mt-2 text-center text-sm font-medium text-[#A89878]">Website chat</h1>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-3">
+        <div
+          ref={scrollRef}
+          data-chat-scroll
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
+        >
           {messages.length === 0 && (
             <p className="text-sm text-[#A89878]">
               Send a message — it will appear in the agent inbox.
@@ -111,7 +116,6 @@ export default function WebsiteChatPage() {
               {m.content}
             </div>
           ))}
-          <div ref={bottomRef} />
         </div>
 
         <form

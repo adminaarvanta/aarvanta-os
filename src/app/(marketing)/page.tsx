@@ -58,18 +58,24 @@ export default function LandingPage() {
             {COMPANY.name}
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-bold leading-tight text-[#F5E6C8] sm:text-5xl lg:text-6xl">
-            The AI Workforce &amp; Business Operating System
+            {COMPANY.tagline}
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-[#A89878]">
-            One platform where AI employees, human teams, knowledge, CRM, projects,
-            and communications work together — built for modern SMEs.
+            {COMPANY.subtagline}. CRM. Projects. Communications. Knowledge.
+            Automation. AI Employees — more revenue, less staff cost, faster growth.
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/dashboard"
+              href="/demo"
               className="inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-6 py-3 text-sm font-semibold text-black hover:bg-[#F9E076]"
             >
-              Launch interactive demo
+              Run 90-second demo
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center rounded-lg border border-[#3d3528] px-6 py-3 text-sm font-semibold text-[#F5E6C8] hover:border-[#D4AF37]/40"
+            >
+              Open dashboard
             </Link>
             <Link
               href="/pricing"
@@ -169,7 +175,7 @@ export default function LandingPage() {
 }
 
 export const metadata = {
-  title: "Aarvanta OS — AI Workforce & Business Operating System",
+  title: "Aarvanta OS — Hire Your First AI Workforce",
   description:
-    "AI employees, CRM, knowledge hub, projects, and unified inbox — one platform for modern SMEs.",
+    "Run sales, marketing, operations and customer support from one dashboard. CRM, projects, AI employees, and automation for SMEs.",
 };

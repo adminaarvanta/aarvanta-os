@@ -53,6 +53,15 @@ export function FounderCommandBar() {
     setActiveIndex(0);
   }, [query]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const grouped = commands.reduce<Record<string, typeof commands>>((acc, cmd) => {
@@ -86,7 +95,7 @@ export function FounderCommandBar() {
           </kbd>
         </div>
 
-        <div className="max-h-72 overflow-y-auto p-2">
+        <div className="max-h-72 overflow-y-auto overscroll-contain p-2">
           {commands.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-[#A89878]">No commands found.</p>
           ) : (

@@ -61,7 +61,18 @@ export type FounderCommandId =
   | "open_integrations"
   | "open_communications"
   | "open_analytics"
-  | "open_settings";
+  | "open_settings"
+  | "open_platform"
+  | "open_billing"
+  | "open_writing"
+  | "open_finance"
+  | "open_hr"
+  | "open_marketplace"
+  | "open_platform_coverage"
+  | "run_demo"
+  | "create_lead"
+  | "create_project"
+  | "generate_proposal";
 
 export interface FounderCommand {
   id: FounderCommandId;

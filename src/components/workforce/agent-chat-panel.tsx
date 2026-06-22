@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AgentChatMessage, AgentType } from "@/types/workforce";
+import { scrollContainerToBottom } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 
 export function AgentChatPanel({
@@ -17,7 +18,7 @@ export function AgentChatPanel({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`/api/workforce/agents/${agentType}/chat`)
@@ -27,7 +28,7 @@ export function AgentChatPanel({
   }, [agentType]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollContainerToBottom(scrollRef.current, messages.length > 0 ? "smooth" : "auto");
   }, [messages, loading]);
 
   async function sendMessage(e: React.FormEvent) {
@@ -86,7 +87,7 @@ export function AgentChatPanel({
   }
 
   return (
-    <section className="flex flex-col rounded-xl border border-[#3d3528] bg-[#101010] overflow-hidden min-h-[420px]">
+    <section className="flex h-[min(520px,60vh)] min-h-[280px] flex-col overflow-hidden rounded-xl border border-[#3d3528] bg-[#101010]">
       <div className="flex items-center justify-between border-b border-[#3d3528] px-4 py-3">
         <div>
           <h3 className="text-sm font-semibold text-[#F5E6C8]">Agent chat</h3>
@@ -106,7 +107,11 @@ export function AgentChatPanel({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[280px] max-h-[480px]">
+      <div
+        ref={scrollRef}
+        data-chat-scroll
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
+      >
         {initialLoading ? (
           <p className="text-sm text-[#A89878]">Loading conversation…</p>
         ) : messages.length === 0 ? (
@@ -134,7 +139,6 @@ export function AgentChatPanel({
             {agentName} is thinking…
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
       <form

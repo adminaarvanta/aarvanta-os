@@ -63,7 +63,7 @@ export default async function ConversationPage({
         </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-        <div className="hidden lg:block w-80 shrink-0 overflow-y-auto border-r border-[#3d3528] bg-[#101010]">
+        <div className="hidden lg:block w-80 shrink-0 min-h-0 overflow-y-auto overscroll-contain border-r border-[#3d3528] bg-[#101010]">
           <ConversationList
             conversations={conversations}
             activeId={conversation.id}

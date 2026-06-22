@@ -33,7 +33,7 @@ export default async function LeadsPage() {
         </p>
       </header>
       <CrmNav />
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         {leads.length === 0 ? (
           <p className="text-sm text-[#A89878]">
             No leads yet. Contacts qualify from inbound conversations or manual

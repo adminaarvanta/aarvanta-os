@@ -79,7 +79,10 @@ export function ConversationDetail({
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0a0a0a] p-4 sm:p-6">
+        <div
+          data-conversation-scroll
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#0a0a0a] p-4 sm:p-6"
+        >
           <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-[#A89878]">
             Conversation timeline
           </p>
@@ -105,7 +108,7 @@ export function ConversationDetail({
         />
       </section>
 
-      <aside className="hidden w-80 shrink-0 space-y-6 overflow-y-auto border-l border-[#3d3528] bg-[#101010] p-4 lg:block">
+      <aside className="hidden w-80 shrink-0 min-h-0 space-y-6 overflow-y-auto overscroll-contain border-l border-[#3d3528] bg-[#101010] p-4 lg:block">
         <ConversationSidebar conversation={conversation} aiStatus={aiStatus} />
       </aside>
     </div>

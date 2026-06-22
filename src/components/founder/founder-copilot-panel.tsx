@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, Sparkles, Sun, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { FounderChatMessage } from "@/types/founder";
+import { scrollContainerToBottom } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 
 export function FounderCopilotPanel({
@@ -14,10 +15,10 @@ export function FounderCopilotPanel({
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollContainerToBottom(scrollRef.current, messages.length > 0 ? "smooth" : "auto");
   }, [messages, loading]);
 
   async function sendMessage(text: string) {
@@ -92,7 +93,7 @@ export function FounderCopilotPanel({
   ];
 
   return (
-    <section className="flex flex-col rounded-xl border border-[#3d3528] bg-[#101010] overflow-hidden min-h-[480px]">
+    <section className="flex h-[min(560px,65vh)] min-h-[320px] flex-col overflow-hidden rounded-xl border border-[#3d3528] bg-[#101010]">
       <div className="flex items-center justify-between border-b border-[#3d3528] px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-[#D4AF37]/15 p-2 ring-1 ring-[#D4AF37]/30">
@@ -132,7 +133,11 @@ export function FounderCopilotPanel({
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[240px] max-h-[420px]">
+      <div
+        ref={scrollRef}
+        data-chat-scroll
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
+      >
         {messages.length === 0 ? (
           <p className="text-sm text-[#A89878]">
             Ask anything about your business — or tap Daily briefing for an AI CEO summary.
@@ -158,7 +163,6 @@ export function FounderCopilotPanel({
             Copilot is thinking…
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
       <form

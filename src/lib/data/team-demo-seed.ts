@@ -1,7 +1,7 @@
 import { DEMO_TENANT } from "@/lib/tenant/demo-context";
 import { DEMO_USER_ID } from "@/lib/data/tenant-demo-seed";
 import { crmNow } from "@/lib/data/crm-helpers";
-import type { ActivityFeedItem, TeamComment, TeamNote } from "@/types/team";
+import type { ActivityFeedItem, TeamChannel, TeamComment, TeamNote } from "@/types/team";
 
 const now = crmNow();
 
@@ -143,6 +143,51 @@ export function buildDemoActivityFeed(): ActivityFeedItem[] {
       entityType: "project_task",
       entityId: "ptask_1",
       createdAt: now,
+    },
+  ];
+}
+
+export function buildDemoTeamChannels(): TeamChannel[] {
+  return [
+    {
+      ...DEMO_TENANT,
+      id: "ch_general",
+      name: "# general",
+      description: "Company-wide announcements and updates",
+      memberCount: 12,
+      lastMessagePreview: "Q2 kickoff slides are in Knowledge Hub.",
+      lastMessageAt: now,
+      unreadCount: 2,
+    },
+    {
+      ...DEMO_TENANT,
+      id: "ch_sales",
+      name: "# sales",
+      description: "Pipeline, deals, and closing coordination",
+      memberCount: 5,
+      lastMessagePreview: "Alex Rivera deal ready for closing call.",
+      lastMessageAt: now,
+      unreadCount: 1,
+    },
+    {
+      ...DEMO_TENANT,
+      id: "ch_delivery",
+      name: "# delivery",
+      description: "Projects, onboarding, and client delivery",
+      memberCount: 7,
+      lastMessagePreview: "Meridian onboarding tasks updated in Project OS.",
+      lastMessageAt: now,
+      unreadCount: 0,
+    },
+    {
+      ...DEMO_TENANT,
+      id: "ch_ai-workforce",
+      name: "# ai-workforce",
+      description: "Agent runs, shared memory, and automation alerts",
+      memberCount: 8,
+      lastMessagePreview: "AI COO flagged 2 overdue provisioning tasks.",
+      lastMessageAt: now,
+      unreadCount: 3,
     },
   ];
 }

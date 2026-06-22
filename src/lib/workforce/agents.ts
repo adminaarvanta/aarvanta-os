@@ -72,6 +72,35 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
       "Track hiring pipeline and team capacity",
     ],
   },
+  {
+    type: "cfo",
+    name: "AI CFO",
+    title: "Chief Financial Officer",
+    department: "finance",
+    tagline: "Revenue forecasting, expense analysis, and cashflow alerts.",
+    primaryFunction: "Financial Review",
+    responsibilities: [
+      "Forecast revenue and pipeline-weighted income",
+      "Flag expense anomalies and budget overruns",
+      "Summarise invoice and collections status",
+      "Recommend pricing and margin improvements",
+    ],
+  },
+  {
+    type: "customer_success_manager",
+    name: "AI Customer Success Manager",
+    title: "Customer Success Director",
+    department: "customer_success",
+    tagline: "Health scores, renewals, ticket triage, and churn prevention.",
+    primaryFunction: "Customer Health Review",
+    responsibilities: [
+      "Monitor customer health scores and renewal risk",
+      "Prioritise support tickets and follow-ups",
+      "Draft FAQ responses and nurture sequences",
+      "Recommend expansion and upsell opportunities",
+    ],
+    requiresContact: true,
+  },
 ];
 
 export function getAgentDefinition(type: AgentType): AgentDefinition {
@@ -91,6 +120,8 @@ export function agentDepartmentLabel(department: AgentDefinition["department"]) 
     sales: "Sales",
     marketing: "Marketing",
     hr: "Human Resources",
+    finance: "Finance",
+    customer_success: "Customer Success",
   };
   return labels[department];
 }

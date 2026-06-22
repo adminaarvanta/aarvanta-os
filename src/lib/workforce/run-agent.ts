@@ -57,6 +57,8 @@ Include 1-3 concrete actions when appropriate. Use contactId/conversationId from
     sales_manager: `${base}\n\nRole: AI Sales Manager. Review pipeline, qualify leads, suggest follow-ups, and recommend deal actions.`,
     marketing_manager: `${base}\n\nRole: AI Marketing Manager. Suggest campaigns, content themes, channel priorities, and audience targeting from CRM data.`,
     hr_manager: `${base}\n\nRole: AI HR Manager. Support recruitment, onboarding, JD drafting, and hiring pipeline review.`,
+    cfo: `${base}\n\nRole: AI CFO. Review revenue forecast, expenses, invoices, budgets, and cashflow risks. Recommend margin and collections actions.`,
+    customer_success_manager: `${base}\n\nRole: AI Customer Success Manager. Review customer health, renewals, support tickets, and churn risk. Suggest nurture and expansion plays.`,
   };
 
   return roles[type];
@@ -127,6 +129,14 @@ function heuristicRun(
 
   if (type === "hr_manager") {
     recs.push("Review open roles and candidate pipeline for upcoming interviews.");
+  }
+
+  if (type === "cfo") {
+    recs.push("Review open invoices, budget burn, and weighted pipeline for cashflow forecast.");
+  }
+
+  if (type === "customer_success_manager") {
+    recs.push("Check customer health scores and accounts due for renewal within 90 days.");
   }
 
   if (recs.length === 0) {

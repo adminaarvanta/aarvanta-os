@@ -6,8 +6,8 @@ export default function InboxLoading() {
     <div className="flex min-h-0 flex-1 flex-col" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading inbox…</span>
       <PageHeaderLoading />
-      <div className="flex flex-1 min-h-0">
-        <div className="w-full shrink-0 overflow-y-auto border-r border-[#3d3528] bg-[#101010] md:w-80">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain border-r border-[#3d3528] bg-[#101010] md:w-80">
           <ul className="divide-y divide-[#3d3528]/80">
             {Array.from({ length: 8 }).map((_, i) => (
               <li key={i} className="px-4 py-3.5 space-y-2">

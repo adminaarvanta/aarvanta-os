@@ -24,7 +24,7 @@ function ListSkeleton() {
 function DetailSkeleton() {
   return (
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="hidden border-b border-[#3d3528] px-6 py-4 lg:block">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="mt-2 h-4 w-64" />
@@ -33,7 +33,7 @@ function DetailSkeleton() {
             <Skeleton className="h-5 w-14 rounded-full" />
           </div>
         </div>
-        <div className="flex-1 space-y-4 p-4 sm:p-6">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6">
           <Skeleton className="h-3 w-36" />
           <div className="space-y-3">
             <Skeleton className="ml-0 mr-16 h-16 rounded-2xl" />
@@ -85,7 +85,7 @@ export function ConversationPageLoading({
       </header>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {showList && (
-          <div className="hidden w-80 shrink-0 overflow-y-auto border-r border-[#3d3528] bg-[#101010] lg:block">
+          <div className="hidden w-80 shrink-0 min-h-0 overflow-y-auto overscroll-contain border-r border-[#3d3528] bg-[#101010] lg:block">
             <ListSkeleton />
           </div>
         )}
@@ -116,7 +116,7 @@ export function CrmOverviewLoading() {
           ))}
         </div>
       </div>
-      <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-4 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
@@ -144,7 +144,7 @@ export function CrmListLoading() {
           ))}
         </div>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-6">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-28 rounded-xl" />
         ))}

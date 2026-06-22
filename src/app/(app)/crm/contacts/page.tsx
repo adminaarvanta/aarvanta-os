@@ -71,7 +71,7 @@ export default async function ContactsPage() {
         </p>
       </header>
       <CrmNav />
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         <div className="space-y-3 md:hidden">
           {contacts.map((contact) => (
             <ContactCard

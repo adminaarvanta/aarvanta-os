@@ -28,7 +28,7 @@ export default async function IntegrationsPage() {
           Connect Gmail, Calendar, Slack, WhatsApp, Stripe, and more.
         </p>
       </header>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         <IntegrationsClient providers={providers} />
       </div>
     </>

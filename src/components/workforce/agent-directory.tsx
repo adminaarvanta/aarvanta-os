@@ -2,9 +2,11 @@ import Link from "next/link";
 import {
   Briefcase,
   Crown,
+  Headphones,
   Megaphone,
   Settings2,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -20,6 +22,8 @@ const icons: Record<AgentType, LucideIcon> = {
   sales_manager: Briefcase,
   marketing_manager: Megaphone,
   hr_manager: Users,
+  cfo: Wallet,
+  customer_success_manager: Headphones,
 };
 
 const departmentOrder: AgentDefinition["department"][] = [
@@ -28,6 +32,8 @@ const departmentOrder: AgentDefinition["department"][] = [
   "sales",
   "marketing",
   "hr",
+  "finance",
+  "customer_success",
 ];
 
 export function AgentDirectory() {

@@ -56,3 +56,14 @@ export interface ActivityFeedItem extends TenantScope {
   metadata?: Record<string, string>;
   createdAt: string;
 }
+
+/** Internal company channels — Layer 8 (demo scaffold). */
+export interface TeamChannel extends TenantScope {
+  id: string;
+  name: string;
+  description: string;
+  memberCount: number;
+  lastMessagePreview: string;
+  lastMessageAt: string;
+  unreadCount: number;
+}

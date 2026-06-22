@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import {
   Bot,
   Calendar,
@@ -10,6 +10,7 @@ import {
   StickyNote,
 } from "lucide-react";
 import { CHANNEL_LABELS } from "@/lib/constants";
+import { scrollContainerToBottom } from "@/lib/scroll";
 import { cn, formatRelative } from "@/lib/utils";
 import type { TimelineEvent } from "@/types/communication";
 
@@ -141,16 +142,16 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
 }
 
 export function ConversationTimeline({ events }: { events: TimelineEvent[] }) {
-  const bottomRef = useRef<HTMLDivElement>(null);
   const sorted = [...events].sort(
     (a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime()
   );
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: sorted.length > 1 ? "smooth" : "auto",
-      block: "end",
-    });
+    const container = document.querySelector<HTMLElement>("[data-conversation-scroll]");
+    scrollContainerToBottom(
+      container,
+      sorted.length > 1 ? "smooth" : "auto"
+    );
   }, [sorted.length, sorted.at(-1)?.id]);
 
   return (
@@ -158,7 +159,6 @@ export function ConversationTimeline({ events }: { events: TimelineEvent[] }) {
       {sorted.map((event) => (
         <TimelineItem key={event.id} event={event} />
       ))}
-      <div ref={bottomRef} className="h-px shrink-0" aria-hidden />
     </div>
   );
 }

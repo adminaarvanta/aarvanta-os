@@ -2,9 +2,11 @@ import Link from "next/link";
 import {
   Briefcase,
   Crown,
+  Headphones,
   Megaphone,
   Settings2,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { RunAgentButton } from "@/components/workforce/run-agent-button";
@@ -16,6 +18,8 @@ const icons: Record<AgentType, LucideIcon> = {
   sales_manager: Briefcase,
   marketing_manager: Megaphone,
   hr_manager: Users,
+  cfo: Wallet,
+  customer_success_manager: Headphones,
 };
 
 export function AgentCard({ agent }: { agent: AgentDefinition }) {

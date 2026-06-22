@@ -52,7 +52,7 @@ export default async function RunDetailPage({
           {run.inputSummary && ` · ${run.inputSummary}`}
         </p>
       </header>
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
         {run.status === "failed" && run.error && (
           <div className="rounded-xl border border-red-800/50 bg-red-950/30 p-4 text-sm text-red-300">
             {run.error}

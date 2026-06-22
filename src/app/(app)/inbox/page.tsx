@@ -17,8 +17,8 @@ export default async function InboxPage() {
           WhatsApp, email, voice, SMS, and website chat in one place.
         </p>
       </header>
-      <div className="flex min-h-0 flex-1">
-        <div className="w-full shrink-0 overflow-y-auto bg-[#101010] md:w-80 md:border-r md:border-[#3d3528]">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain bg-[#101010] md:w-80 md:border-r md:border-[#3d3528]">
           <ConversationList conversations={conversations} />
         </div>
         <section className="hidden flex-1 flex-col items-center justify-center bg-[#101010] text-[#A89878] md:flex">
