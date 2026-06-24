@@ -1,7 +1,6 @@
-import { isDemoMode, isProductionMode } from "@/lib/config/app-mode";
+import { cache } from "react";
+import { isDemoMode } from "@/lib/config/app-mode";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
-import { DEMO_TENANT } from "@/lib/tenant/demo-context";
-import type { TenantScope } from "@/types/communication";
 
 export type DatastoreBackend = "memory" | "firestore";
 
@@ -38,7 +37,7 @@ export function getActiveDatastore(): DatastoreBackend {
   return useMemoryDatastore() ? "memory" : "firestore";
 }
 
-export async function ensureDatastoreReady(): Promise<DatastoreBackend> {
+export const ensureDatastoreReady = cache(async (): Promise<DatastoreBackend> => {
   if (isDemoMode()) {
     backend = "memory";
     return backend;
@@ -61,7 +60,7 @@ export async function ensureDatastoreReady(): Promise<DatastoreBackend> {
   }
 
   return probePromise;
-}
+});
 
 async function probeFirestore(): Promise<DatastoreBackend> {
   if (!isFirebaseConfigured()) {
@@ -85,12 +84,4 @@ async function probeFirestore(): Promise<DatastoreBackend> {
   }
 
   return backend!;
-}
-
-/** Memory stores are seeded with demo tenant ids — map prod scope when falling back. */
-export function resolveDataScope(scope: TenantScope): TenantScope {
-  if (isProductionMode() && useMemoryDatastore()) {
-    return DEMO_TENANT;
-  }
-  return scope;
 }

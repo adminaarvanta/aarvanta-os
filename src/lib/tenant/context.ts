@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { getSessionFromCookies, sessionToScope } from "@/lib/auth/session";
-import { ensureDatastoreReady, resolveDataScope } from "@/lib/data/datastore";
+import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import {
   DEMO_TENANT,
@@ -20,6 +21,8 @@ export interface SessionContext {
   scope: TenantScope;
   member: WorkspaceMember | null;
 }
+
+const getSessionFromCookiesCached = cache(getSessionFromCookies);
 
 async function getDemoScopeFromCookie(): Promise<TenantScope> {
   const cookieStore = await cookies();
@@ -41,25 +44,25 @@ async function getDemoScopeFromCookie(): Promise<TenantScope> {
   return DEMO_TENANT;
 }
 
-export async function getTenantScope(): Promise<TenantScope> {
+export const getTenantScope = cache(async (): Promise<TenantScope> => {
   await ensureDatastoreReady();
 
   if (isDemoMode()) {
-    return resolveDataScope(await getDemoScopeFromCookie());
+    return getDemoScopeFromCookie();
   }
 
-  const session = await getSessionFromCookies();
+  const session = await getSessionFromCookiesCached();
   if (!session) {
     throw new Error("Unauthorized");
   }
-  return resolveDataScope(sessionToScope(session));
-}
+  return sessionToScope(session);
+});
 
-export async function getSessionContext(): Promise<SessionContext> {
+export const getSessionContext = cache(async (): Promise<SessionContext> => {
   await ensureDatastoreReady();
 
   if (isDemoMode()) {
-    const scope = resolveDataScope(await getDemoScopeFromCookie());
+    const scope = await getDemoScopeFromCookie();
     const repo = getTenantRepository();
     const member =
       (await repo.getMemberByUser(DEMO_USER.userId, scope)) ?? null;
@@ -73,24 +76,22 @@ export async function getSessionContext(): Promise<SessionContext> {
     };
   }
 
-  const session = await getSessionFromCookies();
+  const session = await getSessionFromCookiesCached();
   if (!session) {
     throw new Error("Unauthorized");
   }
 
-  const scope = resolveDataScope(sessionToScope(session));
-  const repo = getTenantRepository();
-  const member = await repo.getMemberByUser(session.userId, scope);
+  const scope = sessionToScope(session);
 
   return {
     userId: session.userId,
     email: session.email,
     name: session.name,
-    role: member?.role ?? session.role,
+    role: session.role,
     scope,
-    member: member ?? null,
+    member: null,
   };
-}
+});
 
 export async function requirePermission(permission: Permission) {
   const ctx = await getSessionContext();
@@ -102,7 +103,7 @@ export async function requirePermission(permission: Permission) {
 
 export async function getOptionalSession() {
   if (isDemoMode()) return null;
-  return getSessionFromCookies();
+  return getSessionFromCookiesCached();
 }
 
 export function getProductionTenantScope(): TenantScope {
@@ -116,5 +117,5 @@ export function getProductionTenantScope(): TenantScope {
 /** Webhooks use demo tenant in demo mode so inbound events appear in the inbox. */
 export function getWebhookTenantScope(): TenantScope {
   if (isDemoMode()) return DEMO_TENANT;
-  return resolveDataScope(getProductionTenantScope());
+  return getProductionTenantScope();
 }

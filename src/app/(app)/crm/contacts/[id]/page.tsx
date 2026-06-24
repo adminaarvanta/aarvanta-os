@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { format } from "date-fns";
+import { ContactManualPanel } from "@/components/crm/contact-manual-panel";
 import { CrmAiInsightsPanel } from "@/components/crm/crm-ai-insights-panel";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { ScoreContactButton } from "@/components/crm/score-contact-button";
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { activeMemberOptions, memberNameByUserId } from "@/lib/crm/members";
 import { getRepository } from "@/lib/data/repository";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getTenantRepository } from "@/lib/data/tenant-store";
+import { getSessionContext } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,8 +18,9 @@ export default async function ContactDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const scope = await getTenantScope();
+  const ctx = await getSessionContext();
   const { id } = await params;
+  const scope = ctx.scope;
   const repo = getCrmRepository();
 
   const contact = await repo.getContact(id, scope);
@@ -26,23 +30,23 @@ export default async function ContactDetailPage({
     );
   }
 
-  const [company, activities, allDeals, allTasks, conversations] =
+  const [company, companies, activities, deals, tasks, members, ...linkedById] =
     await Promise.all([
       contact.accountId ? repo.getCompany(contact.accountId, scope) : null,
+      repo.listCompanies(scope),
       repo.listActivities(scope, { contactId: id }),
-      repo.listDeals(scope),
-      repo.listTasks(scope),
-      getRepository().listConversations(scope),
+      repo.listDeals(scope, { contactId: id }),
+      repo.listTasks(scope, { contactId: id }),
+      getTenantRepository().listMembers(scope),
+      ...contact.conversationIds.map((cid) =>
+        getRepository().getConversation(cid, scope)
+      ),
     ]);
 
-  const deals = allDeals.filter((d) => d.contactId === id);
-  const tasks = allTasks.filter((t) => t.contactId === id);
-  const linkedConversations = conversations.filter(
-    (c) =>
-      contact.conversationIds.includes(c.id) ||
-      (contact.email &&
-        c.contact.email?.toLowerCase() === contact.email.toLowerCase()) ||
-      (contact.phone && c.contact.phone === contact.phone)
+  const memberOptions = activeMemberOptions(members);
+
+  const linkedConversations = linkedById.filter(
+    (c): c is NonNullable<typeof c> => c !== null
   );
 
   return (
@@ -61,7 +65,19 @@ export default async function ContactDetailPage({
             </h2>
             <p className="text-xs text-[#A89878] sm:text-sm">
               {contact.jobTitle}
-              {company ? ` · ${company.name}` : ""}
+              {company ? (
+                <>
+                  {" · "}
+                  <Link
+                    href={`/crm/companies/${company.id}`}
+                    className="text-[#D4AF37] hover:underline"
+                  >
+                    {company.name}
+                  </Link>
+                </>
+              ) : (
+                ""
+              )}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -75,6 +91,13 @@ export default async function ContactDetailPage({
       </header>
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
+        <ContactManualPanel
+          contact={contact}
+          companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          members={memberOptions}
+          currentUserId={ctx.userId}
+        />
+
         <CrmAiInsightsPanel contactId={contact.id} />
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -88,6 +111,10 @@ export default async function ContactDetailPage({
               <div>
                 <dt className="text-[#A89878]">Phone</dt>
                 <dd>{contact.phone ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-[#A89878]">Owner</dt>
+                <dd>{memberNameByUserId(members, contact.ownerId)}</dd>
               </div>
               <div>
                 <dt className="text-[#A89878]">Purchase total</dt>
@@ -133,7 +160,8 @@ export default async function ContactDetailPage({
                         Inbox thread
                       </p>
                       <p className="text-xs text-[#A89878]">
-                        {conv.channels.join(", ")} · {conv.timeline.length} events
+                        {conv.channels.join(", ")} ·{" "}
+                        {conv.timelineEventCount ?? conv.timeline.length} events
                       </p>
                     </Link>
                   </li>
@@ -148,14 +176,16 @@ export default async function ContactDetailPage({
             <h3 className="text-sm font-semibold text-[#F5E6C8]">Opportunities</h3>
             <ul className="mt-3 space-y-2">
               {deals.map((deal) => (
-                <li
-                  key={deal.id}
-                  className="flex flex-col gap-1 rounded-lg border border-[#3d3528] px-3 py-2 text-sm sm:flex-row sm:justify-between sm:gap-2"
-                >
-                  <span>{deal.title}</span>
-                  <span className="font-medium text-[#D4AF37]">
-                    £{deal.value.toLocaleString()}
-                  </span>
+                <li key={deal.id}>
+                  <Link
+                    href={`/crm/deals/${deal.id}`}
+                    className="flex flex-col gap-1 rounded-lg border border-[#3d3528] px-3 py-2 text-sm transition-colors hover:bg-[#141414] sm:flex-row sm:justify-between sm:gap-2"
+                  >
+                    <span>{deal.title}</span>
+                    <span className="font-medium text-[#D4AF37]">
+                      £{deal.value.toLocaleString()}
+                    </span>
+                  </Link>
                 </li>
               ))}
               {deals.length === 0 && (

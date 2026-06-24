@@ -30,10 +30,14 @@ export async function GET(req: Request) {
     | "in_progress"
     | "done"
     | null;
+  const assignedTo = new URL(req.url).searchParams.get("assignedTo") ?? undefined;
 
   const tasks = await getCrmRepository().listTasks(
     scope,
-    status ? { status } : undefined
+    {
+      ...(status ? { status } : {}),
+      ...(assignedTo ? { assignedTo } : {}),
+    }
   );
   return NextResponse.json({ tasks });
 }

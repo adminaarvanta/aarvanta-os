@@ -15,6 +15,11 @@ const PUBLIC_PREFIXES = [
   "/api/contact",
 ];
 
+function isLiveDemoPublic(pathname: string) {
+  if (process.env.ENABLE_LIVE_DEMO !== "true") return false;
+  return pathname === "/demo" || pathname.startsWith("/api/demo/");
+}
+
 function isProductionMode() {
   return process.env.APP_MODE === "production";
 }
@@ -44,7 +49,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (isPublicPath(pathname)) {
+  if (isPublicPath(pathname) || isLiveDemoPublic(pathname)) {
     return NextResponse.next();
   }
 

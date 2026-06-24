@@ -1,11 +1,43 @@
 import type { TenantScope } from "@/types/communication";
+import { isProductionMode } from "@/lib/config/app-mode";
+import { useMemoryDatastore } from "@/lib/data/datastore";
+import { DEMO_TENANT } from "@/lib/tenant/demo-context";
 
-export function inCrmScope<T extends TenantScope>(record: T, scope: TenantScope) {
+function scopesMatch(a: TenantScope, b: TenantScope) {
   return (
-    record.tenantId === scope.tenantId &&
-    record.workspaceId === scope.workspaceId &&
-    record.companyId === scope.companyId
+    a.tenantId === b.tenantId &&
+    a.workspaceId === b.workspaceId &&
+    a.companyId === b.companyId
   );
+}
+
+function productionTenantScope(): TenantScope | null {
+  const tenantId = process.env.TENANT_ID;
+  const workspaceId = process.env.WORKSPACE_ID;
+  const companyId = process.env.COMPANY_ID;
+  if (!tenantId || !workspaceId || !companyId) return null;
+  return { tenantId, workspaceId, companyId };
+}
+
+/** Match tenant scope, including demo ↔ production aliasing during memory fallback. */
+export function inCrmScope<T extends TenantScope>(record: T, scope: TenantScope) {
+  if (scopesMatch(record, scope)) return true;
+
+  if (isProductionMode() && useMemoryDatastore()) {
+    const prod = productionTenantScope();
+    if (!prod) return false;
+
+    const recordIsDemo = scopesMatch(record, DEMO_TENANT);
+    const scopeIsProd = scopesMatch(scope, prod);
+    const recordIsProd = scopesMatch(record, prod);
+    const scopeIsDemo = scopesMatch(scope, DEMO_TENANT);
+
+    if ((recordIsDemo && scopeIsProd) || (recordIsProd && scopeIsDemo)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function crmNewId(prefix: string) {

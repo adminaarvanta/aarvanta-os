@@ -41,17 +41,33 @@ export async function runGlobalSearch(
     return features;
   }
 
+  if (q.length < 2) {
+    return features;
+  }
+
   const crm = getCrmRepository();
+  const loadHeavyCollections = q.length >= 3;
+
   const [contacts, companies, deals, projects, documents, conversations, workflows, proposals] =
     await Promise.all([
       crm.listContacts(scope),
       crm.listCompanies(scope),
       crm.listDeals(scope),
-      getProjectRepository().listProjects(scope),
-      getKnowledgeRepository().listDocuments(scope),
-      getRepository().listConversations(scope),
-      getWorkflowRepository().listWorkflows(scope),
-      listProposalDocuments(scope),
+      loadHeavyCollections
+        ? getProjectRepository().listProjects(scope)
+        : Promise.resolve([]),
+      loadHeavyCollections
+        ? getKnowledgeRepository().listDocuments(scope)
+        : Promise.resolve([]),
+      loadHeavyCollections
+        ? getRepository().listConversations(scope)
+        : Promise.resolve([]),
+      loadHeavyCollections
+        ? getWorkflowRepository().listWorkflows(scope)
+        : Promise.resolve([]),
+      loadHeavyCollections
+        ? listProposalDocuments(scope)
+        : Promise.resolve([]),
     ]);
 
   const records: GlobalSearchResult[] = [];
@@ -88,7 +104,7 @@ export async function runGlobalSearch(
         group: "CRM",
         title: company.name,
         subtitle: company.domain ?? company.industry ?? "Company",
-        href: "/crm/companies",
+        href: `/crm/companies/${company.id}`,
       });
     }
   }

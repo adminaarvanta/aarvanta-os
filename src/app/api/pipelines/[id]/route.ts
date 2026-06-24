@@ -20,6 +20,6 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const deals = await getCrmRepository().listDeals(scope, id);
+  const deals = await getCrmRepository().listDeals(scope, { pipelineId: id });
   return NextResponse.json({ pipeline, deals });
 }

@@ -7,6 +7,7 @@ import {
 } from "@/lib/data/tenant-demo-seed";
 import type {
   CreateInvitationInput,
+  CreateMemberInput,
   TenantRepository,
 } from "@/lib/data/tenant-repository";
 import type { TenantScope } from "@/types/communication";
@@ -158,6 +159,31 @@ export const tenantMemoryRepository: TenantRepository = {
 
   async listMembershipsForUser(userId) {
     return members.filter((m) => m.userId === userId && m.status === "active");
+  },
+
+  async createMember(input, scope) {
+    const existing = members.find(
+      (m) =>
+        m.userId === input.userId &&
+        inCrmScope(m, scope) &&
+        m.status === "active"
+    );
+    if (existing) return existing;
+
+    const now = crmNow();
+    const member = {
+      ...scope,
+      id: crmNewId("member"),
+      userId: input.userId,
+      email: input.email,
+      name: input.name,
+      role: input.role,
+      status: "active" as const,
+      joinedAt: now,
+      updatedAt: now,
+    };
+    members.push(member);
+    return member;
   },
 };
 

@@ -48,7 +48,7 @@ export default function PricingPage() {
                 tier.id === "white-label"
                   ? "/contact"
                   : tier.id === "growth"
-                    ? "/demo"
+                    ? "/dashboard?help=live"
                     : "/dashboard"
               }
               className={cn(

@@ -60,4 +60,47 @@ export const DEMO_CONVERSATIONS: Conversation[] = [
       },
     ],
   },
+  {
+    ...base,
+    id: "conv_whatsapp_sarah",
+    contact: {
+      id: "contact_sarah",
+      name: "Sarah Chen",
+      email: "sarah.chen@meridianconsulting.co.uk",
+      phone: "+447700900123",
+    },
+    channels: ["whatsapp"],
+    tags: ["hot_lead", "follow_up"],
+    sentiment: "positive",
+    aiSummary:
+      "Sarah from Meridian Consulting asked about Enterprise pricing. Proposal sent — awaiting board approval.",
+    aiQualificationScore: 82,
+    aiSummaryUpdatedAt: "2026-06-14T09:20:00Z",
+    unreadCount: 1,
+    lastActivityAt: "2026-06-14T09:20:00Z",
+    assignedTo: "admin",
+    updatedAt: "2026-06-14T09:20:00Z",
+    timeline: [
+      {
+        id: "evt_wa_sarah_1",
+        type: "message",
+        direction: "inbound",
+        channel: "whatsapp",
+        content:
+          "Hi — we're Meridian Consulting. Can you share Enterprise pricing and a proposal timeline?",
+        occurredAt: "2026-06-13T15:40:00Z",
+        authorName: "Sarah Chen",
+      },
+      {
+        id: "evt_wa_sarah_2",
+        type: "message",
+        direction: "outbound",
+        channel: "whatsapp",
+        content:
+          "Thanks Sarah — proposal sent for £48k Enterprise. Let me know when your board meets.",
+        occurredAt: "2026-06-14T09:20:00Z",
+        authorName: "Aarvanta",
+      },
+    ],
+  },
 ];

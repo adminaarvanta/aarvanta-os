@@ -14,6 +14,7 @@ import {
   normalizeEmail,
   normalizePhone,
 } from "@/lib/data/conversation-helpers";
+import { toConversationListItem } from "@/lib/data/conversation-list-helpers";
 import type { ConversationRepository } from "@/lib/data/repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type {
@@ -67,11 +68,13 @@ async function listScoped(scope: TenantScope) {
 export const firestoreRepository: ConversationRepository = {
   async listConversations(scope) {
     const items = await listScoped(scope);
-    return items.sort(
-      (a, b) =>
-        new Date(b.lastActivityAt).getTime() -
-        new Date(a.lastActivityAt).getTime()
-    );
+    return items
+      .sort(
+        (a, b) =>
+          new Date(b.lastActivityAt).getTime() -
+          new Date(a.lastActivityAt).getTime()
+      )
+      .map(toConversationListItem);
   },
 
   async getConversation(id, scope) {

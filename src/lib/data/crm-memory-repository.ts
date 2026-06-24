@@ -38,8 +38,12 @@ function scoped<T extends { tenantId: string; workspaceId: string; companyId: st
 }
 
 export const crmMemoryRepository: CrmRepository = {
-  async listContacts(scope) {
-    return scoped(contacts, scope).sort(
+  async listContacts(scope, filters) {
+    let items = scoped(contacts, scope);
+    if (filters?.accountId) {
+      items = items.filter((c) => c.accountId === filters.accountId);
+    }
+    return items.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
   },
@@ -125,9 +129,17 @@ export const crmMemoryRepository: CrmRepository = {
     return item && inCrmScope(item, scope) ? item : null;
   },
 
-  async listDeals(scope, pipelineId) {
+  async listDeals(scope, filters) {
     let items = scoped(deals, scope);
-    if (pipelineId) items = items.filter((d) => d.pipelineId === pipelineId);
+    if (filters?.pipelineId) {
+      items = items.filter((d) => d.pipelineId === filters.pipelineId);
+    }
+    if (filters?.contactId) {
+      items = items.filter((d) => d.contactId === filters.contactId);
+    }
+    if (filters?.accountId) {
+      items = items.filter((d) => d.accountId === filters.accountId);
+    }
     return items.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
@@ -167,6 +179,15 @@ export const crmMemoryRepository: CrmRepository = {
     if (filters?.status) items = items.filter((t) => t.status === filters.status);
     if (filters?.assignedAgentType) {
       items = items.filter((t) => t.assignedAgentType === filters.assignedAgentType);
+    }
+    if (filters?.assignedTo) {
+      items = items.filter((t) => t.assignedTo === filters.assignedTo);
+    }
+    if (filters?.contactId) {
+      items = items.filter((t) => t.contactId === filters.contactId);
+    }
+    if (filters?.dealId) {
+      items = items.filter((t) => t.dealId === filters.dealId);
     }
     return items.sort((a, b) => {
       if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);

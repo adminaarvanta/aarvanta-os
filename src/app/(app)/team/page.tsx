@@ -3,6 +3,7 @@ import { TeamClient } from "@/components/team/team-client";
 import { buildDemoTeamChannels } from "@/lib/data/team-demo-seed";
 import { getTeamRepository } from "@/lib/data/team-store";
 import { getTenantRepository } from "@/lib/data/tenant-store";
+import { can } from "@/lib/tenant/permissions";
 import { getSessionContext } from "@/lib/tenant/context";
 
 export default async function TeamPage() {
@@ -10,11 +11,12 @@ export default async function TeamPage() {
   const teamRepo = getTeamRepository();
   const tenantRepo = getTenantRepository();
 
-  const [notes, comments, activity, members] = await Promise.all([
+  const [notes, comments, activity, members, invitations] = await Promise.all([
     teamRepo.listNotes(ctx.scope),
     teamRepo.listComments(ctx.scope),
     teamRepo.listActivity(ctx.scope),
     tenantRepo.listMembers(ctx.scope),
+    tenantRepo.listInvitations(ctx.scope),
   ]);
 
   const channels = buildDemoTeamChannels();
@@ -27,7 +29,7 @@ export default async function TeamPage() {
           Team
         </h2>
         <p className="text-xs text-[#A89878] sm:text-sm">
-          Directory, internal channels, notes, comments, @mentions, and activity feed.
+          Set up your team, assign CRM work manually, and collaborate with notes and activity.
         </p>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
@@ -38,6 +40,9 @@ export default async function TeamPage() {
           activity={activity}
           channels={channels}
           currentUserId={ctx.userId}
+          invitations={invitations}
+          canInvite={can(ctx.role, "members:invite")}
+          canManageMembers={can(ctx.role, "members:manage")}
         />
       </div>
     </>

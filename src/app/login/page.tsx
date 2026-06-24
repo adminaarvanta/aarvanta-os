@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { LoginPageShell } from "@/components/auth/login-page";
+import { isDemoMode } from "@/lib/config/app-mode";
 
 export default async function LoginPage({
   searchParams,
@@ -6,5 +8,11 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
-  return <LoginPageShell nextPath={next ?? "/dashboard"} />;
+  const nextPath = next ?? "/dashboard";
+
+  if (isDemoMode()) {
+    redirect(nextPath);
+  }
+
+  return <LoginPageShell nextPath={nextPath} />;
 }

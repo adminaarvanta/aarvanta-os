@@ -83,7 +83,7 @@ export function searchFeatures(query: string, limit = 8): GlobalSearchResult[] {
       "/knowledge",
       "/projects",
       "/workflows",
-      "/demo",
+      "/dashboard?help=open",
     ];
     const picked: GlobalSearchResult[] = [];
     for (const href of priority) {

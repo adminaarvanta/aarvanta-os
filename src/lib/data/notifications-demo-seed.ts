@@ -24,7 +24,7 @@ export function buildDemoNotifications(): AppNotification[] {
       kind: "alert",
       priority: "high",
       title: "3 deals require attention",
-      body: "Northstar Digital, Meridian Consulting, and Apex Labs need follow-up this week.",
+      body: "Northstar Digital, Meridian Consulting, and Brightpath need follow-up this week.",
       read: false,
       actionUrl: "/crm/pipelines",
       source: "crm",

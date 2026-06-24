@@ -1,16 +1,21 @@
 import Link from "next/link";
 import { CrmNav } from "@/components/crm/crm-nav";
+import { CreateContactForm } from "@/components/crm/create-contact-form";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { activeMemberOptions, memberNameByUserId } from "@/lib/crm/members";
+import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { contactDisplayName, type CrmContact } from "@/types/crm";
 
 function ContactCard({
   contact,
   companyName,
+  ownerName,
 }: {
   contact: CrmContact;
   companyName: string;
+  ownerName: string;
 }) {
   return (
     <Link
@@ -45,6 +50,10 @@ function ContactCard({
             <dd className="mt-0.5 break-all text-[#F5E6C8]">{contact.email}</dd>
           </div>
         )}
+        <div>
+          <dt className="text-[10px] uppercase tracking-wide">Owner</dt>
+          <dd className="mt-0.5 text-[#F5E6C8]">{ownerName}</dd>
+        </div>
       </dl>
     </Link>
   );
@@ -52,14 +61,21 @@ function ContactCard({
 
 export default async function ContactsPage() {
   const scope = await getTenantScope();
-  const [contacts, companies] = await Promise.all([
+  const [contacts, companies, members] = await Promise.all([
     getCrmRepository().listContacts(scope),
     getCrmRepository().listCompanies(scope),
+    getTenantRepository().listMembers(scope),
   ]);
+
+  const memberOptions = activeMemberOptions(members);
 
   function companyName(id?: string) {
     if (!id) return "—";
     return companies.find((c) => c.id === id)?.name ?? "—";
+  }
+
+  function ownerName(id?: string) {
+    return memberNameByUserId(members, id);
   }
 
   return (
@@ -71,13 +87,19 @@ export default async function ContactsPage() {
         </p>
       </header>
       <CrmNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
+        <CreateContactForm
+          members={memberOptions}
+          companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+        />
+
         <div className="space-y-3 md:hidden">
           {contacts.map((contact) => (
             <ContactCard
               key={contact.id}
               contact={contact}
               companyName={companyName(contact.accountId)}
+              ownerName={ownerName(contact.ownerId)}
             />
           ))}
           {contacts.length === 0 && (
@@ -97,6 +119,7 @@ export default async function ContactsPage() {
                   <th className="px-4 py-3 font-medium">Company</th>
                   <th className="px-4 py-3 font-medium">Email</th>
                   <th className="px-4 py-3 font-medium">Lead score</th>
+                  <th className="px-4 py-3 font-medium">Owner</th>
                   <th className="px-4 py-3 font-medium">Purchases</th>
                 </tr>
               </thead>
@@ -122,6 +145,9 @@ export default async function ContactsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <LeadScoreBadge score={contact.leadScore} />
+                    </td>
+                    <td className="px-4 py-3 text-[#A89878]">
+                      {ownerName(contact.ownerId)}
                     </td>
                     <td className="px-4 py-3 text-[#A89878]">
                       {contact.purchaseTotal > 0

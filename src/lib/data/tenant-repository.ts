@@ -55,4 +55,15 @@ export interface TenantRepository {
   acceptInvitation(token: string): Promise<Invitation | null>;
 
   listMembershipsForUser(userId: string): Promise<WorkspaceMember[]>;
+  createMember(
+    input: CreateMemberInput,
+    scope: TenantScope
+  ): Promise<WorkspaceMember>;
 }
+
+export type CreateMemberInput = {
+  userId: string;
+  email: string;
+  name: string;
+  role: MemberRole;
+};

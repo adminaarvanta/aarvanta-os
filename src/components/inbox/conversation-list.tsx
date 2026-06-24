@@ -6,33 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { CHANNEL_LABELS, TAG_LABELS } from "@/lib/constants";
 import { cn, formatRelative } from "@/lib/utils";
 import { SentimentBadge } from "@/components/inbox/sentiment-badge";
+import { conversationListPreview } from "@/lib/data/conversation-list-helpers";
 import type { Conversation } from "@/types/communication";
-
-function lastPreview(conv: Conversation): string {
-  const last = [...conv.timeline].sort(
-    (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
-  )[0];
-  if (!last) return "No activity";
-  switch (last.type) {
-    case "message":
-      return last.content;
-    case "email":
-      return last.subject;
-    case "call":
-      return last.summary ?? "Phone call";
-    case "note":
-      return `Note: ${last.content}`;
-    case "meeting":
-      return `Meeting: ${last.title}`;
-    default:
-      return "";
-  }
-}
 
 export function ConversationList({
   conversations: initialConversations,
   activeId,
-  pollMs = 8000,
+  pollMs = 30000,
 }: {
   conversations: Conversation[];
   activeId?: string;
@@ -48,8 +28,10 @@ export function ConversationList({
     if (pollMs <= 0) return;
 
     let cancelled = false;
+    let interval: number | undefined;
 
     async function refresh() {
+      if (document.visibilityState === "hidden") return;
       try {
         const response = await fetch("/api/conversations");
         if (!response.ok || cancelled) return;
@@ -60,10 +42,35 @@ export function ConversationList({
       }
     }
 
-    const interval = window.setInterval(refresh, pollMs);
+    function startPolling() {
+      if (interval !== undefined) return;
+      interval = window.setInterval(refresh, pollMs);
+    }
+
+    function stopPolling() {
+      if (interval === undefined) return;
+      window.clearInterval(interval);
+      interval = undefined;
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void refresh();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    }
+
+    if (document.visibilityState === "visible") {
+      startPolling();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [pollMs, activeId]);
 
@@ -91,7 +98,7 @@ export function ConversationList({
                 )}
               </div>
               <p className="mt-0.5 line-clamp-2 text-xs text-[#A89878]">
-                {lastPreview(conv)}
+                {conversationListPreview(conv)}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Badge className="bg-[#101010] text-[#A89878] ring-[#3d3528] text-[10px]">

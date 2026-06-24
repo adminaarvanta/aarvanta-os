@@ -104,8 +104,8 @@ export function LoginPageShell({ nextPath }: { nextPath: string }) {
             ← Back to home
           </a>
           {" · "}
-          <a href="/chat" className="text-[#D4AF37] hover:underline">
-            Try demo without signing in
+          <a href="/dashboard?help=open" className="text-[#D4AF37] hover:underline">
+            Open Help for tour &amp; demo
           </a>
         </p>
       </div>

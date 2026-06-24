@@ -16,6 +16,7 @@ const createSchema = z.object({
   expectedCloseDate: z.string().optional(),
   status: z.enum(["open", "won", "lost"]).optional(),
   notes: z.string().optional(),
+  ownerId: z.string().optional(),
 });
 
 export async function GET(req: Request) {
@@ -27,7 +28,10 @@ export async function GET(req: Request) {
   }
 
   const pipelineId = new URL(req.url).searchParams.get("pipelineId") ?? undefined;
-  const deals = await getCrmRepository().listDeals(scope, pipelineId ?? undefined);
+  const deals = await getCrmRepository().listDeals(
+    scope,
+    pipelineId ? { pipelineId } : undefined
+  );
   return NextResponse.json({ deals });
 }
 

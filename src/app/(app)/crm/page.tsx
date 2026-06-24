@@ -4,6 +4,8 @@ import { CrmNav } from "@/components/crm/crm-nav";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { TaskList } from "@/components/crm/task-list";
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { activeMemberOptions } from "@/lib/crm/members";
+import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
 
@@ -11,13 +13,16 @@ export default async function CrmOverviewPage() {
   const scope = await getTenantScope();
   const repo = getCrmRepository();
 
-  const [contacts, companies, deals, tasks, pipelines] = await Promise.all([
+  const [contacts, companies, deals, tasks, pipelines, members] = await Promise.all([
     repo.listContacts(scope),
     repo.listCompanies(scope),
     repo.listDeals(scope),
     repo.listTasks(scope),
     repo.listPipelines(scope),
+    getTenantRepository().listMembers(scope),
   ]);
+
+  const memberOptions = activeMemberOptions(members);
 
   const openDeals = deals.filter((d) => d.status === "open");
   const pipelineValue = openDeals.reduce((s, d) => s + d.value, 0);
@@ -149,7 +154,7 @@ export default async function CrmOverviewPage() {
               View all ({openTasks.length})
             </Link>
           </div>
-          <TaskList tasks={openTasks.slice(0, 5)} />
+          <TaskList tasks={openTasks.slice(0, 5)} members={memberOptions} />
         </section>
       </div>
     </>

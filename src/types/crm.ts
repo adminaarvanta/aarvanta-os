@@ -34,6 +34,7 @@ export interface CrmCompany extends TenantScope {
   purchaseTotal: number;
   currency: string;
   notes?: string;
+  ownerId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,6 +56,7 @@ export interface CrmContact extends TenantScope {
   currency: string;
   conversationIds: string[];
   notes?: string;
+  ownerId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,6 +89,7 @@ export interface CrmDeal extends TenantScope {
   expectedCloseDate?: string;
   status: DealStatus;
   notes?: string;
+  ownerId?: string;
   createdAt: string;
   updatedAt: string;
 }

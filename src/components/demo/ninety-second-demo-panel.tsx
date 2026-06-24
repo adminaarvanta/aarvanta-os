@@ -45,6 +45,11 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
 
     try {
       const res = await fetch("/api/demo/journey", { method: "POST" });
+      if (res.status === 401) {
+        throw new Error(
+          "Sign in to run the live demo in production mode, or set APP_MODE=demo (or ENABLE_LIVE_DEMO=true) for a no-login presentation."
+        );
+      }
       const data = (await res.json()) as DemoJourneyResult & { error?: string };
       if (!res.ok && !data.steps) {
         throw new Error(data.error ?? "Demo journey failed");

@@ -49,13 +49,13 @@ export const CORE_MODULES: PlatformModule[] = [
     phase: 12,
   },
   {
-    id: "demo",
-    label: "90-Second Demo",
-    description: "Full business journey for live presentations",
-    href: "/demo",
+    id: "help",
+    label: "Help & Product Tour",
+    description: "Guided tour and 90-second live demo from the header",
+    href: "/dashboard?help=open",
     icon: Sparkles,
     group: "Core",
-    phase: "demo",
+    phase: "help",
   },
   {
     id: "workforce",

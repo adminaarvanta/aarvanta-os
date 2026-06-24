@@ -97,8 +97,18 @@ export const tenantFirestoreRepository: TenantRepository = {
   },
 
   async getMemberByUser(userId, scope) {
-    const items = await listMembersScoped(scope);
-    return items.find((m) => m.userId === userId && m.status === "active") ?? null;
+    const snap = await getDb()
+      .collection(MEMBERS)
+      .where("tenantId", "==", scope.tenantId)
+      .where("workspaceId", "==", scope.workspaceId)
+      .where("companyId", "==", scope.companyId)
+      .where("userId", "==", userId)
+      .where("status", "==", "active")
+      .limit(1)
+      .get();
+    const doc = snap.docs[0];
+    if (!doc) return null;
+    return doc.data() as WorkspaceMember;
   },
 
   async updateMemberRole(id, role, scope) {
@@ -188,5 +198,25 @@ export const tenantFirestoreRepository: TenantRepository = {
       .where("status", "==", "active")
       .get();
     return snap.docs.map((doc) => doc.data() as WorkspaceMember);
+  },
+
+  async createMember(input, scope) {
+    const existing = await this.getMemberByUser(input.userId, scope);
+    if (existing) return existing;
+
+    const now = crmNow();
+    const member: WorkspaceMember = {
+      ...scope,
+      id: crmNewId("member"),
+      userId: input.userId,
+      email: input.email,
+      name: input.name,
+      role: input.role,
+      status: "active",
+      joinedAt: now,
+      updatedAt: now,
+    };
+    await getDb().collection(MEMBERS).doc(member.id).set(member);
+    return member;
   },
 };

@@ -3,6 +3,8 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { NavigationProvider } from "@/components/layout/navigation-provider";
 import { ScrollRestoration } from "@/components/layout/scroll-restoration";
+import { DemoTourOverlay } from "@/components/demo/demo-tour-overlay";
+import { DemoTourProvider } from "@/components/demo/demo-tour-provider";
 import type { Organization, Workspace } from "@/types/tenant";
 
 export function AppShell({
@@ -20,15 +22,18 @@ export function AppShell({
 }) {
   return (
     <NavigationProvider>
-      <ScrollRestoration />
-      <div className="flex h-[100dvh] overflow-hidden bg-black">
-        <AppSidebar production={production} tenant={tenant} />
-        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] md:pb-0">
-          <AppHeader />
-          {children}
-        </main>
-        <MobileNav production={production} />
-      </div>
+      <DemoTourProvider>
+        <ScrollRestoration />
+        <div className="flex h-[100dvh] overflow-hidden bg-black">
+          <AppSidebar production={production} tenant={tenant} />
+          <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+            <AppHeader />
+            {children}
+          </main>
+          <MobileNav production={production} />
+        </div>
+        <DemoTourOverlay />
+      </DemoTourProvider>
     </NavigationProvider>
   );
 }

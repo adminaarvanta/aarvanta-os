@@ -65,9 +65,12 @@ export default function LandingPage() {
             Automation. AI Employees — more revenue, less staff cost, faster growth.
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <Link href="/dashboard?help=tour" className="inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-6 py-3 text-sm font-semibold text-black hover:bg-[#F9E076]">
+              Start product tour
+            </Link>
             <Link
-              href="/demo"
-              className="inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-6 py-3 text-sm font-semibold text-black hover:bg-[#F9E076]"
+              href="/dashboard?help=live"
+              className="inline-flex items-center justify-center rounded-lg border border-[#D4AF37]/40 px-6 py-3 text-sm font-semibold text-[#F5E6C8] hover:border-[#D4AF37]"
             >
               Run 90-second demo
             </Link>

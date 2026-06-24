@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
-import { NinetySecondDemoPanel } from "@/components/demo/ninety-second-demo-panel";
 import { FounderCopilotPanel } from "@/components/founder/founder-copilot-panel";
 import { FounderStatsGrid } from "@/components/founder/founder-stats-grid";
 import { buildFounderSnapshot } from "@/lib/founder/build-snapshot";
@@ -28,20 +27,20 @@ export default async function DashboardPage() {
             </p>
           </div>
           <p className="text-[10px] text-[#A89878]">
-            Use the search bar above or{" "}
+            New here? Open{" "}
+            <Link href="/dashboard?help=open" className="font-medium text-[#D4AF37] hover:underline">
+              Help
+            </Link>{" "}
+            for the product tour or 90-second demo ·{" "}
             <kbd className="rounded border border-[#3d3528] px-1.5 py-0.5 text-[#D4AF37]">
               ⌘K
             </kbd>{" "}
-            to find anything
+            to search
           </p>
         </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
-        <section>
-          <NinetySecondDemoPanel compact />
-        </section>
-
         <section>
           <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">Business pulse</h3>
           <FounderStatsGrid snapshot={snapshot} />

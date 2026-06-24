@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ROLE_LABELS, type WorkspaceMember } from "@/types/tenant";
+import { TeamManagementPanel } from "@/components/team/team-management-panel";
+import { ROLE_LABELS, type Invitation, type MemberRole, type WorkspaceMember } from "@/types/tenant";
 import type { ActivityFeedItem, TeamChannel, TeamComment, TeamNote } from "@/types/team";
 import { formatRelative } from "@/lib/utils";
 
@@ -23,6 +24,9 @@ export function TeamClient({
   activity,
   channels,
   currentUserId,
+  invitations,
+  canInvite,
+  canManageMembers,
 }: {
   members: WorkspaceMember[];
   notes: TeamNote[];
@@ -30,11 +34,14 @@ export function TeamClient({
   activity: ActivityFeedItem[];
   channels: TeamChannel[];
   currentUserId: string;
+  invitations: Invitation[];
+  canInvite: boolean;
+  canManageMembers: boolean;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"directory" | "channels" | "notes" | "activity">(
-    "directory"
-  );
+  const [tab, setTab] = useState<
+    "directory" | "management" | "channels" | "notes" | "activity"
+  >("directory");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -63,6 +70,9 @@ export function TeamClient({
 
   const tabs = [
     { id: "directory" as const, label: "Directory" },
+    ...(canInvite || canManageMembers
+      ? [{ id: "management" as const, label: "Manage team" }]
+      : []),
     { id: "channels" as const, label: "Channels" },
     { id: "notes" as const, label: "Internal Notes" },
     { id: "activity" as const, label: "Activity Feed" },
@@ -111,6 +121,16 @@ export function TeamClient({
             </li>
           ))}
         </ul>
+      )}
+
+      {tab === "management" && (
+        <TeamManagementPanel
+          members={members}
+          invitations={invitations}
+          currentUserId={currentUserId}
+          canInvite={canInvite}
+          canManageMembers={canManageMembers}
+        />
       )}
 
       {tab === "channels" && (

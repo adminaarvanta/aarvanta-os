@@ -5,6 +5,10 @@ import { Brain, Inbox, Kanban, LayoutDashboard, LogOut, MessageCircle, Sparkles,
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { cn } from "@/lib/utils";
 
+function tourNavId(href: string) {
+  return href.replace(/^\//, "").replace(/\//g, "-") || "home";
+}
+
 const links = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, match: (p: string) => p.startsWith("/dashboard") },
   { href: "/inbox", label: "Inbox", icon: Inbox, match: (p: string) => p.startsWith("/inbox") },
@@ -33,6 +37,7 @@ export function MobileNav({ production }: { production: boolean }) {
             <PendingLink
               key={item.href}
               href={item.href}
+              data-demo-tour={`mobile-nav-${tourNavId(item.href)}`}
               target={item.href === "/chat" ? "_blank" : undefined}
               rel={item.href === "/chat" ? "noopener noreferrer" : undefined}
               pendingClassName="opacity-60"

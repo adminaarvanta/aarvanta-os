@@ -1,7 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Circle, Clock } from "lucide-react";
+import { MemberSelect } from "@/components/shared/member-select";
+import type { MemberOption } from "@/lib/crm/members";
 import type { CrmTask } from "@/types/crm";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +19,18 @@ const priorityColor = {
   high: "text-red-400",
 };
 
-export function TaskList({ tasks }: { tasks: CrmTask[] }) {
-  const router = useRouter();
+export function TaskList({
+  tasks: initialTasks,
+  members,
+}: {
+  tasks: CrmTask[];
+  members: MemberOption[];
+}) {
+  const [tasks, setTasks] = useState(initialTasks);
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   async function cycleStatus(task: CrmTask) {
     const next =
@@ -27,16 +39,47 @@ export function TaskList({ tasks }: { tasks: CrmTask[] }) {
         : task.status === "in_progress"
           ? "done"
           : "todo";
-    await fetch(`/api/tasks/${task.id}`, {
+    setTasks((current) =>
+      current.map((item) =>
+        item.id === task.id ? { ...item, status: next } : item
+      )
+    );
+    const response = await fetch(`/api/tasks/${task.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: next }),
     });
-    router.refresh();
+    if (!response.ok) {
+      setTasks(initialTasks);
+    }
+  }
+
+  async function assignTask(taskId: string, assignedTo: string) {
+    const previous = tasks;
+    setTasks((current) =>
+      current.map((item) =>
+        item.id === taskId
+          ? { ...item, assignedTo: assignedTo || undefined }
+          : item
+      )
+    );
+    const response = await fetch(`/api/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignedTo: assignedTo || undefined }),
+    });
+    if (!response.ok) {
+      setTasks(previous);
+    }
   }
 
   if (tasks.length === 0) {
     return <p className="text-sm text-[#A89878]">No tasks yet.</p>;
+  }
+
+  function assigneeName(userId?: string) {
+    if (!userId) return null;
+    return members.find((m) => m.userId === userId)?.name ?? userId;
   }
 
   return (
@@ -53,26 +96,40 @@ export function TaskList({ tasks }: { tasks: CrmTask[] }) {
             >
               <Icon className="h-5 w-5" />
             </button>
-            <div className="flex-1 min-w-0">
-              <p
-                className={cn(
-                  "text-sm font-medium text-[#F5E6C8]",
-                  task.status === "done" && "line-through text-[#A89878]"
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <p
+                  className={cn(
+                    "text-sm font-medium text-[#F5E6C8]",
+                    task.status === "done" && "line-through text-[#A89878]"
+                  )}
+                >
+                  {task.title}
+                </p>
+                {task.description && (
+                  <p className="mt-0.5 text-xs text-[#A89878]">{task.description}</p>
                 )}
-              >
-                {task.title}
-              </p>
-              {task.description && (
-                <p className="mt-0.5 text-xs text-[#A89878]">{task.description}</p>
-              )}
-              <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-[#A89878]">
-                <span className={priorityColor[task.priority]}>
-                  {task.priority} priority
-                </span>
-                {task.dueDate && <span>Due {task.dueDate}</span>}
-                {task.assignedTo && <span>→ {task.assignedTo}</span>}
-                {task.source === "ai" && (
-                  <span className="text-[#D4AF37]">AI-created</span>
+                <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-[#A89878]">
+                  <span className={priorityColor[task.priority]}>
+                    {task.priority} priority
+                  </span>
+                  {task.dueDate && <span>Due {task.dueDate}</span>}
+                  {task.source === "ai" && (
+                    <span className="text-[#D4AF37]">AI-created</span>
+                  )}
+                </div>
+              </div>
+              <div className="max-w-xs">
+                <MemberSelect
+                  members={members}
+                  value={task.assignedTo ?? ""}
+                  onChange={(userId) => assignTask(task.id, userId)}
+                  placeholder="Assign to…"
+                />
+                {task.assignedTo && (
+                  <p className="mt-1 text-[10px] text-[#A89878]">
+                    Assigned: {assigneeName(task.assignedTo)}
+                  </p>
                 )}
               </div>
             </div>

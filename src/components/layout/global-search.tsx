@@ -81,6 +81,13 @@ export function GlobalSearch({ className }: { className?: string }) {
   useEffect(() => {
     if (!open) return;
 
+    const trimmed = query.trim();
+    if (trimmed.length === 1) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
@@ -98,7 +105,7 @@ export function GlobalSearch({ className }: { className?: string }) {
       } finally {
         setLoading(false);
       }
-    }, query ? 180 : 0);
+    }, trimmed ? 350 : 0);
 
     return () => {
       controller.abort();
@@ -143,7 +150,7 @@ export function GlobalSearch({ className }: { className?: string }) {
   const showDropdown = open && (loading || flatResults.length > 0 || query.length > 0);
 
   return (
-    <div ref={rootRef} className={cn("relative", className)}>
+    <div ref={rootRef} data-demo-tour="global-search" className={cn("relative", className)}>
       <div
         className={cn(
           "flex items-center gap-2 rounded-lg border bg-[#101010] px-3 py-2 transition-colors",

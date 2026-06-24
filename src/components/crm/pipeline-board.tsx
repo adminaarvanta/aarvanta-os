@@ -1,9 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { CrmDeal, CrmPipeline, PipelineStage } from "@/types/crm";
 import { contactDisplayName, type CrmContact } from "@/types/crm";
+import { DealManualActions } from "@/components/crm/deal-manual-actions";
+import { MemberSelect } from "@/components/shared/member-select";
 
 function formatCurrency(value: number, currency: string) {
   return new Intl.NumberFormat("en-GB", {
@@ -15,23 +17,39 @@ function formatCurrency(value: number, currency: string) {
 
 export function PipelineBoard({
   pipeline,
-  deals,
+  deals: initialDeals,
   contacts,
+  members,
+  currentUserId,
 }: {
   pipeline: CrmPipeline;
   deals: CrmDeal[];
   contacts: CrmContact[];
+  members: Array<{ userId: string; name: string; email: string }>;
+  currentUserId: string;
 }) {
-  const router = useRouter();
+  const [deals, setDeals] = useState(initialDeals);
   const [moving, setMoving] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDeals(initialDeals);
+  }, [initialDeals]);
 
   const openDeals = deals.filter((d) => d.status === "open");
   const stages = [...pipeline.stages].sort((a, b) => a.order - b.order);
 
   async function moveDeal(dealId: string, stage: PipelineStage) {
+    const previous = deals;
     setMoving(dealId);
+    setDeals((current) =>
+      current.map((deal) =>
+        deal.id === dealId
+          ? { ...deal, stageId: stage.id, probability: stage.probability }
+          : deal
+      )
+    );
     try {
-      await fetch(`/api/deals/${dealId}`, {
+      const response = await fetch(`/api/deals/${dealId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -39,7 +57,31 @@ export function PipelineBoard({
           probability: stage.probability,
         }),
       });
-      router.refresh();
+      if (!response.ok) {
+        setDeals(previous);
+      }
+    } finally {
+      setMoving(null);
+    }
+  }
+
+  async function assignOwner(dealId: string, ownerId: string) {
+    const previous = deals;
+    setMoving(dealId);
+    setDeals((current) =>
+      current.map((deal) =>
+        deal.id === dealId ? { ...deal, ownerId: ownerId || undefined } : deal
+      )
+    );
+    try {
+      const response = await fetch(`/api/deals/${dealId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: ownerId || undefined }),
+      });
+      if (!response.ok) {
+        setDeals(previous);
+      }
     } finally {
       setMoving(null);
     }
@@ -91,9 +133,12 @@ export function PipelineBoard({
                     key={deal.id}
                     className="rounded-lg border border-[#3d3528] bg-[#101010] p-3 shadow-sm"
                   >
-                    <p className="text-sm font-medium text-[#F5E6C8]">
+                    <Link
+                      href={`/crm/deals/${deal.id}`}
+                      className="text-sm font-medium text-[#F5E6C8] hover:text-[#D4AF37]"
+                    >
                       {deal.title}
-                    </p>
+                    </Link>
                     <p className="mt-1 text-xs font-semibold text-[#D4AF37]">
                       {formatCurrency(deal.value, deal.currency)}
                     </p>
@@ -102,6 +147,15 @@ export function PipelineBoard({
                         {contactName(deal.contactId)}
                       </p>
                     )}
+                    <div className="mt-2">
+                      <MemberSelect
+                        members={members}
+                        value={deal.ownerId ?? ""}
+                        onChange={(userId) => assignOwner(deal.id, userId)}
+                        placeholder="Assign owner…"
+                        className="text-xs py-1"
+                      />
+                    </div>
                     <select
                       className="mt-2 w-full rounded border border-[#3d3528] bg-[#141414] px-2 py-1 text-xs text-[#F5E6C8]"
                       value={deal.stageId}
@@ -117,6 +171,18 @@ export function PipelineBoard({
                         </option>
                       ))}
                     </select>
+                    <DealManualActions
+                      deal={deal}
+                      members={members}
+                      currentUserId={currentUserId}
+                      onUpdate={(updated) =>
+                        setDeals((current) =>
+                          current.map((item) =>
+                            item.id === updated.id ? updated : item
+                          )
+                        )
+                      }
+                    />
                   </div>
                 ))}
               </div>

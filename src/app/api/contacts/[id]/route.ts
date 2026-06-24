@@ -24,6 +24,7 @@ const updateSchema = z.object({
     )
     .optional(),
   notes: z.string().optional(),
+  ownerId: z.string().optional(),
 });
 
 export async function GET(

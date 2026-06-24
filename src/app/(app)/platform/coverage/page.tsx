@@ -105,8 +105,8 @@ export default function PlatformCoveragePage() {
         <section className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/5 p-4">
           <p className="text-sm text-[#F5E6C8]">
             Run the live demo:{" "}
-            <Link href="/demo" className="text-[#F9E076] hover:underline">
-              /demo
+            <Link href="/dashboard?help=open" className="text-[#F9E076] hover:underline">
+              Help (header)
             </Link>{" "}
             · Browse all modules:{" "}
             <Link href="/platform" className="text-[#F9E076] hover:underline">

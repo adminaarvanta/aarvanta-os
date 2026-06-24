@@ -80,7 +80,7 @@ export const DEMO_CRM_CONTACTS: CrmContact[] = [
     purchases: [],
     purchaseTotal: 0,
     currency: "GBP",
-    conversationIds: [],
+    conversationIds: ["conv_whatsapp_sarah"],
     createdAt: now,
     updatedAt: now,
   },

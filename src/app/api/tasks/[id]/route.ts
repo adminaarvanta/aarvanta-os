@@ -11,6 +11,9 @@ const updateSchema = z.object({
   priority: z.enum(["low", "medium", "high"]).optional(),
   dueDate: z.string().optional(),
   assignedTo: z.string().optional(),
+  contactId: z.string().optional(),
+  accountId: z.string().optional(),
+  dealId: z.string().optional(),
 });
 
 export async function PATCH(

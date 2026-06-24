@@ -106,6 +106,8 @@ export interface Conversation extends TenantScope {
   unreadCount: number;
   lastActivityAt: string;
   assignedTo?: string;
+  /** Set on list views when the full timeline is omitted. */
+  timelineEventCount?: number;
   timeline: TimelineEvent[];
   createdAt: string;
   updatedAt: string;

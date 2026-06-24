@@ -152,7 +152,7 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
     id: "run_demo",
     label: "Run 90-Second Demo",
     keywords: ["demo", "journey", "present", "pitch", "90 second"],
-    href: "/demo",
+    href: "/dashboard?help=live",
     group: "Quick actions",
   },
   {

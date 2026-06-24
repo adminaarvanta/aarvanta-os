@@ -14,7 +14,33 @@ const updateSchema = z.object({
   expectedCloseDate: z.string().optional(),
   status: z.enum(["open", "won", "lost"]).optional(),
   notes: z.string().optional(),
+  ownerId: z.string().optional(),
 });
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let scope;
+  try {
+    scope = await getTenantScope();
+  } catch {
+    return unauthorized();
+  }
+
+  const { id } = await params;
+  const deal = await getCrmRepository().getDeal(id, scope);
+  if (!deal) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const [activities, tasks] = await Promise.all([
+    getCrmRepository().listActivities(scope, { dealId: id }),
+    getCrmRepository().listTasks(scope, { dealId: id }),
+  ]);
+
+  return NextResponse.json({ deal, activities, tasks });
+}
 
 export async function PATCH(
   req: Request,

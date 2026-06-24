@@ -15,6 +15,7 @@ import {
   normalizeEmail,
   normalizePhone,
 } from "@/lib/data/conversation-helpers";
+import { toConversationListItem } from "@/lib/data/conversation-list-helpers";
 import type { ConversationRepository } from "@/lib/data/repository";
 import type {
   Conversation,
@@ -46,7 +47,8 @@ export const memoryRepository: ConversationRepository = {
         (a, b) =>
           new Date(b.lastActivityAt).getTime() -
           new Date(a.lastActivityAt).getTime()
-      );
+      )
+      .map(toConversationListItem);
   },
 
   async getConversation(id, scope) {

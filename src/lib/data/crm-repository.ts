@@ -16,7 +16,10 @@ import type {
 } from "@/types/crm";
 
 export interface CrmRepository {
-  listContacts(scope: TenantScope): Promise<CrmContact[]>;
+  listContacts(
+    scope: TenantScope,
+    filters?: { accountId?: string }
+  ): Promise<CrmContact[]>;
   getContact(id: string, scope: TenantScope): Promise<CrmContact | null>;
   createContact(input: CreateContactInput, scope: TenantScope): Promise<CrmContact>;
   updateContact(
@@ -38,6 +41,7 @@ export interface CrmRepository {
         | "purchaseTotal"
         | "conversationIds"
         | "notes"
+        | "ownerId"
       >
     >,
     scope: TenantScope
@@ -60,6 +64,7 @@ export interface CrmRepository {
         | "tags"
         | "purchaseTotal"
         | "notes"
+        | "ownerId"
       >
     >,
     scope: TenantScope
@@ -68,7 +73,10 @@ export interface CrmRepository {
   listPipelines(scope: TenantScope): Promise<CrmPipeline[]>;
   getPipeline(id: string, scope: TenantScope): Promise<CrmPipeline | null>;
 
-  listDeals(scope: TenantScope, pipelineId?: string): Promise<CrmDeal[]>;
+  listDeals(
+    scope: TenantScope,
+    filters?: { pipelineId?: string; contactId?: string; accountId?: string }
+  ): Promise<CrmDeal[]>;
   getDeal(id: string, scope: TenantScope): Promise<CrmDeal | null>;
   createDeal(input: CreateDealInput, scope: TenantScope): Promise<CrmDeal>;
   updateDeal(
@@ -85,6 +93,7 @@ export interface CrmRepository {
         | "expectedCloseDate"
         | "status"
         | "notes"
+        | "ownerId"
       >
     >,
     scope: TenantScope
@@ -92,7 +101,13 @@ export interface CrmRepository {
 
   listTasks(
     scope: TenantScope,
-    filters?: { status?: TaskStatus; assignedAgentType?: string }
+    filters?: {
+      status?: TaskStatus;
+      assignedAgentType?: string;
+      assignedTo?: string;
+      contactId?: string;
+      dealId?: string;
+    }
   ): Promise<CrmTask[]>;
   getTask(id: string, scope: TenantScope): Promise<CrmTask | null>;
   createTask(input: CreateTaskInput, scope: TenantScope): Promise<CrmTask>;
@@ -135,6 +150,7 @@ export type CreateContactInput = {
   purchases?: Purchase[];
   conversationIds?: string[];
   notes?: string;
+  ownerId?: string;
 };
 
 export type CreateCompanyInput = {
@@ -146,6 +162,7 @@ export type CreateCompanyInput = {
   address?: string;
   tags?: ContactTag[];
   notes?: string;
+  ownerId?: string;
 };
 
 export type CreateDealInput = {
@@ -160,6 +177,7 @@ export type CreateDealInput = {
   expectedCloseDate?: string;
   status?: DealStatus;
   notes?: string;
+  ownerId?: string;
 };
 
 export type CreateTaskInput = {
@@ -186,5 +204,6 @@ export type CreateActivityInput = {
   dealId?: string;
   occurredAt?: string;
   durationMinutes?: number;
+  authorId?: string;
   authorName?: string;
 };

@@ -5,7 +5,6 @@ import {
   BarChart3,
   Bell,
   Brain,
-  Clapperboard,
   Inbox,
   Kanban,
   LayoutDashboard,
@@ -25,7 +24,6 @@ import type { Organization, Workspace } from "@/types/tenant";
 
 const coreNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/demo", label: "Live Demo", icon: Clapperboard },
   { href: "/inbox", label: "Unified Inbox", icon: Inbox },
   { href: "/crm", label: "CRM", icon: LayoutDashboard },
   { href: "/workforce", label: "AI Workforce", icon: Sparkles },
@@ -40,9 +38,12 @@ const coreNav = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+function tourNavId(href: string) {
+  return href.replace(/^\//, "").replace(/\//g, "-") || "home";
+}
+
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname.startsWith("/dashboard");
-  if (href === "/demo") return pathname.startsWith("/demo");
   if (href === "/crm") return pathname.startsWith("/crm");
   if (href === "/workforce") return pathname === "/workforce" || pathname.startsWith("/workforce/");
   if (href === "/knowledge") return pathname.startsWith("/knowledge") && !pathname.startsWith("/knowledge/graph");
@@ -88,6 +89,7 @@ export function AppSidebar({
               <PendingLink
                 key={item.href}
                 href={item.href}
+                data-demo-tour={`nav-${tourNavId(item.href)}`}
                 pendingClassName="opacity-60"
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
