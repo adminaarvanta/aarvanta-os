@@ -2,10 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SystemStatusPanel } from "@/components/settings/system-status-panel";
+import { WorkspaceSettingsPanel } from "@/components/settings/workspace-settings-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/ui/os/panel";
+import { SectionHeader } from "@/components/ui/os/section-header";
 import { PERMISSION_LABELS, permissionsForRole } from "@/lib/tenant/permissions";
 import type { Permission } from "@/lib/tenant/permissions";
+import type { AiRuntimeStatus } from "@/lib/ai/config";
+import type { ChannelStatus } from "@/lib/channels/config";
+import type { Channel } from "@/types/communication";
 import {
   MEMBER_ROLES,
   ROLE_LABELS,
@@ -15,6 +22,7 @@ import {
   type Workspace,
   type WorkspaceMember,
 } from "@/types/tenant";
+import type { WorkspaceSettings } from "@/types/workspace-settings";
 
 type SettingsClientProps = {
   organization: Organization;
@@ -24,7 +32,20 @@ type SettingsClientProps = {
   invitations: Invitation[];
   currentUserId: string;
   currentRole: MemberRole;
+  currentEmail: string;
+  currentName: string;
   permissions: Permission[];
+  workspaceSettings: WorkspaceSettings;
+  systemStatus: {
+    mode: string;
+    datastore: string;
+    ai: AiRuntimeStatus;
+    channels: Record<Channel, ChannelStatus>;
+    emailReceiving: string;
+    emailFrom: string | null;
+    replyTo: string | null;
+  };
+  production: boolean;
 };
 
 const roleBadgeClass: Record<MemberRole, string> = {
@@ -43,9 +64,16 @@ export function SettingsClient({
   invitations,
   currentUserId,
   currentRole,
+  currentEmail,
+  currentName,
   permissions,
+  workspaceSettings,
+  systemStatus,
+  production,
 }: SettingsClientProps) {
   const router = useRouter();
+  const [orgName, setOrgName] = useState(organization.name);
+  const [orgPlan, setOrgPlan] = useState(organization.plan);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<MemberRole>("member");
   const [newWorkspace, setNewWorkspace] = useState("");
@@ -134,61 +162,165 @@ export function SettingsClient({
     }
   }
 
+  async function saveOrganization(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canManageOrg) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/tenant/organization", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: orgName.trim(), plan: orgPlan }),
+      });
+      if (res.ok) {
+        setMessage("Organization updated.");
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setMessage(data.error?.message ?? "Update failed.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function switchWorkspace(workspaceId: string) {
+    if (workspaceId === workspace.id) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/tenant/switch-workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId }),
+      });
+      if (res.ok) {
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-4xl space-y-6">
       {message && (
         <p className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-sm text-[#F9E076]">
           {message}
         </p>
       )}
 
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">Organization</h3>
-        <p className="mt-1 text-xs text-[#A89878]">
-          SaaS tenant — {organization.slug}
-        </p>
-        <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+      <WorkspaceSettingsPanel
+        initialSettings={workspaceSettings}
+        canManage={canManageWorkspace}
+      />
+
+      <SystemStatusPanel
+        mode={systemStatus.mode}
+        datastore={systemStatus.datastore}
+        ai={systemStatus.ai}
+        channels={systemStatus.channels}
+        emailReceiving={systemStatus.emailReceiving}
+      />
+
+      <Panel>
+        <SectionHeader title="Your account" description="Signed-in user for this workspace." />
+        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-[10px] uppercase text-[#A89878]">Name</dt>
-            <dd className="text-sm text-[#F5E6C8]">{organization.name}</dd>
+            <dt className="text-[10px] uppercase text-muted">Name</dt>
+            <dd className="text-sm text-foreground">{currentName}</dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase text-[#A89878]">Plan</dt>
-            <dd className="text-sm capitalize text-[#F5E6C8]">{organization.plan}</dd>
+            <dt className="text-[10px] uppercase text-muted">Email</dt>
+            <dd className="text-sm text-foreground">{currentEmail}</dd>
           </div>
           <div>
-            <dt className="text-[10px] uppercase text-[#A89878]">Your role</dt>
-            <dd>
-              <Badge className={roleBadgeClass[currentRole]}>
-                {ROLE_LABELS[currentRole]}
-              </Badge>
+            <dt className="text-[10px] uppercase text-muted">Role</dt>
+            <dd className="mt-1">
+              <Badge className={roleBadgeClass[currentRole]}>{ROLE_LABELS[currentRole]}</Badge>
             </dd>
           </div>
         </dl>
-        {!canManageOrg && (
-          <p className="mt-3 text-xs text-[#A89878]">
-            Contact an owner to change organization settings.
-          </p>
+        {production && (
+          <form action="/api/auth/logout" method="post" className="mt-4">
+            <Button type="submit" variant="ghost" className="text-muted hover:text-foreground">
+              Sign out
+            </Button>
+          </form>
         )}
-      </section>
+      </Panel>
 
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">Workspaces</h3>
-        <p className="mt-1 text-xs text-[#A89878]">
-          Active: {workspace.name} · {workspaces.length} total
-        </p>
+      <Panel>
+        <SectionHeader
+          title="Organization"
+          description={`Tenant slug: ${organization.slug}`}
+        />
+        {canManageOrg ? (
+          <form onSubmit={saveOrganization} className="mt-4 space-y-3">
+            <div>
+              <label className="mb-1 block text-xs text-muted">Organization name</label>
+              <input
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">Plan</label>
+              <select
+                value={orgPlan}
+                onChange={(e) => setOrgPlan(e.target.value as Organization["plan"])}
+                className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+              >
+                <option value="starter">Starter</option>
+                <option value="growth">Growth</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <Button type="submit" disabled={busy}>
+              Save organization
+            </Button>
+          </form>
+        ) : (
+          <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div>
+              <dt className="text-[10px] uppercase text-muted">Name</dt>
+              <dd className="text-sm text-foreground">{organization.name}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] uppercase text-muted">Plan</dt>
+              <dd className="text-sm capitalize text-foreground">{organization.plan}</dd>
+            </div>
+          </dl>
+        )}
+      </Panel>
+
+      <Panel>
+        <SectionHeader
+          title="Workspaces"
+          description={`Active: ${workspace.name} · ${workspaces.length} total`}
+        />
         <ul className="mt-4 space-y-2">
           {workspaces.map((ws) => (
             <li
               key={ws.id}
-              className="flex items-center justify-between rounded-lg border border-[#3d3528] px-3 py-2"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2"
             >
-              <span className="text-sm text-[#F5E6C8]">{ws.name}</span>
-              {ws.id === workspace.id && (
-                <Badge className="bg-[#D4AF37]/20 text-[#F9E076] ring-[#D4AF37]/40">
-                  Current
-                </Badge>
-              )}
+              <span className="text-sm text-foreground">{ws.name}</span>
+              <div className="flex items-center gap-2">
+                {ws.id === workspace.id ? (
+                  <Badge className="bg-gold/20 text-gold-bright ring-gold/40">Current</Badge>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => switchWorkspace(ws.id)}
+                    disabled={busy}
+                    className="rounded-lg bg-surface-muted px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-border hover:bg-surface-hover disabled:opacity-50"
+                  >
+                    Switch
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -198,44 +330,45 @@ export function SettingsClient({
               value={newWorkspace}
               onChange={(e) => setNewWorkspace(e.target.value)}
               placeholder="New workspace name"
-              className="flex-1 rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8] placeholder:text-[#A89878]/50"
+              className="flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground placeholder:text-dim"
             />
             <Button type="submit" disabled={busy}>
-              Add
+              Add workspace
             </Button>
           </form>
         )}
-      </section>
+      </Panel>
 
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">Team directory</h3>
-        <p className="mt-1 text-xs text-[#A89878]">
-          {members.length} member{members.length === 1 ? "" : "s"} in this workspace
-        </p>
-        <ul className="mt-4 divide-y divide-[#3d3528]">
+      <Panel padding="none">
+        <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
+          <SectionHeader
+            title="Team directory"
+            description={`${members.length} member${members.length === 1 ? "" : "s"} in this workspace`}
+            className="mb-0"
+          />
+        </div>
+        <ul className="divide-y divide-border-subtle px-4 sm:px-5">
           {members.map((member) => (
             <li
               key={member.id}
-              className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+              className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-4 last:pb-4"
             >
               <div>
-                <p className="text-sm font-medium text-[#F5E6C8]">
+                <p className="text-sm font-medium text-foreground">
                   {member.name}
                   {member.userId === currentUserId && (
-                    <span className="ml-2 text-xs text-[#A89878]">(you)</span>
+                    <span className="ml-2 text-xs text-muted">(you)</span>
                   )}
                 </p>
-                <p className="text-xs text-[#A89878]">{member.email}</p>
+                <p className="text-xs text-muted">{member.email}</p>
               </div>
               <div className="flex items-center gap-2">
                 {canManageMembers && member.role !== "owner" && member.userId !== currentUserId ? (
                   <select
                     value={member.role}
-                    onChange={(e) =>
-                      updateRole(member.id, e.target.value as MemberRole)
-                    }
+                    onChange={(e) => updateRole(member.id, e.target.value as MemberRole)}
                     disabled={busy}
-                    className="rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-2 py-1 text-xs text-[#F5E6C8]"
+                    className="rounded-lg border border-border bg-surface-muted px-2 py-1 text-xs text-foreground"
                   >
                     {MEMBER_ROLES.filter((r) => r !== "owner").map((role) => (
                       <option key={role} value={role}>
@@ -248,112 +381,111 @@ export function SettingsClient({
                     {ROLE_LABELS[member.role]}
                   </Badge>
                 )}
-                {canManageMembers &&
-                  member.role !== "owner" &&
-                  member.userId !== currentUserId && (
-                    <button
-                      type="button"
-                      onClick={() => removeMember(member.id)}
-                      disabled={busy}
-                      className="text-xs text-red-400 hover:text-red-300"
-                    >
-                      Remove
-                    </button>
-                  )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">Invitations</h3>
-        {canInvite && (
-          <form onSubmit={inviteMember} className="mt-4 flex flex-wrap gap-2">
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="colleague@company.com"
-              className="min-w-[200px] flex-1 rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
-            />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-              className="rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
-            >
-              {MEMBER_ROLES.filter((r) => r !== "owner").map((role) => (
-                <option key={role} value={role}>
-                  {ROLE_LABELS[role]}
-                </option>
-              ))}
-            </select>
-            <Button type="submit" disabled={busy}>
-              Invite
-            </Button>
-          </form>
-        )}
-        <ul className="mt-4 space-y-2">
-          {invitations.length === 0 && (
-            <p className="text-sm text-[#A89878]">No pending invitations.</p>
-          )}
-          {invitations.map((inv) => (
-            <li
-              key={inv.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#3d3528] px-3 py-2"
-            >
-              <div>
-                <p className="text-sm text-[#F5E6C8]">{inv.email}</p>
-                <p className="text-xs text-[#A89878]">
-                  {ROLE_LABELS[inv.role]} · invited by {inv.invitedByName}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge
-                  className={
-                    inv.status === "pending"
-                      ? "bg-amber-950/60 text-amber-300 ring-amber-700/50"
-                      : "bg-[#141414] text-[#A89878] ring-[#3d3528]"
-                  }
-                >
-                  {inv.status}
-                </Badge>
-                {canInvite && inv.status === "pending" && (
+                {canManageMembers && member.role !== "owner" && member.userId !== currentUserId && (
                   <button
                     type="button"
-                    onClick={() => revokeInvite(inv.id)}
+                    onClick={() => removeMember(member.id)}
                     disabled={busy}
                     className="text-xs text-red-400 hover:text-red-300"
                   >
-                    Revoke
+                    Remove
                   </button>
                 )}
               </div>
             </li>
           ))}
         </ul>
-      </section>
+      </Panel>
 
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">
-          Role permissions (RBAC)
-        </h3>
-        <p className="mt-1 text-xs text-[#A89878]">
-          Your role ({ROLE_LABELS[currentRole]}) grants {permissions.length}{" "}
-          permissions.
-        </p>
+      <Panel padding="none">
+        <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
+          <SectionHeader title="Invitations" className="mb-0" />
+        </div>
+        <div className="px-4 py-4 sm:px-5">
+          {canInvite && (
+            <form onSubmit={inviteMember} className="flex flex-wrap gap-2">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="colleague@company.com"
+                className="min-w-[200px] flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+              />
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+              >
+                {MEMBER_ROLES.filter((r) => r !== "owner").map((role) => (
+                  <option key={role} value={role}>
+                    {ROLE_LABELS[role]}
+                  </option>
+                ))}
+              </select>
+              <Button type="submit" disabled={busy}>
+                Invite
+              </Button>
+            </form>
+          )}
+          <ul className="mt-4 space-y-2">
+            {invitations.length === 0 && (
+              <p className="text-sm text-muted">No pending invitations.</p>
+            )}
+            {invitations.map((inv) => (
+              <li
+                key={inv.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2"
+              >
+                <div>
+                  <p className="text-sm text-foreground">{inv.email}</p>
+                  <p className="text-xs text-muted">
+                    {ROLE_LABELS[inv.role]} · invited by {inv.invitedByName}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    className={
+                      inv.status === "pending"
+                        ? "bg-amber-950/60 text-amber-300 ring-amber-700/50"
+                        : "bg-surface-muted text-muted ring-border"
+                    }
+                  >
+                    {inv.status}
+                  </Badge>
+                  {canInvite && inv.status === "pending" && (
+                    <button
+                      type="button"
+                      onClick={() => revokeInvite(inv.id)}
+                      disabled={busy}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Panel>
+
+      <Panel>
+        <SectionHeader
+          title="Role permissions"
+          description={`Your role (${ROLE_LABELS[currentRole]}) grants ${permissions.length} permissions.`}
+        />
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {permissionsForRole(currentRole).map((perm) => (
             <li
               key={perm}
-              className="flex items-center gap-2 rounded-lg border border-[#3d3528] px-3 py-2 text-xs text-[#F5E6C8]"
+              className="flex items-center gap-2 rounded-lg border border-border-subtle px-3 py-2 text-xs text-foreground"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-gold" />
               {PERMISSION_LABELS[perm]}
             </li>
           ))}
         </ul>
-      </section>
+      </Panel>
     </div>
   );
 }

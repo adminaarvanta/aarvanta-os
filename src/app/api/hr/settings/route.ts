@@ -7,7 +7,7 @@ import { getSessionContext } from "@/lib/tenant/context";
 export async function GET() {
   try {
     const ctx = await getSessionContext();
-    const settings = getHrWorkspaceSettings(ctx.scope.workspaceId);
+    const settings = await getHrWorkspaceSettings(ctx.scope.workspaceId);
     return NextResponse.json({ settings });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Load failed";
@@ -35,6 +35,6 @@ export async function PATCH(req: Request) {
     return apiError("VALIDATION_ERROR", "Invalid settings payload", 400);
   }
 
-  const settings = setHrWorkspaceSettings(ctx.scope.workspaceId, parsed.data);
+  const settings = await setHrWorkspaceSettings(ctx.scope.workspaceId, parsed.data);
   return NextResponse.json({ settings });
 }

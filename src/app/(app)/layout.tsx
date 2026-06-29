@@ -16,15 +16,16 @@ export default async function AppLayout({
   try {
     const ctx = await getSessionContext();
     const repo = getTenantRepository();
-    const [organization, workspaces] = await Promise.all([
-      repo.getOrganization(ctx.scope.tenantId),
-      repo.listWorkspaces(ctx.scope.tenantId),
-    ]);
-    const workspace =
-      workspaces.find((w) => w.id === ctx.scope.workspaceId) ?? null;
-    if (organization && workspace) {
-      tenant = { organization, workspace, workspaces };
-    }
+    const { ensureTenantRecords } = await import("@/lib/tenant/ensure-tenant-records");
+    const bootstrapped = await ensureTenantRecords(ctx);
+    const workspaces = await repo.listWorkspaces(ctx.scope.tenantId);
+    tenant = {
+      organization: bootstrapped.organization,
+      workspace: bootstrapped.workspace,
+      workspaces,
+    };
+    const { hydrateWorkspaceSettingsCache } = await import("@/lib/hr/settings");
+    await hydrateWorkspaceSettingsCache(bootstrapped.workspace.id);
   } catch {
     /* tenant context unavailable */
   }

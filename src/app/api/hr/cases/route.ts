@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const [cases, pendingApprovals, settings] = await Promise.all([
       hrStore.listCases(ctx.scope),
       hrStore.listPendingApprovals(ctx.scope),
-      Promise.resolve(getHrWorkspaceSettings(ctx.scope.workspaceId)),
+      getHrWorkspaceSettings(ctx.scope.workspaceId),
     ]);
     return NextResponse.json({ cases, pendingApprovals, settings });
   } catch (error) {

@@ -1,19 +1,26 @@
 import { getCrmQualificationThreshold } from "@/lib/ai/config";
-import type { ConversationIntent } from "@/types/communication";
+import { getWorkspaceSettingsSync } from "@/lib/settings/workspace-settings";
+import type { ConversationIntent, TenantScope } from "@/types/communication";
 
 export type QualificationResult = {
   intent: ConversationIntent;
   qualificationScore: number;
 };
 
+function thresholdForScope(scope?: TenantScope): number {
+  if (scope) {
+    return getWorkspaceSettingsSync(scope.workspaceId).crmQualificationThreshold;
+  }
+  return getCrmQualificationThreshold();
+}
+
 export function isQualifiedForCrmLead(
-  qualification: QualificationResult
+  qualification: QualificationResult,
+  scope?: TenantScope
 ): boolean {
   if (qualification.intent === "spam") return false;
   if (qualification.intent !== "sales") return false;
-  return (
-    qualification.qualificationScore >= getCrmQualificationThreshold()
-  );
+  return qualification.qualificationScore >= thresholdForScope(scope);
 }
 
 export function heuristicQualification(

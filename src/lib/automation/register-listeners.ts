@@ -23,3 +23,8 @@ export function registerAutomationListeners(): void {
     });
   });
 }
+
+/** Idempotent — safe to call before publishing events in serverless handlers. */
+export function ensureAutomationListenersRegistered(): void {
+  registerAutomationListeners();
+}

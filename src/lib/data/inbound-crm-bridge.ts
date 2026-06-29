@@ -137,7 +137,7 @@ export async function qualifyAndCreateCrmLead(
   qualification: QualificationResult
 ): Promise<void> {
   try {
-    if (!isQualifiedForCrmLead(qualification)) return;
+    if (!isQualifiedForCrmLead(qualification, scope)) return;
 
     const existing = await findExistingCrmContact(conversation, scope);
     if (existing) return;

@@ -9,7 +9,7 @@ const GlobalSearch = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-9 w-36 shrink-0 animate-pulse rounded-lg bg-[#141414] sm:w-44" />
+      <div className="h-9 w-48 shrink-0 animate-pulse rounded-lg bg-surface-muted sm:w-56" />
     ),
   }
 );
@@ -26,9 +26,9 @@ const HelpMenu = dynamic(
 
 export function AppHeader() {
   return (
-    <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface/95 px-3 backdrop-blur-md sm:px-4">
+    <header className="relative z-10 flex h-14 shrink-0 items-center bg-surface/95 px-3 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-4">
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        <GlobalSearch className="w-36 shrink-0 sm:w-44" />
+        <GlobalSearch className="w-48 shrink-0 sm:w-56" />
         <Suspense fallback={null}>
           <HelpMenu />
         </Suspense>

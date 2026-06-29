@@ -43,7 +43,7 @@ export function WorkspaceSwitcher({
   if (!organization || !workspace) return null;
 
   return (
-    <div className="relative border-b border-[#3d3528] px-3 py-3">
+    <div className="relative px-3 py-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

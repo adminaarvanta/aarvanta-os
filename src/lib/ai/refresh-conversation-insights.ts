@@ -1,5 +1,6 @@
 import { generateConversationInsights } from "@/lib/ai/insights";
 import { shouldProcessInboundAi } from "@/lib/ai/config";
+import { getWorkspaceSettingsSync } from "@/lib/settings/workspace-settings";
 import {
   qualifyAndCreateCrmLead,
   syncInboundToExistingCrmContact,
@@ -41,19 +42,49 @@ export async function refreshConversationAiInsights(
   scheduleHrCaseEvaluation(conversationId, scope);
 }
 
-/** Fire-and-forget AI + CRM qualification after inbound — does not block webhooks. */
+function shouldRunAiInsights(scope: TenantScope): boolean {
+  return (
+    getWorkspaceSettingsSync(scope.workspaceId).aiAutoSummarize &&
+    shouldProcessInboundAi()
+  );
+}
+
+/** Runs after every inbound message — AI insights optional, HR automation always eligible. */
+export function schedulePostInboundAutomation(
+  conversationId: string,
+  scope: TenantScope
+): void {
+  if (shouldRunAiInsights(scope)) {
+    void refreshConversationAiInsights(conversationId, scope).catch((error) => {
+      console.error(
+        `[ai:inbound-processing] conversation=${conversationId}`,
+        error instanceof Error ? error.message : error
+      );
+    });
+    return;
+  }
+
+  void (async () => {
+    try {
+      const conversation = await getRepository().getConversation(conversationId, scope);
+      if (!conversation) return;
+      await syncInboundToExistingCrmContact(conversation, scope);
+      scheduleHrCaseEvaluation(conversationId, scope);
+    } catch (error) {
+      console.error(
+        `[hr:inbound-processing] conversation=${conversationId}`,
+        error instanceof Error ? error.message : error
+      );
+    }
+  })();
+}
+
+/** @deprecated Use schedulePostInboundAutomation */
 export function scheduleAiInsightsRefresh(
   conversationId: string,
   scope: TenantScope
 ): void {
-  if (!shouldProcessInboundAi()) return;
-
-  void refreshConversationAiInsights(conversationId, scope).catch((error) => {
-    console.error(
-      `[ai:inbound-processing] conversation=${conversationId}`,
-      error instanceof Error ? error.message : error
-    );
-  });
+  schedulePostInboundAutomation(conversationId, scope);
 }
 
 export { syncInboundToExistingCrmContact };

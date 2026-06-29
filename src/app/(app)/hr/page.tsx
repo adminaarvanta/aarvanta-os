@@ -6,11 +6,13 @@ import { CardList, ModulePageShell, StatGrid } from "@/components/platform/modul
 import { Panel } from "@/components/ui/os/panel";
 import { SectionHeader } from "@/components/ui/os/section-header";
 import { getHrStore } from "@/lib/data/platform-store";
+import { ensureHrPlatformSeed } from "@/lib/hr/ensure-platform-seed";
 import { getHrWorkspaceSettings } from "@/lib/hr/settings";
 import { getTenantScope } from "@/lib/tenant/context";
 
 export default async function HrPage() {
   const scope = await getTenantScope();
+  await ensureHrPlatformSeed(scope);
   const hrStore = getHrStore();
   const [candidates, employees, courses, documents, cases, settings] =
     await Promise.all([
@@ -19,7 +21,7 @@ export default async function HrPage() {
       hrStore.listCourses(scope),
       hrStore.listDocuments(scope),
       hrStore.listCases(scope),
-      Promise.resolve(getHrWorkspaceSettings(scope.workspaceId)),
+      getHrWorkspaceSettings(scope.workspaceId),
     ]);
 
   const pending = cases.filter((item) => item.status === "pending_approval");

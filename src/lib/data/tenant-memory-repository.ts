@@ -38,6 +38,16 @@ export const tenantMemoryRepository: TenantRepository = {
     return organizations[idx];
   },
 
+  async upsertOrganization(org) {
+    const idx = organizations.findIndex((o) => o.id === org.id);
+    if (idx === -1) {
+      organizations.push(org);
+      return org;
+    }
+    organizations[idx] = { ...organizations[idx], ...org, updatedAt: crmNow() };
+    return organizations[idx];
+  },
+
   async listWorkspaces(tenantId) {
     return workspaces
       .filter((w) => w.tenantId === tenantId)
@@ -58,6 +68,16 @@ export const tenantMemoryRepository: TenantRepository = {
     };
     workspaces.push(workspace);
     return workspace;
+  },
+
+  async upsertWorkspace(workspace) {
+    const idx = workspaces.findIndex((w) => w.id === workspace.id);
+    if (idx === -1) {
+      workspaces.push(workspace);
+      return workspace;
+    }
+    workspaces[idx] = { ...workspaces[idx], ...workspace, updatedAt: crmNow() };
+    return workspaces[idx];
   },
 
   async updateWorkspace(id, patch) {

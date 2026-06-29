@@ -46,6 +46,11 @@ async function dispatch(event: DomainEvent) {
 export async function publishDomainEvent(
   input: PublishDomainEventInput
 ): Promise<DomainEvent> {
+  const { ensureAutomationListenersRegistered } = await import(
+    "@/lib/automation/register-listeners"
+  );
+  ensureAutomationListenersRegistered();
+
   const event: DomainEvent = {
     ...input.scope,
     id: crmNewId("evt"),

@@ -1,5 +1,5 @@
 import { findConversationForInboundEmail } from "@/lib/data/email-threading";
-import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
+import { schedulePostInboundAutomation } from "@/lib/ai/refresh-conversation-insights";
 import { syncInboundToExistingCrmContact } from "@/lib/data/inbound-crm-bridge";
 import {
   appendInboundCall,
@@ -42,7 +42,7 @@ async function save(conv: Conversation) {
 
 async function saveInbound(conv: Conversation, scope: TenantScope) {
   const saved = await save(conv);
-  scheduleAiInsightsRefresh(saved.id, scope);
+  schedulePostInboundAutomation(saved.id, scope);
   await syncInboundToExistingCrmContact(saved, scope);
   return saved;
 }

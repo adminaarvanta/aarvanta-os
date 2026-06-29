@@ -1,5 +1,5 @@
 import { findConversationForInboundEmail } from "@/lib/data/email-threading";
-import { scheduleAiInsightsRefresh } from "@/lib/ai/refresh-conversation-insights";
+import { schedulePostInboundAutomation } from "@/lib/ai/refresh-conversation-insights";
 import { syncInboundToExistingCrmContact } from "@/lib/data/inbound-crm-bridge";
 import { DEMO_CONVERSATIONS } from "@/lib/data/demo-seed";
 import {
@@ -34,8 +34,7 @@ function findIndex(id: string, scope: TenantScope) {
 }
 
 async function finishInbound(conv: Conversation, scope: TenantScope) {
-  scheduleAiInsightsRefresh(conv.id, scope);
-  await syncInboundToExistingCrmContact(conv, scope);
+  schedulePostInboundAutomation(conv.id, scope);
   return structuredClone(conv);
 }
 

@@ -18,6 +18,7 @@ export type CreateInvitationInput = {
 export interface TenantRepository {
   listOrganizations(): Promise<Organization[]>;
   getOrganization(id: string): Promise<Organization | null>;
+  upsertOrganization(org: Organization): Promise<Organization>;
   updateOrganization(
     id: string,
     patch: Partial<Pick<Organization, "name" | "plan">>
@@ -25,6 +26,7 @@ export interface TenantRepository {
 
   listWorkspaces(tenantId: string): Promise<Workspace[]>;
   getWorkspace(id: string): Promise<Workspace | null>;
+  upsertWorkspace(workspace: Workspace): Promise<Workspace>;
   createWorkspace(
     input: Pick<Workspace, "tenantId" | "name" | "slug" | "defaultCompanyId">
   ): Promise<Workspace>;

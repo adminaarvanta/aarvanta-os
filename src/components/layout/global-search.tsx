@@ -153,8 +153,10 @@ export function GlobalSearch({ className }: { className?: string }) {
     <div ref={rootRef} data-demo-tour="global-search" className={cn("relative", className)}>
       <div
         className={cn(
-          "flex h-9 items-center gap-2 rounded-lg border bg-[#101010] px-2.5 transition-colors sm:px-3",
-          open ? "border-[#D4AF37]/50 ring-1 ring-[#D4AF37]/20" : "border-[#3d3528]"
+          "flex h-10 items-center gap-2 rounded-lg bg-surface-muted px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_8px_rgba(0,0,0,0.25)] transition-[box-shadow,background-color] sm:px-3.5",
+          open
+            ? "bg-surface-hover shadow-[inset_0_1px_0_rgba(212,175,55,0.08),0_0_0_1px_rgba(212,175,55,0.18),0_4px_16px_rgba(0,0,0,0.3)]"
+            : "hover:bg-surface-hover/80"
         )}
       >
         {loading ? (
@@ -180,14 +182,14 @@ export function GlobalSearch({ className }: { className?: string }) {
           role="combobox"
           className="min-w-0 flex-1 bg-transparent text-sm text-[#F5E6C8] outline-none placeholder:text-[#A89878]/60"
         />
-        <kbd className="hidden shrink-0 rounded border border-[#3d3528] px-1.5 py-0.5 text-[10px] text-[#A89878] sm:inline">
+        <kbd className="hidden shrink-0 rounded bg-black/20 px-1.5 py-0.5 text-[10px] text-[#A89878] shadow-sm sm:inline">
           ⌘K
         </kbd>
       </div>
 
       {showDropdown && (
         <div
-          className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#3d3528] bg-[#0a0a0a] shadow-2xl shadow-black/50"
+          className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl bg-[#0a0a0a] shadow-[0_16px_48px_rgba(0,0,0,0.55)]"
           role="presentation"
         >
           <div
@@ -249,9 +251,9 @@ export function GlobalSearch({ className }: { className?: string }) {
               ))
             )}
           </div>
-          <div className="border-t border-[#3d3528] px-3 py-2 text-[10px] text-[#A89878]">
+          <div className="bg-black/20 px-3 py-2 text-[10px] text-[#A89878]">
             <span className="hidden sm:inline">↑↓ navigate · ↵ open · </span>
-            <kbd className="rounded border border-[#3d3528] px-1">esc</kbd> close
+            <kbd className="rounded bg-black/30 px-1 shadow-sm">esc</kbd> close
           </div>
         </div>
       )}

@@ -5,7 +5,9 @@ import { getHrStore } from "@/lib/data/platform-store";
 import { getNotificationsRepository } from "@/lib/data/notifications-store";
 import { publishDomainEvent } from "@/lib/events/publish";
 import { classifyDocumentRisk } from "@/lib/hr/document-risk";
-import { getHrWorkspaceSettings } from "@/lib/hr/settings";
+import { ensureHrPlatformSeed } from "@/lib/hr/ensure-platform-seed";
+import { getHrWorkspaceSettings, hydrateWorkspaceSettingsCache } from "@/lib/hr/settings";
+import { scheduleProcessHrCase } from "@/lib/hr/process-case";
 import type { Conversation, TenantScope } from "@/types/communication";
 import type { HrCase, HrCaseAction } from "@/types/hr-case";
 import type { HrDocumentType } from "@/types/platform-modules";
@@ -361,6 +363,8 @@ export async function createHrCaseFromEvaluation(
     source: "ai",
   });
 
+  scheduleProcessHrCase(hrCase.id, scope);
+
   return hrCase;
 }
 
@@ -368,8 +372,11 @@ export async function runHrCaseEvaluation(
   conversationId: string,
   scope: TenantScope
 ): Promise<void> {
-  const settings = getHrWorkspaceSettings(scope.workspaceId);
+  await hydrateWorkspaceSettingsCache(scope.workspaceId);
+  const settings = await getHrWorkspaceSettings(scope.workspaceId);
   if (!settings.inboxAutomationEnabled) return;
+
+  await ensureHrPlatformSeed(scope);
 
   const { getRepository } = await import("@/lib/data/repository");
   const conversation = await getRepository().getConversation(conversationId, scope);

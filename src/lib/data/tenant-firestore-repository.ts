@@ -49,6 +49,17 @@ export const tenantFirestoreRepository: TenantRepository = {
     return updated;
   },
 
+  async upsertOrganization(org) {
+    const existing = await this.getOrganization(org.id);
+    const updated = {
+      ...(existing ?? org),
+      ...org,
+      updatedAt: crmNow(),
+    };
+    await getDb().collection(ORGS).doc(org.id).set(updated);
+    return updated;
+  },
+
   async listWorkspaces(tenantId) {
     const snap = await getDb()
       .collection(WORKSPACES)
@@ -74,6 +85,17 @@ export const tenantFirestoreRepository: TenantRepository = {
     };
     await getDb().collection(WORKSPACES).doc(workspace.id).set(workspace);
     return workspace;
+  },
+
+  async upsertWorkspace(workspace) {
+    const existing = await this.getWorkspace(workspace.id);
+    const updated: Workspace = {
+      ...(existing ?? workspace),
+      ...workspace,
+      updatedAt: crmNow(),
+    };
+    await getDb().collection(WORKSPACES).doc(workspace.id).set(updated);
+    return updated;
   },
 
   async updateWorkspace(id, patch) {

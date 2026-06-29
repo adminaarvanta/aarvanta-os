@@ -190,13 +190,13 @@ function ToolsPanel({
   return (
     <div
       data-demo-tour="all-tools-panel"
-      className="fixed top-0 z-50 flex h-full w-[min(720px,calc(100vw-3.5rem))] flex-col border-r border-border bg-surface-elevated shadow-2xl shadow-black/40"
+      className="fixed top-0 z-50 flex h-full w-[min(720px,calc(100vw-3.5rem))] flex-col bg-surface-elevated shadow-[8px_0_48px_rgba(0,0,0,0.45)]"
       style={{
         left: sidebarWidth,
         transition: `left ${SIDEBAR_MS}ms ${SIDEBAR_EASE}`,
       }}
     >
-      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3 shadow-[0_8px_16px_-12px_rgba(0,0,0,0.5)]">
         <h2 className="text-sm font-semibold text-foreground">All tools</h2>
         <button
           type="button"
@@ -209,7 +209,7 @@ function ToolsPanel({
       </div>
 
       {tenant && (
-        <div className="border-b border-border-subtle px-3 py-2">
+        <div className="px-3 py-2">
           <WorkspaceSwitcher
             organization={tenant.organization}
             workspace={tenant.workspace}
@@ -218,7 +218,7 @@ function ToolsPanel({
         </div>
       )}
 
-      <div className="border-b border-border-subtle px-4 py-3">
+      <div className="px-4 py-3 shadow-[0_8px_16px_-12px_rgba(0,0,0,0.45)]">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
@@ -227,7 +227,7 @@ function ToolsPanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search all tools…"
-            className="w-full rounded-lg border border-border bg-surface-muted py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-dim focus:border-gold/40 focus:outline-none focus:ring-1 focus:ring-gold/30"
+            className="w-full rounded-lg bg-surface-muted py-2 pl-9 pr-3 text-sm text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_8px_rgba(0,0,0,0.2)] placeholder:text-dim focus:outline-none focus:shadow-[inset_0_1px_0_rgba(212,175,55,0.08),0_0_0_1px_rgba(212,175,55,0.2),0_2px_8px_rgba(0,0,0,0.25)]"
           />
         </label>
       </div>
@@ -281,7 +281,7 @@ function ToolsPanel({
         )}
       </div>
 
-      <div className="border-t border-border-subtle px-4 py-3">
+      <div className="px-4 py-3 shadow-[0_-8px_16px_-12px_rgba(0,0,0,0.45)]">
         <Link
           href="/platform"
           onClick={onClose}
@@ -386,11 +386,11 @@ export function AppSidebar({
 
   return (
     <>
-      <div className="relative hidden md:flex shrink-0">
+      <div className="relative hidden md:flex shrink-0 z-20">
         <aside
           data-demo-tour="sidebar-rail"
           className={cn(
-            "flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-surface",
+            "flex min-h-0 shrink-0 flex-col overflow-hidden bg-surface shadow-[4px_0_32px_rgba(0,0,0,0.4)]",
             sidebarExpanded ? "w-52" : "w-14"
           )}
           style={{
@@ -399,7 +399,7 @@ export function AppSidebar({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="flex h-14 shrink-0 items-center border-b border-border p-2">
+          <div className="flex h-14 shrink-0 items-center p-2">
             <Link
               href="/dashboard"
               onClick={closeToolsPanel}
@@ -431,7 +431,7 @@ export function AppSidebar({
               ))}
             </div>
 
-            <div className="mt-2 border-t border-border-subtle pt-2">
+            <div className="mt-3 pt-1">
               <button
                 type="button"
                 data-demo-tour="nav-all-tools"
@@ -454,7 +454,7 @@ export function AppSidebar({
             </div>
           </nav>
 
-          <div className="mt-auto shrink-0 border-t border-border p-2">
+          <div className="mt-auto shrink-0 p-2">
             <PendingLink
               href="/settings"
               data-demo-tour="nav-settings"
