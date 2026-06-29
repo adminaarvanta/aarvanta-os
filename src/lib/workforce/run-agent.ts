@@ -24,6 +24,7 @@ const ACTION_TYPES: AgentActionType[] = [
   "create_activity",
   "suggest_reply",
   "alert",
+  "generate_hr_document",
 ];
 
 function agentSystemPrompt(type: AgentType): string {
@@ -36,7 +37,7 @@ Respond ONLY with valid JSON:
   "recommendations": ["actionable bullet 1", "actionable bullet 2", ...],
   "actions": [
     {
-      "type": "create_task" | "create_activity" | "suggest_reply" | "alert",
+      "type": "create_task" | "create_activity" | "suggest_reply" | "alert" | "generate_hr_document",
       "label": "short human label for the action button",
       "payload": { ... type-specific fields ... }
     }
@@ -48,6 +49,7 @@ Action payload schemas:
 - create_activity: { "type": "call"|"meeting"|"note", "title": string, "description"?: string, "contactId"?: string }
 - suggest_reply: { "channel": "email"|"sms"|"whatsapp"|"website_chat", "content": string, "subject"?: string }
 - alert: { "severity": "info"|"warning"|"critical", "message": string }
+- generate_hr_document: { "documentType": string, "subjectName": string, "contextFields"?: object, "conversationId"?: string, "instructions"?: string }
 
 Include 1-3 concrete actions when appropriate. Use contactId/conversationId from context when provided.`;
 
@@ -56,7 +58,7 @@ Include 1-3 concrete actions when appropriate. Use contactId/conversationId from
     coo: `${base}\n\nRole: AI COO. Review operations, task backlog, bottlenecks, and process efficiency. Prefer create_task for operational follow-ups.`,
     sales_manager: `${base}\n\nRole: AI Sales Manager. Review pipeline, qualify leads, suggest follow-ups, and recommend deal actions.`,
     marketing_manager: `${base}\n\nRole: AI Marketing Manager. Suggest campaigns, content themes, channel priorities, and audience targeting from CRM data.`,
-    hr_manager: `${base}\n\nRole: AI HR Manager. Support recruitment, onboarding, JD drafting, and hiring pipeline review.`,
+    hr_manager: `${base}\n\nRole: AI HR Manager. Support recruitment, onboarding, JD drafting, and hiring pipeline review. Use generate_hr_document when a formal HR letter is needed (offer, experience, relieving, etc.).`,
     cfo: `${base}\n\nRole: AI CFO. Review revenue forecast, expenses, invoices, budgets, and cashflow risks. Recommend margin and collections actions.`,
     customer_success_manager: `${base}\n\nRole: AI Customer Success Manager. Review customer health, renewals, support tickets, and churn risk. Suggest nurture and expansion plays.`,
   };
@@ -129,6 +131,9 @@ function heuristicRun(
 
   if (type === "hr_manager") {
     recs.push("Review open roles and candidate pipeline for upcoming interviews.");
+    if (context.hr?.openCases?.length) {
+      recs.push(`${context.hr.openCases.length} open HR inbox cases need review.`);
+    }
   }
 
   if (type === "cfo") {

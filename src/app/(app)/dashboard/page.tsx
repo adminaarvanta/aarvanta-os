@@ -2,6 +2,10 @@ import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 import { FounderCopilotPanel } from "@/components/founder/founder-copilot-panel";
 import { FounderStatsGrid } from "@/components/founder/founder-stats-grid";
+import { PageFrame, PageScroll } from "@/components/layout/page-scroll";
+import { PageHeader } from "@/components/ui/os/page-header";
+import { Panel } from "@/components/ui/os/panel";
+import { SectionHeader } from "@/components/ui/os/section-header";
 import { buildFounderSnapshot } from "@/lib/founder/build-snapshot";
 import { getFounderChatRepository } from "@/lib/data/founder-chat-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -14,82 +18,83 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-[#F5E6C8] sm:text-xl">
-              <LayoutDashboard className="h-5 w-5 text-[#D4AF37]" />
-              Founder Dashboard
-            </h2>
-            <p className="text-xs text-[#A89878] sm:text-sm">
-              Command center — revenue, pipeline, projects, AI workforce, and Copilot.
-            </p>
-          </div>
-          <p className="text-[10px] text-[#A89878]">
+    <PageFrame>
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Founder Dashboard"
+        description="Command center — revenue, pipeline, projects, AI workforce, and Copilot."
+        meta={
+          <p className="text-[11px] text-muted">
             New here? Open{" "}
-            <Link href="/dashboard?help=open" className="font-medium text-[#D4AF37] hover:underline">
+            <Link href="/dashboard?help=open" className="font-medium text-gold hover:text-gold-bright">
               Help
             </Link>{" "}
-            for the product tour or 90-second demo ·{" "}
-            <kbd className="rounded border border-[#3d3528] px-1.5 py-0.5 text-[#D4AF37]">
+            for the tour or 90-second demo ·{" "}
+            <kbd className="rounded border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] text-gold">
               ⌘K
             </kbd>{" "}
             to search
           </p>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
+      <PageScroll className="space-y-8 p-4 sm:p-6">
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">Business pulse</h3>
+          <SectionHeader
+            title="Business pulse"
+            description="Live metrics across revenue, inbox, delivery, and AI workforce."
+          />
           <FounderStatsGrid snapshot={snapshot} />
         </section>
 
-        <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Today&apos;s focus</h3>
-          <ul className="mt-3 space-y-2">
+        <Panel>
+          <SectionHeader title="Today's focus" />
+          <ul className="mt-3 space-y-2.5">
             {snapshot.focus.map((item) => (
-              <li key={item} className="flex gap-2 text-sm text-[#A89878]">
-                <span className="text-[#D4AF37]">→</span>
+              <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-muted">
+                <span className="mt-0.5 text-gold" aria-hidden>
+                  →
+                </span>
                 {item}
               </li>
             ))}
           </ul>
-        </section>
+        </Panel>
 
         {snapshot.sales.topOpportunities.length > 0 && (
-          <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#F5E6C8]">Top opportunities</h3>
-              <Link href="/crm/pipelines" className="text-xs text-[#D4AF37] hover:underline">
-                View pipeline →
-              </Link>
+          <Panel padding="none">
+            <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
+              <SectionHeader
+                title="Top opportunities"
+                action="View pipeline"
+                actionHref="/crm/pipelines"
+                className="mb-0"
+              />
             </div>
-            <ul className="mt-3 space-y-2">
+            <ul className="divide-y divide-border-subtle">
               {snapshot.sales.topOpportunities.map((deal) => (
                 <li
                   key={deal.title}
-                  className="flex justify-between rounded-lg border border-[#3d3528] px-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-surface-hover sm:px-5"
                 >
-                  <span className="text-[#F5E6C8]">
+                  <span className="min-w-0 text-sm text-foreground">
                     {deal.title}
                     {deal.contact && (
-                      <span className="text-[#A89878]"> · {deal.contact}</span>
+                      <span className="text-muted"> · {deal.contact}</span>
                     )}
                   </span>
-                  <span className="font-medium text-[#D4AF37]">
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-gold">
                     £{deal.value.toLocaleString()}
                   </span>
                 </li>
               ))}
             </ul>
-          </section>
+          </Panel>
         )}
 
         <FounderCopilotPanel initialMessages={messages} />
-      </div>
-    </>
+      </PageScroll>
+    </PageFrame>
   );
 }
 

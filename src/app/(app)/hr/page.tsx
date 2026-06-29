@@ -1,99 +1,105 @@
 import { Landmark } from "lucide-react";
+import { HrApprovalQueue } from "@/components/hr/hr-approval-queue";
+import { HrAutomationToggle } from "@/components/hr/hr-automation-toggle";
+import { HrDocumentAgent } from "@/components/hr/hr-document-agent";
 import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
+import { Panel } from "@/components/ui/os/panel";
+import { SectionHeader } from "@/components/ui/os/section-header";
 import { getHrStore } from "@/lib/data/platform-store";
+import { getHrWorkspaceSettings } from "@/lib/hr/settings";
 import { getTenantScope } from "@/lib/tenant/context";
 
 export default async function HrPage() {
   const scope = await getTenantScope();
   const hrStore = getHrStore();
-  const [candidates, employees, courses] = await Promise.all([
-    hrStore.list(scope),
-    hrStore.listEmployees(scope),
-    hrStore.listCourses(scope),
-  ]);
+  const [candidates, employees, courses, documents, cases, settings] =
+    await Promise.all([
+      hrStore.list(scope),
+      hrStore.listEmployees(scope),
+      hrStore.listCourses(scope),
+      hrStore.listDocuments(scope),
+      hrStore.listCases(scope),
+      Promise.resolve(getHrWorkspaceSettings(scope.workspaceId)),
+    ]);
+
+  const pending = cases.filter((item) => item.status === "pending_approval");
+  const recentSent = cases
+    .filter((item) => item.status === "sent")
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 5);
 
   return (
     <ModulePageShell
       icon={Landmark}
       title="HR OS"
-      description="ATS candidates, employee roster, and learning programs in one workspace."
+      description="Inbox-driven document automation, ATS, and employee roster."
     >
-      <div className="space-y-8">
+      <div className="space-y-6">
+        <HrAutomationToggle initialEnabled={settings.inboxAutomationEnabled} />
+        <HrApprovalQueue pending={pending} recentSent={recentSent} />
+
         <StatGrid
           items={[
             { label: "Candidates", value: candidates.length, sub: "ATS pipeline" },
             { label: "Employees", value: employees.length, sub: "Active roster" },
-            { label: "Courses", value: courses.length, sub: "Learning programs" },
-            {
-              label: "Avg candidate score",
-              value: candidates.length
-                ? Math.round(
-                    candidates.reduce((sum, candidate) => sum + candidate.score, 0) /
-                      candidates.length
-                  )
-                : 0,
-              sub: "Qualification average",
-            },
+            { label: "HR documents", value: documents.length, sub: "Generated" },
+            { label: "Open cases", value: pending.length, sub: "Awaiting review" },
           ]}
         />
 
-        <div className="flex flex-wrap gap-2">
-          <a
-            href="#ats-candidates"
-            className="rounded-lg bg-[#D4AF37]/15 px-3 py-1.5 text-sm text-[#F9E076] ring-1 ring-[#D4AF37]/30"
-          >
-            ATS candidates
-          </a>
-          <a
-            href="#employees"
-            className="rounded-lg px-3 py-1.5 text-sm text-[#A89878] ring-1 ring-[#3d3528] hover:bg-[#1a1714]"
-          >
-            Employees
-          </a>
-          <a
-            href="#courses"
-            className="rounded-lg px-3 py-1.5 text-sm text-[#A89878] ring-1 ring-[#3d3528] hover:bg-[#1a1714]"
-          >
-            Courses
-          </a>
-        </div>
+        <HrDocumentAgent
+          employees={employees}
+          candidates={candidates}
+          initialDocuments={documents}
+        />
 
-        <section id="ats-candidates">
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">ATS candidates</h3>
-          <CardList
-            items={candidates.map((candidate) => ({
-              id: candidate.id,
-              title: `${candidate.name} · ${candidate.role}`,
-              body: candidate.resumeSummary,
-              meta: `Score ${candidate.score}`,
-              badge: candidate.status,
-            }))}
-          />
-        </section>
-
-        <section id="employees">
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Employees</h3>
-          <CardList
-            items={employees.map((employee) => ({
-              id: employee.id,
-              title: `${employee.name} · ${employee.role}`,
-              body: employee.department,
-              meta: `Started ${new Date(employee.startDate).toLocaleDateString()} · Leave balance ${employee.leaveBalance}`,
-            }))}
-          />
-        </section>
-
-        <section id="courses">
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Courses</h3>
-          <CardList
-            items={courses.map((course) => ({
-              id: course.id,
-              title: course.title,
-              body: `${course.durationHours} hours · ${course.enrolled} enrolled`,
-              badge: course.category,
-            }))}
-          />
-        </section>
+        <Panel padding="none">
+          <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
+            <SectionHeader title="People & learning" className="mb-0" />
+          </div>
+          <div className="grid gap-6 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Candidates
+              </h3>
+              <CardList
+                items={candidates.map((candidate) => ({
+                  id: candidate.id,
+                  title: candidate.name,
+                  body: candidate.role,
+                  meta: `Score ${candidate.score}`,
+                  badge: candidate.status,
+                }))}
+              />
+            </section>
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Employees
+              </h3>
+              <CardList
+                items={employees.map((employee) => ({
+                  id: employee.id,
+                  title: employee.name,
+                  body: `${employee.role} · ${employee.department}`,
+                  meta: `Leave ${employee.leaveBalance}d`,
+                }))}
+              />
+            </section>
+            <section className="sm:col-span-2 lg:col-span-1">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                Courses
+              </h3>
+              <CardList
+                items={courses.map((course) => ({
+                  id: course.id,
+                  title: course.title,
+                  body: `${course.durationHours}h · ${course.enrolled} enrolled`,
+                  badge: course.category,
+                }))}
+              />
+            </section>
+          </div>
+        </Panel>
       </div>
     </ModulePageShell>
   );

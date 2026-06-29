@@ -1,41 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { BrandLogo } from "@/components/brand/logo";
+import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
-  const router = useRouter();
+const LOGIN_ERRORS: Record<string, string> = {
+  invalid_credentials: "Invalid email or password",
+  misconfigured: "Sign-in is not configured on this server. Contact your administrator.",
+};
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function onSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setError(data?.error?.message ?? "Login failed");
-      setLoading(false);
-      return;
-    }
-
-    router.push(nextPath);
-    router.refresh();
-  }
+function LoginFormInner({ nextPath }: { nextPath: string }) {
+  const searchParams = useSearchParams();
+  const safeNextPath = sanitizeNextPath(nextPath);
+  const errorCode = searchParams.get("error");
+  const error =
+    errorCode && LOGIN_ERRORS[errorCode]
+      ? LOGIN_ERRORS[errorCode]
+      : errorCode
+        ? "Sign in failed. Please try again."
+        : null;
 
   return (
-    <form onSubmit={onSubmit} className="mt-8 space-y-4">
+    <form action="/api/auth/login" method="POST" className="mt-8 space-y-4">
+      <input type="hidden" name="next" value={safeNextPath} />
+
       <div>
         <label
           htmlFor="email"
@@ -45,10 +34,10 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </label>
         <input
           id="email"
+          name="email"
           type="email"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
           className="mt-1 w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30"
         />
       </div>
@@ -61,10 +50,10 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </label>
         <input
           id="password"
+          name="password"
           type="password"
           required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
           className="mt-1 w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30"
         />
       </div>
@@ -77,16 +66,29 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
 
       <button
         type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-semibold text-black hover:bg-[#F9E076] disabled:opacity-60"
+        className="w-full rounded-lg bg-[#D4AF37] px-4 py-2.5 text-sm font-semibold text-black hover:bg-[#F9E076]"
       >
-        {loading ? "Signing in…" : "Sign in"}
+        Sign in
       </button>
     </form>
   );
 }
 
+export function LoginForm({ nextPath }: { nextPath: string }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="mt-8 h-48 animate-pulse rounded-lg bg-[#141414]" />
+      }
+    >
+      <LoginFormInner nextPath={nextPath} />
+    </Suspense>
+  );
+}
+
 export function LoginPageShell({ nextPath }: { nextPath: string }) {
+  const safeNextPath = sanitizeNextPath(nextPath);
+
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-black px-4 py-6">
       <div className="w-full max-w-md rounded-2xl border border-[#3d3528] bg-[#0a0a0a] p-6 shadow-lg shadow-[#D4AF37]/5 sm:p-8">
@@ -97,15 +99,18 @@ export function LoginPageShell({ nextPath }: { nextPath: string }) {
           Sign in to access your business operating system.
         </p>
 
-        <LoginForm nextPath={nextPath} />
+        <LoginForm nextPath={safeNextPath} />
 
         <p className="mt-6 text-center text-xs text-[#A89878]">
           <a href="/" className="text-[#D4AF37] hover:underline">
             ← Back to home
           </a>
           {" · "}
-          <a href="/dashboard?help=open" className="text-[#D4AF37] hover:underline">
-            Open Help for tour &amp; demo
+          <a
+            href={`/login?next=${encodeURIComponent("/dashboard?help=open")}`}
+            className="text-[#D4AF37] hover:underline"
+          >
+            Tour &amp; demo after sign-in
           </a>
         </p>
       </div>

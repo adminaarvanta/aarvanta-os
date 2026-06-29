@@ -1,4 +1,5 @@
 import { AiInsightsPanel } from "@/components/inbox/ai-insights-panel";
+import { HrCasePanel } from "@/components/inbox/hr-case-panel";
 import { MarkReadOnView } from "@/components/inbox/mark-read-on-view";
 import { ConversationTimeline } from "@/components/inbox/timeline";
 import { NoteForm } from "@/components/inbox/note-form";
@@ -8,16 +9,21 @@ import { Badge } from "@/components/ui/badge";
 import { CHANNEL_LABELS } from "@/lib/constants";
 import type { AiRuntimeStatus } from "@/lib/ai/config";
 import type { Conversation } from "@/types/communication";
+import type { HrCase } from "@/types/hr-case";
 
 function ConversationSidebar({
   conversation,
   aiStatus,
+  hrCases,
 }: {
   conversation: Conversation;
   aiStatus: AiRuntimeStatus;
+  hrCases: HrCase[];
 }) {
   return (
     <>
+      <HrCasePanel conversationId={conversation.id} initialCases={hrCases} />
+
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#A89878]">
           Tags
@@ -47,9 +53,11 @@ function ConversationSidebar({
 export function ConversationDetail({
   conversation,
   aiStatus,
+  hrCases = [],
 }: {
   conversation: Conversation;
   aiStatus: AiRuntimeStatus;
+  hrCases?: HrCase[];
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
@@ -97,6 +105,7 @@ export function ConversationDetail({
             <ConversationSidebar
               conversation={conversation}
               aiStatus={aiStatus}
+              hrCases={hrCases}
             />
           </div>
         </details>
@@ -109,7 +118,11 @@ export function ConversationDetail({
       </section>
 
       <aside className="hidden w-80 shrink-0 min-h-0 space-y-6 overflow-y-auto overscroll-contain border-l border-[#3d3528] bg-[#101010] p-4 lg:block">
-        <ConversationSidebar conversation={conversation} aiStatus={aiStatus} />
+        <ConversationSidebar
+          conversation={conversation}
+          aiStatus={aiStatus}
+          hrCases={hrCases}
+        />
       </aside>
     </div>
   );

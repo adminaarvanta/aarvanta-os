@@ -233,6 +233,7 @@ export interface HrCandidate extends TenantScope {
   score: number;
   status: "applied" | "screening" | "interview" | "offer" | "hired" | "rejected";
   resumeSummary: string;
+  email?: string;
 }
 
 export interface HrEmployee extends TenantScope {
@@ -242,6 +243,7 @@ export interface HrEmployee extends TenantScope {
   role: string;
   startDate: string;
   leaveBalance: number;
+  email?: string;
 }
 
 export interface HrCourse extends TenantScope {
@@ -250,6 +252,37 @@ export interface HrCourse extends TenantScope {
   category: string;
   durationHours: number;
   enrolled: number;
+}
+
+export type HrDocumentType =
+  | "offer_letter"
+  | "experience_letter"
+  | "appointment_letter"
+  | "relieving_letter"
+  | "salary_certificate"
+  | "employment_verification"
+  | "corporate_invoice"
+  | "nda"
+  | "policy_memo"
+  | "warning_letter"
+  | "custom_corporate";
+
+export type HrDocumentStatus = "draft" | "finalized";
+
+export interface HrDocument extends TenantScope {
+  id: string;
+  type: HrDocumentType;
+  title: string;
+  subjectName: string;
+  subjectId?: string;
+  subjectKind?: "employee" | "candidate" | "vendor" | "other";
+  status: HrDocumentStatus;
+  instructions: string;
+  contextFields: Record<string, string>;
+  content: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Autonomous Agents (Module 30) ─────────────────────────────────

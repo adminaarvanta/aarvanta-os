@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       ...nextScope,
     });
     const response = NextResponse.json({ ok: true, scope: nextScope });
-    response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions());
+    response.cookies.set(SESSION_COOKIE, token, getSessionCookieOptions(undefined, req.url));
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Switch failed";

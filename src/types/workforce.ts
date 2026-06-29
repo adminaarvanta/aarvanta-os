@@ -24,7 +24,8 @@ export type AgentActionType =
   | "create_task"
   | "create_activity"
   | "suggest_reply"
-  | "alert";
+  | "alert"
+  | "generate_hr_document";
 
 export type AgentMemorySource = "manual" | "run" | "chat";
 export type AgentMemoryCategory =

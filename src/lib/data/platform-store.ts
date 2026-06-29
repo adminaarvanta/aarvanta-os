@@ -12,7 +12,9 @@ import {
   buildDemoFranchiseLocations,
   buildDemoHrCandidates,
   buildDemoHrCourses,
+  buildDemoHrDocuments,
   buildDemoHrEmployees,
+  buildDemoHrCases,
   buildDemoInstalledAgents,
   buildDemoKnowledgeGraphEdges,
   buildDemoKnowledgeGraphNodes,
@@ -42,6 +44,7 @@ import type {
   FranchiseLocation,
   HrCandidate,
   HrCourse,
+  HrDocument,
   HrEmployee,
   InstalledAgent,
   KnowledgeGraphEdge,
@@ -59,6 +62,8 @@ import type {
   WikiPage,
   WritingDraft,
 } from "@/types/platform-modules";
+import type { HrCase } from "@/types/hr-case";
+import { OPEN_HR_CASE_STATUSES } from "@/types/hr-case";
 
 type MaybePromise<T> = T | Promise<T>;
 type ScopedEntity = TenantScope & { id: string };
@@ -179,6 +184,14 @@ const hrCourseRepository = createScopedRepository<HrCourse>(
   "hr_courses",
   buildDemoHrCourses
 );
+const hrDocumentRepository = createScopedRepository<HrDocument>(
+  "hr_documents",
+  buildDemoHrDocuments
+);
+const hrCaseRepository = createScopedRepository<HrCase>(
+  "hr_cases",
+  buildDemoHrCases
+);
 const autonomousRepository = createScopedRepository<AutonomousTask>(
   "autonomous_tasks",
   buildDemoAutonomousTasks
@@ -223,6 +236,8 @@ const financeBudgetsStore = createCrudStore(financeBudgetRepository, "budget");
 const hrCandidatesStore = createCrudStore(hrCandidateRepository, "candidate");
 const hrEmployeesStore = createCrudStore(hrEmployeeRepository, "employee");
 const hrCoursesStore = createCrudStore(hrCourseRepository, "course");
+const hrDocumentsStore = createCrudStore(hrDocumentRepository, "hr_doc");
+const hrCasesStore = createCrudStore(hrCaseRepository, "hr_case");
 const autonomousStore = createCrudStore(autonomousRepository, "task");
 const ssoStore = createCrudStore(ssoRepository, "sso");
 const franchiseStore = createCrudStore(franchiseRepository, "franchise");
@@ -395,6 +410,54 @@ export function getHrStore() {
     },
     removeCourse(id: string, scope: TenantScope) {
       return hrCoursesStore.remove(id, scope);
+    },
+    listDocuments(scope: TenantScope) {
+      return hrDocumentsStore.list(scope);
+    },
+    getDocument(id: string, scope: TenantScope) {
+      return hrDocumentsStore.get(id, scope);
+    },
+    createDocument(item: CreateInput<HrDocument>) {
+      return hrDocumentsStore.create(item);
+    },
+    setDocument(item: HrDocument) {
+      return hrDocumentsStore.set(item);
+    },
+    removeDocument(id: string, scope: TenantScope) {
+      return hrDocumentsStore.remove(id, scope);
+    },
+    listCases(scope: TenantScope) {
+      return hrCasesStore.list(scope);
+    },
+    getCase(id: string, scope: TenantScope) {
+      return hrCasesStore.get(id, scope);
+    },
+    createCase(item: CreateInput<HrCase>) {
+      return hrCasesStore.create(item);
+    },
+    setCase(item: HrCase) {
+      return hrCasesStore.set(item);
+    },
+    removeCase(id: string, scope: TenantScope) {
+      return hrCasesStore.remove(id, scope);
+    },
+    async findOpenCaseByConversation(conversationId: string, scope: TenantScope) {
+      const cases = await hrCasesStore.list(scope);
+      return (
+        cases.find(
+          (item) =>
+            item.conversationId === conversationId &&
+            OPEN_HR_CASE_STATUSES.includes(item.status)
+        ) ?? null
+      );
+    },
+    async listCasesByConversation(conversationId: string, scope: TenantScope) {
+      const cases = await hrCasesStore.list(scope);
+      return cases.filter((item) => item.conversationId === conversationId);
+    },
+    async listPendingApprovals(scope: TenantScope) {
+      const cases = await hrCasesStore.list(scope);
+      return cases.filter((item) => item.status === "pending_approval");
     },
   };
 }

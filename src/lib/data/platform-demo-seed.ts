@@ -11,6 +11,7 @@ import type {
   FranchiseLocation,
   HrCandidate,
   HrCourse,
+  HrDocument,
   HrEmployee,
   InstalledAgent,
   KnowledgeGraphEdge,
@@ -30,6 +31,7 @@ import type {
   WikiPage,
   WritingDraft,
 } from "@/types/platform-modules";
+import type { HrCase } from "@/types/hr-case";
 
 const now = crmNow();
 
@@ -651,6 +653,7 @@ export function buildDemoHrCandidates(): HrCandidate[] {
       role: "Senior Account Executive",
       score: 88,
       status: "interview",
+      email: "aisha.khan@example.com",
       resumeSummary:
         "7 years in B2B SaaS sales with strong enterprise closing track record.",
     },
@@ -661,6 +664,7 @@ export function buildDemoHrCandidates(): HrCandidate[] {
       role: "Customer Success Manager",
       score: 81,
       status: "screening",
+      email: "rohan.patel@example.com",
       resumeSummary:
         "Scaled onboarding and renewals for mid-market accounts in fintech.",
     },
@@ -677,6 +681,7 @@ export function buildDemoHrEmployees(): HrEmployee[] {
       role: "Head of Growth",
       startDate: "2024-04-15",
       leaveBalance: 18,
+      email: "sarah.chen@example.com",
     },
     {
       ...DEMO_TENANT,
@@ -686,6 +691,7 @@ export function buildDemoHrEmployees(): HrEmployee[] {
       role: "Delivery Manager",
       startDate: "2023-09-01",
       leaveBalance: 12,
+      email: "john.mathew@example.com",
     },
   ];
 }
@@ -709,6 +715,38 @@ export function buildDemoHrCourses(): HrCourse[] {
       enrolled: 14,
     },
   ];
+}
+
+export function buildDemoHrDocuments(): HrDocument[] {
+  return [
+    {
+      ...DEMO_TENANT,
+      id: "hr_doc_sample_offer",
+      type: "offer_letter",
+      title: "Offer — Aisha Khan, Senior Account Executive",
+      subjectName: "Aisha Khan",
+      subjectId: "candidate_aisha",
+      subjectKind: "candidate",
+      status: "draft",
+      instructions: "Standard offer with 3-month probation and hybrid working.",
+      contextFields: {
+        jobTitle: "Senior Account Executive",
+        department: "Sales",
+        startDate: "1 August 2026",
+        salary: "£72,000",
+        workLocation: "Hybrid — London",
+      },
+      content:
+        "# Offer of Employment\n\nSample draft — use the HR Document Agent to regenerate with AI.",
+      createdByName: "HR Manager",
+      createdAt: "2026-06-01T10:00:00.000Z",
+      updatedAt: "2026-06-01T10:00:00.000Z",
+    },
+  ];
+}
+
+export function buildDemoHrCases(): HrCase[] {
+  return [];
 }
 
 export function buildDemoAutonomousTasks(): AutonomousTask[] {

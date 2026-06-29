@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { getRepository } from "@/lib/data/repository";
+import { getHrStore } from "@/lib/data/platform-store";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getTenantScope } from "@/lib/tenant/context";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export default async function ConversationPage({
   }
 
   const conversations = await repo.listConversations(scope);
+  const hrCases = await getHrStore().listCasesByConversation(id, scope);
 
   const aiStatus = getAiRuntimeStatus();
 
@@ -69,7 +71,11 @@ export default async function ConversationPage({
             activeId={conversation.id}
           />
         </div>
-        <ConversationDetail conversation={conversation} aiStatus={aiStatus} />
+        <ConversationDetail
+          conversation={conversation}
+          aiStatus={aiStatus}
+          hrCases={hrCases}
+        />
       </div>
     </>
   );

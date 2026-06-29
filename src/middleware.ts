@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
 const SESSION_COOKIE = "aarvanta_session";
 
@@ -48,12 +49,18 @@ export async function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
+  const hasSession = await hasValidSession(request);
+
+  if (pathname === "/login" && hasSession) {
+    const next = sanitizeNextPath(request.nextUrl.searchParams.get("next"));
+    return NextResponse.redirect(new URL(next, request.url));
+  }
 
   if (isPublicPath(pathname) || isLiveDemoPublic(pathname)) {
     return NextResponse.next();
   }
 
-  if (await hasValidSession(request)) {
+  if (hasSession) {
     return NextResponse.next();
   }
 
@@ -65,7 +72,8 @@ export async function middleware(request: NextRequest) {
   }
 
   const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("next", pathname);
+  const returnTo = `${pathname}${request.nextUrl.search}`;
+  loginUrl.searchParams.set("next", returnTo);
   return NextResponse.redirect(loginUrl);
 }
 

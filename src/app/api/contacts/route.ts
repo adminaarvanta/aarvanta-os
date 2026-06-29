@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { recordMutationEvent } from "@/lib/api/mutation-events";
 import { getCrmRepository } from "@/lib/data/crm-store";
-import { getTenantScope } from "@/lib/tenant/context";
+import { validateAgainstRules } from "@/lib/rules/validate-mutation";
+import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 
 const createSchema = z.object({
@@ -40,9 +42,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  let scope;
+  let ctx;
   try {
-    scope = await getTenantScope();
+    ctx = await getSessionContext();
   } catch {
     return unauthorized();
   }
@@ -55,6 +57,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const contact = await getCrmRepository().createContact(parsed.data, scope);
+  const ruleCheck = validateAgainstRules({ contact: parsed.data });
+  if (!ruleCheck.allowed) {
+    return NextResponse.json(
+      { error: { code: "RULE_VIOLATION", message: ruleCheck.message, ruleId: ruleCheck.ruleId } },
+      { status: 422 }
+    );
+  }
+
+  const contact = await getCrmRepository().createContact(parsed.data, ctx.scope);
+  await recordMutationEvent({
+    ctx,
+    type: "contact.created",
+    entityType: "contact",
+    entityId: contact.id,
+    payload: {
+      name: `${contact.firstName} ${contact.lastName}`,
+      email: contact.email,
+    },
+  });
+
   return NextResponse.json({ contact }, { status: 201 });
 }

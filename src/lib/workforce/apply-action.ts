@@ -1,6 +1,25 @@
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { crmNow } from "@/lib/data/crm-helpers";
+import { getHrStore } from "@/lib/data/platform-store";
+import { publishDomainEvent } from "@/lib/events/publish";
+import { scheduleProcessHrCase } from "@/lib/hr/process-case";
 import type { TenantScope } from "@/types/communication";
 import type { AgentAction } from "@/types/workforce";
+import type { HrDocumentType } from "@/types/platform-modules";
+
+const HR_DOC_TYPES = new Set<string>([
+  "offer_letter",
+  "experience_letter",
+  "appointment_letter",
+  "relieving_letter",
+  "salary_certificate",
+  "employment_verification",
+  "corporate_invoice",
+  "nda",
+  "policy_memo",
+  "warning_letter",
+  "custom_corporate",
+]);
 
 export async function applyAgentAction(
   action: AgentAction,
@@ -78,6 +97,57 @@ export async function applyAgentAction(
         kind: "alert",
         message: (action.payload.message as string) || action.label,
       };
+    case "generate_hr_document": {
+      const p = action.payload as {
+        documentType?: string;
+        subjectName?: string;
+        contextFields?: Record<string, string>;
+        conversationId?: string;
+        instructions?: string;
+      };
+      if (!p.documentType || !p.subjectName) {
+        throw new Error("documentType and subjectName are required.");
+      }
+      if (!HR_DOC_TYPES.has(p.documentType)) {
+        throw new Error(`Unsupported HR document type: ${p.documentType}`);
+      }
+
+      const hrStore = getHrStore();
+      const now = crmNow();
+      const hrCase = await hrStore.createCase({
+        ...scope,
+        conversationId: p.conversationId ?? `manual_${crmNow()}`,
+        subjectName: p.subjectName,
+        proposedAction: "generate_document",
+        proposedDocumentType: p.documentType as HrDocumentType,
+        contextFields: p.contextFields ?? {},
+        riskTier: "high",
+        riskReasons: ["Created via AI HR Manager action"],
+        status: "triaging",
+        aiSummary: p.instructions ?? action.label,
+        confidence: 0.9,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await publishDomainEvent({
+        scope,
+        type: "hr.case.created",
+        actor: { type: "ai_agent", id: "hr_manager", name: "AI HR Manager" },
+        entityType: "hr_case",
+        entityId: hrCase.id,
+        payload: { source: "workforce_action" },
+        source: "ai",
+      });
+
+      scheduleProcessHrCase(hrCase.id, scope);
+
+      return {
+        kind: "hr_case",
+        id: hrCase.id,
+        message: `HR case created for ${p.documentType.replace(/_/g, " ")} — ${p.subjectName}`,
+      };
+    }
     default:
       throw new Error(`Unsupported action type: ${action.type}`);
   }

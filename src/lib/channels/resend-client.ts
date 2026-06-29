@@ -141,6 +141,7 @@ export async function sendResendEmail(input: {
   to: string;
   subject: string;
   text: string;
+  html?: string;
   inReplyTo?: string;
   messageId?: string;
 }): Promise<ResendSendResult> {
@@ -166,6 +167,8 @@ export async function sendResendEmail(input: {
     subject: input.subject,
     text: input.text,
   };
+
+  if (input.html) body.html = input.html;
 
   if (replyTo) body.reply_to = replyTo;
   if (Object.keys(headers).length > 0) body.headers = headers;

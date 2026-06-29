@@ -4,6 +4,7 @@ import {
   qualifyAndCreateCrmLead,
   syncInboundToExistingCrmContact,
 } from "@/lib/data/inbound-crm-bridge";
+import { scheduleHrCaseEvaluation } from "@/lib/hr/evaluate-conversation-case";
 import { getRepository } from "@/lib/data/repository";
 import type { TenantScope } from "@/types/communication";
 
@@ -35,6 +36,9 @@ export async function refreshConversationAiInsights(
     intent: insights.intent,
     qualificationScore: insights.qualificationScore,
   });
+
+  await syncInboundToExistingCrmContact(updated, scope);
+  scheduleHrCaseEvaluation(conversationId, scope);
 }
 
 /** Fire-and-forget AI + CRM qualification after inbound — does not block webhooks. */

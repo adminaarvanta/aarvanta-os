@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { recordMutationEvent } from "@/lib/api/mutation-events";
 import { getCrmRepository } from "@/lib/data/crm-store";
-import { getTenantScope } from "@/lib/tenant/context";
+import { approvalRequiredByRules } from "@/lib/rules/validate-mutation";
+import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 
 const createSchema = z.object({
@@ -36,9 +38,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  let scope;
+  let ctx;
   try {
-    scope = await getTenantScope();
+    ctx = await getSessionContext();
   } catch {
     return unauthorized();
   }
@@ -51,6 +53,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const deal = await getCrmRepository().createDeal(parsed.data, scope);
+  const approval = approvalRequiredByRules({
+    deal: parsed.data,
+  });
+
+  const deal = await getCrmRepository().createDeal(parsed.data, ctx.scope);
+  await recordMutationEvent({
+    ctx,
+    type: "deal.created",
+    entityType: "deal",
+    entityId: deal.id,
+    payload: {
+      title: deal.title,
+      value: deal.value,
+      pipelineId: deal.pipelineId,
+      ...(approval.required
+        ? { approvalRequired: approval.reason, approvalRole: approval.role }
+        : {}),
+    },
+  });
+
   return NextResponse.json({ deal }, { status: 201 });
 }

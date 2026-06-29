@@ -1,26 +1,32 @@
 import type { LucideIcon } from "lucide-react";
 import { PageFrame, PageScroll } from "@/components/layout/page-scroll";
+import { EmptyState } from "@/components/ui/os/empty-state";
+import { PageHeader } from "@/components/ui/os/page-header";
+import { Panel } from "@/components/ui/os/panel";
+import { StatTile } from "@/components/ui/os/stat-tile";
+import { StatusPill } from "@/components/ui/os/status-pill";
 
 export function ModulePageShell({
   icon: Icon,
   title,
   description,
+  actions,
   children,
 }: {
   icon: LucideIcon;
   title: string;
   description: string;
+  actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <PageFrame>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-[#F5E6C8] sm:text-xl">
-          <Icon className="h-5 w-5 text-[#D4AF37]" />
-          {title}
-        </h2>
-        <p className="text-xs text-[#A89878] sm:text-sm">{description}</p>
-      </header>
+      <PageHeader
+        icon={Icon}
+        title={title}
+        description={description}
+        actions={actions}
+      />
       <PageScroll className="p-4 sm:p-6">{children}</PageScroll>
     </PageFrame>
   );
@@ -29,25 +35,18 @@ export function ModulePageShell({
 export function StatGrid({
   items,
 }: {
-  items: { label: string; value: string | number; sub?: string }[];
+  items: { label: string; value: string | number; sub?: string; href?: string }[];
 }) {
   return (
-    <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
-        <div
+        <StatTile
           key={item.label}
-          className="rounded-xl border border-[#3d3528] bg-[#101010] p-4"
-        >
-          <dt className="text-[10px] uppercase tracking-wide text-[#A89878]">
-            {item.label}
-          </dt>
-          <dd className="mt-1 text-2xl font-semibold text-[#F5E6C8]">
-            {item.value}
-          </dd>
-          {item.sub && (
-            <dd className="mt-0.5 text-xs text-[#A89878]">{item.sub}</dd>
-          )}
-        </div>
+          label={item.label}
+          value={item.value}
+          sub={item.sub}
+          href={item.href}
+        />
       ))}
     </dl>
   );
@@ -59,31 +58,37 @@ export function CardList({
   items: { id: string; title: string; body?: string; meta?: string; badge?: string }[];
 }) {
   if (!items.length) {
-    return <p className="text-sm text-[#A89878]">No items yet.</p>;
+    return (
+      <EmptyState
+        title="Nothing here yet"
+        description="Records will appear as your team creates and updates data."
+      />
+    );
   }
+
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
       {items.map((item) => (
         <li
           key={item.id}
-          className="rounded-xl border border-[#3d3528] bg-[#101010] p-4"
+          className="group px-4 py-3.5 transition-colors hover:bg-surface-hover"
         >
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <p className="font-medium text-[#F5E6C8]">{item.title}</p>
-            {item.badge && (
-              <span className="rounded-full bg-[#D4AF37]/15 px-2 py-0.5 text-[10px] text-[#F9E076] ring-1 ring-[#D4AF37]/30">
-                {item.badge}
-              </span>
-            )}
+            <p className="text-sm font-medium text-foreground group-hover:text-gold-bright">
+              {item.title}
+            </p>
+            {item.badge && <StatusPill variant="gold">{item.badge}</StatusPill>}
           </div>
           {item.body && (
-            <p className="mt-2 text-sm text-[#A89878] line-clamp-3">{item.body}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted line-clamp-2">{item.body}</p>
           )}
           {item.meta && (
-            <p className="mt-2 text-[10px] text-[#A89878]/70">{item.meta}</p>
+            <p className="mt-2 text-[11px] tabular-nums text-dim">{item.meta}</p>
           )}
         </li>
       ))}
     </ul>
   );
 }
+
+export { Panel, StatusPill };

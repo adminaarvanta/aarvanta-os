@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { recordMutationEvent } from "@/lib/api/mutation-events";
 import { getCrmRepository } from "@/lib/data/crm-store";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getSessionContext } from "@/lib/tenant/context";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 
 const updateSchema = z.object({
@@ -20,9 +21,9 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let scope;
+  let ctx;
   try {
-    scope = await getTenantScope();
+    ctx = await getSessionContext();
   } catch {
     return unauthorized();
   }
@@ -36,10 +37,23 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const task = await getCrmRepository().updateTask(id, parsed.data, scope);
+  const task = await getCrmRepository().updateTask(id, parsed.data, ctx.scope);
   if (!task) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  const eventType =
+    parsed.data.status === "done" || task.status === "done"
+      ? "task.completed"
+      : "task.updated";
+
+  await recordMutationEvent({
+    ctx,
+    type: eventType,
+    entityType: "task",
+    entityId: task.id,
+    payload: { changes: parsed.data, status: task.status },
+  });
 
   return NextResponse.json({ task });
 }

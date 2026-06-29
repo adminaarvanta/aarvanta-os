@@ -1,4 +1,5 @@
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { getHrStore } from "@/lib/data/platform-store";
 import { getRepository } from "@/lib/data/repository";
 import { contactDisplayName } from "@/types/crm";
 import type { TenantScope } from "@/types/communication";
@@ -42,6 +43,9 @@ export async function buildWorkforceContext(
     tasks,
     pipelines,
     conversations,
+    hrCandidates,
+    hrEmployees,
+    hrCases,
   ] = await Promise.all([
     crm.listContacts(scope),
     crm.listCompanies(scope),
@@ -49,6 +53,9 @@ export async function buildWorkforceContext(
     crm.listTasks(scope),
     crm.listPipelines(scope),
     inbox.listConversations(scope),
+    getHrStore().list(scope),
+    getHrStore().listEmployees(scope),
+    getHrStore().listCases(scope),
   ]);
 
   const contact = input.contactId
@@ -141,6 +148,38 @@ export async function buildWorkforceContext(
       name: c.contact.name,
       sentiment: c.sentiment,
     })),
+    hr: {
+      candidateCount: hrCandidates.length,
+      employeeCount: hrEmployees.length,
+      openCases: hrCases
+        .filter((item) =>
+          ["pending_approval", "triaging", "generating", "ready_to_send"].includes(
+            item.status
+          )
+        )
+        .slice(0, 5)
+        .map((item) => ({
+          id: item.id,
+          subjectName: item.subjectName,
+          status: item.status,
+          documentType: item.proposedDocumentType,
+          conversationId: item.conversationId,
+        })),
+      candidates: hrCandidates.slice(0, 5).map((c) => ({
+        id: c.id,
+        name: c.name,
+        role: c.role,
+        status: c.status,
+        score: c.score,
+      })),
+      employees: hrEmployees.slice(0, 5).map((e) => ({
+        id: e.id,
+        name: e.name,
+        role: e.role,
+        department: e.department,
+        leaveBalance: e.leaveBalance,
+      })),
+    },
   };
 }
 

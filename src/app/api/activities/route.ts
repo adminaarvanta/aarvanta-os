@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { recordMutationEvent } from "@/lib/api/mutation-events";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
@@ -66,5 +67,19 @@ export async function POST(req: Request) {
     },
     ctx.scope
   );
+
+  await recordMutationEvent({
+    ctx,
+    type: "activity.logged",
+    entityType: "activity",
+    entityId: activity.id,
+    payload: {
+      activityType: activity.type,
+      title: activity.title,
+      contactId: activity.contactId,
+      dealId: activity.dealId,
+    },
+  });
+
   return NextResponse.json({ activity }, { status: 201 });
 }

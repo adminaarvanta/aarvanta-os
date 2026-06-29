@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardCheck, LayoutGrid } from "lucide-react";
+import { Activity, ClipboardCheck, LayoutGrid } from "lucide-react";
 import {
   CORE_MODULES,
   PLATFORM_MODULES,
@@ -60,6 +60,14 @@ export default function PlatformHubPage() {
               planned
             </p>
           </div>
+          <div className="flex flex-wrap gap-2">
+          <Link
+            href="/platform/events"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#3d3528] px-3 py-2 text-xs font-medium text-[#F5E6C8] hover:border-[#D4AF37]/40"
+          >
+            <Activity className="h-3.5 w-3.5 text-[#D4AF37]" />
+            Event audit log
+          </Link>
           <Link
             href="/platform/coverage"
             className="inline-flex items-center gap-2 rounded-lg border border-[#D4AF37]/40 px-3 py-2 text-xs font-medium text-[#F9E076] hover:bg-[#D4AF37]/10"
@@ -67,6 +75,7 @@ export default function PlatformHubPage() {
             <ClipboardCheck className="h-3.5 w-3.5" />
             View full coverage report
           </Link>
+          </div>
         </section>
 
         <section>

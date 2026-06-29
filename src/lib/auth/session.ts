@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import type { TenantScope } from "@/types/communication";
 import type { MemberRole } from "@/types/tenant";
 
+export { getSessionCookieOptions, shouldUseSecureCookies } from "@/lib/auth/cookie-options";
+
 export const SESSION_COOKIE = "aarvanta_session";
 
 export interface SessionPayload {
@@ -75,15 +77,5 @@ export function sessionToScope(session: SessionPayload): TenantScope {
     tenantId: session.tenantId,
     workspaceId: session.workspaceId,
     companyId: session.companyId,
-  };
-}
-
-export function getSessionCookieOptions(maxAge = 60 * 60 * 24 * 7) {
-  return {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge,
   };
 }

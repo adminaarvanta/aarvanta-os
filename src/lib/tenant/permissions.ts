@@ -11,6 +11,7 @@ export type Permission =
   | "workforce:run"
   | "workforce:configure"
   | "workflows:manage"
+  | "platform:audit"
   | "settings:view";
 
 const ROLE_PERMISSIONS: Record<MemberRole, Permission[]> = {
@@ -25,6 +26,7 @@ const ROLE_PERMISSIONS: Record<MemberRole, Permission[]> = {
     "workforce:run",
     "workforce:configure",
     "workflows:manage",
+    "platform:audit",
     "settings:view",
   ],
   admin: [
@@ -36,6 +38,7 @@ const ROLE_PERMISSIONS: Record<MemberRole, Permission[]> = {
     "workforce:run",
     "workforce:configure",
     "workflows:manage",
+    "platform:audit",
     "settings:view",
   ],
   manager: [
@@ -44,6 +47,7 @@ const ROLE_PERMISSIONS: Record<MemberRole, Permission[]> = {
     "crm:write",
     "workforce:run",
     "workflows:manage",
+    "platform:audit",
     "settings:view",
   ],
   member: [
@@ -74,5 +78,6 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "workforce:run": "Run AI agents",
   "workforce:configure": "Configure AI agents",
   "workflows:manage": "Manage workflows",
+  "platform:audit": "View audit log & events",
   "settings:view": "View settings",
 };

@@ -10,6 +10,7 @@ export interface DeliveryContext {
   contact: ContactRef;
   content: string;
   subject?: string;
+  html?: string;
   emailInReplyTo?: string;
   emailMessageId?: string;
 }
@@ -130,6 +131,7 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
         to: ctx.contact.email,
         subject,
         text: ctx.content,
+        html: ctx.html,
         inReplyTo: ctx.emailInReplyTo,
         messageId: ctx.emailMessageId,
       });

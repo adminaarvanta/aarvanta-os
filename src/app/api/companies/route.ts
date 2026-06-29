@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { recordMutationEvent } from "@/lib/api/mutation-events";
 import { getCrmRepository } from "@/lib/data/crm-store";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 
 const createSchema = z.object({
@@ -40,9 +41,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  let scope;
+  let ctx;
   try {
-    scope = await getTenantScope();
+    ctx = await getSessionContext();
   } catch {
     return unauthorized();
   }
@@ -55,6 +56,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const company = await getCrmRepository().createCompany(parsed.data, scope);
+  const company = await getCrmRepository().createCompany(parsed.data, ctx.scope);
+  await recordMutationEvent({
+    ctx,
+    type: "company.created",
+    entityType: "company",
+    entityId: company.id,
+    payload: { name: company.name, industry: company.industry },
+  });
+
   return NextResponse.json({ company }, { status: 201 });
 }
