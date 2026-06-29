@@ -135,7 +135,7 @@ export default function WebsiteChatPage() {
           className="shrink-0 border-t border-[#3d3528] p-3 space-y-2"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
-          {!visitorName && (
+          {messages.length === 0 && (
             <input
               type="text"
               placeholder="Your name (optional)"
