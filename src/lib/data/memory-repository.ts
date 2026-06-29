@@ -55,6 +55,11 @@ export const memoryRepository: ConversationRepository = {
     return found ? structuredClone(found) : null;
   },
 
+  async getConversationById(id) {
+    const found = conversations.find((c) => c.id === id);
+    return found ? structuredClone(found) : null;
+  },
+
   async findConversationByPhone(phone, scope) {
     const normalized = normalizePhone(phone);
     const found = conversations.find(

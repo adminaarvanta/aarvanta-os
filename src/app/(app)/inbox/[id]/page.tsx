@@ -1,10 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { getRepository } from "@/lib/data/repository";
 import { getHrStore } from "@/lib/data/platform-store";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
+import { resolveConversationForInbox } from "@/lib/inbox/resolve-conversation";
 import { getTenantScope } from "@/lib/tenant/context";
 import { Badge } from "@/components/ui/badge";
 import { CHANNEL_LABELS } from "@/lib/constants";
@@ -18,15 +19,19 @@ export default async function ConversationPage({
   const { id } = await params;
   const scope = await getTenantScope();
   const repo = getRepository();
-  let conversation = await repo.getConversation(id, scope);
-  if (!conversation) notFound();
+  const resolved = await resolveConversationForInbox(id, scope);
+  if (!resolved) notFound();
+  if (resolved.switchedWorkspace) redirect(`/inbox/${id}`);
+
+  let conversation = resolved.conversation;
+  const activeScope = resolved.scope;
 
   if (conversation.unreadCount > 0) {
-    conversation = (await repo.markAsRead(id, scope)) ?? conversation;
+    conversation = (await repo.markAsRead(id, activeScope)) ?? conversation;
   }
 
-  const conversations = await repo.listConversations(scope);
-  const hrCases = await getHrStore().listCasesByConversation(id, scope);
+  const conversations = await repo.listConversations(activeScope);
+  const hrCases = await getHrStore().listCasesByConversation(id, activeScope);
 
   const aiStatus = getAiRuntimeStatus();
 

@@ -13,6 +13,7 @@ import { memoryRepository } from "@/lib/data/memory-repository";
 export interface ConversationRepository {
   listConversations(scope: TenantScope): Promise<Conversation[]>;
   getConversation(id: string, scope: TenantScope): Promise<Conversation | null>;
+  getConversationById(id: string): Promise<Conversation | null>;
   findConversationByPhone(
     phone: string,
     scope: TenantScope

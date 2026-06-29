@@ -81,6 +81,12 @@ export const firestoreRepository: ConversationRepository = {
     return getScopedConversation(id, scope);
   },
 
+  async getConversationById(id) {
+    const snap = await getDb().collection(COLLECTION).doc(id).get();
+    if (!snap.exists) return null;
+    return snap.data() as Conversation;
+  },
+
   async findConversationByPhone(phone, scope) {
     const normalized = normalizePhone(phone);
     const items = await listScoped(scope);
