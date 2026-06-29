@@ -96,6 +96,9 @@ export function PendingLink({
     const url = typeof href === "string" ? href : href.pathname ?? "";
     if (!url || url === "#") return;
 
+    // Visitor chat lives outside the app shell — always use a full navigation.
+    if (url === "/chat" || url.startsWith("/chat?")) return;
+
     event.preventDefault();
     startNavigation();
     startTransition(() => {

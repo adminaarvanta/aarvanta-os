@@ -76,10 +76,16 @@ export default function WebsiteChatPage() {
     setLoading(false);
 
     if (!res.ok) {
+      const payload = (await res.json().catch(() => null)) as {
+        error?: { code?: string; message?: string };
+      } | null;
       setError(
         res.status === 401
           ? "Chat is unavailable — please try again in a moment."
-          : "Failed to send message."
+          : res.status === 503
+            ? payload?.error?.message ??
+              "Website chat is not configured. Contact your administrator."
+            : "Failed to send message."
       );
       return;
     }

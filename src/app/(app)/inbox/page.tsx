@@ -1,6 +1,7 @@
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { OpenConversationLink } from "@/components/inbox/open-conversation-link";
 import { getRepository } from "@/lib/data/repository";
+import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantScope } from "@/lib/tenant/context";
 import { Inbox } from "lucide-react";
 
@@ -8,6 +9,11 @@ export default async function InboxPage() {
   const scope = await getTenantScope();
   const conversations = await getRepository().listConversations(scope);
   const first = conversations[0];
+  const inboundWorkspaceId = process.env.WORKSPACE_ID;
+  const showInboundHint =
+    isProductionMode() &&
+    inboundWorkspaceId &&
+    scope.workspaceId !== inboundWorkspaceId;
 
   return (
     <>
@@ -16,6 +22,12 @@ export default async function InboxPage() {
         <p className="text-xs text-[#A89878] sm:text-sm">
           WhatsApp, email, voice, SMS, and website chat in one place.
         </p>
+        {showInboundHint && (
+          <p className="mt-2 rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-2 text-xs text-[#F9E076]">
+            Website chat and other inbound channels route to your main workspace. Switch
+            back to see those conversations.
+          </p>
+        )}
       </header>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain bg-[#101010] md:w-80 md:border-r md:border-[#3d3528]">

@@ -33,18 +33,34 @@ export function MobileNav({ production }: { production: boolean }) {
         {links.map((item) => {
           const Icon = item.icon;
           const active = item.match(pathname);
+          const className = cn(
+            "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium transition-colors",
+            active ? "text-[#F9E076]" : "text-[#A89878]"
+          );
+
+          if (item.href === "/chat") {
+            return (
+              <a
+                key={item.href}
+                href="/chat"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-demo-tour={`mobile-nav-${tourNavId(item.href)}`}
+                className={className}
+              >
+                <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                <span>{item.label}</span>
+              </a>
+            );
+          }
+
           return (
             <PendingLink
               key={item.href}
               href={item.href}
               data-demo-tour={`mobile-nav-${tourNavId(item.href)}`}
-              target={item.href === "/chat" ? "_blank" : undefined}
-              rel={item.href === "/chat" ? "noopener noreferrer" : undefined}
               pendingClassName="opacity-60"
-              className={cn(
-                "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium transition-colors",
-                active ? "text-[#F9E076]" : "text-[#A89878]"
-              )}
+              className={className}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden />
               <span>{item.label}</span>
@@ -55,7 +71,7 @@ export function MobileNav({ production }: { production: boolean }) {
           <form action="/api/auth/logout" method="post" className="flex min-w-0 flex-1">
             <button
               type="submit"
-              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium text-[#A89878]"
+              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium text-[#A89878] transition-colors hover:text-[#F9E076]"
             >
               <LogOut className="h-5 w-5 shrink-0" aria-hidden />
               <span>Sign out</span>

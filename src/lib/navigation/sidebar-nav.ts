@@ -4,6 +4,7 @@ import {
   Kanban,
   Landmark,
   LayoutDashboard,
+  MessageCircle,
   Sparkles,
   Workflow,
 } from "lucide-react";
@@ -31,3 +32,10 @@ export const SIDEBAR_MAIN_NAV = SIDEBAR_RAIL_NAV;
 
 /** @deprecated Settings is on the rail footer; modules are in All tools */
 export const SIDEBAR_SECONDARY_NAV: SidebarNavItem[] = [];
+
+/** Opens visitor chat in a new tab — for testing inbound website chat. */
+export const SIDEBAR_WEBSITE_CHAT: SidebarNavItem = {
+  href: "/chat",
+  label: "Website chat",
+  icon: MessageCircle,
+};

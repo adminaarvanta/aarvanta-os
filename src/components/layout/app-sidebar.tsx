@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Search, Settings, X } from "lucide-react";
+import { LayoutGrid, LogOut, Search, Settings, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { useDemoTourOptional } from "@/components/demo/demo-tour-provider";
@@ -16,7 +16,7 @@ import {
   TOOL_GROUP_LABELS,
   TOOL_GROUP_ORDER,
 } from "@/lib/navigation/all-tools";
-import { SIDEBAR_RAIL_NAV } from "@/lib/navigation/sidebar-nav";
+import { SIDEBAR_RAIL_NAV, SIDEBAR_WEBSITE_CHAT } from "@/lib/navigation/sidebar-nav";
 import { cn } from "@/lib/utils";
 import type { Organization, Workspace } from "@/types/tenant";
 
@@ -281,16 +281,79 @@ function ToolsPanel({
         )}
       </div>
 
-      <div className="px-4 py-3 shadow-[0_-8px_16px_-12px_rgba(0,0,0,0.45)]">
+      <div className="px-4 py-3 shadow-[0_-8px_16px_-12px_rgba(0,0,0,0.45)] space-y-2">
+        <a
+          href="/chat"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onClose}
+          className="block text-xs font-medium text-gold hover:text-gold-bright"
+        >
+          Open visitor chat →
+        </a>
         <Link
           href="/platform"
           onClick={onClose}
-          className="text-xs font-medium text-gold hover:text-gold-bright"
+          className="block text-xs font-medium text-gold hover:text-gold-bright"
         >
           View full module directory →
         </Link>
       </div>
     </div>
+  );
+}
+
+function SidebarFooterLink({
+  item,
+  expanded,
+  onNavigate,
+}: {
+  item: { href: string; label: string; icon: LucideIcon };
+  expanded: boolean;
+  onNavigate?: () => void;
+}) {
+  const Icon = item.icon;
+
+  return (
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onNavigate}
+      data-demo-tour={`nav-${tourNavId(item.href)}`}
+      title={item.label}
+      className={cn(
+        "relative flex h-10 w-full items-center rounded-lg transition-colors duration-150",
+        expanded ? "px-1" : "justify-center",
+        "text-muted hover:bg-surface-hover hover:text-foreground"
+      )}
+    >
+      <SidebarIconSlot>
+        <Icon className="h-[18px] w-[18px]" />
+      </SidebarIconSlot>
+      <SidebarLabel expanded={expanded}>{item.label}</SidebarLabel>
+    </a>
+  );
+}
+
+function SignOutNavItem({ expanded }: { expanded: boolean }) {
+  return (
+    <form action="/api/auth/logout" method="post" className="w-full">
+      <button
+        type="submit"
+        title="Sign out"
+        className={cn(
+          "relative flex h-10 w-full items-center rounded-lg transition-colors duration-150",
+          expanded ? "px-1" : "justify-center",
+          "text-muted hover:bg-surface-hover hover:text-foreground"
+        )}
+      >
+        <SidebarIconSlot>
+          <LogOut className="h-[18px] w-[18px]" />
+        </SidebarIconSlot>
+        <SidebarLabel expanded={expanded}>Sign out</SidebarLabel>
+      </button>
+    </form>
   );
 }
 
@@ -454,16 +517,21 @@ export function AppSidebar({
             </div>
           </nav>
 
-          <div className="mt-auto shrink-0 p-2">
+          <div className="mt-auto shrink-0 space-y-0.5 p-2">
+            <SidebarFooterLink
+              item={SIDEBAR_WEBSITE_CHAT}
+              expanded={sidebarExpanded}
+              onNavigate={closeToolsPanel}
+            />
             <PendingLink
               href="/settings"
               data-demo-tour="nav-settings"
               onClick={closeToolsPanel}
               className={cn(
-                "flex h-10 w-full items-center rounded-lg transition-colors duration-150",
+                "relative flex h-10 w-full items-center rounded-lg transition-colors duration-150",
                 sidebarExpanded ? "px-1" : "justify-center",
                 pathname.startsWith("/settings")
-                  ? "bg-gold/10 text-gold-bright"
+                  ? "bg-gold/10 text-gold-bright before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold"
                   : "text-muted hover:bg-surface-hover hover:text-foreground"
               )}
             >
@@ -472,27 +540,7 @@ export function AppSidebar({
               </SidebarIconSlot>
               <SidebarLabel expanded={sidebarExpanded}>Settings</SidebarLabel>
             </PendingLink>
-            {production && (
-              <div
-                className={cn(
-                  "overflow-hidden transition-[max-height,opacity] ease-out",
-                  sidebarExpanded ? "max-h-8 opacity-100" : "max-h-0 opacity-0"
-                )}
-                style={{
-                  transitionDuration: `${SIDEBAR_MS}ms`,
-                  transitionTimingFunction: SIDEBAR_EASE,
-                }}
-              >
-                <form action="/api/auth/logout" method="post" className="px-3 pt-1">
-                  <button
-                    type="submit"
-                    className="text-xs text-muted hover:text-gold hover:underline"
-                  >
-                    Sign out
-                  </button>
-                </form>
-              </div>
-            )}
+            {production && <SignOutNavItem expanded={sidebarExpanded} />}
           </div>
         </aside>
 

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRepository } from "@/lib/data/repository";
-import { getWebhookTenantScope } from "@/lib/tenant/context";
+import {
+  getWebhookTenantScope,
+  isProductionTenantConfigured,
+} from "@/lib/tenant/context";
+import { isDemoMode } from "@/lib/config/app-mode";
 import { parseJsonBody } from "@/lib/api/request";
 import type { TimelineMessage } from "@/types/communication";
 
@@ -10,6 +14,19 @@ const postSchema = z.object({
   content: z.string().min(1),
   visitorName: z.string().optional(),
 });
+
+function chatUnavailableResponse() {
+  return NextResponse.json(
+    {
+      error: {
+        code: "CHAT_UNAVAILABLE",
+        message:
+          "Website chat is not configured for this workspace. Check TENANT_ID, WORKSPACE_ID, and COMPANY_ID.",
+      },
+    },
+    { status: 503 }
+  );
+}
 
 export async function POST(req: Request) {
   const body = await parseJsonBody<unknown>(req);
@@ -20,7 +37,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const scope = getWebhookTenantScope();
+  if (!isDemoMode() && !isProductionTenantConfigured()) {
+    return chatUnavailableResponse();
+  }
+
+  let scope;
+  try {
+    scope = getWebhookTenantScope();
+  } catch {
+    return chatUnavailableResponse();
+  }
+
   const conversation = await getRepository().addInboundChat(
     {
       sessionId: parsed.data.sessionId,
@@ -39,7 +66,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "sessionId required" }, { status: 400 });
   }
 
-  const scope = getWebhookTenantScope();
+  if (!isDemoMode() && !isProductionTenantConfigured()) {
+    return NextResponse.json({ messages: [] });
+  }
+
+  let scope;
+  try {
+    scope = getWebhookTenantScope();
+  } catch {
+    return NextResponse.json({ messages: [] });
+  }
   const conversation = await getRepository().findConversationByChatSession(
     sessionId,
     scope

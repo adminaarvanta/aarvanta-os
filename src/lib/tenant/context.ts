@@ -106,12 +106,24 @@ export async function getOptionalSession() {
   return getSessionFromCookiesCached();
 }
 
+export function isProductionTenantConfigured(): boolean {
+  return Boolean(
+    process.env.TENANT_ID &&
+      process.env.WORKSPACE_ID &&
+      process.env.COMPANY_ID
+  );
+}
+
 export function getProductionTenantScope(): TenantScope {
-  return {
-    tenantId: process.env.TENANT_ID!,
-    workspaceId: process.env.WORKSPACE_ID!,
-    companyId: process.env.COMPANY_ID!,
-  };
+  const tenantId = process.env.TENANT_ID;
+  const workspaceId = process.env.WORKSPACE_ID;
+  const companyId = process.env.COMPANY_ID;
+  if (!tenantId || !workspaceId || !companyId) {
+    throw new Error(
+      "Production tenant is not configured (TENANT_ID, WORKSPACE_ID, COMPANY_ID)."
+    );
+  }
+  return { tenantId, workspaceId, companyId };
 }
 
 /** Webhooks use demo tenant in demo mode so inbound events appear in the inbox. */
