@@ -153,7 +153,7 @@ export function GlobalSearch({ className }: { className?: string }) {
     <div ref={rootRef} data-demo-tour="global-search" className={cn("relative", className)}>
       <div
         className={cn(
-          "flex items-center gap-2 rounded-lg border bg-[#101010] px-3 py-2 transition-colors",
+          "flex h-9 items-center gap-2 rounded-lg border bg-[#101010] px-2.5 transition-colors sm:px-3",
           open ? "border-[#D4AF37]/50 ring-1 ring-[#D4AF37]/20" : "border-[#3d3528]"
         )}
       >
@@ -172,7 +172,7 @@ export function GlobalSearch({ className }: { className?: string }) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onInputKeyDown}
-          placeholder="Search features, contacts, deals, projects…"
+          placeholder="Search…"
           aria-label="Global search"
           aria-expanded={showDropdown}
           aria-controls={showDropdown ? listboxId : undefined}
@@ -187,7 +187,7 @@ export function GlobalSearch({ className }: { className?: string }) {
 
       {showDropdown && (
         <div
-          className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-50 overflow-hidden rounded-xl border border-[#3d3528] bg-[#0a0a0a] shadow-2xl shadow-black/50"
+          className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#3d3528] bg-[#0a0a0a] shadow-2xl shadow-black/50"
           role="presentation"
         >
           <div

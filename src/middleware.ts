@@ -10,6 +10,7 @@ const PUBLIC_PREFIXES = [
   "/about",
   "/contact",
   "/chat",
+  "/api/chat",
   "/api/auth",
   "/api/webhooks",
   "/api/health",

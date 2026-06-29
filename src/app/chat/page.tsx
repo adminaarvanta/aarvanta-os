@@ -24,9 +24,17 @@ export default function WebsiteChatPage() {
 
   useEffect(() => {
     fetch("/api/chat/session", { method: "POST" })
-      .then((r) => r.json())
-      .then((data) => setSessionId(data.sessionId))
-      .catch(() => setError("Could not start chat session."));
+      .then(async (r) => {
+        if (!r.ok) {
+          throw new Error(`Session failed (${r.status})`);
+        }
+        return r.json();
+      })
+      .then((data) => {
+        if (!data.sessionId) throw new Error("Missing session");
+        setSessionId(data.sessionId);
+      })
+      .catch(() => setError("Could not start chat session. Please refresh and try again."));
   }, []);
 
   useEffect(() => {
@@ -68,7 +76,11 @@ export default function WebsiteChatPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setError("Failed to send message.");
+      setError(
+        res.status === 401
+          ? "Chat is unavailable — please try again in a moment."
+          : "Failed to send message."
+      );
       return;
     }
 
