@@ -26,7 +26,7 @@ const HelpMenu = dynamic(
 
 export function AppHeader() {
   return (
-    <header className="shrink-0 border-b border-[#3d3528] bg-[#0a0a0a] px-3 py-2 sm:px-4">
+    <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface/95 px-3 backdrop-blur-md sm:px-4">
       <div className="flex items-center gap-2 sm:gap-3">
         <GlobalSearch className="min-w-0 flex-1" />
         <Suspense fallback={null}>

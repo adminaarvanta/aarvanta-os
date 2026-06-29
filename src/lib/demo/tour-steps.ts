@@ -10,6 +10,10 @@ export type DemoTourStep = {
   target?: string;
   placement?: DemoTourPlacement;
   tip?: string;
+  /** Expand the desktop sidebar rail during this step. */
+  expandSidebar?: boolean;
+  /** Open the All tools flyout during this step. */
+  openAllTools?: boolean;
 };
 
 export const DEMO_TOUR_STORAGE_KEY = "aarvanta_demo_tour_active";
@@ -29,11 +33,22 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     id: "help",
     title: "Help is always here",
     description:
-      "The Help button in the header gives you the product tour, the 90-second live demo, and quick tips — no extra sidebar items needed.",
+      "The Help button in the header gives you the product tour, the 90-second live demo, and quick tips.",
     route: "/dashboard",
     target: '[data-demo-tour="help-trigger"]',
     placement: "bottom",
     tip: "Look for the gold Help button with the pulse indicator",
+  },
+  {
+    id: "sidebar",
+    title: "Sidebar navigation",
+    description:
+      "The left rail keeps your workspace uncluttered. Hover to expand and read full labels — icons stay fixed so nothing jumps around.",
+    route: "/dashboard",
+    target: '[data-demo-tour="sidebar-rail"]',
+    placement: "right",
+    expandSidebar: true,
+    tip: "Hover the rail to expand · move away to collapse",
   },
   {
     id: "dashboard",
@@ -43,26 +58,29 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     route: "/dashboard",
     target: '[data-demo-tour="nav-dashboard"], [data-demo-tour="mobile-nav-dashboard"]',
     placement: "right",
+    expandSidebar: true,
     tip: "Ask Copilot: “What's our pipeline forecast?”",
   },
   {
     id: "inbox",
     title: "Unified Inbox",
     description:
-      "WhatsApp, email, SMS, voice, and website chat in one timeline — with AI summaries, sentiment, and tags on every thread.",
+      "WhatsApp, email, SMS, voice, and website chat in one timeline — with AI summaries, sentiment, tags, and HR document automation.",
     route: "/inbox",
     target: '[data-demo-tour="nav-inbox"], [data-demo-tour="mobile-nav-inbox"]',
     placement: "right",
+    expandSidebar: true,
     tip: "Sarah Chen's Meridian thread is pre-loaded for demo",
   },
   {
     id: "crm",
     title: "CRM & Pipelines",
     description:
-      "Manage contacts, companies, deals, and tasks manually. Move deals across stages, assign owners, and log activities.",
+      "Manage contacts, companies, deals, and tasks. Move deals across stages, assign owners, and log activities.",
     route: "/crm",
     target: '[data-demo-tour="nav-crm"], [data-demo-tour="mobile-nav-crm"]',
     placement: "right",
+    expandSidebar: true,
     tip: "Try ⌘K and search “Meridian”",
   },
   {
@@ -73,7 +91,20 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     route: "/workforce",
     target: '[data-demo-tour="nav-workforce"], [data-demo-tour="mobile-nav-workforce"]',
     placement: "right",
+    expandSidebar: true,
     tip: "Open Sales Manager after running the live demo",
+  },
+  {
+    id: "all-tools",
+    title: "All tools",
+    description:
+      "Every module in one searchable panel — Team, Finance, Billing, Writing, Analytics, Integrations, and 30+ more. Grouped by Manage, Revenue, Intelligence, and Enterprise.",
+    route: "/dashboard",
+    target: '[data-demo-tour="all-tools-panel"]',
+    placement: "right",
+    expandSidebar: true,
+    openAllTools: true,
+    tip: "Click All tools below the main tabs · panel stays open until you close it or pick another sidebar item",
   },
   {
     id: "search",
@@ -85,13 +116,14 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     placement: "bottom",
   },
   {
-    id: "team",
-    title: "Team & Collaboration",
+    id: "settings",
+    title: "Settings & workspace",
     description:
-      "Add members, assign roles, invite colleagues, and coordinate on CRM records, tasks, and deals.",
-    route: "/team",
-    target: '[data-demo-tour="nav-team"], [data-demo-tour="mobile-nav-team"]',
+      "Organizations, workspaces, roles, and sign-out live at the bottom of the sidebar. Extended modules are in All tools, not duplicated here.",
+    route: "/settings",
+    target: '[data-demo-tour="nav-settings"]',
     placement: "right",
+    expandSidebar: true,
   },
   {
     id: "live-demo",
@@ -107,7 +139,7 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     id: "finish",
     title: "You're ready to go",
     description:
-      "Use Help anytime for the product tour or live demo. Explore modules from the sidebar, or press ⌘K to jump anywhere instantly.",
+      "Use Help anytime for the product tour or live demo. Hover the sidebar for quick tabs, open All tools for everything else, or press ⌘K to jump anywhere.",
     route: "/dashboard",
     placement: "center",
   },

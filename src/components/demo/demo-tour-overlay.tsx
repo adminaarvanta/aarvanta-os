@@ -107,17 +107,28 @@ export function DemoTourOverlay() {
     if (!tour?.active) return;
 
     updateRect();
-    const timer = window.setTimeout(updateRect, 450);
+    const needsLayout = tour.step.expandSidebar || tour.step.openAllTools;
+    const timer = window.setTimeout(updateRect, needsLayout ? 500 : 450);
+    const timer2 = needsLayout
+      ? window.setTimeout(updateRect, 750)
+      : undefined;
 
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect, true);
 
     return () => {
       window.clearTimeout(timer);
+      if (timer2 !== undefined) window.clearTimeout(timer2);
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect, true);
     };
-  }, [tour?.active, updateRect]);
+  }, [
+    tour?.active,
+    tour?.stepIndex,
+    tour?.step.expandSidebar,
+    tour?.step.openAllTools,
+    updateRect,
+  ]);
 
   if (!tour?.active) return null;
 
