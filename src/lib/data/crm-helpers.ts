@@ -1,6 +1,6 @@
 import type { TenantScope } from "@/types/communication";
 import { isProductionMode } from "@/lib/config/app-mode";
-import { useMemoryDatastore } from "@/lib/data/datastore";
+import { isMemoryDatastore } from "@/lib/data/datastore";
 import { DEMO_TENANT } from "@/lib/tenant/demo-context";
 
 function scopesMatch(a: TenantScope, b: TenantScope) {
@@ -23,7 +23,7 @@ function productionTenantScope(): TenantScope | null {
 export function inCrmScope<T extends TenantScope>(record: T, scope: TenantScope) {
   if (scopesMatch(record, scope)) return true;
 
-  if (isProductionMode() && useMemoryDatastore()) {
+  if (isProductionMode() && isMemoryDatastore()) {
     const prod = productionTenantScope();
     if (!prod) return false;
 

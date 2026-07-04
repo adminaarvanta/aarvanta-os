@@ -44,8 +44,8 @@ export function buildFeatureSearchIndex(): GlobalSearchResult[] {
     });
   }
 
-  for (const module of [...CORE_MODULES, ...PLATFORM_MODULES]) {
-    add(moduleToResult(module, [module.group, String(module.phase)]));
+  for (const tool of [...CORE_MODULES, ...PLATFORM_MODULES]) {
+    add(moduleToResult(tool, [tool.group, String(tool.phase)]));
   }
 
   for (const agent of AGENT_DEFINITIONS) {

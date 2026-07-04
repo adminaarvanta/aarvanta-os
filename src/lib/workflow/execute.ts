@@ -124,7 +124,7 @@ export async function executeWorkflowRun(
   startIndex = 0
 ): Promise<WorkflowRun> {
   const repo = getWorkflowRepository();
-  let context = await enrichRunContext(scope, run.context);
+  const context = await enrichRunContext(scope, run.context);
   const logs: WorkflowStepLog[] = [...run.stepLogs];
 
   for (let i = startIndex; i < workflow.steps.length; i += 1) {

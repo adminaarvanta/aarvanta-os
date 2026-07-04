@@ -25,7 +25,7 @@ import type {
 
 let contacts = [...DEMO_CRM_CONTACTS];
 let companies = [...DEMO_CRM_COMPANIES];
-let pipelines = [...DEMO_CRM_PIPELINES];
+const pipelines = [...DEMO_CRM_PIPELINES];
 let deals = [...DEMO_CRM_DEALS];
 let tasks = [...DEMO_CRM_TASKS];
 let activities = [...DEMO_CRM_ACTIVITIES];

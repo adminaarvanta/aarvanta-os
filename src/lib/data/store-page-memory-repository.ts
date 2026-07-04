@@ -3,7 +3,7 @@ import type { StorePageRepository } from "@/lib/data/store-page-repository";
 import type { GeneratedStorePage } from "@/types/store-page";
 import type { TenantScope } from "@/types/communication";
 
-let pages: GeneratedStorePage[] = [];
+const pages: GeneratedStorePage[] = [];
 const bySlug = new Map<string, GeneratedStorePage>();
 
 export const storePageMemoryRepository: StorePageRepository = {

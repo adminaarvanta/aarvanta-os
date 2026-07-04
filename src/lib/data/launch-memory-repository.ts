@@ -3,7 +3,7 @@ import type { LaunchRepository } from "@/lib/data/launch-repository";
 import type { TenantScope } from "@/types/communication";
 import type { CreateLaunchSessionInput, LaunchSession } from "@/types/launch";
 
-let sessions: LaunchSession[] = [];
+const sessions: LaunchSession[] = [];
 
 export const launchMemoryRepository: LaunchRepository = {
   async list(scope) {

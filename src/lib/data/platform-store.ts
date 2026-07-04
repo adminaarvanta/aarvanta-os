@@ -1,7 +1,7 @@
 import {
   createResilientRepository,
   withFirestoreFallback,
-  useMemoryDatastore,
+  isMemoryDatastore,
 } from "@/lib/data/datastore";
 import {
   BILLING_PLANS,
@@ -92,35 +92,35 @@ function createCrudStore<T extends ScopedEntity>(
 ): ScopedCrudStore<T> {
   return {
     list(scope) {
-      if (useMemoryDatastore()) return repository.memory.list(scope);
+      if (isMemoryDatastore()) return repository.memory.list(scope);
       return withFirestoreFallback(
         () => repository.firestore.list(scope),
         () => repository.memory.list(scope)
       );
     },
     get(id, scope) {
-      if (useMemoryDatastore()) return repository.memory.get(id, scope);
+      if (isMemoryDatastore()) return repository.memory.get(id, scope);
       return withFirestoreFallback(
         () => repository.firestore.get(id, scope),
         () => repository.memory.get(id, scope)
       );
     },
     create(item) {
-      if (useMemoryDatastore()) return repository.memory.create(item, idPrefix);
+      if (isMemoryDatastore()) return repository.memory.create(item, idPrefix);
       return withFirestoreFallback(
         () => repository.firestore.create(item, idPrefix),
         () => repository.memory.create(item, idPrefix)
       );
     },
     set(item) {
-      if (useMemoryDatastore()) return repository.memory.set(item);
+      if (isMemoryDatastore()) return repository.memory.set(item);
       return withFirestoreFallback(
         () => repository.firestore.set(item),
         () => repository.memory.set(item)
       );
     },
     remove(id, scope) {
-      if (useMemoryDatastore()) return repository.memory.remove(id, scope);
+      if (isMemoryDatastore()) return repository.memory.remove(id, scope);
       return withFirestoreFallback(
         () => repository.firestore.remove(id, scope),
         () => repository.memory.remove(id, scope)

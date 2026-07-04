@@ -290,7 +290,7 @@ export async function approveHrCase(
   }
 
   const now = crmNow();
-  let documentId = hrCase.documentId;
+  const documentId = hrCase.documentId;
 
   if (patch?.contextFields && documentId) {
     const document = await hrStore.getDocument(documentId, scope);

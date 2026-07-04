@@ -9,8 +9,8 @@ export function getAllToolsModules(): PlatformModule[] {
     ...PLATFORM_MODULES,
   ];
 
-  return merged.filter((module) => {
-    const key = module.href.split("?")[0];
+  return merged.filter((tool) => {
+    const key = tool.href.split("?")[0];
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -48,9 +48,9 @@ export function groupToolsByCategory(
   modules: PlatformModule[]
 ): Record<string, PlatformModule[]> {
   const groups: Record<string, PlatformModule[]> = {};
-  for (const module of modules) {
-    if (!groups[module.group]) groups[module.group] = [];
-    groups[module.group].push(module);
+  for (const tool of modules) {
+    if (!groups[tool.group]) groups[tool.group] = [];
+    groups[tool.group].push(tool);
   }
   return groups;
 }

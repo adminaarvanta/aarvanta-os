@@ -42,7 +42,7 @@ export async function withFirestoreFallback<T>(
   firestoreOp: () => Promise<T>,
   memoryOp: () => T | Promise<T>
 ): Promise<T> {
-  if (useMemoryDatastore()) {
+  if (isMemoryDatastore()) {
     return memoryOp();
   }
 
@@ -64,7 +64,7 @@ export function createResilientRepository<M extends object, F extends M>(
   memory: M,
   firestore: F
 ): M {
-  if (useMemoryDatastore()) return memory;
+  if (isMemoryDatastore()) return memory;
 
   return new Proxy(firestore, {
     get(target, prop, receiver) {
@@ -91,7 +91,7 @@ export function createResilientRepository<M extends object, F extends M>(
   }) as M;
 }
 
-export function useMemoryDatastore(): boolean {
+export function isMemoryDatastore(): boolean {
   if (isDemoMode()) return true;
   if (process.env.DATASTORE === "memory") return true;
   if (process.env.DATASTORE === "firestore") return false;
@@ -100,7 +100,7 @@ export function useMemoryDatastore(): boolean {
 }
 
 export function getActiveDatastore(): DatastoreBackend {
-  return useMemoryDatastore() ? "memory" : "firestore";
+  return isMemoryDatastore() ? "memory" : "firestore";
 }
 
 export const ensureDatastoreReady = cache(async (): Promise<DatastoreBackend> => {
