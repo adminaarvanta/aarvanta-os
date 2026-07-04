@@ -5,9 +5,9 @@ import { PageHeader } from "@/components/ui/os/page-header";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getAllChannelStatuses } from "@/lib/channels/config";
 import {
-  checkResendReceivingAccess,
+  checkGmailSyncAccess,
   getEmailInboundConfig,
-} from "@/lib/channels/resend-client";
+} from "@/lib/channels/gmail-client";
 import { getActiveDatastore } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantRepository } from "@/lib/data/tenant-store";
@@ -22,13 +22,13 @@ export default async function SettingsPage() {
   const { organization, workspace } = await ensureTenantRecords(ctx);
   const repo = getTenantRepository();
 
-  const [workspaces, members, invitations, workspaceSettings, receivingStatus] =
+  const [workspaces, members, invitations, workspaceSettings, gmailSyncStatus] =
     await Promise.all([
       repo.listWorkspaces(ctx.scope.tenantId),
       repo.listMembers(ctx.scope),
       repo.listInvitations(ctx.scope),
       getWorkspaceSettings(ctx.scope.workspaceId),
-      checkResendReceivingAccess(),
+      checkGmailSyncAccess(),
     ]);
 
   await hydrateWorkspaceSettingsCache(ctx.scope.workspaceId);
@@ -60,7 +60,7 @@ export default async function SettingsPage() {
             datastore: getActiveDatastore(),
             ai: getAiRuntimeStatus(),
             channels: getAllChannelStatuses(),
-            emailReceiving: receivingStatus,
+            emailSync: gmailSyncStatus,
             emailFrom: emailInbound.from ?? null,
             replyTo: emailInbound.replyTo ?? null,
           }}

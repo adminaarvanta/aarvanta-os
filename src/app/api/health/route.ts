@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getAllChannelStatuses } from "@/lib/channels/config";
 import {
-  checkResendReceivingAccess,
+  checkGmailSyncAccess,
   getEmailInboundConfig,
-} from "@/lib/channels/resend-client";
+} from "@/lib/channels/gmail-client";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { getActiveDatastore, ensureDatastoreReady } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
@@ -13,8 +13,8 @@ export async function GET() {
   const mode = isProductionMode() ? "production" : "demo";
   const channels = getAllChannelStatuses();
   const ai = getAiRuntimeStatus();
-  const receivingStatus = await checkResendReceivingAccess();
-  const emailInbound = { ...getEmailInboundConfig(), receivingStatus };
+  const gmailSyncStatus = await checkGmailSyncAccess();
+  const emailInbound = { ...getEmailInboundConfig(), gmailSyncStatus };
 
   if (!isProductionMode()) {
     return NextResponse.json({
@@ -23,7 +23,7 @@ export async function GET() {
       datastore: "memory",
       channels,
       ai,
-      emailReceiving: receivingStatus,
+      emailSync: gmailSyncStatus,
       emailInbound,
     });
   }
@@ -41,7 +41,7 @@ export async function GET() {
         "Firestore unavailable (quota or connectivity). Serving demo data from memory until Firestore recovers.",
       channels,
       ai,
-      emailReceiving: receivingStatus,
+      emailSync: gmailSyncStatus,
       emailInbound,
     });
   }
@@ -57,7 +57,7 @@ export async function GET() {
           firestore: "not_configured",
           channels,
           ai,
-          emailReceiving: receivingStatus,
+          emailSync: gmailSyncStatus,
           emailInbound,
         },
         { status: 503 }
@@ -73,7 +73,7 @@ export async function GET() {
       firestore: "connected",
       channels,
       ai,
-      emailReceiving: receivingStatus,
+      emailSync: gmailSyncStatus,
       emailInbound,
     });
   } catch (error) {
@@ -85,7 +85,7 @@ export async function GET() {
         firestore: "error",
         channels,
         ai,
-        emailReceiving: receivingStatus,
+        emailSync: gmailSyncStatus,
         emailInbound,
         message: error instanceof Error ? error.message : "Unknown error",
       },

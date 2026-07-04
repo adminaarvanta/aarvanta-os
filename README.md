@@ -125,19 +125,27 @@ npm run seed:firestore
 4. **Voice**: same webhook URL for call status; outbound calls use `/api/webhooks/twilio/twiml`
 5. Trial accounts: verify recipient numbers first
 
-### 9. Email (Resend)
+### 9. Email (Gmail — free with Google Workspace)
 
-1. [resend.com](https://resend.com) → create an API key with **Full access** (send-only keys cannot load inbound email bodies) → `RESEND_API_KEY`
-2. Verify your domain in Resend and enable **Receiving** (add the MX record Resend provides)
-3. Set `EMAIL_FROM` to an address on that verified domain (e.g. `notifications@yourdomain.com`)
-4. Set `EMAIL_REPLY_TO` to an address on the **same verified receiving domain** (e.g. `reply@yourdomain.com`). Gmail replies go to this address — if it is on an unverified subdomain, replies will never reach Resend. When unset, defaults to `reply@<your EMAIL_FROM domain>`.
-5. **Resend → Webhooks** → `https://YOUR-DOMAIN/api/webhooks/email` (event: `email.received` only)
-6. Verify: `GET /api/health` → `emailInbound.replyTo`, `emailInbound.receivingStatus: "ok"`
+Uses your existing Google Workspace / Gmail mailbox. **No third-party email provider, no DNS/MX changes** — company inboxes keep working normally.
 
-**Common pitfalls:**
-- Reply-To on a subdomain without Resend receiving enabled (use the root verified domain instead)
-- Send-only API key (inbound messages fail body fetch; webhook skips saving until fixed)
-- Webhook subscribed to `email.sent` / `email.delivered` instead of `email.received`
+1. In Google Account → Security → enable 2-Step Verification
+2. Create an **App password** (Google Account → Security → App passwords) → `GMAIL_APP_PASSWORD`
+3. Set env vars:
+   ```bash
+   GMAIL_USER=support@yourdomain.com
+   GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+   EMAIL_FROM=support@yourdomain.com
+   ```
+4. **Inbound sync** — poll Gmail inbox via IMAP (every few minutes):
+   - Cron: `GET /api/cron/sync-email` with header `Authorization: Bearer $CRON_SECRET`
+   - Manual: `POST /api/email/sync` (signed-in workspace admin)
+   - Optional: add `vercel.json` cron or use [cron-job.org](https://cron-job.org) (free)
+5. Verify: `GET /api/health` → `channels.email: "live"`, `emailInbound.gmailSyncStatus: "ok"`
+
+**Remove Resend DNS records** if still present: delete Resend MX/SPF/DKIM from your domain and keep only Google MX (`ASPMX.L.GOOGLE.COM`, etc.).
+
+**Dev simulation:** `POST /api/webhooks/email` with `{ "simulate": true, "from": "...", "text": "..." }` — no Gmail needed in demo mode.
 
 ### 10. Website chat
 
@@ -197,7 +205,7 @@ Check channel status: `GET /api/health` → `channels` object (`live` | `simulat
 | WhatsApp | ✅ webhook | ✅ | Meta Cloud API |
 | SMS | ✅ webhook | ✅ | Twilio |
 | Voice | ✅ webhook | ✅ call + TTS | Twilio |
-| Email | ✅ webhook | ✅ | Resend |
+| Email | ✅ IMAP sync | ✅ SMTP | Gmail |
 | Website chat | ✅ `/chat` | ✅ inbox reply | Built-in |
 
 ## API
@@ -212,7 +220,9 @@ Check channel status: `GET /api/health` → `channels` object (`live` | `simulat
 - `GET|POST /api/webhooks/whatsapp`
 - `POST /api/webhooks/twilio` — SMS + voice status
 - `GET /api/webhooks/twilio/twiml` — voice message TwiML
-- `POST /api/webhooks/email` — Resend inbound
+- `GET /api/cron/sync-email` — Gmail IMAP inbox sync (cron)
+- `POST /api/email/sync` — manual Gmail inbox sync (admin)
+- `POST /api/webhooks/email` — simulated inbound (dev only)
 - `POST /api/chat/session` · `POST|GET /api/chat/messages`
 
 ## Stack

@@ -1,5 +1,5 @@
 import { normalizeEmail } from "@/lib/data/conversation-helpers";
-import { getEmailReplyToAddress } from "@/lib/channels/resend-client";
+import { getEmailReplyToAddress } from "@/lib/channels/gmail-client";
 import type { Conversation, TimelineEmail } from "@/types/communication";
 
 export function normalizeEmailSubject(subject: string): string {
@@ -45,7 +45,7 @@ function ownEmailAddresses(): Set<string> {
   const addresses = [
     process.env.EMAIL_FROM,
     getEmailReplyToAddress(),
-    process.env.EMAIL_INBOUND_ADDRESS,
+    process.env.GMAIL_USER,
   ]
     .filter(Boolean)
     .map((email) => normalizeEmail(email!));

@@ -5,8 +5,8 @@ import { getAllChannelStatuses } from "@/lib/channels/config";
 import { apiError, parseJsonBody } from "@/lib/api/request";
 import {
   getEmailInboundConfig,
-  checkResendReceivingAccess,
-} from "@/lib/channels/resend-client";
+  checkGmailSyncAccess,
+} from "@/lib/channels/gmail-client";
 import { getActiveDatastore } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
 import {
@@ -24,9 +24,9 @@ const patchSchema = z.object({
 export async function GET() {
   try {
     const ctx = await getSessionContext();
-    const [settings, receivingStatus] = await Promise.all([
+    const [settings, gmailSyncStatus] = await Promise.all([
       getWorkspaceSettings(ctx.scope.workspaceId),
-      checkResendReceivingAccess(),
+      checkGmailSyncAccess(),
     ]);
 
     return NextResponse.json({
@@ -36,7 +36,7 @@ export async function GET() {
         datastore: getActiveDatastore(),
         ai: getAiRuntimeStatus(),
         channels: getAllChannelStatuses(),
-        emailInbound: { ...getEmailInboundConfig(), receivingStatus },
+        emailInbound: { ...getEmailInboundConfig(), gmailSyncStatus },
       },
       scope: ctx.scope,
       user: {

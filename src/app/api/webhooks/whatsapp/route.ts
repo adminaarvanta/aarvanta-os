@@ -14,16 +14,17 @@ import {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get("hub.mode");
-  const token = searchParams.get("hub.verify_token");
+  const token = searchParams.get("hub.verify_token")?.trim();
   const challenge = searchParams.get("hub.challenge");
+  const expected = process.env.WHATSAPP_VERIFY_TOKEN?.trim();
 
-  if (
-    mode === "subscribe" &&
-    token === process.env.WHATSAPP_VERIFY_TOKEN &&
-    challenge
-  ) {
-    return new NextResponse(challenge, { status: 200 });
+  if (mode === "subscribe" && token && challenge && expected && token === expected) {
+    return new NextResponse(challenge, {
+      status: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
+
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 }
 

@@ -41,7 +41,7 @@ type SettingsClientProps = {
     datastore: string;
     ai: AiRuntimeStatus;
     channels: Record<Channel, ChannelStatus>;
-    emailReceiving: string;
+    emailSync: string;
     emailFrom: string | null;
     replyTo: string | null;
   };
@@ -220,7 +220,7 @@ export function SettingsClient({
         datastore={systemStatus.datastore}
         ai={systemStatus.ai}
         channels={systemStatus.channels}
-        emailReceiving={systemStatus.emailReceiving}
+        emailSync={systemStatus.emailSync}
       />
 
       <Panel>

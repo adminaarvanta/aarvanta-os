@@ -3,7 +3,7 @@ import {
   getChannelStatus,
   shouldSimulateChannel,
 } from "@/lib/channels/config";
-import { sendResendEmail as sendViaResend } from "@/lib/channels/resend-client";
+import { sendGmailEmail } from "@/lib/channels/gmail-client";
 
 export interface DeliveryContext {
   channel: Channel;
@@ -127,7 +127,7 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
     case "email": {
       if (!ctx.contact.email) throw new Error("Contact has no email address.");
       const subject = ctx.subject?.trim() || "Message from Aarvanta";
-      await sendViaResend({
+      await sendGmailEmail({
         to: ctx.contact.email,
         subject,
         text: ctx.content,

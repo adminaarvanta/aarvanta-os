@@ -66,13 +66,10 @@ await post(
 
 const testEmail = process.env.AUTH_EMAIL ?? "admin@aarvanta.co";
 await post("/api/webhooks/email", {
-  type: "email.received",
-  data: {
-    email_id: `em_${Date.now()}`,
-    from: `Email Tester <${testEmail}>`,
-    subject: "Test email inbound",
-    text: "Hello from simulated email.",
-  },
+  simulate: true,
+  from: `Email Tester <${testEmail}>`,
+  subject: "Test email inbound",
+  text: "Hello from simulated email.",
 });
 
 const sessionRes = await fetch(`${base}/api/chat/session`, { method: "POST" });

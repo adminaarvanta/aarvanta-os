@@ -18,7 +18,11 @@ export function isSmsConfigured() {
 }
 
 export function isEmailConfigured() {
-  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+  return Boolean(
+    process.env.GMAIL_USER &&
+      process.env.GMAIL_APP_PASSWORD &&
+      (process.env.EMAIL_FROM || process.env.GMAIL_USER)
+  );
 }
 
 export function isVoiceConfigured() {

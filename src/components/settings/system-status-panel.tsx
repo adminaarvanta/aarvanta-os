@@ -32,13 +32,13 @@ export function SystemStatusPanel({
   datastore,
   ai,
   channels,
-  emailReceiving,
+  emailSync,
 }: {
   mode: string;
   datastore: string;
   ai: AiRuntimeStatus;
   channels: Record<Channel, ChannelStatus>;
-  emailReceiving: string;
+  emailSync: string;
 }) {
   return (
     <Panel>
@@ -68,8 +68,8 @@ export function SystemStatusPanel({
           )}
         </div>
         <div className="rounded-lg border border-border-subtle px-3 py-2.5 sm:col-span-2">
-          <dt className="text-[10px] uppercase tracking-wide text-muted">Email receiving</dt>
-          <dd className="mt-1 text-sm text-foreground">{emailReceiving}</dd>
+          <dt className="text-[10px] uppercase tracking-wide text-muted">Gmail sync</dt>
+          <dd className="mt-1 text-sm text-foreground">{emailSync}</dd>
         </div>
       </dl>
       <div className="mt-4 border-t border-border-subtle pt-4">

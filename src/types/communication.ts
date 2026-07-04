@@ -69,7 +69,7 @@ export interface TimelineEmail extends TimelineBase {
   bodyPreview: string;
   /** RFC Message-ID for email threading */
   messageId?: string;
-  /** Provider id (e.g. Resend send/receive id) */
+  /** Provider id (e.g. Gmail UID or simulated id) */
   providerId?: string;
 }
 

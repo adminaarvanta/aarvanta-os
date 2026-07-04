@@ -9,10 +9,13 @@ const PUBLIC_PREFIXES = [
   "/pricing",
   "/about",
   "/contact",
+  "/store",
   "/chat",
   "/api/chat",
+  "/api/store",
   "/api/auth",
   "/api/webhooks",
+  "/api/cron",
   "/api/health",
   "/api/contact",
 ];

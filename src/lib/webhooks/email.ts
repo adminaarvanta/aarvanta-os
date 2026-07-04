@@ -1,8 +1,9 @@
-export function parseResendWebhookEvent(payload: unknown): Array<{
+export function parseSimulatedEmailEvent(payload: unknown): Array<{
   messageId: string;
   from: string;
   subject: string;
   to: string[];
+  body: string;
   rfcMessageId?: string;
 }> {
   const results: Array<{
@@ -10,30 +11,42 @@ export function parseResendWebhookEvent(payload: unknown): Array<{
     from: string;
     subject: string;
     to: string[];
+    body: string;
     rfcMessageId?: string;
   }> = [];
 
   if (!payload || typeof payload !== "object") return results;
 
   const record = payload as {
-    type?: string;
-    data?: {
-      email_id?: string;
-      from?: string;
-      subject?: string;
-      to?: string[];
-      message_id?: string;
-    };
+    simulate?: boolean;
+    from?: string;
+    subject?: string;
+    text?: string;
+    body?: string;
+    to?: string | string[];
+    messageId?: string;
+    message_id?: string;
   };
 
-  if (record.type !== "email.received" || !record.data?.email_id) return results;
+  if (!record.simulate || !record.from) return results;
+
+  const body = (record.text ?? record.body ?? "").trim();
+  if (!body) return results;
+
+  const toRaw = record.to;
+  const to = Array.isArray(toRaw)
+    ? toRaw.map(parseEmailAddress)
+    : toRaw
+      ? [parseEmailAddress(toRaw)]
+      : [];
 
   results.push({
-    messageId: record.data.email_id,
-    from: parseEmailAddress(record.data.from ?? ""),
-    subject: record.data.subject ?? "(no subject)",
-    to: (record.data.to ?? []).map(parseEmailAddress),
-    rfcMessageId: record.data.message_id,
+    messageId: record.messageId ?? `sim_${Date.now()}`,
+    from: parseEmailAddress(record.from),
+    subject: record.subject ?? "(no subject)",
+    to,
+    body,
+    rfcMessageId: record.message_id,
   });
 
   return results;
