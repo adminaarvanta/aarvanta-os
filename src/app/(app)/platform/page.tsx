@@ -69,6 +69,12 @@ export default function PlatformHubPage() {
             Event audit log
           </Link>
           <Link
+            href="/platform/ageb"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#3d3528] px-3 py-2 text-xs font-medium text-[#F5E6C8] hover:border-[#D4AF37]/40"
+          >
+            AGEB 2.0 blueprint
+          </Link>
+          <Link
             href="/platform/coverage"
             className="inline-flex items-center gap-2 rounded-lg border border-[#D4AF37]/40 px-3 py-2 text-xs font-medium text-[#F9E076] hover:bg-[#D4AF37]/10"
           >

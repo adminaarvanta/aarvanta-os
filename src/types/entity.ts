@@ -14,7 +14,8 @@ export type EntityType =
   | "member"
   | "organization"
   | "ai_agent"
-  | "project";
+  | "project"
+  | "launch_session";
 
 export type CanonicalEntityRef = {
   type: EntityType;

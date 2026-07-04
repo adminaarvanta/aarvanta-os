@@ -225,6 +225,18 @@ export interface FinanceBudget extends TenantScope {
   period: string;
 }
 
+/** UK chart of accounts entry (Milestone 1 — Launch OS finance stack). */
+export interface ChartOfAccount extends TenantScope {
+  id: string;
+  code: string;
+  name: string;
+  type: "asset" | "liability" | "equity" | "revenue" | "expense";
+  vatApplicable: boolean;
+  currency: string;
+  active: boolean;
+  createdAt: string;
+}
+
 // ─── HR OS (Module 29) ──────────────────────────────────────────────
 export interface HrCandidate extends TenantScope {
   id: string;
@@ -244,6 +256,8 @@ export interface HrEmployee extends TenantScope {
   startDate: string;
   leaveBalance: number;
   email?: string;
+  /** Annual salary in GBP for payroll engine (M2). */
+  annualSalaryGbp?: number;
 }
 
 export interface HrCourse extends TenantScope {

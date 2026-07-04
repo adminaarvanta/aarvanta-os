@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { BrandLogo } from "@/components/brand/logo";
@@ -70,6 +71,22 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
       >
         Sign in
       </button>
+
+      <div className="relative my-2">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-[#3d3528]" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-[#0a0a0a] px-2 text-[#A89878]">or</span>
+        </div>
+      </div>
+
+      <a
+        href={`/api/auth/sso/start?provider=google&next=${encodeURIComponent(safeNextPath)}`}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#3d3528] bg-[#141414] px-4 py-2.5 text-sm font-medium text-[#F5E6C8] hover:border-[#D4AF37]"
+      >
+        Sign in with SSO
+      </a>
     </form>
   );
 }
@@ -102,9 +119,9 @@ export function LoginPageShell({ nextPath }: { nextPath: string }) {
         <LoginForm nextPath={safeNextPath} />
 
         <p className="mt-6 text-center text-xs text-[#A89878]">
-          <a href="/" className="text-[#D4AF37] hover:underline">
+          <Link href="/" className="text-[#D4AF37] hover:underline">
             ← Back to home
-          </a>
+          </Link>
           {" · "}
           <a
             href={`/login?next=${encodeURIComponent("/dashboard?help=open")}`}

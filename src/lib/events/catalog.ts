@@ -25,6 +25,13 @@ export const DOMAIN_EVENT_LABELS: Record<DomainEventType, string> = {
   "hr.case.created": "HR case created",
   "hr.case.resolved": "HR case resolved",
   "conversation.message.inbound": "Inbound message received",
+  "invoice.created": "Invoice created",
+  "invoice.paid": "Invoice paid",
+  "launch.interpreted": "Launch OS interpreted business idea",
+  "launch.deployed": "Launch OS deployed business system",
+  "payroll.processed": "Payroll processed",
+  "contract.signed": "Contract signed",
+  "ai.decision.generated": "AI decision generated",
 };
 
 export function labelForEventType(type: DomainEventType): string {

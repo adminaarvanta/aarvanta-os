@@ -6,6 +6,16 @@ export type WorkspaceSettings = {
   aiAutoSummarize: boolean;
   /** Minimum score (0–100) before auto-creating a CRM lead from inbound sales intent. */
   crmQualificationThreshold: number;
+  /** Set by Launch OS — AGEB industry profile id. */
+  industryProfileId?: string;
+  /** Primary country code (ISO-style) from Launch OS. */
+  countryCode?: string;
+  /** Business display name from Launch OS. */
+  businessName?: string;
+  /** Public store slug from Launch OS deploy. */
+  storeSlug?: string;
+  logoUrl?: string;
+  primaryDomain?: string;
   updatedAt: string;
 };
 
@@ -15,5 +25,11 @@ export type WorkspaceSettingsPatch = Partial<
     | "inboxAutomationEnabled"
     | "aiAutoSummarize"
     | "crmQualificationThreshold"
+    | "industryProfileId"
+    | "countryCode"
+    | "businessName"
+    | "storeSlug"
+    | "logoUrl"
+    | "primaryDomain"
   >
 >;

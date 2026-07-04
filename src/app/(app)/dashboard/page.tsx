@@ -8,13 +8,16 @@ import { Panel } from "@/components/ui/os/panel";
 import { SectionHeader } from "@/components/ui/os/section-header";
 import { buildFounderSnapshot } from "@/lib/founder/build-snapshot";
 import { getFounderChatRepository } from "@/lib/data/founder-chat-store";
+import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getTenantScope } from "@/lib/tenant/context";
+import { IndustryDashboardPanel } from "@/components/industry/industry-dashboard-panel";
 
 export default async function DashboardPage() {
   const scope = await getTenantScope();
-  const [snapshot, messages] = await Promise.all([
+  const [snapshot, messages, workspaceSettings] = await Promise.all([
     buildFounderSnapshot(scope),
     getFounderChatRepository().listMessages(scope),
+    getWorkspaceSettings(scope.workspaceId),
   ]);
 
   return (
@@ -46,6 +49,14 @@ export default async function DashboardPage() {
           />
           <FounderStatsGrid snapshot={snapshot} />
         </section>
+
+        {workspaceSettings.industryProfileId ? (
+          <IndustryDashboardPanel
+            industryProfileId={workspaceSettings.industryProfileId}
+            businessName={workspaceSettings.businessName}
+            storeSlug={workspaceSettings.storeSlug}
+          />
+        ) : null}
 
         <Panel>
           <SectionHeader title="Today's focus" />

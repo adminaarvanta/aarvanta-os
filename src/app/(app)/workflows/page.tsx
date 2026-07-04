@@ -1,6 +1,7 @@
 import { Workflow } from "lucide-react";
 import { WorkflowList } from "@/components/workflow/workflow-list";
 import { WorkflowRunList } from "@/components/workflow/workflow-run-list";
+import { WorkflowBuilder } from "@/components/workflow/workflow-builder";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -24,6 +25,8 @@ export default async function WorkflowsPage() {
         </p>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
+        <WorkflowBuilder />
+
         <section>
           <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">
             Active workflows ({workflows.length})

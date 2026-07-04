@@ -1,6 +1,11 @@
 import { Wallet } from "lucide-react";
 import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
 import { getFinanceStore } from "@/lib/data/platform-store";
+import {
+  buildBalanceSheet,
+  buildProfitAndLoss,
+  buildTrialBalance,
+} from "@/lib/finance/reports";
 import { getTenantScope } from "@/lib/tenant/context";
 
 function formatCurrency(value: number, currency: string) {
@@ -14,22 +19,27 @@ function formatCurrency(value: number, currency: string) {
 export default async function FinancePage() {
   const scope = await getTenantScope();
   const store = getFinanceStore();
-  const [invoices, expenses, budgets] = await Promise.all([
+  const [invoices, expenses, budgets, chartOfAccounts, journalEntries, trialBalance, pl, balanceSheet] =
+    await Promise.all([
     store.list(scope),
     store.listExpenses(scope),
     store.listBudgets(scope),
+    store.listChartOfAccounts(scope),
+    store.listJournalEntries(scope),
+    buildTrialBalance(scope),
+    buildProfitAndLoss(scope),
+    buildBalanceSheet(scope),
   ]);
 
   const invoiceValue = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
   const expenseValue = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const allocatedBudget = budgets.reduce((sum, budget) => sum + budget.allocated, 0);
-  const spentBudget = budgets.reduce((sum, budget) => sum + budget.spent, 0);
 
   return (
     <ModulePageShell
       icon={Wallet}
       title="Finance OS"
-      description="Track invoices, expenses, and budgets in one operational view."
+      description="Track invoices, expenses, budgets, journal ledger, and financial reports."
     >
       <div className="space-y-8">
         <StatGrid
@@ -42,9 +52,14 @@ export default async function FinancePage() {
               sub: "Across departments",
             },
             {
-              label: "Budget spent",
-              value: formatCurrency(spentBudget, "GBP"),
-              sub: `${allocatedBudget ? Math.round((spentBudget / allocatedBudget) * 100) : 0}%`,
+              label: "Net profit (YTD)",
+              value: formatCurrency(pl.netProfit, "GBP"),
+              sub: `Revenue ${formatCurrency(pl.revenue, "GBP")}`,
+            },
+            {
+              label: "Journal entries",
+              value: journalEntries.length,
+              sub: "Double-entry ledger",
             },
           ]}
         />
@@ -73,6 +88,106 @@ export default async function FinancePage() {
             }))}
           />
         </section>
+
+        {journalEntries.length > 0 ? (
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Journal ledger</h3>
+            <CardList
+              items={journalEntries.map((entry) => ({
+                id: entry.id,
+                title: `${entry.reference} · ${entry.description}`,
+                body: `${entry.lines.length} lines`,
+                meta: entry.date,
+                badge: entry.status,
+              }))}
+            />
+          </section>
+        ) : null}
+
+        {trialBalance.length > 0 ? (
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Trial balance</h3>
+            <CardList
+              items={trialBalance.map((row) => ({
+                id: row.accountCode,
+                title: `${row.accountCode} · ${row.accountName}`,
+                body: formatCurrency(row.balance, "GBP"),
+                meta: `Dr ${formatCurrency(row.debit, "GBP")} · Cr ${formatCurrency(row.credit, "GBP")}`,
+                badge: row.type,
+              }))}
+            />
+          </section>
+        ) : null}
+
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Profit &amp; loss</h3>
+          <CardList
+            items={[
+              {
+                id: "pl-revenue",
+                title: "Revenue",
+                body: formatCurrency(pl.revenue, pl.currency),
+              },
+              {
+                id: "pl-cogs",
+                title: "Cost of sales",
+                body: formatCurrency(pl.cogs, pl.currency),
+              },
+              {
+                id: "pl-opex",
+                title: "Operating expenses",
+                body: formatCurrency(pl.operatingExpenses, pl.currency),
+              },
+              {
+                id: "pl-net",
+                title: "Net profit",
+                body: formatCurrency(pl.netProfit, pl.currency),
+                badge: pl.netProfit >= 0 ? "profit" : "loss",
+              },
+            ]}
+          />
+        </section>
+
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Balance sheet</h3>
+          <CardList
+            items={[
+              {
+                id: "bs-assets",
+                title: "Total assets",
+                body: formatCurrency(balanceSheet.assets, balanceSheet.currency),
+              },
+              {
+                id: "bs-liabilities",
+                title: "Total liabilities",
+                body: formatCurrency(balanceSheet.liabilities, balanceSheet.currency),
+              },
+              {
+                id: "bs-equity",
+                title: "Total equity",
+                body: formatCurrency(balanceSheet.equity, balanceSheet.currency),
+                meta: `As of ${balanceSheet.asOf}`,
+              },
+            ]}
+          />
+        </section>
+
+        {chartOfAccounts.length > 0 ? (
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">
+              Chart of accounts (UK)
+            </h3>
+            <CardList
+              items={chartOfAccounts.map((account) => ({
+                id: account.id,
+                title: `${account.code} · ${account.name}`,
+                body: account.type,
+                meta: account.vatApplicable ? "VAT applicable" : "No VAT",
+                badge: account.active ? "active" : "inactive",
+              }))}
+            />
+          </section>
+        ) : null}
 
         <section>
           <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Budgets</h3>

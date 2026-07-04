@@ -682,6 +682,7 @@ export function buildDemoHrEmployees(): HrEmployee[] {
       startDate: "2024-04-15",
       leaveBalance: 18,
       email: "sarah.chen@example.com",
+      annualSalaryGbp: 52_000,
     },
     {
       ...DEMO_TENANT,
@@ -692,6 +693,7 @@ export function buildDemoHrEmployees(): HrEmployee[] {
       startDate: "2023-09-01",
       leaveBalance: 12,
       email: "john.mathew@example.com",
+      annualSalaryGbp: 44_000,
     },
   ];
 }

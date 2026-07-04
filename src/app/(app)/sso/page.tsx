@@ -1,5 +1,6 @@
 import { Lock } from "lucide-react";
 import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
+import { SsoConnectionForm } from "@/components/sso/sso-connection-form";
 import { getSsoStore } from "@/lib/data/platform-store";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -14,6 +15,8 @@ export default async function SsoPage() {
       description="Monitor identity provider connections and provisioning posture."
     >
       <div className="space-y-8">
+        <SsoConnectionForm />
+
         <StatGrid
           items={[
             { label: "Connections", value: connections.length, sub: "Configured IdPs" },

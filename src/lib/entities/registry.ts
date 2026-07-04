@@ -9,6 +9,7 @@ const ENTITY_ROUTES: Partial<Record<EntityType, (id: string) => string>> = {
   workflow: (id) => `/workflows/${id}`,
   conversation: (id) => `/inbox/${id}`,
   hr_case: (id) => `/hr?case=${id}`,
+  launch_session: (id) => `/launch?session=${id}`,
 };
 
 export function entityRef(
@@ -42,6 +43,7 @@ export function entityTypeLabel(type: EntityType): string {
     organization: "Organization",
     ai_agent: "AI agent",
     project: "Project",
+    launch_session: "Launch session",
   };
   return labels[type] ?? type;
 }

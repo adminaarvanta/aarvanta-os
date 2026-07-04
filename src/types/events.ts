@@ -41,7 +41,14 @@ export type DomainEventType =
   | "hr.document.approved"
   | "hr.case.created"
   | "hr.case.resolved"
-  | "conversation.message.inbound";
+  | "conversation.message.inbound"
+  | "invoice.created"
+  | "invoice.paid"
+  | "launch.interpreted"
+  | "launch.deployed"
+  | "payroll.processed"
+  | "contract.signed"
+  | "ai.decision.generated";
 
 export type ListDomainEventsFilters = {
   type?: DomainEventType;

@@ -1,5 +1,5 @@
 import { crmNow } from "@/lib/data/crm-helpers";
-import { useMemoryDatastore } from "@/lib/data/datastore";
+import { useMemoryDatastore, withFirestoreFallback } from "@/lib/data/datastore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type {
   WorkspaceSettings,
@@ -32,7 +32,10 @@ export async function loadWorkspaceSettingsRecord(
   if (useMemoryDatastore()) {
     return memory.get(workspaceId) ?? null;
   }
-  return readFirestore(workspaceId);
+  return withFirestoreFallback(
+    () => readFirestore(workspaceId),
+    () => memory.get(workspaceId) ?? null
+  );
 }
 
 export async function saveWorkspaceSettingsRecord(
@@ -41,9 +44,12 @@ export async function saveWorkspaceSettingsRecord(
   defaults: WorkspaceSettings
 ): Promise<WorkspaceSettings> {
   const current =
-    (useMemoryDatastore()
-      ? memory.get(workspaceId)
-      : await readFirestore(workspaceId)) ?? defaults;
+    (await (useMemoryDatastore()
+      ? Promise.resolve(memory.get(workspaceId) ?? null)
+      : withFirestoreFallback(
+          () => readFirestore(workspaceId),
+          () => memory.get(workspaceId) ?? null
+        ))) ?? defaults;
 
   const next: WorkspaceSettings = {
     ...current,
@@ -57,5 +63,11 @@ export async function saveWorkspaceSettingsRecord(
     return next;
   }
 
-  return writeFirestore(next);
+  return withFirestoreFallback(
+    () => writeFirestore(next),
+    () => {
+      memory.set(workspaceId, next);
+      return next;
+    }
+  );
 }

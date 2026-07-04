@@ -1,4 +1,8 @@
-import { useMemoryDatastore } from "@/lib/data/datastore";
+import {
+  createResilientRepository,
+  withFirestoreFallback,
+  useMemoryDatastore,
+} from "@/lib/data/datastore";
 import {
   BILLING_PLANS,
   MARKETPLACE_AGENTS,
@@ -34,10 +38,12 @@ import {
 import { crmNow } from "@/lib/data/crm-helpers";
 import { createScopedRepository } from "@/lib/data/scoped-store";
 import type { TenantScope } from "@/types/communication";
+import type { HrCase } from "@/types/hr-case";
 import type {
   AuditLogEntry,
   AutonomousTask,
   CustomerHealth,
+  ChartOfAccount,
   FinanceBudget,
   FinanceExpense,
   FinanceInvoice,
@@ -62,7 +68,9 @@ import type {
   WikiPage,
   WritingDraft,
 } from "@/types/platform-modules";
-import type { HrCase } from "@/types/hr-case";
+import type { JournalEntry } from "@/types/finance-ledger";
+import type { LegalContract } from "@/types/legal";
+import type { PayRun, Payslip } from "@/types/payroll";
 import { OPEN_HR_CASE_STATUSES } from "@/types/hr-case";
 
 type MaybePromise<T> = T | Promise<T>;
@@ -82,24 +90,41 @@ function createCrudStore<T extends ScopedEntity>(
   repository: ReturnType<typeof createScopedRepository<T>>,
   idPrefix: string
 ): ScopedCrudStore<T> {
-  const activeStore = () =>
-    useMemoryDatastore() ? repository.memory : repository.firestore;
-
   return {
     list(scope) {
-      return activeStore().list(scope);
+      if (useMemoryDatastore()) return repository.memory.list(scope);
+      return withFirestoreFallback(
+        () => repository.firestore.list(scope),
+        () => repository.memory.list(scope)
+      );
     },
     get(id, scope) {
-      return activeStore().get(id, scope);
+      if (useMemoryDatastore()) return repository.memory.get(id, scope);
+      return withFirestoreFallback(
+        () => repository.firestore.get(id, scope),
+        () => repository.memory.get(id, scope)
+      );
     },
     create(item) {
-      return activeStore().create(item, idPrefix);
+      if (useMemoryDatastore()) return repository.memory.create(item, idPrefix);
+      return withFirestoreFallback(
+        () => repository.firestore.create(item, idPrefix),
+        () => repository.memory.create(item, idPrefix)
+      );
     },
     set(item) {
-      return activeStore().set(item);
+      if (useMemoryDatastore()) return repository.memory.set(item);
+      return withFirestoreFallback(
+        () => repository.firestore.set(item),
+        () => repository.memory.set(item)
+      );
     },
     remove(id, scope) {
-      return activeStore().remove(id, scope);
+      if (useMemoryDatastore()) return repository.memory.remove(id, scope);
+      return withFirestoreFallback(
+        () => repository.firestore.remove(id, scope),
+        () => repository.memory.remove(id, scope)
+      );
     },
   };
 }
@@ -172,6 +197,10 @@ const financeBudgetRepository = createScopedRepository<FinanceBudget>(
   "finance_budgets",
   buildDemoFinanceBudgets
 );
+const chartOfAccountsRepository = createScopedRepository<ChartOfAccount>(
+  "finance_chart_of_accounts",
+  () => []
+);
 const hrCandidateRepository = createScopedRepository<HrCandidate>(
   "hr_candidates",
   buildDemoHrCandidates
@@ -233,6 +262,23 @@ const governanceStore = createCrudStore(governanceRepository, "audit");
 const financeInvoicesStore = createCrudStore(financeInvoiceRepository, "invoice");
 const financeExpensesStore = createCrudStore(financeExpenseRepository, "expense");
 const financeBudgetsStore = createCrudStore(financeBudgetRepository, "budget");
+const chartOfAccountsStore = createCrudStore(chartOfAccountsRepository, "coa");
+const journalEntriesStore = createCrudStore(
+  createScopedRepository<JournalEntry>("finance_journal_entries", () => []),
+  "journal"
+);
+const payRunsStore = createCrudStore(
+  createScopedRepository<PayRun>("payroll_runs", () => []),
+  "payrun"
+);
+const payslipsStore = createCrudStore(
+  createScopedRepository<Payslip>("payroll_payslips", () => []),
+  "payslip"
+);
+const legalContractsStore = createCrudStore(
+  createScopedRepository<LegalContract>("legal_contracts", () => []),
+  "contract"
+);
 const hrCandidatesStore = createCrudStore(hrCandidateRepository, "candidate");
 const hrEmployeesStore = createCrudStore(hrEmployeeRepository, "employee");
 const hrCoursesStore = createCrudStore(hrCourseRepository, "course");
@@ -375,7 +421,42 @@ export function getFinanceStore() {
     removeBudget(id: string, scope: TenantScope) {
       return financeBudgetsStore.remove(id, scope);
     },
+    listChartOfAccounts(scope: TenantScope) {
+      return chartOfAccountsStore.list(scope);
+    },
+    createChartOfAccount(item: CreateInput<ChartOfAccount>) {
+      return chartOfAccountsStore.create(item);
+    },
+    listJournalEntries(scope: TenantScope) {
+      return journalEntriesStore.list(scope);
+    },
+    createJournalEntry(item: CreateInput<JournalEntry>) {
+      return journalEntriesStore.create(item);
+    },
+    listPayRuns(scope: TenantScope) {
+      return payRunsStore.list(scope);
+    },
+    createPayRun(item: CreateInput<PayRun>) {
+      return payRunsStore.create(item);
+    },
+    setPayRun(item: PayRun) {
+      return payRunsStore.set(item);
+    },
+    async listPayslips(scope: TenantScope, payRunId?: string) {
+      const items = await payslipsStore.list(scope);
+      return payRunId ? items.filter((p) => p.payRunId === payRunId) : items;
+    },
+    createPayslip(item: CreateInput<Payslip>) {
+      return payslipsStore.create(item);
+    },
+    setPayslip(item: Payslip) {
+      return payslipsStore.set(item);
+    },
   };
+}
+
+export function getLegalStore() {
+  return legalContractsStore;
 }
 
 export function getHrStore() {

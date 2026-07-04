@@ -6,7 +6,9 @@ import type {
   CreateNoteInput,
   TenantScope,
 } from "@/types/communication";
-import { useMemoryDatastore } from "@/lib/data/datastore";
+import {
+  createResilientRepository,
+} from "@/lib/data/datastore";
 import { firestoreRepository } from "@/lib/data/firestore-repository";
 import { memoryRepository } from "@/lib/data/memory-repository";
 
@@ -113,5 +115,5 @@ export interface ConversationRepository {
 }
 
 export function getRepository(): ConversationRepository {
-  return useMemoryDatastore() ? memoryRepository : firestoreRepository;
+  return createResilientRepository(memoryRepository, firestoreRepository);
 }

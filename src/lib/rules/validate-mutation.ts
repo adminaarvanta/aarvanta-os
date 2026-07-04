@@ -1,17 +1,19 @@
 import { findFirstMatchingRule } from "@/lib/rules/evaluate";
-import { resolveRulePack } from "@/lib/rules/packs/uk-default";
+import { resolveRulePackForIntent } from "@/lib/rules/resolve-pack";
 import type { RuleEvaluationContext } from "@/lib/rules/types";
 
 export type RuleValidationResult =
   | { allowed: true }
   | { allowed: false; message: string; ruleId: string };
 
-/** Evaluate business rules before a mutation (Phase 1 rules engine). */
+/** Evaluate business rules before a mutation (M2 — intent-aware pack resolution). */
 export function validateAgainstRules(
-  context: RuleEvaluationContext,
+  context: RuleEvaluationContext & { intent?: string },
   options?: { country?: string; industry?: string }
 ): RuleValidationResult {
-  const pack = resolveRulePack(options ?? {});
+  const pack = context.intent
+    ? resolveRulePackForIntent(context.intent, options)
+    : resolveRulePackForIntent("create_contact", options);
   const match = findFirstMatchingRule(pack, context);
 
   if (match?.matched && match.action?.type === "reject") {
@@ -26,10 +28,12 @@ export function validateAgainstRules(
 }
 
 export function approvalRequiredByRules(
-  context: RuleEvaluationContext,
+  context: RuleEvaluationContext & { intent?: string },
   options?: { country?: string; industry?: string }
 ): { required: boolean; reason?: string; role?: string } {
-  const pack = resolveRulePack(options ?? {});
+  const pack = context.intent
+    ? resolveRulePackForIntent(context.intent, options)
+    : resolveRulePackForIntent("create_contact", options);
   const match = findFirstMatchingRule(pack, context);
 
   if (match?.matched && match.action?.type === "require_approval") {

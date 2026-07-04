@@ -68,7 +68,7 @@ export const SPEC_PHASES: Array<{
         href: "/workflows",
         status: "partial",
         summary:
-          "Trigger → condition → agent → approval → action. Template workflows; visual drag-drop builder planned.",
+          "Trigger → condition → agent → approval → action. AI workflow generation from natural language.",
       },
       {
         id: "founder",
@@ -242,7 +242,24 @@ export const SPEC_PHASES: Array<{
         name: "Finance OS",
         href: "/finance",
         status: "partial",
-        summary: "Invoices, expenses, budgets. Xero/QuickBooks/Stripe hooks planned.",
+        summary:
+          "Double-entry ledger, trial balance, P&L, balance sheet, invoices, UK CoA. Xero/QuickBooks hooks planned.",
+      },
+      {
+        id: "payroll",
+        phase: "ageb-3",
+        name: "Payroll OS",
+        href: "/payroll",
+        status: "partial",
+        summary: "UK PAYE/NI monthly runs, payslips, payroll journal posting.",
+      },
+      {
+        id: "legal",
+        phase: "ageb-3",
+        name: "Legal OS",
+        href: "/legal",
+        status: "partial",
+        summary: "Contract templates, clause risk scan, contract repository.",
       },
       {
         id: "hr",
@@ -279,8 +296,8 @@ export const SPEC_PHASES: Array<{
         phase: 31,
         name: "Enterprise SSO",
         href: "/sso",
-        status: "planned",
-        summary: "SAML, OIDC, OAuth, SCIM — configuration UI scaffolded.",
+        status: "partial",
+        summary: "OIDC start/callback flow, connection registry, SCIM flags. IdP credentials required for live sign-in.",
       },
       {
         id: "franchise",
@@ -305,6 +322,72 @@ export const SPEC_PHASES: Array<{
         href: "/marketplace",
         status: "partial",
         summary: "Discover and install agent packs. Publisher workflow planned.",
+      },
+    ] as SpecModule[],
+  },
+  {
+    id: "ageb-2",
+    label: "AGEB 2.0 — Global Blueprint",
+    modules: [
+      {
+        id: "launch-os",
+        phase: 11,
+        name: "Launch OS",
+        href: "/launch",
+        status: "complete",
+        summary:
+          "Full M1 flow: domain, logo, legal drafts, UK CoA, store page, Firestore persistence, industry dashboard.",
+      },
+      {
+        id: "ageb-engines",
+        phase: 3,
+        name: "Core Engines",
+        href: "/platform/engines",
+        status: "partial",
+        summary:
+          "Identity, workflow, rules, finance, legal, communication, billing, event engines — registry and partial implementation.",
+      },
+      {
+        id: "business-action-api",
+        phase: 8,
+        name: "Business Action API",
+        href: "/api/v1/action/execute",
+        status: "partial",
+        summary:
+          "17 intents: CRM, finance ledger, payroll, legal, HR, workflows, industry KPIs, Launch OS, AI buddies.",
+      },
+      {
+        id: "intelligence-fabric",
+        phase: 5,
+        name: "Intelligence Fabric",
+        status: "partial",
+        summary:
+          "Buddy routing with engine dispatch to finance, payroll, and legal engines.",
+      },
+      {
+        id: "ai-buddy-framework",
+        phase: 5,
+        name: "AI Buddy Framework",
+        href: "/workforce",
+        status: "partial",
+        summary:
+          "10 role-based buddies mapped to workforce agents with domain tools and permissions model.",
+      },
+      {
+        id: "industry-os",
+        phase: 10,
+        name: "Industry OS",
+        status: "partial",
+        summary:
+          "Industry profiles drive Launch OS, buddy assignment, and dashboard KPI panels (retail, services, hospitality, etc.).",
+      },
+      {
+        id: "ageb-blueprint",
+        phase: 15,
+        name: "AGEB Blueprint Hub",
+        href: "/platform/ageb",
+        status: "partial",
+        summary: "Volume and engine implementation status dashboard for AGEB 2.0.",
       },
     ] as SpecModule[],
   },
