@@ -2,7 +2,7 @@ import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
 import type { AgentMemoryRepository } from "@/lib/data/agent-memory-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
-import type { AgentMemoryEntry, AgentType } from "@/types/workforce";
+import type { AgentMemoryEntry } from "@/types/workforce";
 
 const COLLECTION = "ai_agent_memory";
 

@@ -4,7 +4,7 @@ const ENTITY_ROUTES: Partial<Record<EntityType, (id: string) => string>> = {
   contact: (id) => `/crm/contacts/${id}`,
   company: (id) => `/crm/companies/${id}`,
   deal: (id) => `/crm/deals/${id}`,
-  task: (id) => `/crm/tasks`,
+  task: () => `/crm/tasks`,
   project: (id) => `/projects/${id}`,
   workflow: (id) => `/workflows/${id}`,
   conversation: (id) => `/inbox/${id}`,

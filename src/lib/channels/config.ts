@@ -33,7 +33,8 @@ export function isWebsiteChatConfigured() {
   return true;
 }
 
-export function shouldSimulateChannel(_channel: Channel): boolean {
+export function shouldSimulateChannel(channel: Channel): boolean {
+  void channel;
   if (process.env.CHANNELS_SIMULATE === "true") return true;
   if (isDemoMode()) return true;
   return false;

@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { ClosedDealsList } from "@/components/crm/closed-deals-list";
 import { CreateDealForm } from "@/components/crm/create-deal-form";

@@ -2,7 +2,6 @@ import { inCrmScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { StorePageRepository } from "@/lib/data/store-page-repository";
 import type { GeneratedStorePage } from "@/types/store-page";
-import type { TenantScope } from "@/types/communication";
 
 const COLLECTION = "generated_store_pages";
 

@@ -1,6 +1,5 @@
 import { findConversationForInboundEmail } from "@/lib/data/email-threading";
 import { schedulePostInboundAutomation } from "@/lib/ai/refresh-conversation-insights";
-import { syncInboundToExistingCrmContact } from "@/lib/data/inbound-crm-bridge";
 import { DEMO_CONVERSATIONS } from "@/lib/data/demo-seed";
 import {
   appendInboundCall,
@@ -19,9 +18,6 @@ import { toConversationListItem } from "@/lib/data/conversation-list-helpers";
 import type { ConversationRepository } from "@/lib/data/repository";
 import type {
   Conversation,
-  ConversationTag,
-  CreateMessageInput,
-  CreateNoteInput,
   TenantScope,
   TimelineMessage,
   TimelineNote,

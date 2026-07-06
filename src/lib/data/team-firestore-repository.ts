@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import type {
   CreateCommentInput,
   CreateNoteInput,

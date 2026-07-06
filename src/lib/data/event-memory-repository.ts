@@ -1,7 +1,6 @@
 import { inCrmScope } from "@/lib/data/crm-helpers";
 import type { EventRepository } from "@/lib/data/event-repository";
-import type { TenantScope } from "@/types/communication";
-import type { DomainEvent, ListDomainEventsFilters } from "@/types/events";
+import type { DomainEvent } from "@/types/events";
 
 let events: DomainEvent[] = [];
 

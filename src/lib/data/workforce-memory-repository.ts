@@ -1,6 +1,5 @@
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
 import type { WorkforceRepository } from "@/lib/data/workforce-repository";
-import type { TenantScope } from "@/types/communication";
 import type { AgentRun } from "@/types/workforce";
 
 let runs: AgentRun[] = [];

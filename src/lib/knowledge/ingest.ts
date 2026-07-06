@@ -22,7 +22,6 @@ export async function ingestKnowledgeText(
     text: string;
   }
 ): Promise<KnowledgeDocument> {
-  const now = crmNow();
   const doc = await repo.createDocument(
     {
       title: input.title,

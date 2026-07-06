@@ -4,12 +4,7 @@ import {
   buildDemoTeamComments,
   buildDemoTeamNotes,
 } from "@/lib/data/team-demo-seed";
-import type {
-  CreateCommentInput,
-  CreateNoteInput,
-  TeamRepository,
-} from "@/lib/data/team-repository";
-import type { TenantScope } from "@/types/communication";
+import type { TeamRepository } from "@/lib/data/team-repository";
 
 let notes = buildDemoTeamNotes();
 let comments = buildDemoTeamComments();

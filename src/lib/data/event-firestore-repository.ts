@@ -1,8 +1,7 @@
 import { inCrmScope, crmNewId } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { EventRepository } from "@/lib/data/event-repository";
-import type { TenantScope } from "@/types/communication";
-import type { DomainEvent, ListDomainEventsFilters } from "@/types/events";
+import type { DomainEvent } from "@/types/events";
 
 const COLLECTION = "domain_events";
 

@@ -52,7 +52,6 @@ ${input.companyName}
 export async function generateHrDocument(
   input: GenerateHrDocumentInput
 ): Promise<string> {
-  const spec = getHrDocumentSpec(input.type);
   const docLabel = labelForHrDocumentType(input.type);
 
   if (!isAiConfigured()) {

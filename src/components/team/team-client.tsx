@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TeamManagementPanel } from "@/components/team/team-management-panel";
-import { ROLE_LABELS, type Invitation, type MemberRole, type WorkspaceMember } from "@/types/tenant";
+import { ROLE_LABELS, type Invitation, type WorkspaceMember } from "@/types/tenant";
 import type { ActivityFeedItem, TeamChannel, TeamComment, TeamNote } from "@/types/team";
 import { formatRelative } from "@/lib/utils";
 

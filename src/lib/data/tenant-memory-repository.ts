@@ -7,11 +7,8 @@ import {
 } from "@/lib/data/tenant-demo-seed";
 import type {
   CreateInvitationInput,
-  CreateMemberInput,
   TenantRepository,
 } from "@/lib/data/tenant-repository";
-import type { TenantScope } from "@/types/communication";
-import type { MemberRole } from "@/types/tenant";
 
 let organizations = buildDemoOrganizationSeed();
 let workspaces = buildDemoWorkspaceSeed();

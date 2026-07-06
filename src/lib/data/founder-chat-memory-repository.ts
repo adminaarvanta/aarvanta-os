@@ -1,6 +1,5 @@
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
 import type { FounderChatRepository } from "@/lib/data/founder-chat-repository";
-import type { TenantScope } from "@/types/communication";
 import type { FounderChatMessage } from "@/types/founder";
 
 let messages: FounderChatMessage[] = [];

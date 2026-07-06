@@ -1,11 +1,6 @@
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
-import type {
-  CreateProjectInput,
-  CreateProjectTaskInput,
-  ProjectRepository,
-} from "@/lib/data/project-repository";
+import type { ProjectRepository } from "@/lib/data/project-repository";
 import { buildDemoProjectSeed } from "@/lib/data/project-demo-seed";
-import type { TenantScope } from "@/types/communication";
 import type { Project, ProjectTask } from "@/types/project";
 
 const seed = buildDemoProjectSeed();

@@ -4,7 +4,6 @@ import {
   buildDemoSharedMemory,
 } from "@/lib/data/workforce-upgrade-demo-seed";
 import type { WorkforceUpgradeRepository } from "@/lib/data/workforce-upgrade-repository";
-import type { TenantScope } from "@/types/communication";
 
 let sharedMemory = buildDemoSharedMemory();
 let collaborations = buildDemoCollaborations();

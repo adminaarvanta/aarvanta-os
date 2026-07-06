@@ -145,6 +145,7 @@ export function ConversationTimeline({ events }: { events: TimelineEvent[] }) {
   const sorted = [...events].sort(
     (a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime()
   );
+  const lastEventId = sorted.at(-1)?.id;
 
   useEffect(() => {
     const container = document.querySelector<HTMLElement>("[data-conversation-scroll]");
@@ -152,7 +153,7 @@ export function ConversationTimeline({ events }: { events: TimelineEvent[] }) {
       container,
       sorted.length > 1 ? "smooth" : "auto"
     );
-  }, [sorted.length, sorted.at(-1)?.id]);
+  }, [sorted.length, lastEventId]);
 
   return (
     <div className="space-y-4">

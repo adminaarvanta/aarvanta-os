@@ -1,7 +1,6 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import type { FounderChatRepository } from "@/lib/data/founder-chat-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import type { TenantScope } from "@/types/communication";
 import type { FounderChatMessage } from "@/types/founder";
 
 const COLLECTION = "founder_chat";

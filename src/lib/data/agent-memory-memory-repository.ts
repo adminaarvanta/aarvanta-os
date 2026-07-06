@@ -1,7 +1,6 @@
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
 import type { AgentMemoryRepository } from "@/lib/data/agent-memory-repository";
 import { DEMO_AGENT_MEMORY } from "@/lib/data/workforce-demo-seed";
-import type { TenantScope } from "@/types/communication";
 import type { AgentMemoryEntry } from "@/types/workforce";
 
 let memory: AgentMemoryEntry[] = structuredClone(DEMO_AGENT_MEMORY);

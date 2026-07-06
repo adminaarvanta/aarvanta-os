@@ -1,8 +1,7 @@
-import { crmNow, crmNewId, inCrmScope } from "@/lib/data/crm-helpers";
+import { inCrmScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { LaunchRepository } from "@/lib/data/launch-repository";
 import type { LaunchSession } from "@/types/launch";
-import type { TenantScope } from "@/types/communication";
 
 const COLLECTION = "launch_sessions";
 

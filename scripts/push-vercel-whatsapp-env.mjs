@@ -6,8 +6,6 @@
  * Usage:
  *   VERCEL_TOKEN=xxx node --env-file=.env.local scripts/push-vercel-whatsapp-env.mjs
  */
-import { spawnSync } from "node:child_process";
-
 const token = process.env.VERCEL_TOKEN;
 if (!token) {
   console.error("Set VERCEL_TOKEN (https://vercel.com/account/tokens)");

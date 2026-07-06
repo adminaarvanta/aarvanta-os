@@ -1,7 +1,6 @@
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
-import type { CreateWorkflowInput, WorkflowRepository } from "@/lib/data/workflow-repository";
+import type { WorkflowRepository } from "@/lib/data/workflow-repository";
 import { buildDemoWorkflowSeed } from "@/lib/data/workflow-demo-seed";
-import type { TenantScope } from "@/types/communication";
 import type { Workflow, WorkflowRun } from "@/types/workflow";
 
 let workflows: Workflow[] = buildDemoWorkflowSeed();

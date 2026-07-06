@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CrmContactInsights } from "@/lib/ai/crm-insights";
@@ -9,7 +9,7 @@ export function CrmAiInsightsPanel({ contactId }: { contactId: string }) {
   const [insights, setInsights] = useState<CrmContactInsights | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadInsights() {
+  const loadInsights = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/contacts/${contactId}/insights`, {
@@ -20,11 +20,11 @@ export function CrmAiInsightsPanel({ contactId }: { contactId: string }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [contactId]);
 
   useEffect(() => {
     loadInsights();
-  }, [contactId]);
+  }, [loadInsights]);
 
   return (
     <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">

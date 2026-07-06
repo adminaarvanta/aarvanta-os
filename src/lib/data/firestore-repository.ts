@@ -19,9 +19,6 @@ import type { ConversationRepository } from "@/lib/data/repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type {
   Conversation,
-  ConversationTag,
-  CreateMessageInput,
-  CreateNoteInput,
   TenantScope,
   TimelineMessage,
   TimelineNote,

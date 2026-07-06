@@ -1,7 +1,6 @@
 import { inCrmScope } from "@/lib/data/crm-helpers";
 import type { StorePageRepository } from "@/lib/data/store-page-repository";
 import type { GeneratedStorePage } from "@/types/store-page";
-import type { TenantScope } from "@/types/communication";
 
 const pages: GeneratedStorePage[] = [];
 const bySlug = new Map<string, GeneratedStorePage>();

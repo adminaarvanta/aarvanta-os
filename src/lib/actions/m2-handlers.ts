@@ -68,8 +68,9 @@ export async function handlePostJournalEntry(
 
 export async function handleGeneratePl(
   ctx: SessionContext,
-  _context: Record<string, unknown>
+  context: Record<string, unknown>
 ): HandlerResult {
+  void context;
   const pl = await buildProfitAndLoss(ctx.scope);
   const balanceSheet = await buildBalanceSheet(ctx.scope);
   return success({

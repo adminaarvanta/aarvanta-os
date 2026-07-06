@@ -4,8 +4,6 @@ import {
   buildDemoNotifications,
 } from "@/lib/data/notifications-demo-seed";
 import type { NotificationsRepository } from "@/lib/data/notifications-repository";
-import type { TenantScope } from "@/types/communication";
-import type { AiDigest } from "@/types/notifications";
 
 let notifications = buildDemoNotifications();
 let digests = buildDemoDigests();

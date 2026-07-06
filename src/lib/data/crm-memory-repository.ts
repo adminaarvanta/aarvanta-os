@@ -19,7 +19,6 @@ import type {
   CrmCompany,
   CrmContact,
   CrmDeal,
-  CrmPipeline,
   CrmTask,
 } from "@/types/crm";
 

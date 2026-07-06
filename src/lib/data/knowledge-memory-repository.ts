@@ -1,11 +1,9 @@
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
 import type {
-  CreateKnowledgeChunkInput,
   CreateKnowledgeDocumentInput,
   KnowledgeRepository,
 } from "@/lib/data/knowledge-repository";
 import { buildDemoKnowledgeSeed } from "@/lib/data/knowledge-demo-seed";
-import type { TenantScope } from "@/types/communication";
 import type { KnowledgeChunk, KnowledgeDocument } from "@/types/knowledge";
 
 const seed = buildDemoKnowledgeSeed();
