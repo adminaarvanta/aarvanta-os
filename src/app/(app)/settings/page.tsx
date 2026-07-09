@@ -9,6 +9,7 @@ import {
   getEmailInboundConfig,
 } from "@/lib/channels/gmail-client";
 import { getActiveDatastore } from "@/lib/data/datastore";
+import { getProductionReadiness } from "@/lib/config/production-readiness";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
@@ -34,6 +35,7 @@ export default async function SettingsPage() {
   await hydrateWorkspaceSettingsCache(ctx.scope.workspaceId);
 
   const emailInbound = getEmailInboundConfig();
+  const readiness = getProductionReadiness();
 
   return (
     <PageFrame>
@@ -63,6 +65,7 @@ export default async function SettingsPage() {
             emailSync: gmailSyncStatus,
             emailFrom: emailInbound.from ?? null,
             replyTo: emailInbound.replyTo ?? null,
+            readiness,
           }}
           production={isProductionMode()}
         />

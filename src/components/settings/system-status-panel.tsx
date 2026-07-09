@@ -6,6 +6,7 @@ import { StatusPill } from "@/components/ui/os/status-pill";
 import type { Channel } from "@/types/communication";
 import type { AiRuntimeStatus } from "@/lib/ai/config";
 import type { ChannelStatus } from "@/lib/channels/config";
+import type { ProductionReadiness } from "@/lib/config/production-readiness";
 
 const CHANNEL_LABELS: Record<Channel, string> = {
   whatsapp: "WhatsApp",
@@ -33,12 +34,14 @@ export function SystemStatusPanel({
   ai,
   channels,
   emailSync,
+  readiness,
 }: {
   mode: string;
   datastore: string;
   ai: AiRuntimeStatus;
   channels: Record<Channel, ChannelStatus>;
   emailSync: string;
+  readiness?: ProductionReadiness;
 }) {
   return (
     <Panel>
@@ -86,6 +89,51 @@ export function SystemStatusPanel({
           ))}
         </ul>
       </div>
+      {readiness && readiness.items.length > 1 && (
+        <div className="mt-4 border-t border-border-subtle pt-4">
+          <p className="mb-2 text-xs font-medium text-foreground">
+            Production readiness
+            {!readiness.ready && (
+              <span className="ml-2 text-amber-300">— action required</span>
+            )}
+          </p>
+          {readiness.warnings.length > 0 && (
+            <ul className="mb-3 space-y-1 text-xs text-amber-200/90">
+              {readiness.warnings.map((warning) => (
+                <li key={warning}>• {warning}</li>
+              ))}
+            </ul>
+          )}
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {readiness.items
+              .filter((item) => item.id !== "mode")
+              .map((item) => (
+                <li
+                  key={item.id}
+                  className="rounded-lg border border-border-subtle px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-foreground">{item.label}</span>
+                    <StatusPill
+                      variant={
+                        item.status === "ok"
+                          ? "success"
+                          : item.status === "warning"
+                            ? "warning"
+                            : "default"
+                      }
+                    >
+                      {item.status}
+                    </StatusPill>
+                  </div>
+                  {item.detail && (
+                    <p className="mt-1 text-xs text-muted">{item.detail}</p>
+                  )}
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
     </Panel>
   );
 }

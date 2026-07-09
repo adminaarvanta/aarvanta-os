@@ -22,6 +22,7 @@ import {
   type Workspace,
   type WorkspaceMember,
 } from "@/types/tenant";
+import type { ProductionReadiness } from "@/lib/config/production-readiness";
 import type { WorkspaceSettings } from "@/types/workspace-settings";
 
 type SettingsClientProps = {
@@ -44,6 +45,7 @@ type SettingsClientProps = {
     emailSync: string;
     emailFrom: string | null;
     replyTo: string | null;
+    readiness: ProductionReadiness;
   };
   production: boolean;
 };
@@ -221,6 +223,7 @@ export function SettingsClient({
         ai={systemStatus.ai}
         channels={systemStatus.channels}
         emailSync={systemStatus.emailSync}
+        readiness={systemStatus.readiness}
       />
 
       <Panel>

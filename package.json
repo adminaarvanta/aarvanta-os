@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed:firestore": "node --env-file=.env.local scripts/seed-firestore.mjs",
+    "bootstrap:production": "node --env-file=.env.local scripts/bootstrap-production.mjs",
     "simulate:channels": "node --env-file=.env.local scripts/simulate-channels.mjs",
     "seed:email": "node --env-file=.env.local scripts/seed-email-test.mjs",
     "seed:inbox-email": "node --env-file=.env.local scripts/reset-inbox-email.mjs",

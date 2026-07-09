@@ -17,7 +17,11 @@ export default async function AppLayout({
     const ctx = await getSessionContext();
     const repo = getTenantRepository();
     const { ensureTenantRecords } = await import("@/lib/tenant/ensure-tenant-records");
+    const { ensureProductionBootstrap } = await import(
+      "@/lib/tenant/ensure-production-bootstrap"
+    );
     const bootstrapped = await ensureTenantRecords(ctx);
+    await ensureProductionBootstrap();
     const workspaces = await repo.listWorkspaces(ctx.scope.tenantId);
     tenant = {
       organization: bootstrapped.organization,
