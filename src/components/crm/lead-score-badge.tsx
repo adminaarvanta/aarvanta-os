@@ -10,7 +10,7 @@ export function LeadScoreBadge({
 }) {
   if (score == null) {
     return (
-      <Badge className={cn("bg-[#1a1714] text-[#A89878] ring-[#3d3528]", className)}>
+      <Badge className={cn("bg-[#162840] text-[#9AABC4] ring-[#243656]", className)}>
         Unscored
       </Badge>
     );

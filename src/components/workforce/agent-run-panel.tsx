@@ -22,18 +22,18 @@ export function AgentRunPanel({
     (!needsContact || contactId) && (!needsConversation || conversationId);
 
   return (
-    <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-[#F5E6C8]">Run {agent.name}</h3>
+    <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 space-y-4">
+      <h3 className="text-sm font-semibold text-[#FFFFFF]">Run {agent.name}</h3>
 
       {(needsContact || !needsConversation) && contacts.length > 0 && (
         <div>
-          <label className="block text-xs font-medium text-[#A89878]">
+          <label className="block text-xs font-medium text-[#9AABC4]">
             Contact {needsContact ? "(required)" : "(optional)"}
           </label>
           <select
             value={contactId}
             onChange={(e) => setContactId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8]"
+            className="mt-1 w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
           >
             <option value="">Select contact…</option>
             {contacts.map((c) => (
@@ -47,13 +47,13 @@ export function AgentRunPanel({
 
       {(needsConversation || needsContact) && conversations.length > 0 && (
         <div>
-          <label className="block text-xs font-medium text-[#A89878]">
+          <label className="block text-xs font-medium text-[#9AABC4]">
             Conversation {needsConversation ? "(required)" : "(optional)"}
           </label>
           <select
             value={conversationId}
             onChange={(e) => setConversationId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8]"
+            className="mt-1 w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
           >
             <option value="">Select conversation…</option>
             {conversations.map((c) => (
@@ -66,7 +66,7 @@ export function AgentRunPanel({
       )}
 
       {!needsContact && !needsConversation && (
-        <p className="text-xs text-[#A89878]">
+        <p className="text-xs text-[#9AABC4]">
           Runs a business-wide analysis using CRM and inbox data.
         </p>
       )}

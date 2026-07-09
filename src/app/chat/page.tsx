@@ -99,12 +99,12 @@ export default function WebsiteChatPage() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-black p-3 sm:items-center sm:justify-center sm:p-4">
-      <div className="flex min-h-0 flex-1 w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#3d3528] bg-[#0a0a0a] shadow-lg shadow-[#D4AF37]/5 sm:h-[32rem] sm:flex-none">
-        <header className="shrink-0 border-b border-[#3d3528] px-4 py-4">
+      <div className="flex min-h-0 flex-1 w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#243656] bg-[#040608] shadow-lg shadow-[#B8965D]/5 sm:h-[32rem] sm:flex-none">
+        <header className="shrink-0 border-b border-[#243656] px-4 py-4">
           <div className="flex justify-center">
             <BrandLogo size="sm" />
           </div>
-          <h1 className="mt-2 text-center text-sm font-medium text-[#A89878]">Website chat</h1>
+          <h1 className="mt-2 text-center text-sm font-medium text-[#9AABC4]">Website chat</h1>
         </header>
 
         <div
@@ -113,7 +113,7 @@ export default function WebsiteChatPage() {
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
         >
           {messages.length === 0 && (
-            <p className="text-sm text-[#A89878]">
+            <p className="text-sm text-[#9AABC4]">
               Send a message — it will appear in the agent inbox.
             </p>
           )}
@@ -122,12 +122,12 @@ export default function WebsiteChatPage() {
               key={m.id}
               className={
                 m.direction === "inbound"
-                  ? "mr-4 rounded-xl bg-[#141414] ring-1 ring-[#3d3528] px-3 py-2 text-sm text-[#F5E6C8] sm:mr-8"
-                  : "ml-4 rounded-xl bg-[#D4AF37]/20 ring-1 ring-[#D4AF37]/40 px-3 py-2 text-sm text-[#F5E6C8] sm:ml-8"
+                  ? "mr-4 rounded-xl bg-[#121E32] ring-1 ring-[#243656] px-3 py-2 text-sm text-[#FFFFFF] sm:mr-8"
+                  : "ml-4 rounded-xl bg-[#B8965D]/20 ring-1 ring-[#B8965D]/40 px-3 py-2 text-sm text-[#FFFFFF] sm:ml-8"
               }
             >
               {m.direction === "outbound" && (
-                <p className="text-[10px] font-medium text-[#F9E076] mb-0.5">
+                <p className="text-[10px] font-medium text-[#C9AA72] mb-0.5">
                   {m.authorName ?? "Agent"}
                 </p>
               )}
@@ -138,7 +138,7 @@ export default function WebsiteChatPage() {
 
         <form
           onSubmit={send}
-          className="shrink-0 border-t border-[#3d3528] p-3 space-y-2"
+          className="shrink-0 border-t border-[#243656] p-3 space-y-2"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
           {messages.length === 0 && (
@@ -147,7 +147,7 @@ export default function WebsiteChatPage() {
               placeholder="Your name (optional)"
               value={visitorName}
               onChange={(e) => setVisitorName(e.target.value)}
-              className="w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-base text-[#F5E6C8] sm:text-sm"
+              className="w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-base text-[#FFFFFF] sm:text-sm"
             />
           )}
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -156,7 +156,7 @@ export default function WebsiteChatPage() {
               placeholder="Type a message…"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2.5 text-base text-[#F5E6C8] sm:text-sm"
+              className="min-w-0 flex-1 rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2.5 text-base text-[#FFFFFF] sm:text-sm"
             />
             <Button type="submit" disabled={loading || !sessionId} className="w-full sm:w-auto">
               Send

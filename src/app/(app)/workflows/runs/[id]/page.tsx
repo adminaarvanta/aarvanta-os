@@ -25,20 +25,20 @@ export default async function WorkflowRunPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
         <Link
           href={`/workflows/${run.workflowId}`}
-          className="text-xs text-[#D4AF37] hover:underline"
+          className="text-xs text-[#B8965D] hover:underline"
         >
           ← {run.workflowName}
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">
+          <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">
             Workflow run
           </h2>
           <Badge className={statusColors[run.status]}>{run.status.replace("_", " ")}</Badge>
         </div>
-        <p className="text-xs text-[#A89878]">
+        <p className="text-xs text-[#9AABC4]">
           {formatRelative(run.createdAt)}
           {run.context.contactName ? ` · ${run.context.contactName}` : ""}
         </p>
@@ -52,49 +52,49 @@ export default async function WorkflowRunPage({
           </div>
         )}
 
-        <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Context</h3>
+        <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Context</h3>
           <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
             {run.context.contactName && (
               <>
-                <dt className="text-[#A89878]">Contact</dt>
+                <dt className="text-[#9AABC4]">Contact</dt>
                 <dd>{run.context.contactName}</dd>
               </>
             )}
             {run.context.leadScore !== undefined && (
               <>
-                <dt className="text-[#A89878]">Lead score</dt>
+                <dt className="text-[#9AABC4]">Lead score</dt>
                 <dd>{run.context.leadScore}</dd>
               </>
             )}
             {run.context.dealValue !== undefined && (
               <>
-                <dt className="text-[#A89878]">Deal value</dt>
+                <dt className="text-[#9AABC4]">Deal value</dt>
                 <dd>£{run.context.dealValue.toLocaleString()}</dd>
               </>
             )}
           </dl>
         </section>
 
-        <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Step log</h3>
+        <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Step log</h3>
           <ul className="mt-4 space-y-3">
             {run.stepLogs.map((log) => (
               <li
                 key={`${log.stepId}-${log.at}`}
-                className="rounded-lg border border-[#3d3528] bg-[#141414] p-3"
+                className="rounded-lg border border-[#243656] bg-[#121E32] p-3"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium text-[#F5E6C8]">{log.stepLabel}</p>
-                  <Badge className="bg-[#0a0a0a] text-[#A89878] ring-[#3d3528]">
+                  <p className="text-sm font-medium text-[#FFFFFF]">{log.stepLabel}</p>
+                  <Badge className="bg-[#040608] text-[#9AABC4] ring-[#243656]">
                     {log.stepType}
                   </Badge>
-                  <Badge className="bg-[#0a0a0a] text-[#A89878] ring-[#3d3528]">
+                  <Badge className="bg-[#040608] text-[#9AABC4] ring-[#243656]">
                     {log.status}
                   </Badge>
                 </div>
                 {log.output && (
-                  <p className="mt-2 text-xs text-[#A89878] whitespace-pre-wrap">
+                  <p className="mt-2 text-xs text-[#9AABC4] whitespace-pre-wrap">
                     {log.output}
                   </p>
                 )}

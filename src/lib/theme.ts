@@ -1,18 +1,26 @@
-/** Aarvanta OS dark theme — metallic gold on deep black */
+/** Aarvanta Business OS — palette from official logo (navy, gold, cyan on black). */
 export const colors = {
   background: "#000000",
-  surface: "#0A0A0A",
-  surfaceElevated: "#101010",
-  surfaceMuted: "#141414",
-  surfaceHover: "#1A1714",
-  border: "#3D3528",
-  borderSubtle: "#2A2418",
-  gold: "#D4AF37",
-  goldBright: "#F9E076",
-  goldDark: "#996515",
-  goldHover: "#B8860B",
-  textPrimary: "#F5E6C8",
-  textMuted: "#A89878",
-  textDim: "#6B5D48",
-  outboundBubble: "#1A1510",
+  surface: "#040608",
+  surfaceElevated: "#0D1524",
+  surfaceMuted: "#121E32",
+  surfaceHover: "#162840",
+  border: "#243656",
+  borderSubtle: "#1A2840",
+  navy: "#1A2B48",
+  gold: "#B8965D",
+  goldBright: "#C9AA72",
+  goldDark: "#94784A",
+  goldHover: "#A88952",
+  accentCyan: "#4DA6FF",
+  textPrimary: "#FFFFFF",
+  textMuted: "#9AABC4",
+  textDim: "#6B7F9E",
+  outboundBubble: "#162840",
+} as const;
+
+export const brand = {
+  name: "Aarvanta",
+  product: "Business OS",
+  fullName: "Aarvanta Business OS",
 } as const;

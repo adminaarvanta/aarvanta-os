@@ -2,19 +2,21 @@
 
 :root {
   --background: #000000;
-  --foreground: #f5e6c8;
-  --surface: #0a0a0a;
-  --surface-elevated: #101010;
-  --surface-muted: #141414;
-  --surface-hover: #1a1714;
-  --border: #3d3528;
-  --border-subtle: #2a2418;
-  --gold: #d4af37;
-  --gold-bright: #f9e076;
-  --gold-dark: #996515;
-  --gold-hover: #b8860b;
-  --text-muted: #a89878;
-  --text-dim: #6b5d48;
+  --foreground: #ffffff;
+  --surface: #040608;
+  --surface-elevated: #0d1524;
+  --surface-muted: #121e32;
+  --surface-hover: #162840;
+  --border: #243656;
+  --border-subtle: #1a2840;
+  --navy: #1a2b48;
+  --gold: #b8965d;
+  --gold-bright: #c9aa72;
+  --gold-dark: #94784a;
+  --gold-hover: #a88952;
+  --accent-cyan: #4da6ff;
+  --text-muted: #9aabc4;
+  --text-dim: #6b7f9e;
   --font-sans: var(--font-inter);
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
@@ -30,10 +32,12 @@
   --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
+  --color-navy: var(--navy);
   --color-gold: var(--gold);
   --color-gold-bright: var(--gold-bright);
   --color-gold-dark: var(--gold-dark);
   --color-gold-hover: var(--gold-hover);
+  --color-accent-cyan: var(--accent-cyan);
   --color-muted: var(--text-muted);
   --color-dim: var(--text-dim);
   --font-sans: var(--font-inter);
@@ -56,12 +60,12 @@ body {
 }
 
 ::selection {
-  background: rgba(212, 175, 55, 0.25);
+  background: rgba(184, 150, 93, 0.28);
   color: var(--foreground);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(212, 175, 55, 0.55);
+  outline: 2px solid rgba(184, 150, 93, 0.55);
   outline-offset: 2px;
 }
 
@@ -77,12 +81,10 @@ textarea::placeholder {
   color: var(--text-dim);
 }
 
-/* Gold accent scrollbar on dark surfaces */
 * {
-  scrollbar-color: #3d3528 transparent;
+  scrollbar-color: #243656 transparent;
 }
 
-/* Prevent iOS zoom on focused inputs — use 16px+ on form controls */
 @media (max-width: 640px) {
   input,
   select,

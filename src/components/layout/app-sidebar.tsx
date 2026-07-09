@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LayoutGrid, LogOut, Search, Settings, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
+import { BrandLogo } from "@/components/brand/logo";
 import { useDemoTourOptional } from "@/components/demo/demo-tour-provider";
 import { WorkspaceSwitcher } from "@/components/tenant/workspace-switcher";
 import {
@@ -59,19 +60,10 @@ function SidebarIconSlot({ children }: { children: React.ReactNode }) {
 }
 
 function SidebarBrandLabel({ expanded }: { expanded: boolean }) {
+  if (!expanded) return null;
   return (
-    <div
-      className={cn(
-        "flex min-w-0 flex-col justify-center overflow-hidden transition-[max-width,opacity,margin] ease-out",
-        expanded ? "ml-2 max-w-[132px] opacity-100" : "ml-0 max-w-0 opacity-0"
-      )}
-      style={{ transitionDuration: `${SIDEBAR_MS}ms`, transitionTimingFunction: SIDEBAR_EASE }}
-      aria-hidden={!expanded}
-    >
-      <span className="truncate text-sm font-semibold leading-tight text-foreground">
-        Aarvanta
-      </span>
-      <span className="truncate text-[10px] leading-tight text-muted">Business OS</span>
+    <div className="ml-2 min-w-0 flex-1 overflow-hidden">
+      <BrandLogo size="sm" className="max-h-10" />
     </div>
   );
 }
@@ -227,7 +219,7 @@ function ToolsPanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search all tools…"
-            className="w-full rounded-lg bg-surface-muted py-2 pl-9 pr-3 text-sm text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_8px_rgba(0,0,0,0.2)] placeholder:text-dim focus:outline-none focus:shadow-[inset_0_1px_0_rgba(212,175,55,0.08),0_0_0_1px_rgba(212,175,55,0.2),0_2px_8px_rgba(0,0,0,0.25)]"
+            className="w-full rounded-lg bg-surface-muted py-2 pl-9 pr-3 text-sm text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_8px_rgba(0,0,0,0.2)] placeholder:text-dim focus:outline-none focus:shadow-[inset_0_1px_0_rgba(184, 150, 93,0.08),0_0_0_1px_rgba(184, 150, 93,0.2),0_2px_8px_rgba(0,0,0,0.25)]"
           />
         </label>
       </div>
@@ -466,14 +458,14 @@ export function AppSidebar({
             <Link
               href="/dashboard"
               onClick={closeToolsPanel}
-              title="Aarvanta OS"
+              title="Aarvanta Business OS"
               className={cn(
                 "flex h-10 w-full min-w-0 items-center rounded-lg transition-colors hover:bg-surface-hover/60",
                 sidebarExpanded ? "px-1" : "justify-center"
               )}
             >
               <SidebarIconSlot>
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/10 text-sm font-bold tracking-tight text-gold-bright ring-1 ring-gold/25">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1A2B48] text-sm font-bold tracking-tight text-[#B8965D] ring-1 ring-[#B8965D]/35">
                   A
                 </span>
               </SidebarIconSlot>

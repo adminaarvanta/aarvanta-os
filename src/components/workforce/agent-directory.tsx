@@ -46,11 +46,11 @@ export function AgentDirectory() {
     <div className="space-y-8">
       {byDepartment.map(({ department, agents }) => (
         <section key={department}>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#A89878]">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#9AABC4]">
             {agentDepartmentLabel(department)}
           </h3>
           <div className="relative">
-            <div className="absolute left-6 top-0 bottom-0 w-px bg-[#3d3528] hidden sm:block" />
+            <div className="absolute left-6 top-0 bottom-0 w-px bg-[#243656] hidden sm:block" />
             <div className="space-y-3">
               {agents.map((agent) => {
                 const Icon = icons[agent.type];
@@ -59,26 +59,26 @@ export function AgentDirectory() {
                     key={agent.type}
                     href={`/workforce/${agent.type}`}
                     className={cn(
-                      "relative flex items-center gap-4 rounded-xl border border-[#3d3528] bg-[#101010] p-4",
-                      "transition-colors hover:border-[#D4AF37]/40 hover:bg-[#141414]"
+                      "relative flex items-center gap-4 rounded-xl border border-[#243656] bg-[#0D1524] p-4",
+                      "transition-colors hover:border-[#B8965D]/40 hover:bg-[#121E32]"
                     )}
                   >
-                    <div className="relative z-10 rounded-lg bg-[#D4AF37]/15 p-2.5 ring-1 ring-[#D4AF37]/30">
-                      <Icon className="h-5 w-5 text-[#D4AF37]" />
+                    <div className="relative z-10 rounded-lg bg-[#B8965D]/15 p-2.5 ring-1 ring-[#B8965D]/30">
+                      <Icon className="h-5 w-5 text-[#B8965D]" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-[#F5E6C8]">{agent.name}</p>
-                        <span className="rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-[10px] font-medium text-[#F9E076] ring-1 ring-[#D4AF37]/20">
+                        <p className="font-semibold text-[#FFFFFF]">{agent.name}</p>
+                        <span className="rounded-full bg-[#B8965D]/10 px-2 py-0.5 text-[10px] font-medium text-[#C9AA72] ring-1 ring-[#B8965D]/20">
                           {agent.primaryFunction}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-[#A89878]">{agent.title}</p>
-                      <p className="mt-1 text-xs text-[#A89878]/80 line-clamp-1">
+                      <p className="mt-0.5 text-xs text-[#9AABC4]">{agent.title}</p>
+                      <p className="mt-1 text-xs text-[#9AABC4]/80 line-clamp-1">
                         {agent.tagline}
                       </p>
                     </div>
-                    <span className="text-xs text-[#D4AF37]">Open →</span>
+                    <span className="text-xs text-[#B8965D]">Open →</span>
                   </Link>
                 );
               })}

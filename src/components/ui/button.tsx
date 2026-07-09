@@ -18,10 +18,10 @@ export function Button({
         size === "sm" && "px-3 py-1.5 text-xs",
         size === "md" && "px-4 py-2 text-sm",
         variant === "primary" &&
-          "bg-[#D4AF37] text-black hover:bg-[#F9E076] shadow-sm shadow-[#D4AF37]/20",
+          "bg-[#B8965D] text-black hover:bg-[#C9AA72] shadow-sm shadow-[#B8965D]/20",
         variant === "secondary" &&
-          "border border-[#3d3528] bg-[#141414] text-[#F5E6C8] hover:bg-[#1a1714] hover:border-[#D4AF37]/40",
-        variant === "ghost" && "text-[#A89878] hover:bg-[#1a1714] hover:text-[#F5E6C8]",
+          "border border-[#243656] bg-[#121E32] text-[#FFFFFF] hover:bg-[#162840] hover:border-[#B8965D]/40",
+        variant === "ghost" && "text-[#9AABC4] hover:bg-[#162840] hover:text-[#FFFFFF]",
         className
       )}
       {...props}

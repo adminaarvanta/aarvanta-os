@@ -41,7 +41,7 @@ export default async function RegionsPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Global region map</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Global region map</h3>
           <CardList
             items={regions.map((region) => ({
               id: region.id,
@@ -55,7 +55,7 @@ export default async function RegionsPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Tenant assignments</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Tenant assignments</h3>
           <CardList
             items={tenantRegions.map((tenantRegion) => ({
               id: tenantRegion.id,

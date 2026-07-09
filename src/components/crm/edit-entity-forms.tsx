@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { CrmCompany, CrmContact, ContactTag } from "@/types/crm";
 
 const inputClass =
-  "w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30";
+  "w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF] outline-none focus:border-[#B8965D] focus:ring-1 focus:ring-[#B8965D]/30";
 
 const TAG_OPTIONS: ContactTag[] = [
   "prospect",
@@ -81,9 +81,9 @@ export function EditContactForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-xl border border-[#3d3528] bg-[#101010] p-4 space-y-3"
+      className="rounded-xl border border-[#243656] bg-[#0D1524] p-4 space-y-3"
     >
-      <p className="text-sm font-medium text-[#F5E6C8]">Edit contact</p>
+      <p className="text-sm font-medium text-[#FFFFFF]">Edit contact</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <input
           value={firstName}
@@ -146,8 +146,8 @@ export function EditContactForm({
             onClick={() => toggleTag(tag)}
             className={
               tags.includes(tag)
-                ? "rounded-full bg-[#D4AF37]/20 px-2.5 py-1 text-xs text-[#D4AF37] ring-1 ring-[#D4AF37]/40"
-                : "rounded-full border border-[#3d3528] px-2.5 py-1 text-xs text-[#A89878]"
+                ? "rounded-full bg-[#B8965D]/20 px-2.5 py-1 text-xs text-[#B8965D] ring-1 ring-[#B8965D]/40"
+                : "rounded-full border border-[#243656] px-2.5 py-1 text-xs text-[#9AABC4]"
             }
           >
             {tag.replace("_", " ")}
@@ -216,9 +216,9 @@ export function EditCompanyForm({ company }: { company: CrmCompany }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-xl border border-[#3d3528] bg-[#101010] p-4 space-y-3"
+      className="rounded-xl border border-[#243656] bg-[#0D1524] p-4 space-y-3"
     >
-      <p className="text-sm font-medium text-[#F5E6C8]">Edit company</p>
+      <p className="text-sm font-medium text-[#FFFFFF]">Edit company</p>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}

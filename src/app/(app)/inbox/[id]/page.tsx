@@ -37,40 +37,40 @@ export default async function ConversationPage({
 
   return (
     <>
-      <header className="flex shrink-0 items-center gap-3 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6">
+      <header className="flex shrink-0 items-center gap-3 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6">
         <Link
           href="/inbox"
-          className="rounded-lg p-1.5 text-[#A89878] hover:bg-[#141414] lg:hidden"
+          className="rounded-lg p-1.5 text-[#9AABC4] hover:bg-[#121E32] lg:hidden"
           aria-label="Back to inbox"
         >
           <ChevronLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold text-[#F5E6C8] sm:text-lg">
+          <h2 className="truncate text-base font-semibold text-[#FFFFFF] sm:text-lg">
             {conversation.contact.name}
           </h2>
           <div className="mt-0.5 flex flex-wrap items-center gap-1 lg:hidden">
             {conversation.contact.email && (
-              <span className="truncate text-xs text-[#A89878]">
+              <span className="truncate text-xs text-[#9AABC4]">
                 {conversation.contact.email}
               </span>
             )}
             {conversation.channels.slice(0, 2).map((ch) => (
               <Badge
                 key={ch}
-                className="bg-[#141414] text-[#A89878] ring-[#3d3528] text-[10px]"
+                className="bg-[#121E32] text-[#9AABC4] ring-[#243656] text-[10px]"
               >
                 {CHANNEL_LABELS[ch]}
               </Badge>
             ))}
           </div>
-          <p className="text-xs text-[#A89878] hidden sm:block">
+          <p className="text-xs text-[#9AABC4] hidden sm:block">
             Conversation timeline · notes · tags · AI
           </p>
         </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-        <div className="hidden lg:block w-80 shrink-0 min-h-0 overflow-y-auto overscroll-contain border-r border-[#3d3528] bg-[#101010]">
+        <div className="hidden lg:block w-80 shrink-0 min-h-0 overflow-y-auto overscroll-contain border-r border-[#243656] bg-[#0D1524]">
           <ConversationList
             conversations={conversations}
             activeId={conversation.id}

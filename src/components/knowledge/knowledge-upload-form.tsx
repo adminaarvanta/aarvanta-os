@@ -40,11 +40,11 @@ export function KnowledgeUploadForm() {
   }
 
   return (
-    <section className="rounded-xl border border-dashed border-[#3d3528] bg-[#101010] p-5">
+    <section className="rounded-xl border border-dashed border-[#243656] bg-[#0D1524] p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Upload documents</h3>
-          <p className="mt-1 text-xs text-[#A89878]">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Upload documents</h3>
+          <p className="mt-1 text-xs text-[#9AABC4]">
             PDF, DOCX, or TXT · max 10 MB · indexed for semantic search
           </p>
         </div>

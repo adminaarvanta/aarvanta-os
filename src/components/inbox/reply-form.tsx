@@ -87,12 +87,12 @@ export function ReplyForm({
   return (
     <form
       onSubmit={send}
-      className="shrink-0 border-t border-[#3d3528] bg-[#0a0a0a] p-3 space-y-2 sm:p-4"
+      className="shrink-0 border-t border-[#243656] bg-[#040608] p-3 space-y-2 sm:p-4"
     >
       <select
         value={channel}
         onChange={(e) => setChannel(e.target.value as Channel)}
-        className="w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] sm:w-auto sm:text-xs"
+        className="w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF] sm:w-auto sm:text-xs"
       >
         {ALL_CHANNELS.map((ch) => (
           <option key={ch} value={ch}>
@@ -111,11 +111,11 @@ export function ReplyForm({
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Email subject"
-          className="w-full rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-1.5 text-sm text-[#F5E6C8]"
+          className="w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-1.5 text-sm text-[#FFFFFF]"
         />
       )}
       {channel === "voice" ? (
-        <p className="text-xs text-[#A89878]">
+        <p className="text-xs text-[#9AABC4]">
           Initiates a voice call and speaks your message to the contact.
         </p>
       ) : null}
@@ -129,7 +129,7 @@ export function ReplyForm({
               : "Reply via selected channel…"
           }
           rows={3}
-          className="min-h-[4.5rem] flex-1 resize-none rounded-xl border border-[#3d3528] bg-[#141414] px-3 py-2 text-base text-[#F5E6C8] placeholder:text-[#A89878]/60 focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/30 sm:min-h-0 sm:text-sm"
+          className="min-h-[4.5rem] flex-1 resize-none rounded-xl border border-[#243656] bg-[#121E32] px-3 py-2 text-base text-[#FFFFFF] placeholder:text-[#9AABC4]/60 focus:border-[#B8965D] focus:outline-none focus:ring-1 focus:ring-[#B8965D]/30 sm:min-h-0 sm:text-sm"
         />
         <Button
           type="submit"

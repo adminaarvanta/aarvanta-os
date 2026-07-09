@@ -13,9 +13,9 @@ const priorityColors: Record<CrmTask["priority"], string> = {
 export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
   if (tasks.length === 0) {
     return (
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">Agent tasks</h3>
-        <p className="mt-2 text-sm text-[#A89878]">
+      <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+        <h3 className="text-sm font-semibold text-[#FFFFFF]">Agent tasks</h3>
+        <p className="mt-2 text-sm text-[#9AABC4]">
           No tasks assigned to this agent yet. Run the agent and apply actions to
           create tasks automatically.
         </p>
@@ -24,10 +24,10 @@ export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
   }
 
   return (
-    <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
+    <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">Agent tasks</h3>
-        <Link href="/crm/tasks" className="text-xs text-[#D4AF37] hover:underline">
+        <h3 className="text-sm font-semibold text-[#FFFFFF]">Agent tasks</h3>
+        <Link href="/crm/tasks" className="text-xs text-[#B8965D] hover:underline">
           View all in CRM →
         </Link>
       </div>
@@ -35,32 +35,32 @@ export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
         {tasks.map((task) => (
           <li
             key={task.id}
-            className="rounded-lg border border-[#3d3528] bg-[#141414] p-4"
+            className="rounded-lg border border-[#243656] bg-[#121E32] p-4"
           >
             <div className="flex items-start gap-3">
               {task.status === "done" ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
               ) : (
-                <Circle className="mt-0.5 h-4 w-4 shrink-0 text-[#A89878]" />
+                <Circle className="mt-0.5 h-4 w-4 shrink-0 text-[#9AABC4]" />
               )}
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-[#F5E6C8]">{task.title}</p>
+                <p className="font-medium text-[#FFFFFF]">{task.title}</p>
                 {task.description && (
-                  <p className="mt-1 text-xs text-[#A89878]">{task.description}</p>
+                  <p className="mt-1 text-xs text-[#9AABC4]">{task.description}</p>
                 )}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge className={priorityColors[task.priority]}>
                     {task.priority}
                   </Badge>
-                  <Badge className="bg-[#0a0a0a] text-[#A89878] ring-[#3d3528]">
+                  <Badge className="bg-[#040608] text-[#9AABC4] ring-[#243656]">
                     {task.status.replace("_", " ")}
                   </Badge>
                   {task.dueDate && (
-                    <span className="text-[10px] text-[#A89878]">
+                    <span className="text-[10px] text-[#9AABC4]">
                       Due {task.dueDate}
                     </span>
                   )}
-                  <span className="text-[10px] text-[#A89878]">
+                  <span className="text-[10px] text-[#9AABC4]">
                     {formatRelative(task.updatedAt)}
                   </span>
                 </div>

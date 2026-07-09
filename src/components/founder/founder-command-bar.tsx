@@ -76,32 +76,32 @@ export function FounderCommandBar() {
       role="presentation"
     >
       <div
-        className="w-full max-w-lg rounded-xl border border-[#3d3528] bg-[#0a0a0a] shadow-2xl shadow-black/50"
+        className="w-full max-w-lg rounded-xl border border-[#243656] bg-[#040608] shadow-2xl shadow-black/50"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="Command bar"
       >
-        <div className="flex items-center gap-3 border-b border-[#3d3528] px-4 py-3">
-          <Search className="h-4 w-4 text-[#A89878]" />
+        <div className="flex items-center gap-3 border-b border-[#243656] px-4 py-3">
+          <Search className="h-4 w-4 text-[#9AABC4]" />
           <input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search commands…"
-            className="flex-1 bg-transparent text-sm text-[#F5E6C8] outline-none placeholder:text-[#A89878]/60"
+            className="flex-1 bg-transparent text-sm text-[#FFFFFF] outline-none placeholder:text-[#9AABC4]/60"
           />
-          <kbd className="hidden rounded border border-[#3d3528] px-1.5 py-0.5 text-[10px] text-[#A89878] sm:inline">
+          <kbd className="hidden rounded border border-[#243656] px-1.5 py-0.5 text-[10px] text-[#9AABC4] sm:inline">
             esc
           </kbd>
         </div>
 
         <div className="max-h-72 overflow-y-auto overscroll-contain p-2">
           {commands.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-[#A89878]">No commands found.</p>
+            <p className="px-3 py-6 text-center text-sm text-[#9AABC4]">No commands found.</p>
           ) : (
             Object.entries(grouped).map(([group, items]) => (
               <div key={group} className="mb-2">
-                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#A89878]">
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#9AABC4]">
                   {group}
                 </p>
                 <ul>
@@ -118,8 +118,8 @@ export function FounderCommandBar() {
                           }}
                           className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm ${
                             active
-                              ? "bg-[#D4AF37]/15 text-[#F9E076]"
-                              : "text-[#F5E6C8] hover:bg-[#141414]"
+                              ? "bg-[#B8965D]/15 text-[#C9AA72]"
+                              : "text-[#FFFFFF] hover:bg-[#121E32]"
                           }`}
                         >
                           {cmd.label}
@@ -133,9 +133,9 @@ export function FounderCommandBar() {
           )}
         </div>
 
-        <div className="border-t border-[#3d3528] px-4 py-2 text-[10px] text-[#A89878]">
+        <div className="border-t border-[#243656] px-4 py-2 text-[10px] text-[#9AABC4]">
           <span className="hidden sm:inline">↑↓ navigate · ↵ open · </span>
-          <kbd className="rounded border border-[#3d3528] px-1">⌘K</kbd> toggle
+          <kbd className="rounded border border-[#243656] px-1">⌘K</kbd> toggle
         </div>
       </div>
     </div>

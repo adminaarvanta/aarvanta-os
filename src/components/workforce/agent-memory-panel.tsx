@@ -62,14 +62,14 @@ export function AgentMemoryPanel({
   }
 
   return (
-    <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5 space-y-4">
+    <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-[#D4AF37]/15 p-2 ring-1 ring-[#D4AF37]/30">
-          <Brain className="h-4 w-4 text-[#D4AF37]" />
+        <div className="rounded-lg bg-[#B8965D]/15 p-2 ring-1 ring-[#B8965D]/30">
+          <Brain className="h-4 w-4 text-[#B8965D]" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Agent memory</h3>
-          <p className="text-xs text-[#A89878]">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Agent memory</h3>
+          <p className="text-xs text-[#9AABC4]">
             Long-term context saved from runs, chat, and manual notes
           </p>
         </div>
@@ -80,7 +80,7 @@ export function AgentMemoryPanel({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Add a memory for this agent…"
-          className="flex-1 rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8]"
+          className="flex-1 rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
         />
         <Button type="submit" disabled={adding || !content.trim()}>
           <Plus className="h-4 w-4" />
@@ -88,7 +88,7 @@ export function AgentMemoryPanel({
       </form>
 
       {memory.length === 0 ? (
-        <p className="text-sm text-[#A89878]">
+        <p className="text-sm text-[#9AABC4]">
           No memories yet. Run the agent or chat to build context automatically.
         </p>
       ) : (
@@ -96,30 +96,30 @@ export function AgentMemoryPanel({
           {memory.map((entry) => (
             <li
               key={entry.id}
-              className="rounded-lg border border-[#3d3528] bg-[#141414] p-3"
+              className="rounded-lg border border-[#243656] bg-[#121E32] p-3"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={categoryColors[entry.category]}>
                   {entry.category}
                 </Badge>
-                <Badge className="bg-[#0a0a0a] text-[#A89878] ring-[#3d3528]">
+                <Badge className="bg-[#040608] text-[#9AABC4] ring-[#243656]">
                   {entry.source}
                 </Badge>
-                <span className="text-[10px] text-[#A89878]">
+                <span className="text-[10px] text-[#9AABC4]">
                   {formatRelative(entry.createdAt)}
                 </span>
                 {entry.source === "manual" && (
                   <button
                     type="button"
                     onClick={() => deleteEntry(entry.id)}
-                    className="ml-auto text-[#A89878] hover:text-red-300"
+                    className="ml-auto text-[#9AABC4] hover:text-red-300"
                     aria-label="Delete memory"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
-              <p className="mt-2 text-sm text-[#F5E6C8]">{entry.content}</p>
+              <p className="mt-2 text-sm text-[#FFFFFF]">{entry.content}</p>
             </li>
           ))}
         </ul>

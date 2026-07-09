@@ -64,11 +64,11 @@ export function KnowledgeDocumentDetail({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5 space-y-4">
+      <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-[#F5E6C8]">{document.title}</h3>
-            <p className="text-xs text-[#A89878]">
+            <h3 className="text-lg font-semibold text-[#FFFFFF]">{document.title}</h3>
+            <p className="text-xs text-[#9AABC4]">
               {document.fileName} · {document.fileType.toUpperCase()} ·{" "}
               {document.charCount.toLocaleString()} chars · Updated{" "}
               {formatRelative(document.updatedAt)}
@@ -103,18 +103,18 @@ export function KnowledgeDocumentDetail({
 
         {document.summary && (
           <div>
-            <p className="text-xs font-medium text-[#A89878]">Summary</p>
-            <p className="mt-1 text-sm text-[#F5E6C8]">{document.summary}</p>
+            <p className="text-xs font-medium text-[#9AABC4]">Summary</p>
+            <p className="mt-1 text-sm text-[#FFFFFF]">{document.summary}</p>
           </div>
         )}
 
         <div>
-          <label className="block text-xs font-medium text-[#A89878]">Tags</label>
+          <label className="block text-xs font-medium text-[#9AABC4]">Tags</label>
           <div className="mt-1 flex gap-2">
             <input
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="flex-1 rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8]"
+              className="flex-1 rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
               placeholder="sop, onboarding, sales"
             />
             <Button type="button" disabled={busy === "tags"} onClick={saveTags}>
@@ -126,7 +126,7 @@ export function KnowledgeDocumentDetail({
               {document.tags.map((tag) => (
                 <Badge
                   key={tag}
-                  className="bg-[#0a0a0a] text-[#A89878] ring-[#3d3528]"
+                  className="bg-[#040608] text-[#9AABC4] ring-[#243656]"
                 >
                   {tag}
                 </Badge>
@@ -140,18 +140,18 @@ export function KnowledgeDocumentDetail({
         )}
       </section>
 
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">
+      <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+        <h3 className="text-sm font-semibold text-[#FFFFFF]">
           Indexed chunks ({chunks.length})
         </h3>
         <ul className="mt-4 space-y-3 max-h-[480px] overflow-y-auto">
           {chunks.map((chunk) => (
             <li
               key={chunk.id}
-              className="rounded-lg border border-[#3d3528] bg-[#141414] p-3"
+              className="rounded-lg border border-[#243656] bg-[#121E32] p-3"
             >
-              <p className="text-[10px] text-[#A89878]">Chunk {chunk.index + 1}</p>
-              <p className="mt-1 text-xs text-[#A89878] whitespace-pre-wrap">
+              <p className="text-[10px] text-[#9AABC4]">Chunk {chunk.index + 1}</p>
+              <p className="mt-1 text-xs text-[#9AABC4] whitespace-pre-wrap">
                 {chunk.content}
               </p>
             </li>

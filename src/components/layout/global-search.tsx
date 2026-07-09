@@ -155,14 +155,14 @@ export function GlobalSearch({ className }: { className?: string }) {
         className={cn(
           "flex h-10 items-center gap-2 rounded-lg bg-surface-muted px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_8px_rgba(0,0,0,0.25)] transition-[box-shadow,background-color] sm:px-3.5",
           open
-            ? "bg-surface-hover shadow-[inset_0_1px_0_rgba(212,175,55,0.08),0_0_0_1px_rgba(212,175,55,0.18),0_4px_16px_rgba(0,0,0,0.3)]"
+            ? "bg-surface-hover shadow-[inset_0_1px_0_rgba(184, 150, 93,0.08),0_0_0_1px_rgba(184, 150, 93,0.18),0_4px_16px_rgba(0,0,0,0.3)]"
             : "hover:bg-surface-hover/80"
         )}
       >
         {loading ? (
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#A89878]" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#9AABC4]" />
         ) : (
-          <Search className="h-4 w-4 shrink-0 text-[#A89878]" />
+          <Search className="h-4 w-4 shrink-0 text-[#9AABC4]" />
         )}
         <input
           ref={inputRef}
@@ -180,16 +180,16 @@ export function GlobalSearch({ className }: { className?: string }) {
           aria-controls={showDropdown ? listboxId : undefined}
           aria-autocomplete="list"
           role="combobox"
-          className="min-w-0 flex-1 bg-transparent text-sm text-[#F5E6C8] outline-none placeholder:text-[#A89878]/60"
+          className="min-w-0 flex-1 bg-transparent text-sm text-[#FFFFFF] outline-none placeholder:text-[#9AABC4]/60"
         />
-        <kbd className="hidden shrink-0 rounded bg-black/20 px-1.5 py-0.5 text-[10px] text-[#A89878] shadow-sm sm:inline">
+        <kbd className="hidden shrink-0 rounded bg-black/20 px-1.5 py-0.5 text-[10px] text-[#9AABC4] shadow-sm sm:inline">
           ⌘K
         </kbd>
       </div>
 
       {showDropdown && (
         <div
-          className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl bg-[#0a0a0a] shadow-[0_16px_48px_rgba(0,0,0,0.55)]"
+          className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl bg-[#040608] shadow-[0_16px_48px_rgba(0,0,0,0.55)]"
           role="presentation"
         >
           <div
@@ -199,15 +199,15 @@ export function GlobalSearch({ className }: { className?: string }) {
             className="max-h-[min(24rem,60vh)] overflow-y-auto overscroll-contain p-2"
           >
             {loading && flatResults.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-[#A89878]">Searching…</p>
+              <p className="px-3 py-6 text-center text-sm text-[#9AABC4]">Searching…</p>
             ) : flatResults.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-[#A89878]">
+              <p className="px-3 py-6 text-center text-sm text-[#9AABC4]">
                 {query ? `No results for “${query}”` : "Start typing to search"}
               </p>
             ) : (
               Object.entries(grouped).map(([group, items]) => (
                 <div key={group} className="mb-1">
-                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#A89878]">
+                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#9AABC4]">
                     {group}
                   </p>
                   <ul>
@@ -224,20 +224,20 @@ export function GlobalSearch({ className }: { className?: string }) {
                             className={cn(
                               "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left",
                               active
-                                ? "bg-[#D4AF37]/15 text-[#F9E076]"
-                                : "text-[#F5E6C8] hover:bg-[#141414]"
+                                ? "bg-[#B8965D]/15 text-[#C9AA72]"
+                                : "text-[#FFFFFF] hover:bg-[#121E32]"
                             )}
                           >
                             <Icon
                               className={cn(
                                 "h-4 w-4 shrink-0",
-                                active ? "text-[#D4AF37]" : "text-[#A89878]"
+                                active ? "text-[#B8965D]" : "text-[#9AABC4]"
                               )}
                             />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm">{item.title}</span>
                               {item.subtitle && (
-                                <span className="block truncate text-xs text-[#A89878]">
+                                <span className="block truncate text-xs text-[#9AABC4]">
                                   {item.subtitle}
                                 </span>
                               )}
@@ -251,7 +251,7 @@ export function GlobalSearch({ className }: { className?: string }) {
               ))
             )}
           </div>
-          <div className="bg-black/20 px-3 py-2 text-[10px] text-[#A89878]">
+          <div className="bg-black/20 px-3 py-2 text-[10px] text-[#9AABC4]">
             <span className="hidden sm:inline">↑↓ navigate · ↵ open · </span>
             <kbd className="rounded bg-black/30 px-1 shadow-sm">esc</kbd> close
           </div>

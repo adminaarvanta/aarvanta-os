@@ -37,7 +37,7 @@ export default async function MarketplacePage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Install agents</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Install agents</h3>
           <MarketplaceClient
             catalog={catalog}
             installedIds={installed.map((agent) => agent.marketplaceId)}
@@ -45,7 +45,7 @@ export default async function MarketplacePage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Installed agents</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Installed agents</h3>
           <CardList
             items={installed.map((agent) => ({
               id: agent.id,

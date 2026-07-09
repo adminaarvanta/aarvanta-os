@@ -22,17 +22,17 @@ export default async function WorkflowDetailPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <Link href="/workflows" className="text-xs text-[#D4AF37] hover:underline">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+        <Link href="/workflows" className="text-xs text-[#B8965D] hover:underline">
           ← Workflows
         </Link>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">
+            <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">
               {workflow.name}
             </h2>
             {workflow.description && (
-              <p className="text-xs text-[#A89878] sm:text-sm">{workflow.description}</p>
+              <p className="text-xs text-[#9AABC4] sm:text-sm">{workflow.description}</p>
             )}
           </div>
           <RunWorkflowButton workflowId={workflow.id} />
@@ -42,7 +42,7 @@ export default async function WorkflowDetailPage({
         <WorkflowFlowDiagram workflow={workflow} />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Run history</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Run history</h3>
           <WorkflowRunList runs={runs} />
         </section>
       </div>

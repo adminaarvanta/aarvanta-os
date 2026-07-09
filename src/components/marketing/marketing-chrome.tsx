@@ -10,7 +10,7 @@ const links = [
 export function MarketingNav({ production }: { production: boolean }) {
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#3d3528]/80 bg-black/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-[#243656]/80 bg-black/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <BrandLogo href="/" size="sm" />
         <nav className="hidden items-center gap-6 md:flex">
@@ -18,7 +18,7 @@ export function MarketingNav({ production }: { production: boolean }) {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm text-[#A89878] transition-colors hover:text-[#F5E6C8]"
+              className="text-sm text-[#9AABC4] transition-colors hover:text-[#FFFFFF]"
             >
               {link.label}
             </Link>
@@ -28,14 +28,14 @@ export function MarketingNav({ production }: { production: boolean }) {
           {production ? (
             <Link
               href="/login"
-              className="rounded-lg border border-[#3d3528] px-3 py-2 text-sm font-medium text-[#F5E6C8] hover:border-[#D4AF37]/40"
+              className="rounded-lg border border-[#243656] px-3 py-2 text-sm font-medium text-[#FFFFFF] hover:border-[#B8965D]/40"
             >
               Sign in
             </Link>
           ) : null}
           <Link
             href="/inbox"
-            className="rounded-lg bg-[#D4AF37] px-3 py-2 text-sm font-semibold text-black hover:bg-[#F9E076] sm:px-4"
+            className="rounded-lg bg-[#B8965D] px-3 py-2 text-sm font-semibold text-black hover:bg-[#C9AA72] sm:px-4"
           >
             {production ? "Open app" : "Launch demo"}
           </Link>
@@ -47,25 +47,25 @@ export function MarketingNav({ production }: { production: boolean }) {
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-[#3d3528] bg-[#0a0a0a]">
+    <footer className="border-t border-[#243656] bg-[#040608]">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <p className="text-sm font-medium text-[#F5E6C8]">Aarvanta OS</p>
-          <p className="mt-1 text-xs text-[#A89878]">
+          <p className="text-sm font-medium text-[#FFFFFF]">Aarvanta Business OS</p>
+          <p className="mt-1 text-xs text-[#9AABC4]">
             © {new Date().getFullYear()} Aarvanta Limited. All rights reserved.
           </p>
         </div>
-        <div className="flex flex-wrap gap-4 text-xs text-[#A89878]">
-          <Link href="/pricing" className="hover:text-[#D4AF37]">
+        <div className="flex flex-wrap gap-4 text-xs text-[#9AABC4]">
+          <Link href="/pricing" className="hover:text-[#B8965D]">
             Pricing
           </Link>
-          <Link href="/about" className="hover:text-[#D4AF37]">
+          <Link href="/about" className="hover:text-[#B8965D]">
             About
           </Link>
-          <Link href="/contact" className="hover:text-[#D4AF37]">
+          <Link href="/contact" className="hover:text-[#B8965D]">
             Contact
           </Link>
-          <Link href="/inbox" className="hover:text-[#D4AF37]">
+          <Link href="/inbox" className="hover:text-[#B8965D]">
             App
           </Link>
         </div>

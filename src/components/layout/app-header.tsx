@@ -19,7 +19,7 @@ const HelpMenu = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-10 w-20 shrink-0 animate-pulse rounded-full bg-[#141414]" />
+      <div className="h-10 w-20 shrink-0 animate-pulse rounded-full bg-[#121E32]" />
     ),
   }
 );

@@ -35,7 +35,7 @@ export default async function KnowledgeGraphPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Nodes</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Nodes</h3>
           <CardList
             items={nodes.map((node) => ({
               id: node.id,
@@ -47,7 +47,7 @@ export default async function KnowledgeGraphPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Edges</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Edges</h3>
           <CardList
             items={edges.map((edge) => ({
               id: edge.id,

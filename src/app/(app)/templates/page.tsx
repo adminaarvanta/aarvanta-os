@@ -25,7 +25,7 @@ export default async function TemplatesPage() {
       <div className="space-y-8">
         {categories.map((category) => (
           <section key={category}>
-            <h3 className="mb-3 text-sm font-semibold capitalize text-[#F5E6C8]">
+            <h3 className="mb-3 text-sm font-semibold capitalize text-[#FFFFFF]">
               {category} templates ({grouped[category].length})
             </h3>
             <CardList

@@ -48,26 +48,26 @@ export function WorkspaceSwitcher({
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={loading}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-[#1a1714] disabled:opacity-60"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-[#162840] disabled:opacity-60"
       >
-        <Building2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+        <Building2 className="h-4 w-4 shrink-0 text-[#B8965D]" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-[#F5E6C8]">
+          <p className="truncate text-xs font-medium text-[#FFFFFF]">
             {organization.name}
           </p>
-          <p className="truncate text-[10px] text-[#A89878]">{workspace.name}</p>
+          <p className="truncate text-[10px] text-[#9AABC4]">{workspace.name}</p>
         </div>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-[#A89878] transition-transform",
+            "h-4 w-4 shrink-0 text-[#9AABC4] transition-transform",
             open && "rotate-180"
           )}
         />
       </button>
 
       {open && (
-        <div className="absolute left-3 right-3 top-full z-50 mt-1 rounded-lg border border-[#3d3528] bg-[#0a0a0a] py-1 shadow-xl">
-          <p className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-[#A89878]">
+        <div className="absolute left-3 right-3 top-full z-50 mt-1 rounded-lg border border-[#243656] bg-[#040608] py-1 shadow-xl">
+          <p className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-[#9AABC4]">
             Workspaces
           </p>
           {workspaces.map((ws) => (
@@ -76,10 +76,10 @@ export function WorkspaceSwitcher({
               type="button"
               onClick={() => switchTo(ws.id)}
               className={cn(
-                "flex w-full px-3 py-2 text-left text-sm hover:bg-[#1a1714]",
+                "flex w-full px-3 py-2 text-left text-sm hover:bg-[#162840]",
                 ws.id === workspace.id
-                  ? "text-[#F9E076]"
-                  : "text-[#A89878]"
+                  ? "text-[#C9AA72]"
+                  : "text-[#9AABC4]"
               )}
             >
               {ws.name}

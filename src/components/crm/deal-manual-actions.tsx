@@ -7,7 +7,7 @@ import type { MemberOption } from "@/lib/crm/members";
 import type { CrmDeal } from "@/types/crm";
 
 const inputClass =
-  "w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-2 py-1 text-xs text-[#F5E6C8] outline-none focus:border-[#D4AF37]";
+  "w-full rounded-lg border border-[#243656] bg-[#040608] px-2 py-1 text-xs text-[#FFFFFF] outline-none focus:border-[#B8965D]";
 
 export function DealManualActions({
   deal,
@@ -55,7 +55,7 @@ export function DealManualActions({
   }
 
   return (
-    <div className="mt-2 space-y-2 border-t border-[#3d3528] pt-2">
+    <div className="mt-2 space-y-2 border-t border-[#243656] pt-2">
       <div className="flex flex-wrap gap-1.5">
         {deal.status === "open" && (
           <>

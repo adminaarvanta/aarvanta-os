@@ -46,37 +46,37 @@ export function SopsClient() {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-3 rounded-xl border border-[#3d3528] bg-[#101010] p-4"
+      className="space-y-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4"
     >
-      <p className="text-sm font-medium text-[#F5E6C8]">Create SOP</p>
+      <p className="text-sm font-medium text-[#FFFFFF]">Create SOP</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1 text-xs text-[#A89878]">
+        <label className="space-y-1 text-xs text-[#9AABC4]">
           SOP title
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Incident response SOP"
-            className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
           />
         </label>
-        <label className="space-y-1 text-xs text-[#A89878]">
+        <label className="space-y-1 text-xs text-[#9AABC4]">
           Trigger question
           <input
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
             placeholder="How should incidents be handled?"
-            className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
           />
         </label>
       </div>
-      <label className="space-y-1 text-xs text-[#A89878]">
+      <label className="space-y-1 text-xs text-[#9AABC4]">
         Optional content
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
           rows={3}
           placeholder="Add SOP details..."
-          className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+          className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
         />
       </label>
       <div className="flex items-center gap-3">

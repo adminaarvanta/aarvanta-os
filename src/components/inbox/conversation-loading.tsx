@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function ListSkeleton() {
   return (
-    <ul className="divide-y divide-[#3d3528]/80" aria-hidden>
+    <ul className="divide-y divide-[#243656]/80" aria-hidden>
       {Array.from({ length: 6 }).map((_, i) => (
         <li key={i} className="px-4 py-3.5 space-y-2">
           <div className="flex justify-between gap-2">
@@ -25,7 +25,7 @@ function DetailSkeleton() {
   return (
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="hidden border-b border-[#3d3528] px-6 py-4 lg:block">
+        <div className="hidden border-b border-[#243656] px-6 py-4 lg:block">
           <Skeleton className="h-6 w-48" />
           <Skeleton className="mt-2 h-4 w-64" />
           <div className="mt-3 flex gap-2">
@@ -42,13 +42,13 @@ function DetailSkeleton() {
             <Skeleton className="ml-12 mr-0 h-20 rounded-2xl" />
           </div>
         </div>
-        <div className="border-t border-[#3d3528] p-4 space-y-2">
+        <div className="border-t border-[#243656] p-4 space-y-2">
           <Skeleton className="h-9 w-full sm:w-40" />
           <Skeleton className="h-20 w-full rounded-xl" />
           <Skeleton className="h-9 w-full sm:w-24" />
         </div>
       </section>
-      <aside className="w-full space-y-6 border-t border-[#3d3528] p-4 lg:w-80 lg:border-t-0 lg:border-l">
+      <aside className="w-full space-y-6 border-t border-[#243656] p-4 lg:w-80 lg:border-t-0 lg:border-l">
         <div className="space-y-2">
           <Skeleton className="h-3 w-12" />
           <div className="flex flex-wrap gap-1.5">
@@ -76,7 +76,7 @@ export function ConversationPageLoading({
   return (
     <div className="flex min-h-0 flex-1 flex-col" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading conversation…</span>
-      <header className="shrink-0 flex items-center gap-3 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6">
+      <header className="shrink-0 flex items-center gap-3 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6">
         <Skeleton className="h-8 w-8 rounded-lg lg:hidden" />
         <div className="min-w-0 flex-1 space-y-2">
           <Skeleton className="h-5 w-40 sm:h-6 sm:w-52" />
@@ -85,7 +85,7 @@ export function ConversationPageLoading({
       </header>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {showList && (
-          <div className="hidden w-80 shrink-0 min-h-0 overflow-y-auto overscroll-contain border-r border-[#3d3528] bg-[#101010] lg:block">
+          <div className="hidden w-80 shrink-0 min-h-0 overflow-y-auto overscroll-contain border-r border-[#243656] bg-[#0D1524] lg:block">
             <ListSkeleton />
           </div>
         )}
@@ -97,7 +97,7 @@ export function ConversationPageLoading({
 
 export function PageHeaderLoading({ lines = 2 }: { lines?: number }) {
   return (
-    <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
+    <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
       <Skeleton className="h-6 w-40 sm:h-7 sm:w-48" />
       {lines > 1 && <Skeleton className="mt-2 h-3 w-full max-w-md sm:h-4" />}
     </header>
@@ -109,7 +109,7 @@ export function CrmOverviewLoading() {
     <div className="flex min-h-0 flex-1 flex-col" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading CRM…</span>
       <PageHeaderLoading />
-      <div className="shrink-0 border-b border-[#3d3528] bg-[#0a0a0a] px-3 sm:px-6">
+      <div className="shrink-0 border-b border-[#243656] bg-[#040608] px-3 sm:px-6">
         <div className="flex gap-4 py-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-4 w-16" />
@@ -137,7 +137,7 @@ export function CrmListLoading() {
     <div className="flex min-h-0 flex-1 flex-col" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading…</span>
       <PageHeaderLoading />
-      <div className="shrink-0 border-b border-[#3d3528] bg-[#0a0a0a] px-3 sm:px-6">
+      <div className="shrink-0 border-b border-[#243656] bg-[#040608] px-3 sm:px-6">
         <div className="flex gap-4 py-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-4 w-16" />

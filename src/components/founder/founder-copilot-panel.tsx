@@ -93,15 +93,15 @@ export function FounderCopilotPanel({
   ];
 
   return (
-    <section className="flex h-[min(560px,65vh)] min-h-[320px] flex-col overflow-hidden rounded-xl border border-[#3d3528] bg-[#101010]">
-      <div className="flex items-center justify-between border-b border-[#3d3528] px-4 py-3">
+    <section className="flex h-[min(560px,65vh)] min-h-[320px] flex-col overflow-hidden rounded-xl border border-[#243656] bg-[#0D1524]">
+      <div className="flex items-center justify-between border-b border-[#243656] px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-[#D4AF37]/15 p-2 ring-1 ring-[#D4AF37]/30">
-            <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+          <div className="rounded-lg bg-[#B8965D]/15 p-2 ring-1 ring-[#B8965D]/30">
+            <Sparkles className="h-4 w-4 text-[#B8965D]" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">Founder Copilot</h3>
-            <p className="text-xs text-[#A89878]">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">Founder Copilot</h3>
+            <p className="text-xs text-[#9AABC4]">
               Chat with your entire business — CRM, projects, inbox, AI workforce
             </p>
           </div>
@@ -112,21 +112,21 @@ export function FounderCopilotPanel({
             Daily briefing
           </Button>
           {messages.length > 0 && (
-            <button type="button" onClick={clearChat} className="text-[#A89878] hover:text-red-300">
+            <button type="button" onClick={clearChat} className="text-[#9AABC4] hover:text-red-300">
               <Trash2 className="h-4 w-4" />
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 p-3 border-b border-[#3d3528]">
+      <div className="flex flex-wrap gap-2 p-3 border-b border-[#243656]">
         {suggestions.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => sendMessage(s)}
             disabled={loading}
-            className="rounded-full border border-[#3d3528] px-3 py-1 text-xs text-[#A89878] hover:border-[#D4AF37]/40 hover:text-[#F5E6C8]"
+            className="rounded-full border border-[#243656] px-3 py-1 text-xs text-[#9AABC4] hover:border-[#B8965D]/40 hover:text-[#FFFFFF]"
           >
             {s}
           </button>
@@ -139,7 +139,7 @@ export function FounderCopilotPanel({
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
       >
         {messages.length === 0 ? (
-          <p className="text-sm text-[#A89878]">
+          <p className="text-sm text-[#9AABC4]">
             Ask anything about your business — or tap Daily briefing for an AI CEO summary.
           </p>
         ) : (
@@ -149,8 +149,8 @@ export function FounderCopilotPanel({
               className={cn(
                 "max-w-[90%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
                 msg.role === "user"
-                  ? "ml-auto bg-[#D4AF37]/15 text-[#F5E6C8] ring-1 ring-[#D4AF37]/25"
-                  : "bg-[#141414] text-[#A89878] ring-1 ring-[#3d3528]"
+                  ? "ml-auto bg-[#B8965D]/15 text-[#FFFFFF] ring-1 ring-[#B8965D]/25"
+                  : "bg-[#121E32] text-[#9AABC4] ring-1 ring-[#243656]"
               )}
             >
               {msg.content}
@@ -158,7 +158,7 @@ export function FounderCopilotPanel({
           ))
         )}
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-[#A89878]">
+          <div className="flex items-center gap-2 text-xs text-[#9AABC4]">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Copilot is thinking…
           </div>
@@ -170,13 +170,13 @@ export function FounderCopilotPanel({
           e.preventDefault();
           sendMessage(input);
         }}
-        className="flex gap-2 border-t border-[#3d3528] p-3"
+        className="flex gap-2 border-t border-[#243656] p-3"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask Founder Copilot…"
-          className="flex-1 rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8]"
+          className="flex-1 rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
           disabled={loading}
         />
         <Button type="submit" disabled={loading || !input.trim()}>

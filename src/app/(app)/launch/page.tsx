@@ -10,7 +10,7 @@ export default function LaunchPage() {
       title="Launch OS"
       description="Idea → industry-aware business OS in minutes (AGEB Volume 11)"
     >
-      <Suspense fallback={<p className="text-sm text-[#A89878]">Loading…</p>}>
+      <Suspense fallback={<p className="text-sm text-[#9AABC4]">Loading…</p>}>
         <LaunchClient />
       </Suspense>
     </ModulePageShell>

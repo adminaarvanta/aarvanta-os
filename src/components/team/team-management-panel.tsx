@@ -13,15 +13,15 @@ import {
 } from "@/types/tenant";
 
 const roleBadge: Record<string, string> = {
-  owner: "bg-[#D4AF37]/20 text-[#F9E076] ring-[#D4AF37]/40",
+  owner: "bg-[#B8965D]/20 text-[#C9AA72] ring-[#B8965D]/40",
   admin: "bg-blue-950/60 text-blue-300 ring-blue-700/50",
   manager: "bg-purple-950/60 text-purple-300 ring-purple-700/50",
-  member: "bg-[#141414] text-[#A89878] ring-[#3d3528]",
-  guest: "bg-[#141414] text-[#A89878]/70 ring-[#3d3528]",
+  member: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
+  guest: "bg-[#121E32] text-[#9AABC4]/70 ring-[#243656]",
 };
 
 const inputClass =
-  "w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30";
+  "w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF] outline-none focus:border-[#B8965D] focus:ring-1 focus:ring-[#B8965D]/30";
 
 export function TeamManagementPanel({
   members,
@@ -140,7 +140,7 @@ export function TeamManagementPanel({
   return (
     <div className="space-y-6">
       {message && (
-        <p className="rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8]">
+        <p className="rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]">
           {message}
         </p>
       )}
@@ -149,10 +149,10 @@ export function TeamManagementPanel({
         {canManageMembers && (
           <form
             onSubmit={addMember}
-            className="rounded-xl border border-[#3d3528] bg-[#101010] p-4 space-y-3"
+            className="rounded-xl border border-[#243656] bg-[#0D1524] p-4 space-y-3"
           >
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">Add team member</h3>
-            <p className="text-xs text-[#A89878]">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">Add team member</h3>
+            <p className="text-xs text-[#9AABC4]">
               Manually add a colleague to this workspace for CRM assignment and collaboration.
             </p>
             <input
@@ -190,10 +190,10 @@ export function TeamManagementPanel({
         {canInvite && (
           <form
             onSubmit={inviteMember}
-            className="rounded-xl border border-[#3d3528] bg-[#101010] p-4 space-y-3"
+            className="rounded-xl border border-[#243656] bg-[#0D1524] p-4 space-y-3"
           >
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">Invite by email</h3>
-            <p className="text-xs text-[#A89878]">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">Invite by email</h3>
+            <p className="text-xs text-[#9AABC4]">
               Send an invitation with a role — they can accept when auth is connected.
             </p>
             <input
@@ -222,22 +222,22 @@ export function TeamManagementPanel({
         )}
       </div>
 
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-4">
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">Manage members</h3>
+      <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+        <h3 className="text-sm font-semibold text-[#FFFFFF]">Manage members</h3>
         <ul className="mt-3 space-y-3">
           {members.map((member) => (
             <li
               key={member.id}
-              className="flex flex-col gap-2 rounded-lg border border-[#3d3528] p-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-2 rounded-lg border border-[#243656] p-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="font-medium text-[#F5E6C8]">
+                <p className="font-medium text-[#FFFFFF]">
                   {member.name}
                   {member.userId === currentUserId && (
-                    <span className="ml-1 text-xs text-[#A89878]">(you)</span>
+                    <span className="ml-1 text-xs text-[#9AABC4]">(you)</span>
                   )}
                 </p>
-                <p className="text-xs text-[#A89878]">{member.email}</p>
+                <p className="text-xs text-[#9AABC4]">{member.email}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {canManageMembers && member.role !== "owner" && member.userId !== currentUserId ? (
@@ -248,7 +248,7 @@ export function TeamManagementPanel({
                       onChange={(e) =>
                         updateRole(member.id, e.target.value as MemberRole)
                       }
-                      className="rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-2 py-1 text-xs text-[#F5E6C8]"
+                      className="rounded-lg border border-[#243656] bg-[#040608] px-2 py-1 text-xs text-[#FFFFFF]"
                     >
                       {assignableRoles.map((role) => (
                         <option key={role} value={role}>
@@ -278,17 +278,17 @@ export function TeamManagementPanel({
       </section>
 
       {canInvite && pendingInvites.length > 0 && (
-        <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-4">
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Pending invitations</h3>
+        <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Pending invitations</h3>
           <ul className="mt-3 space-y-2">
             {pendingInvites.map((invite) => (
               <li
                 key={invite.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-[#3d3528] px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-2 rounded-lg border border-[#243656] px-3 py-2 text-sm"
               >
-                <span className="text-[#F5E6C8]">
+                <span className="text-[#FFFFFF]">
                   {invite.email}{" "}
-                  <span className="text-[#A89878]">· {ROLE_LABELS[invite.role]}</span>
+                  <span className="text-[#9AABC4]">· {ROLE_LABELS[invite.role]}</span>
                 </span>
                 <Button
                   type="button"
