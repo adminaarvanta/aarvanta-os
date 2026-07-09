@@ -107,10 +107,10 @@ export function LoginPageShell({ nextPath }: { nextPath: string }) {
   const safeNextPath = sanitizeNextPath(nextPath);
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-black px-4 py-6">
-      <div className="w-full max-w-md rounded-2xl border border-[#243656] bg-[#040608] p-6 shadow-lg shadow-[#B8965D]/5 sm:p-8">
-        <div className="flex justify-center">
-          <BrandLogo size="md" />
+    <div className="flex min-h-[100dvh] items-center justify-center bg-black px-4 py-8">
+      <div className="w-full max-w-md rounded-2xl border border-[#243656] bg-[#040608] p-6 shadow-lg shadow-[#B8965D]/5 sm:p-10">
+        <div className="flex justify-center px-2">
+          <BrandLogo size="xl" fullWidth />
         </div>
         <p className="mt-4 text-center text-sm text-[#9AABC4]">
           Sign in to access your business operating system.

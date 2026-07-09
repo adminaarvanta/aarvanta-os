@@ -11,8 +11,8 @@ export function MarketingNav({ production }: { production: boolean }) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#243656]/80 bg-black/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <BrandLogo href="/" size="sm" />
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <BrandLogo href="/" size="header" />
         <nav className="hidden items-center gap-6 md:flex">
           {links.map((link) => (
             <Link

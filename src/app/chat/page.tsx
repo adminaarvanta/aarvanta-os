@@ -102,7 +102,7 @@ export default function WebsiteChatPage() {
       <div className="flex min-h-0 flex-1 w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#243656] bg-[#040608] shadow-lg shadow-[#B8965D]/5 sm:h-[32rem] sm:flex-none">
         <header className="shrink-0 border-b border-[#243656] px-4 py-4">
           <div className="flex justify-center">
-            <BrandLogo size="sm" />
+            <BrandLogo variant="icon" size="header" />
           </div>
           <h1 className="mt-2 text-center text-sm font-medium text-[#9AABC4]">Website chat</h1>
         </header>

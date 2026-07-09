@@ -3,37 +3,65 @@ import Link from "next/link";
 import { brand } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-/** Logo aspect ratio from official mark (globe + wordmark). */
-const LOGO_ASPECT = 1.65;
+/** Full wordmark aspect (globe + AARVANTA + BUSINESS OS). */
+const FULL_LOGO_ASPECT = 1.05;
+
+const DISPLAY_HEIGHT = {
+  header: 72,
+  sm: 64,
+  md: 96,
+  lg: 128,
+  xl: 168,
+  sidebar: 64,
+} as const;
+
+export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
+export type BrandLogoVariant = "full" | "icon";
 
 export function BrandLogo({
   className,
   href,
   size = "md",
+  variant = "full",
   fullWidth = false,
 }: {
   className?: string;
   href?: string;
-  size?: "sm" | "md" | "lg";
+  size?: BrandLogoSize;
+  variant?: BrandLogoVariant;
   fullWidth?: boolean;
 }) {
-  const heights = { sm: 52, md: 88, lg: 140 };
-  const height = heights[size];
-  const width = fullWidth ? 320 : Math.round(height * LOGO_ASPECT);
+  const displayHeight = DISPLAY_HEIGHT[size];
+  const src = variant === "icon" ? "/aarvanta-logo-icon.png" : "/aarvanta-logo.png";
+  const intrinsicHeight = displayHeight * 2;
+  const intrinsicWidth =
+    variant === "icon"
+      ? intrinsicHeight
+      : Math.round(intrinsicHeight * FULL_LOGO_ASPECT);
 
   const image = (
     <Image
-      src="/aarvanta-logo.png"
+      src={src}
       alt={brand.fullName}
-      width={width}
-      height={height}
+      width={intrinsicWidth}
+      height={intrinsicHeight}
+      quality={100}
+      unoptimized
+      priority
       className={cn(
-        "object-contain bg-transparent",
-        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : "h-auto w-auto",
+        "bg-transparent object-contain",
+        fullWidth ? "mx-auto h-auto w-full max-w-[320px]" : "h-auto w-auto",
         className
       )}
-      style={fullWidth ? undefined : { maxHeight: height }}
-      priority
+      style={
+        fullWidth
+          ? undefined
+          : {
+              height: displayHeight,
+              width: variant === "icon" ? displayHeight : "auto",
+              maxWidth: variant === "full" ? displayHeight * FULL_LOGO_ASPECT : displayHeight,
+            }
+      }
     />
   );
 
@@ -41,7 +69,7 @@ export function BrandLogo({
     return (
       <Link
         href={href}
-        className={cn(fullWidth ? "block w-full" : "inline-block shrink-0")}
+        className={cn(fullWidth ? "block w-full" : "inline-flex shrink-0 items-center")}
         aria-label={brand.fullName}
       >
         {image}
