@@ -128,20 +128,14 @@ export function HelpMenu() {
           data-demo-tour="help-trigger"
           onClick={() => setMenuOpen((value) => !value)}
           className={cn(
-            "group relative flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-all sm:px-4",
-            menuOpen
-              ? "border-[#D4AF37] bg-[#D4AF37]/20 text-[#F9E076] shadow-[0_0_24px_rgba(212,175,55,0.25)]"
-              : "border-[#D4AF37]/45 bg-gradient-to-r from-[#D4AF37]/15 to-[#D4AF37]/5 text-[#F5E6C8] shadow-[0_0_16px_rgba(212,175,55,0.12)] hover:border-[#D4AF37] hover:from-[#D4AF37]/25 hover:to-[#D4AF37]/10 hover:text-[#F9E076]"
+            "group relative flex items-center gap-2 rounded-lg border border-border p-2.5 text-muted transition-colors hover:bg-surface-hover hover:text-foreground",
+            menuOpen && "border-primary/30 bg-primary-soft text-primary"
           )}
           aria-expanded={menuOpen}
           aria-haspopup="menu"
         >
-          <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-40" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#D4AF37]" />
-          </span>
-          <CircleHelp className="h-4 w-4 text-[#D4AF37] transition-transform group-hover:scale-110" />
-          <span className="hidden sm:inline">Help</span>
+          <CircleHelp className="h-[18px] w-[18px]" />
+          <span className="sr-only">Help</span>
         </button>
 
         {menuOpen && (

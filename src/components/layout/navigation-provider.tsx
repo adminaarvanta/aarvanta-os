@@ -54,11 +54,11 @@ export function NavigationProgress() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden bg-[#3d3528]"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden bg-border"
       role="progressbar"
       aria-label="Loading page"
     >
-      <div className="h-full w-1/3 animate-[nav-progress_0.9s_ease-in-out_infinite] bg-[#D4AF37]" />
+      <div className="h-full w-1/3 animate-[nav-progress_0.9s_ease-in-out_infinite] bg-primary" />
     </div>
   );
 }

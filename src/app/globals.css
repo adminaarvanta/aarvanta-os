@@ -1,24 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
-  --foreground: #f5e6c8;
-  --surface: #0a0a0a;
-  --surface-elevated: #101010;
-  --surface-muted: #141414;
-  --surface-hover: #1a1714;
-  --border: #3d3528;
-  --border-subtle: #2a2418;
-  --gold: #d4af37;
-  --gold-bright: #f9e076;
-  --gold-dark: #996515;
-  --gold-hover: #b8860b;
-  --text-muted: #a89878;
-  --text-dim: #6b5d48;
+  --background: #f8f9fb;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f1f5f9;
+  --surface-hover: #e8eef5;
+  --border: #e2e8f0;
+  --border-subtle: #eef2f7;
+  --primary: #003399;
+  --primary-bright: #1d4ed8;
+  --primary-dark: #002266;
+  --primary-hover: #002b7a;
+  --primary-soft: #e8efff;
+  --gold: #003399;
+  --gold-bright: #1d4ed8;
+  --gold-dark: #002266;
+  --gold-hover: #002b7a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --success: #16a34a;
+  --danger: #dc2626;
   --font-sans: var(--font-inter);
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -30,12 +37,16 @@
   --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
+  --color-primary: var(--primary);
+  --color-primary-bright: var(--primary-bright);
+  --color-primary-soft: var(--primary-soft);
   --color-gold: var(--gold);
   --color-gold-bright: var(--gold-bright);
   --color-gold-dark: var(--gold-dark);
   --color-gold-hover: var(--gold-hover);
   --color-muted: var(--text-muted);
   --color-dim: var(--text-dim);
+  --color-success: var(--success);
   --font-sans: var(--font-inter);
 }
 
@@ -56,20 +67,21 @@ body {
 }
 
 ::selection {
-  background: rgba(212, 175, 55, 0.25);
+  background: rgba(0, 51, 153, 0.15);
   color: var(--foreground);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(212, 175, 55, 0.55);
+  outline: 2px solid rgba(0, 51, 153, 0.45);
   outline-offset: 2px;
 }
 
 input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
-  background-color: var(--surface-muted);
+  background-color: var(--surface);
   color: var(--foreground);
+  border-color: var(--border);
 }
 
 input::placeholder,
@@ -77,12 +89,10 @@ textarea::placeholder {
   color: var(--text-dim);
 }
 
-/* Gold accent scrollbar on dark surfaces */
 * {
-  scrollbar-color: #3d3528 transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
-/* Prevent iOS zoom on focused inputs — use 16px+ on form controls */
 @media (max-width: 640px) {
   input,
   select,
