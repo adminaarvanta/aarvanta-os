@@ -101,7 +101,7 @@ export function ReplyForm({
         ))}
       </select>
       {hint && (
-        <p className="text-xs text-amber-400" role="status">
+        <p className="text-xs text-[#C9AA72]" role="status">
           {hint}
         </p>
       )}
@@ -140,7 +140,7 @@ export function ReplyForm({
         </Button>
       </div>
       {warning && (
-        <p className="text-xs text-amber-400" role="status">
+        <p className="text-xs text-[#C9AA72]" role="status">
           Saved to inbox, but delivery failed: {warning}
         </p>
       )}

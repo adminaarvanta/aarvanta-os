@@ -49,7 +49,7 @@ export function AppSidebar({
 
   return (
     <>
-      <aside className="relative z-20 hidden h-full w-[260px] shrink-0 flex-col border-r border-border bg-surface md:flex">
+      <aside className="relative z-20 hidden h-full w-[260px] shrink-0 flex-col border-r border-[#1A2840] bg-[#040608] md:flex">
         <Link
           href={SIDEBAR_BRAND.href}
           className="flex h-16 shrink-0 items-center gap-2 border-b border-border-subtle px-4 transition-colors hover:bg-surface-muted"
@@ -96,14 +96,14 @@ export function AppSidebar({
                     className={cn(
                       "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       active
-                        ? "bg-primary-soft text-primary before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-primary"
+                        ? "bg-gold/15 text-gold-bright before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-gold"
                         : "text-muted hover:bg-surface-hover hover:text-foreground"
                     )}
                   >
                     <Icon className="h-[18px] w-[18px] shrink-0" />
                     <span className="flex-1 truncate">{item.label}</span>
                     {badge !== null && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-white">
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-semibold text-black">
                         {badge > 99 ? "99+" : badge}
                       </span>
                     )}
@@ -141,7 +141,7 @@ export function AppSidebar({
           <div className="mb-2 flex items-center justify-center px-2 text-muted">
             <PendingLink
               href="/settings"
-              className="rounded-lg p-2 hover:bg-surface-hover hover:text-primary"
+              className="rounded-lg p-2 hover:bg-surface-hover hover:text-gold"
             >
               <Settings className="h-4 w-4" />
             </PendingLink>
@@ -150,7 +150,7 @@ export function AppSidebar({
             href="/settings"
             className="flex items-center gap-3 rounded-xl bg-surface-muted px-3 py-2.5 transition-colors hover:bg-surface-hover"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-semibold text-gold ring-1 ring-gold/30">
               {userName.charAt(0).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">

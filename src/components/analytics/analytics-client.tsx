@@ -22,7 +22,7 @@ function StatCard({
       <p className="mt-1 text-2xl font-semibold text-[#FFFFFF]">{value}</p>
       {sub && <p className="mt-0.5 text-xs text-[#9AABC4]">{sub}</p>}
       {change != null && (
-        <p className={`mt-1 text-xs ${change >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+        <p className={`mt-1 text-xs ${change >= 0 ? "text-[#4DA6FF]" : "text-red-400"}`}>
           {change >= 0 ? "+" : ""}
           {change}% vs prior period
         </p>
@@ -165,7 +165,7 @@ export function AnalyticsClient({
                     : String(m.value)}
                 </span>
                 {m.changePct != null && (
-                  <Badge className="bg-emerald-950/60 text-emerald-300 ring-emerald-700/50">
+                  <Badge className="bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30">
                     +{m.changePct}%
                   </Badge>
                 )}

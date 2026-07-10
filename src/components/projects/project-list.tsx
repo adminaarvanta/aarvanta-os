@@ -4,9 +4,9 @@ import type { Project } from "@/types/project";
 import { formatRelative } from "@/lib/utils";
 
 const statusColors: Record<Project["status"], string> = {
-  active: "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50",
-  completed: "bg-blue-950/60 text-blue-300 ring-blue-700/50",
-  on_hold: "bg-amber-950/60 text-amber-300 ring-amber-700/50",
+  active: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  completed: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  on_hold: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
 };
 
 export function ProjectList({ projects }: { projects: Project[] }) {

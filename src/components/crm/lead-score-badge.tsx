@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { statusTone } from "@/lib/ui/status-tone";
 import { cn } from "@/lib/utils";
 
 export function LeadScoreBadge({
@@ -10,7 +11,7 @@ export function LeadScoreBadge({
 }) {
   if (score == null) {
     return (
-      <Badge className={cn("bg-[#162840] text-[#9AABC4] ring-[#243656]", className)}>
+      <Badge className={cn(statusTone.neutral, className)}>
         Unscored
       </Badge>
     );
@@ -18,10 +19,10 @@ export function LeadScoreBadge({
 
   const tone =
     score >= 80
-      ? "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50"
+      ? statusTone.success
       : score >= 50
-        ? "bg-amber-950/60 text-amber-300 ring-amber-700/50"
-        : "bg-zinc-800/80 text-zinc-300 ring-zinc-600/50";
+        ? statusTone.warning
+        : statusTone.neutral;
 
   return (
     <Badge className={cn(tone, className)}>

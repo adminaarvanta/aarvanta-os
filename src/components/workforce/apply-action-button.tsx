@@ -46,7 +46,7 @@ export function ApplyActionButton({
 
   if (action.applied) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+      <span className="inline-flex items-center gap-1 text-xs text-[#4DA6FF]">
         <Check className="h-3.5 w-3.5" />
         Applied
       </span>
@@ -66,7 +66,7 @@ export function ApplyActionButton({
         {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
         {isInfoOnly ? "Acknowledge" : "Apply"}
       </Button>
-      {message && <p className="text-xs text-emerald-400">{message}</p>}
+      {message && <p className="text-xs text-[#4DA6FF]">{message}</p>}
       {error && (
         <p className="text-xs text-red-400" role="alert">
           {error}

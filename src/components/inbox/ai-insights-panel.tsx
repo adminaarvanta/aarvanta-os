@@ -105,7 +105,7 @@ export function AiInsightsPanel({
             CRM lead:{" "}
             {qualification.intent === "sales" &&
             qualification.qualificationScore >= qualificationThreshold ? (
-              <span className="text-emerald-400">qualified</span>
+              <span className="text-[#4DA6FF]">qualified</span>
             ) : (
               <span className="text-[#9AABC4]">inbox only</span>
             )}
@@ -139,7 +139,7 @@ export function AiInsightsPanel({
         </p>
       )}
       {aiStatus.status === "disabled" && (
-        <p className="text-[10px] text-amber-400/90 leading-relaxed">
+        <p className="text-[10px] text-[#C9AA72] leading-relaxed">
           AI is disabled. Set <code className="text-[#B8965D]">OPENAI_API_KEY</code> on the server
           and redeploy.
         </p>

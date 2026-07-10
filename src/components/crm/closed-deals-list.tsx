@@ -66,7 +66,7 @@ export function ClosedDealsList({
                 <p
                   className={
                     deal.status === "won"
-                      ? "text-xs text-emerald-400"
+                      ? "text-xs text-[#4DA6FF]"
                       : "text-xs text-red-400"
                   }
                 >

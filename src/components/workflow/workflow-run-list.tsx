@@ -4,10 +4,10 @@ import type { WorkflowRun } from "@/types/workflow";
 import { formatRelative } from "@/lib/utils";
 
 const statusColors: Record<WorkflowRun["status"], string> = {
-  running: "bg-amber-950/60 text-amber-300 ring-amber-700/50",
-  completed: "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50",
-  failed: "bg-red-950/60 text-red-300 ring-red-700/50",
-  awaiting_approval: "bg-violet-950/60 text-violet-300 ring-violet-700/50",
+  running: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
+  completed: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  failed: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
+  awaiting_approval: "bg-[#1A2B48]/60 text-[#C9AA72] ring-[#B8965D]/30",
 };
 
 export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {

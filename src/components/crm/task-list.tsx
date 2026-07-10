@@ -14,8 +14,8 @@ const statusIcon = {
 };
 
 const priorityColor = {
-  low: "text-zinc-400",
-  medium: "text-amber-400",
+  low: "text-[#9AABC4]",
+  medium: "text-[#C9AA72]",
   high: "text-red-400",
 };
 

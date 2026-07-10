@@ -19,11 +19,11 @@ const stepIcons: Record<WorkflowStep["type"], typeof Zap> = {
 };
 
 const stepColors: Record<WorkflowStep["type"], string> = {
-  condition: "border-violet-800/50 bg-violet-950/30 text-violet-300",
+  condition: "border-[#4DA6FF]/30 bg-[#0D1A2E] text-[#4DA6FF]",
   agent: "border-[#B8965D]/40 bg-[#B8965D]/10 text-[#C9AA72]",
-  approval: "border-amber-800/50 bg-amber-950/30 text-amber-300",
-  action: "border-emerald-800/50 bg-emerald-950/30 text-emerald-300",
-  delay: "border-slate-700/50 bg-slate-950/30 text-slate-300",
+  approval: "border-[#B8965D]/35 bg-[#2A2210] text-[#C9AA72]",
+  action: "border-[#4DA6FF]/30 bg-[#0A2A33] text-[#4DA6FF]",
+  delay: "border-[#243656] bg-[#121E32] text-[#9AABC4]",
 };
 
 export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
@@ -34,7 +34,7 @@ export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
           Trigger: {workflow.trigger.label}
         </span>
         {!workflow.enabled && (
-          <span className="rounded-full bg-red-950/40 px-3 py-1 text-xs text-red-300">
+          <span className="rounded-full bg-[#2A1218] px-3 py-1 text-xs text-[#F0A0A8]">
             Disabled
           </span>
         )}

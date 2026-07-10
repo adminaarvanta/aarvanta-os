@@ -11,7 +11,7 @@ export function PageScroll({
   return (
     <div
       className={cn(
-        "min-h-0 flex-1 overflow-y-auto overscroll-contain",
+        "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-black",
         className
       )}
       data-page-scroll
@@ -32,7 +32,7 @@ export function PageFrame({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-hidden",
+        "flex min-h-0 flex-1 flex-col overflow-hidden bg-black",
         className
       )}
     >

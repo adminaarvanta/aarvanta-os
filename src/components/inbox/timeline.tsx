@@ -73,8 +73,8 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
 
   if (event.type === "note") {
     return (
-      <div className="rounded-xl border border-amber-700/40 bg-amber-950/40 px-4 py-3 text-sm">
-        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-amber-300">
+      <div className="rounded-xl border border-[#B8965D]/35 bg-[#2A2210] px-4 py-3 text-sm">
+        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#C9AA72]">
           <StickyNote className="h-4 w-4" />
           {event.isInternal ? "Internal note" : "Note"}
           {event.authorName && ` · ${event.authorName}`}

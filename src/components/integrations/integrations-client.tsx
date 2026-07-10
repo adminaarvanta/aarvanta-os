@@ -16,10 +16,10 @@ type ProviderRow = {
 };
 
 const statusClass: Record<string, string> = {
-  connected: "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50",
+  connected: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
   disconnected: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
-  syncing: "bg-blue-950/60 text-blue-300 ring-blue-700/50",
-  error: "bg-red-950/60 text-red-300 ring-red-700/50",
+  syncing: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  error: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
 };
 
 export function IntegrationsClient({ providers }: { providers: ProviderRow[] }) {

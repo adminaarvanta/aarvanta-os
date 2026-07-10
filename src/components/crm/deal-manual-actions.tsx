@@ -63,7 +63,7 @@ export function DealManualActions({
               type="button"
               size="sm"
               variant="ghost"
-              className="h-7 px-2 text-[10px] text-emerald-400"
+              className="h-7 px-2 text-[10px] text-[#4DA6FF]"
               disabled={busy}
               onClick={() => patchDeal({ status: "won" })}
             >

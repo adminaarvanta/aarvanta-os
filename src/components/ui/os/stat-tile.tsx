@@ -38,7 +38,7 @@ export function StatTile({
         <p
           className={cn(
             "mt-1 text-xs text-muted",
-            trend === "up" && "text-emerald-400/90",
+            trend === "up" && "text-[#4DA6FF]",
             trend === "down" && "text-red-400/90"
           )}
         >

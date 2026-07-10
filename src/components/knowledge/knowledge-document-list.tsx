@@ -5,9 +5,9 @@ import type { KnowledgeDocument } from "@/types/knowledge";
 import { formatRelative } from "@/lib/utils";
 
 const statusColors: Record<KnowledgeDocument["status"], string> = {
-  ready: "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50",
-  processing: "bg-amber-950/60 text-amber-300 ring-amber-700/50",
-  failed: "bg-red-950/60 text-red-300 ring-red-700/50",
+  ready: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  processing: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
+  failed: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
 };
 
 export function KnowledgeDocumentList({

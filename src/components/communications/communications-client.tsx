@@ -8,8 +8,8 @@ import { formatRelative } from "@/lib/utils";
 import type { AiDigest, AppNotification } from "@/types/notifications";
 
 const priorityClass = {
-  high: "bg-red-950/60 text-red-300 ring-red-700/50",
-  medium: "bg-amber-950/60 text-amber-300 ring-amber-700/50",
+  high: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
+  medium: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
   low: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
 };
 
@@ -75,7 +75,7 @@ export function CommunicationsClient({
             {digest.stats.revenueChangePct != null && (
               <div>
                 <dt className="text-[10px] text-[#9AABC4]">Revenue change</dt>
-                <dd className="text-lg font-semibold text-emerald-400">
+                <dd className="text-lg font-semibold text-[#4DA6FF]">
                   +{digest.stats.revenueChangePct}%
                 </dd>
               </div>

@@ -87,9 +87,9 @@ export default async function DealDetailPage({
               <Badge
                 className={
                   deal.status === "won"
-                    ? "bg-emerald-950 text-emerald-300 ring-emerald-800"
+                    ? "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30"
                     : deal.status === "lost"
-                      ? "bg-red-950 text-red-300 ring-red-800"
+                      ? "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45"
                       : "bg-[#121E32] text-[#FFFFFF] ring-[#243656]"
                 }
               >

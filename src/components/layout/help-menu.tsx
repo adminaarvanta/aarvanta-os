@@ -179,7 +179,7 @@ export function HelpMenu() {
                   onClick={openLiveDemo}
                   className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[#1a1714]"
                 >
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-950/80 text-emerald-400">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A2A33] text-[#4DA6FF]">
                     <Play className="h-4 w-4" />
                   </span>
                   <span>

@@ -6,9 +6,7 @@ import { Suspense, useState } from "react";
 import {
   Bell,
   ChevronDown,
-  HelpCircle,
   Plus,
-  Sun,
   UserPlus,
   FileText,
   Workflow,
@@ -47,7 +45,7 @@ export function AppHeader() {
   const [quickOpen, setQuickOpen] = useState(false);
 
   return (
-    <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
+    <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-[#040608] px-4 sm:px-6">
       <div className="min-w-0 flex-1">
         <GlobalSearch className="w-full max-w-xl" placeholder="Search across OS…" />
       </div>
@@ -55,19 +53,11 @@ export function AppHeader() {
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         <button
           type="button"
-          className="hidden rounded-lg p-2.5 text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:inline-flex"
-          aria-label="Theme"
-        >
-          <Sun className="h-[18px] w-[18px]" />
-        </button>
-
-        <button
-          type="button"
           className="relative rounded-lg p-2.5 text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
           aria-label="Notifications"
         >
           <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-white">
+          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-black">
             5
           </span>
         </button>
@@ -80,7 +70,7 @@ export function AppHeader() {
           <button
             type="button"
             onClick={() => setQuickOpen((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover sm:px-4"
+            className="inline-flex items-center gap-2 rounded-xl bg-gold px-3 py-2.5 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-gold-bright sm:px-4"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Quick Action</span>
@@ -95,7 +85,7 @@ export function AppHeader() {
                 aria-label="Close quick actions"
                 onClick={() => setQuickOpen(false)}
               />
-              <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-lg">
+              <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-[#0D1524] py-1 shadow-lg">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
@@ -105,7 +95,7 @@ export function AppHeader() {
                       onClick={() => setQuickOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-surface-hover"
                     >
-                      <Icon className="h-4 w-4 text-primary" />
+                      <Icon className="h-4 w-4 text-gold" />
                       {action.label}
                     </Link>
                   );

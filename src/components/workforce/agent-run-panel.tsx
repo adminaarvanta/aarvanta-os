@@ -79,7 +79,7 @@ export function AgentRunPanel({
           label={`Run ${agent.name}`}
         />
       ) : (
-        <p className="text-xs text-amber-400/90">
+        <p className="text-xs text-[#C9AA72]">
           Select the required context above to run this agent.
         </p>
       )}

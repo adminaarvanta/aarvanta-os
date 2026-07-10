@@ -11,9 +11,9 @@ const columns: { id: ProjectTaskStatus; label: string }[] = [
 ];
 
 const priorityColors = {
-  low: "border-l-slate-600",
-  medium: "border-l-amber-600",
-  high: "border-l-red-600",
+  low: "border-l-[#243656]",
+  medium: "border-l-[#B8965D]",
+  high: "border-l-[#8B3A45]",
 };
 
 export function ProjectKanbanBoard({

@@ -48,7 +48,7 @@ export default function ContactPage() {
       </div>
 
       {status === "sent" ? (
-        <div className="mt-8 rounded-xl border border-emerald-800/50 bg-emerald-950/30 p-5 text-sm text-emerald-300">
+        <div className="mt-8 rounded-xl border border-[#4DA6FF]/30 bg-[#0A2A33] p-5 text-sm text-[#4DA6FF]">
           Thank you — we&apos;ve received your message and will respond shortly.
         </div>
       ) : (

@@ -21,7 +21,7 @@ const FLOW = [
 
 function StepIcon({ status }: { status: "completed" | "skipped" | "failed" | "pending" }) {
   if (status === "completed") {
-    return <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />;
+    return <CheckCircle2 className="h-4 w-4 shrink-0 text-[#4DA6FF]" />;
   }
   if (status === "failed") {
     return <XCircle className="h-4 w-4 shrink-0 text-red-400" />;
@@ -119,7 +119,7 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
         )}
 
         {error && (
-          <p className="mt-4 rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-300">
+          <p className="mt-4 rounded-lg border border-[#8B3A45]/45 bg-[#2A1218] px-3 py-2 text-sm text-red-300">
             {error}
           </p>
         )}
@@ -130,8 +130,8 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
           <div
             className={`rounded-lg border px-4 py-3 text-sm ${
               result.ok
-                ? "border-emerald-800/50 bg-emerald-950/20 text-emerald-200"
-                : "border-red-800/50 bg-red-950/20 text-red-200"
+                ? "border-[#4DA6FF]/30 bg-[#0A2A33] text-[#4DA6FF]"
+                : "border-[#8B3A45]/45 bg-[#2A1218] text-[#F0A0A8]"
             }`}
           >
             {result.ok

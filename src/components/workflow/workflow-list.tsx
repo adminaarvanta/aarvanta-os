@@ -35,8 +35,8 @@ export function WorkflowList({ workflows }: { workflows: Workflow[] }) {
             <Badge
               className={
                 workflow.enabled
-                  ? "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50"
-                  : "bg-red-950/60 text-red-300 ring-red-700/50"
+                  ? "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30"
+                  : "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45"
               }
             >
               {workflow.enabled ? "Active" : "Off"}

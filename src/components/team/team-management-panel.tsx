@@ -14,8 +14,8 @@ import {
 
 const roleBadge: Record<string, string> = {
   owner: "bg-[#B8965D]/20 text-[#C9AA72] ring-[#B8965D]/40",
-  admin: "bg-blue-950/60 text-blue-300 ring-blue-700/50",
-  manager: "bg-purple-950/60 text-purple-300 ring-purple-700/50",
+  admin: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  manager: "bg-[#1A2B48]/60 text-[#C9AA72] ring-[#B8965D]/30",
   member: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
   guest: "bg-[#121E32] text-[#9AABC4]/70 ring-[#243656]",
 };

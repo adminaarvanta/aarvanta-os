@@ -5,9 +5,9 @@ import type { CrmTask } from "@/types/crm";
 import { formatRelative } from "@/lib/utils";
 
 const priorityColors: Record<CrmTask["priority"], string> = {
-  low: "bg-slate-950/60 text-slate-300 ring-slate-700/50",
-  medium: "bg-amber-950/60 text-amber-300 ring-amber-700/50",
-  high: "bg-red-950/60 text-red-300 ring-red-700/50",
+  low: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
+  medium: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
+  high: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
 };
 
 export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
@@ -39,7 +39,7 @@ export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
           >
             <div className="flex items-start gap-3">
               {task.status === "done" ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#4DA6FF]" />
               ) : (
                 <Circle className="mt-0.5 h-4 w-4 shrink-0 text-[#9AABC4]" />
               )}

@@ -46,7 +46,7 @@ export function MarketplaceClient({ catalog, installedIds }: MarketplaceClientPr
   return (
     <div className="space-y-4">
       {error && (
-        <p className="rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-xs text-red-300">
+        <p className="rounded-lg border border-[#8B3A45]/45 bg-[#2A1218] px-3 py-2 text-xs text-red-300">
           {error}
         </p>
       )}

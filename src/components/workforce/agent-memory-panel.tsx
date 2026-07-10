@@ -8,10 +8,10 @@ import type { AgentMemoryEntry, AgentType } from "@/types/workforce";
 import { formatRelative } from "@/lib/utils";
 
 const categoryColors: Record<AgentMemoryEntry["category"], string> = {
-  insight: "bg-violet-950/60 text-violet-300 ring-violet-700/50",
-  decision: "bg-blue-950/60 text-blue-300 ring-blue-700/50",
-  preference: "bg-amber-950/60 text-amber-300 ring-amber-700/50",
-  fact: "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50",
+  insight: "bg-[#1A2B48]/60 text-[#C9AA72] ring-[#B8965D]/30",
+  decision: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  preference: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
+  fact: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
 };
 
 export function AgentMemoryPanel({

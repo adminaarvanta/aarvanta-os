@@ -38,10 +38,10 @@ export default async function RunDetailPage({
           <Badge
             className={
               run.status === "completed"
-                ? "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50"
+                ? "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30"
                 : run.status === "failed"
-                  ? "bg-red-950/60 text-red-300 ring-red-700/50"
-                  : "bg-amber-950/60 text-amber-300 ring-amber-700/50"
+                  ? "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45"
+                  : "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35"
             }
           >
             {run.status}
@@ -54,7 +54,7 @@ export default async function RunDetailPage({
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
         {run.status === "failed" && run.error && (
-          <div className="rounded-xl border border-red-800/50 bg-red-950/30 p-4 text-sm text-red-300">
+          <div className="rounded-xl border border-[#8B3A45]/45 bg-[#2A1218] p-4 text-sm text-red-300">
             {run.error}
           </div>
         )}
@@ -114,7 +114,7 @@ export default async function RunDetailPage({
                         </p>
                       )}
                       {action.type === "alert" && (
-                        <p className="mt-2 text-sm text-amber-300">
+                        <p className="mt-2 text-sm text-[#C9AA72]">
                           {String(action.payload.message ?? "")}
                         </p>
                       )}

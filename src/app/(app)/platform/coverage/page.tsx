@@ -10,8 +10,8 @@ import {
 import { cn } from "@/lib/utils";
 
 const statusStyles: Record<CoverageStatus, string> = {
-  complete: "bg-emerald-950/40 text-emerald-300 ring-emerald-800/50",
-  partial: "bg-amber-950/40 text-amber-200 ring-amber-800/50",
+  complete: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  partial: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
   planned: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
 };
 

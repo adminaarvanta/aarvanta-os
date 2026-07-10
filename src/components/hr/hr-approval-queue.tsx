@@ -85,7 +85,7 @@ export function HrApprovalQueue({
                       : "Support reply"}
                   </p>
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-emerald-400">
+                <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-[#4DA6FF]">
                   <Check className="h-3 w-3" />
                   Sent
                 </span>
