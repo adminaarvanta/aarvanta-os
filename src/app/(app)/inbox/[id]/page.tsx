@@ -2,9 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { ConversationList } from "@/components/inbox/conversation-list";
+import { InboxLiveSync } from "@/components/inbox/inbox-live-sync";
+import { syncInboxEmailIfConfigured } from "@/lib/channels/sync-inbox-email";
+import { isGmailConfigured } from "@/lib/channels/gmail-client";
 import { getRepository } from "@/lib/data/repository";
 import { getHrStore } from "@/lib/data/platform-store";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
+import { isProductionMode } from "@/lib/config/app-mode";
 import { resolveConversationForInbox } from "@/lib/inbox/resolve-conversation";
 import { getTenantScope } from "@/lib/tenant/context";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +22,10 @@ export default async function ConversationPage({
 }) {
   const { id } = await params;
   const scope = await getTenantScope();
+  const liveEmailSync = isProductionMode() && isGmailConfigured();
+  if (liveEmailSync) {
+    await syncInboxEmailIfConfigured();
+  }
   const repo = getRepository();
   const resolved = await resolveConversationForInbox(id, scope);
   if (!resolved) notFound();
@@ -68,6 +76,7 @@ export default async function ConversationPage({
             Conversation timeline · notes · tags · AI
           </p>
         </div>
+        <InboxLiveSync enabled={liveEmailSync} />
       </header>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         <div className="hidden lg:block w-80 shrink-0 min-h-0 overflow-y-auto overscroll-contain border-r border-[#243656] bg-[#0D1524]">

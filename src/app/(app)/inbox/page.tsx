@@ -1,5 +1,8 @@
 import { ConversationList } from "@/components/inbox/conversation-list";
+import { InboxLiveSync } from "@/components/inbox/inbox-live-sync";
 import { OpenConversationLink } from "@/components/inbox/open-conversation-link";
+import { syncInboxEmailIfConfigured } from "@/lib/channels/sync-inbox-email";
+import { isGmailConfigured } from "@/lib/channels/gmail-client";
 import { getRepository } from "@/lib/data/repository";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -7,6 +10,10 @@ import { Inbox } from "lucide-react";
 
 export default async function InboxPage() {
   const scope = await getTenantScope();
+  const liveEmailSync = isProductionMode() && isGmailConfigured();
+  if (liveEmailSync) {
+    await syncInboxEmailIfConfigured();
+  }
   const conversations = await getRepository().listConversations(scope);
   const first = conversations[0];
   const inboundWorkspaceId = process.env.WORKSPACE_ID;
@@ -18,10 +25,18 @@ export default async function InboxPage() {
   return (
     <>
       <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Unified Inbox</h2>
-        <p className="text-xs text-[#9AABC4] sm:text-sm">
-          WhatsApp, email, voice, SMS, and website chat in one place.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Unified Inbox</h2>
+            <p className="text-xs text-[#9AABC4] sm:text-sm">
+              WhatsApp, email, voice, SMS, and website chat in one place.
+              {liveEmailSync && (
+                <span className="ml-1 text-[#9AABC4]/80">· Email syncs every 60s while open</span>
+              )}
+            </p>
+          </div>
+          <InboxLiveSync enabled={liveEmailSync} />
+        </div>
         {showInboundHint && (
           <p className="mt-2 rounded-lg border border-[#B8965D]/30 bg-[#B8965D]/10 px-3 py-2 text-xs text-[#C9AA72]">
             Website chat and other inbound channels route to your main workspace. Switch
