@@ -10,6 +10,9 @@ import type { Organization, Workspace } from "@/types/tenant";
 export function AppShell({
   production,
   tenant,
+  userName,
+  userRole,
+  inboxUnread,
   children,
 }: {
   production: boolean;
@@ -18,14 +21,23 @@ export function AppShell({
     workspace: Workspace;
     workspaces: Workspace[];
   } | null;
+  userName?: string;
+  userRole?: string;
+  inboxUnread?: number;
   children: React.ReactNode;
 }) {
   return (
     <NavigationProvider>
       <DemoTourProvider>
         <ScrollRestoration />
-        <div className="flex h-[100dvh] overflow-hidden bg-black">
-          <AppSidebar production={production} tenant={tenant} />
+        <div className="flex h-[100dvh] overflow-hidden bg-background">
+          <AppSidebar
+            production={production}
+            tenant={tenant}
+            userName={userName}
+            userRole={userRole}
+            inboxUnread={inboxUnread}
+          />
           <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             <AppHeader />
             {children}

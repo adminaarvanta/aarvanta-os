@@ -5,6 +5,7 @@ import {
   checkGmailSyncAccess,
   getEmailInboundConfig,
 } from "@/lib/channels/gmail-client";
+import { getProductionReadiness } from "@/lib/config/production-readiness";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { getActiveDatastore, ensureDatastoreReady } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
@@ -15,6 +16,7 @@ export async function GET() {
   const ai = getAiRuntimeStatus();
   const gmailSyncStatus = await checkGmailSyncAccess();
   const emailInbound = { ...getEmailInboundConfig(), gmailSyncStatus };
+  const readiness = getProductionReadiness();
 
   if (!isProductionMode()) {
     return NextResponse.json({
@@ -25,11 +27,30 @@ export async function GET() {
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
+      readiness,
     });
   }
 
   await ensureDatastoreReady();
   const activeDatastore = getActiveDatastore();
+
+  if (!readiness.ready) {
+    return NextResponse.json(
+      {
+        status: "degraded",
+        mode,
+        datastore: activeDatastore,
+        firestore: isFirebaseConfigured() ? "not_ready" : "not_configured",
+        message: `Missing required configuration: ${readiness.requiredMissing.join(", ")}`,
+        channels,
+        ai,
+        emailSync: gmailSyncStatus,
+        emailInbound,
+        readiness,
+      },
+      { status: 503 }
+    );
+  }
 
   if (activeDatastore === "memory") {
     return NextResponse.json({
@@ -43,6 +64,7 @@ export async function GET() {
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
+      readiness,
     });
   }
 
@@ -59,6 +81,7 @@ export async function GET() {
           ai,
           emailSync: gmailSyncStatus,
           emailInbound,
+          readiness,
         },
         { status: 503 }
       );
@@ -67,7 +90,7 @@ export async function GET() {
     await db.collection("conversations").limit(1).get();
 
     return NextResponse.json({
-      status: "ok",
+      status: readiness.warnings.length > 0 ? "degraded" : "ok",
       mode,
       datastore: "firestore",
       firestore: "connected",
@@ -75,6 +98,7 @@ export async function GET() {
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
+      readiness,
     });
   } catch (error) {
     return NextResponse.json(
@@ -87,6 +111,7 @@ export async function GET() {
         ai,
         emailSync: gmailSyncStatus,
         emailInbound,
+        readiness,
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 503 }

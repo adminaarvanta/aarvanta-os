@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { syncGmailInbox } from "@/lib/channels/gmail-sync";
 import { isGmailConfigured } from "@/lib/channels/gmail-client";
+import { isProductionMode } from "@/lib/config/app-mode";
 
 function authorizeCron(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) {
+    return !isProductionMode();
+  }
   return req.headers.get("authorization") === `Bearer ${secret}`;
 }
 

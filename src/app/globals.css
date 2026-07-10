@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --surface: #040608;
-  --surface-elevated: #0d1524;
-  --surface-muted: #121e32;
-  --surface-hover: #162840;
-  --border: #243656;
-  --border-subtle: #1a2840;
-  --navy: #1a2b48;
-  --gold: #b8965d;
-  --gold-bright: #c9aa72;
-  --gold-dark: #94784a;
-  --gold-hover: #a88952;
-  --accent-cyan: #4da6ff;
-  --text-muted: #9aabc4;
-  --text-dim: #6b7f9e;
+  --background: #f8f9fb;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f1f5f9;
+  --surface-hover: #e8eef5;
+  --border: #e2e8f0;
+  --border-subtle: #eef2f7;
+  --primary: #003399;
+  --primary-bright: #1d4ed8;
+  --primary-dark: #002266;
+  --primary-hover: #002b7a;
+  --primary-soft: #e8efff;
+  --gold: #003399;
+  --gold-bright: #1d4ed8;
+  --gold-dark: #002266;
+  --gold-hover: #002b7a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --success: #16a34a;
+  --danger: #dc2626;
   --font-sans: var(--font-inter);
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -32,14 +37,16 @@
   --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
-  --color-navy: var(--navy);
+  --color-primary: var(--primary);
+  --color-primary-bright: var(--primary-bright);
+  --color-primary-soft: var(--primary-soft);
   --color-gold: var(--gold);
   --color-gold-bright: var(--gold-bright);
   --color-gold-dark: var(--gold-dark);
   --color-gold-hover: var(--gold-hover);
-  --color-accent-cyan: var(--accent-cyan);
   --color-muted: var(--text-muted);
   --color-dim: var(--text-dim);
+  --color-success: var(--success);
   --font-sans: var(--font-inter);
 }
 
@@ -60,20 +67,21 @@ body {
 }
 
 ::selection {
-  background: rgba(184, 150, 93, 0.28);
+  background: rgba(0, 51, 153, 0.15);
   color: var(--foreground);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(184, 150, 93, 0.55);
+  outline: 2px solid rgba(0, 51, 153, 0.45);
   outline-offset: 2px;
 }
 
 input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
-  background-color: var(--surface-muted);
+  background-color: var(--surface);
   color: var(--foreground);
+  border-color: var(--border);
 }
 
 input::placeholder,
@@ -82,7 +90,7 @@ textarea::placeholder {
 }
 
 * {
-  scrollbar-color: #243656 transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 @media (max-width: 640px) {

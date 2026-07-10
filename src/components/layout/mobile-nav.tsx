@@ -25,7 +25,7 @@ export function MobileNav({ production }: { production: boolean }) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-[#243656] bg-[#040608]/95 backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/95 backdrop-blur-md md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       aria-label="Main navigation"
     >
@@ -35,7 +35,7 @@ export function MobileNav({ production }: { production: boolean }) {
           const active = item.match(pathname);
           const className = cn(
             "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium transition-colors",
-            active ? "text-[#C9AA72]" : "text-[#9AABC4]"
+            active ? "text-primary" : "text-muted"
           );
 
           if (item.href === "/chat") {
@@ -71,7 +71,7 @@ export function MobileNav({ production }: { production: boolean }) {
           <form action="/api/auth/logout" method="post" className="flex min-w-0 flex-1">
             <button
               type="submit"
-              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium text-[#9AABC4] transition-colors hover:text-[#C9AA72]"
+              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-[10px] font-medium text-muted transition-colors hover:text-primary"
             >
               <LogOut className="h-5 w-5 shrink-0" aria-hidden />
               <span>Sign out</span>

@@ -36,7 +36,13 @@ function groupResults(results: GlobalSearchResult[]) {
   }, {});
 }
 
-export function GlobalSearch({ className }: { className?: string }) {
+export function GlobalSearch({
+  className,
+  placeholder = "Search…",
+}: {
+  className?: string;
+  placeholder?: string;
+}) {
   const router = useRouter();
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -153,16 +159,14 @@ export function GlobalSearch({ className }: { className?: string }) {
     <div ref={rootRef} data-demo-tour="global-search" className={cn("relative", className)}>
       <div
         className={cn(
-          "flex h-10 items-center gap-2 rounded-lg bg-surface-muted px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_8px_rgba(0,0,0,0.25)] transition-[box-shadow,background-color] sm:px-3.5",
-          open
-            ? "bg-surface-hover shadow-[inset_0_1px_0_rgba(184, 150, 93,0.08),0_0_0_1px_rgba(184, 150, 93,0.18),0_4px_16px_rgba(0,0,0,0.3)]"
-            : "hover:bg-surface-hover/80"
+          "flex h-10 items-center gap-2 rounded-xl border border-border bg-surface-muted px-3 transition-colors sm:px-3.5",
+          open && "border-primary/30 bg-surface ring-2 ring-primary/10"
         )}
       >
         {loading ? (
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#9AABC4]" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted" />
         ) : (
-          <Search className="h-4 w-4 shrink-0 text-[#9AABC4]" />
+          <Search className="h-4 w-4 shrink-0 text-muted" />
         )}
         <input
           ref={inputRef}
@@ -174,22 +178,22 @@ export function GlobalSearch({ className }: { className?: string }) {
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onInputKeyDown}
-          placeholder="Search…"
+          placeholder={placeholder}
           aria-label="Global search"
           aria-expanded={showDropdown}
           aria-controls={showDropdown ? listboxId : undefined}
           aria-autocomplete="list"
           role="combobox"
-          className="min-w-0 flex-1 bg-transparent text-sm text-[#FFFFFF] outline-none placeholder:text-[#9AABC4]/60"
+          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-dim"
         />
-        <kbd className="hidden shrink-0 rounded bg-black/20 px-1.5 py-0.5 text-[10px] text-[#9AABC4] shadow-sm sm:inline">
+        <kbd className="hidden shrink-0 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-muted sm:inline">
           ⌘K
         </kbd>
       </div>
 
       {showDropdown && (
         <div
-          className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl bg-[#040608] shadow-[0_16px_48px_rgba(0,0,0,0.55)]"
+          className="absolute right-0 top-[calc(100%+0.35rem)] z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-surface shadow-xl"
           role="presentation"
         >
           <div
@@ -199,15 +203,15 @@ export function GlobalSearch({ className }: { className?: string }) {
             className="max-h-[min(24rem,60vh)] overflow-y-auto overscroll-contain p-2"
           >
             {loading && flatResults.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-[#9AABC4]">Searching…</p>
+              <p className="px-3 py-6 text-center text-sm text-muted">Searching…</p>
             ) : flatResults.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-[#9AABC4]">
+              <p className="px-3 py-6 text-center text-sm text-muted">
                 {query ? `No results for “${query}”` : "Start typing to search"}
               </p>
             ) : (
               Object.entries(grouped).map(([group, items]) => (
                 <div key={group} className="mb-1">
-                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#9AABC4]">
+                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
                     {group}
                   </p>
                   <ul>
@@ -224,20 +228,20 @@ export function GlobalSearch({ className }: { className?: string }) {
                             className={cn(
                               "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left",
                               active
-                                ? "bg-[#B8965D]/15 text-[#C9AA72]"
-                                : "text-[#FFFFFF] hover:bg-[#121E32]"
+                                ? "bg-primary-soft text-primary"
+                                : "text-foreground hover:bg-surface-hover"
                             )}
                           >
                             <Icon
                               className={cn(
                                 "h-4 w-4 shrink-0",
-                                active ? "text-[#B8965D]" : "text-[#9AABC4]"
+                                active ? "text-primary" : "text-muted"
                               )}
                             />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm">{item.title}</span>
                               {item.subtitle && (
-                                <span className="block truncate text-xs text-[#9AABC4]">
+                                <span className="block truncate text-xs text-muted">
                                   {item.subtitle}
                                 </span>
                               )}
@@ -251,7 +255,7 @@ export function GlobalSearch({ className }: { className?: string }) {
               ))
             )}
           </div>
-          <div className="bg-black/20 px-3 py-2 text-[10px] text-[#9AABC4]">
+          <div className="border-t border-border bg-surface-muted px-3 py-2 text-[10px] text-muted">
             <span className="hidden sm:inline">↑↓ navigate · ↵ open · </span>
             <kbd className="rounded bg-black/30 px-1 shadow-sm">esc</kbd> close
           </div>
