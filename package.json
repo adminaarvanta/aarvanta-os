@@ -12,7 +12,8 @@
     "simulate:channels": "node --env-file=.env.local scripts/simulate-channels.mjs",
     "seed:email": "node --env-file=.env.local scripts/seed-email-test.mjs",
     "seed:inbox-email": "node --env-file=.env.local scripts/reset-inbox-email.mjs",
-    "reset:crm-workforce": "node --env-file=.env.local scripts/reset-crm-workforce.mjs"
+    "reset:crm-workforce": "node --env-file=.env.local scripts/reset-crm-workforce.mjs",
+    "reset:production": "node --env-file=.env.local scripts/reset-production-firestore.mjs --confirm"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -155,14 +155,14 @@ export function HrDocumentAgent({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-[#D4AF37]/30 bg-gradient-to-r from-[#D4AF37]/10 to-transparent p-4">
+      <div className="rounded-xl border border-[#B8965D]/30 bg-gradient-to-r from-[#B8965D]/10 to-transparent p-4">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37]/15 text-[#D4AF37]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B8965D]/15 text-[#B8965D]">
             <Sparkles className="h-5 w-5" />
           </span>
           <div>
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">HR Document Agent</h3>
-            <p className="mt-1 text-xs text-[#A89878]">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">HR Document Agent</h3>
+            <p className="mt-1 text-xs text-[#9AABC4]">
               AI drafts offer letters, experience certificates, corporate invoices, NDAs,
               policy memos, and any HR or corporate document — ready to review, edit, and export.
             </p>
@@ -174,15 +174,15 @@ export function HrDocumentAgent({
         onSubmit={onGenerate}
         className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
       >
-        <div className="space-y-4 rounded-xl border border-[#3d3528] bg-[#101010] p-4">
-          <p className="text-sm font-medium text-[#F5E6C8]">Generate document</p>
+        <div className="space-y-4 rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+          <p className="text-sm font-medium text-[#FFFFFF]">Generate document</p>
 
-          <label className="block space-y-1 text-xs text-[#A89878]">
+          <label className="block space-y-1 text-xs text-[#9AABC4]">
             Document type
             <select
               value={docType}
               onChange={(e) => onTypeChange(e.target.value as HrDocumentType)}
-              className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
             >
               {HR_DOCUMENT_SPECS.map((item) => (
                 <option key={item.type} value={item.type}>
@@ -192,14 +192,14 @@ export function HrDocumentAgent({
             </select>
           </label>
 
-          <p className="text-xs text-[#A89878]">{spec.description}</p>
+          <p className="text-xs text-[#9AABC4]">{spec.description}</p>
 
-          <label className="block space-y-1 text-xs text-[#A89878]">
+          <label className="block space-y-1 text-xs text-[#9AABC4]">
             Select from roster (optional)
             <select
               value={subjectKey}
               onChange={(e) => onSubjectChange(e.target.value)}
-              className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
             >
               <option value="">— Manual entry —</option>
               {subjects.map((subject) => (
@@ -210,29 +210,29 @@ export function HrDocumentAgent({
             </select>
           </label>
 
-          <label className="block space-y-1 text-xs text-[#A89878]">
+          <label className="block space-y-1 text-xs text-[#9AABC4]">
             Subject name *
             <input
               value={subjectName}
               onChange={(e) => setSubjectName(e.target.value)}
               required
               placeholder="Employee, candidate, or vendor name"
-              className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
             />
           </label>
 
-          <label className="block space-y-1 text-xs text-[#A89878]">
+          <label className="block space-y-1 text-xs text-[#9AABC4]">
             Document title
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={`${spec.label} — ${subjectName || "Name"}`}
-              className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
             />
           </label>
 
           {spec.fields.map((field) => (
-            <label key={field.key} className="block space-y-1 text-xs text-[#A89878]">
+            <label key={field.key} className="block space-y-1 text-xs text-[#9AABC4]">
               {field.label}
               {field.required ? " *" : ""}
               <input
@@ -240,12 +240,12 @@ export function HrDocumentAgent({
                 onChange={(e) => updateField(field.key, e.target.value)}
                 required={field.required}
                 placeholder={field.placeholder}
-                className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+                className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
               />
             </label>
           ))}
 
-          <label className="block space-y-1 text-xs text-[#A89878]">
+          <label className="block space-y-1 text-xs text-[#9AABC4]">
             Instructions for HR Agent *
             <textarea
               value={instructions}
@@ -253,7 +253,7 @@ export function HrDocumentAgent({
               required
               rows={4}
               placeholder="Describe tone, clauses to include, probation, notice period, or any special terms…"
-              className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
             />
           </label>
 
@@ -265,10 +265,10 @@ export function HrDocumentAgent({
           </div>
         </div>
 
-        <div className="flex min-h-[20rem] flex-col rounded-xl border border-[#3d3528] bg-[#101010]">
-          <div className="flex items-center justify-between border-b border-[#3d3528] px-4 py-3">
-            <p className="flex items-center gap-2 text-sm font-medium text-[#F5E6C8]">
-              <FileText className="h-4 w-4 text-[#D4AF37]" />
+        <div className="flex min-h-[20rem] flex-col rounded-xl border border-[#243656] bg-[#0D1524]">
+          <div className="flex items-center justify-between border-b border-[#243656] px-4 py-3">
+            <p className="flex items-center gap-2 text-sm font-medium text-[#FFFFFF]">
+              <FileText className="h-4 w-4 text-[#B8965D]" />
               Preview
             </p>
             {preview && (
@@ -276,7 +276,7 @@ export function HrDocumentAgent({
                 <button
                   type="button"
                   onClick={() => void copyContent(preview.content)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-[#3d3528] px-2 py-1 text-[10px] text-[#A89878] hover:border-[#D4AF37]/40"
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#243656] px-2 py-1 text-[10px] text-[#9AABC4] hover:border-[#B8965D]/40"
                 >
                   {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                   {copied ? "Copied" : "Copy"}
@@ -289,7 +289,7 @@ export function HrDocumentAgent({
                       preview.content
                     )
                   }
-                  className="inline-flex items-center gap-1 rounded-lg border border-[#3d3528] px-2 py-1 text-[10px] text-[#A89878] hover:border-[#D4AF37]/40"
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#243656] px-2 py-1 text-[10px] text-[#9AABC4] hover:border-[#B8965D]/40"
                 >
                   <Download className="h-3 w-3" />
                   Download
@@ -299,11 +299,11 @@ export function HrDocumentAgent({
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {preview ? (
-              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[#F5E6C8]">
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-[#FFFFFF]">
                 {preview.content}
               </pre>
             ) : (
-              <p className="text-sm text-[#A89878]">
+              <p className="text-sm text-[#9AABC4]">
                 Generated documents appear here. The agent uses your company profile, employee
                 context, and structured fields to draft complete corporate documents.
               </p>
@@ -314,25 +314,25 @@ export function HrDocumentAgent({
 
       {initialDocuments.length > 0 && (
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Generated documents</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Generated documents</h3>
           <ul className="space-y-2">
             {initialDocuments.map((doc) => (
               <li
                 key={doc.id}
                 className={cn(
-                  "rounded-xl border border-[#3d3528] bg-[#101010] p-4 transition-colors",
-                  preview?.id === doc.id && "border-[#D4AF37]/40"
+                  "rounded-xl border border-[#243656] bg-[#0D1524] p-4 transition-colors",
+                  preview?.id === doc.id && "border-[#B8965D]/40"
                 )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-[#F5E6C8]">{doc.title}</p>
-                    <p className="mt-0.5 text-xs text-[#A89878]">
+                    <p className="text-sm font-medium text-[#FFFFFF]">{doc.title}</p>
+                    <p className="mt-0.5 text-xs text-[#9AABC4]">
                       {labelForHrDocumentType(doc.type)} · {doc.subjectName} ·{" "}
                       {new Date(doc.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className="rounded-full bg-[#141414] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#D4AF37]">
+                  <span className="rounded-full bg-[#121E32] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#B8965D]">
                     {doc.status}
                   </span>
                 </div>

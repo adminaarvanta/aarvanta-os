@@ -51,7 +51,7 @@ export default async function BillingPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Plans</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Plans</h3>
           <CardList
             items={BILLING_PLANS.map((plan) => ({
               id: plan.id,
@@ -63,7 +63,7 @@ export default async function BillingPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Subscriptions</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Subscriptions</h3>
           <CardList
             items={subscriptions.map((subscription) => ({
               id: subscription.id,
@@ -76,7 +76,7 @@ export default async function BillingPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Usage</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Usage</h3>
           <CardList
             items={usage.map((record) => ({
               id: record.id,

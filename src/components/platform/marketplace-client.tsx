@@ -57,21 +57,21 @@ export function MarketplaceClient({ catalog, installedIds }: MarketplaceClientPr
           return (
             <li
               key={agent.id}
-              className="space-y-3 rounded-xl border border-[#3d3528] bg-[#101010] p-4"
+              className="space-y-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-[#F5E6C8]">{agent.name}</p>
-                  <p className="text-xs text-[#A89878]">
+                  <p className="font-medium text-[#FFFFFF]">{agent.name}</p>
+                  <p className="text-xs text-[#9AABC4]">
                     {agent.author} · {agent.category}
                   </p>
                 </div>
-                <span className="rounded-full bg-[#D4AF37]/15 px-2 py-0.5 text-[10px] text-[#F9E076] ring-1 ring-[#D4AF37]/30">
+                <span className="rounded-full bg-[#B8965D]/15 px-2 py-0.5 text-[10px] text-[#C9AA72] ring-1 ring-[#B8965D]/30">
                   {agent.price}
                 </span>
               </div>
-              <p className="text-sm text-[#A89878]">{agent.description}</p>
-              <p className="text-[10px] text-[#A89878]/80">
+              <p className="text-sm text-[#9AABC4]">{agent.description}</p>
+              <p className="text-[10px] text-[#9AABC4]/80">
                 {agent.installs.toLocaleString()} installs · {agent.rating.toFixed(1)} rating
               </p>
               <Button

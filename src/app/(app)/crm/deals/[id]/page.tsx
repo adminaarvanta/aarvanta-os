@@ -30,7 +30,7 @@ export default async function DealDetailPage({
   const deal = await repo.getDeal(id, scope);
   if (!deal) {
     return (
-      <div className="p-8 text-sm text-[#A89878]">Deal not found.</div>
+      <div className="p-8 text-sm text-[#9AABC4]">Deal not found.</div>
     );
   }
 
@@ -50,18 +50,18 @@ export default async function DealDetailPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
         <div className="min-w-0">
           <Link
             href="/crm/pipelines"
-            className="text-xs text-[#D4AF37] hover:underline"
+            className="text-xs text-[#B8965D] hover:underline"
           >
             ← Pipelines
           </Link>
-          <h2 className="mt-1 text-lg font-semibold text-[#F5E6C8] sm:text-xl">
+          <h2 className="mt-1 text-lg font-semibold text-[#FFFFFF] sm:text-xl">
             {deal.title}
           </h2>
-          <p className="text-xs text-[#A89878] sm:text-sm">
+          <p className="text-xs text-[#9AABC4] sm:text-sm">
             {pipeline?.name ?? "Pipeline"} · {stageName}
           </p>
         </div>
@@ -69,20 +69,20 @@ export default async function DealDetailPage({
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-[#3d3528] bg-[#101010] p-4">
-            <p className="text-xs text-[#A89878]">Value</p>
-            <p className="mt-1 text-xl font-semibold text-[#D4AF37]">
+          <div className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+            <p className="text-xs text-[#9AABC4]">Value</p>
+            <p className="mt-1 text-xl font-semibold text-[#B8965D]">
               {formatCurrency(deal.value, deal.currency)}
             </p>
           </div>
-          <div className="rounded-xl border border-[#3d3528] bg-[#101010] p-4">
-            <p className="text-xs text-[#A89878]">Probability</p>
-            <p className="mt-1 text-xl font-semibold text-[#F5E6C8]">
+          <div className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+            <p className="text-xs text-[#9AABC4]">Probability</p>
+            <p className="mt-1 text-xl font-semibold text-[#FFFFFF]">
               {deal.probability}%
             </p>
           </div>
-          <div className="rounded-xl border border-[#3d3528] bg-[#101010] p-4">
-            <p className="text-xs text-[#A89878]">Status</p>
+          <div className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+            <p className="text-xs text-[#9AABC4]">Status</p>
             <p className="mt-1">
               <Badge
                 className={
@@ -90,7 +90,7 @@ export default async function DealDetailPage({
                     ? "bg-emerald-950 text-emerald-300 ring-emerald-800"
                     : deal.status === "lost"
                       ? "bg-red-950 text-red-300 ring-red-800"
-                      : "bg-[#141414] text-[#F5E6C8] ring-[#3d3528]"
+                      : "bg-[#121E32] text-[#FFFFFF] ring-[#243656]"
                 }
               >
                 {deal.status}
@@ -106,20 +106,20 @@ export default async function DealDetailPage({
         />
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">Details</h3>
+          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">Details</h3>
             <dl className="mt-3 space-y-2 text-sm">
               <div>
-                <dt className="text-[#A89878]">Owner</dt>
+                <dt className="text-[#9AABC4]">Owner</dt>
                 <dd>{memberNameByUserId(members, deal.ownerId)}</dd>
               </div>
               <div>
-                <dt className="text-[#A89878]">Contact</dt>
+                <dt className="text-[#9AABC4]">Contact</dt>
                 <dd>
                   {contact ? (
                     <Link
                       href={`/crm/contacts/${contact.id}`}
-                      className="text-[#D4AF37] hover:underline"
+                      className="text-[#B8965D] hover:underline"
                     >
                       {contactDisplayName(contact)}
                     </Link>
@@ -129,12 +129,12 @@ export default async function DealDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-[#A89878]">Company</dt>
+                <dt className="text-[#9AABC4]">Company</dt>
                 <dd>
                   {company ? (
                     <Link
                       href={`/crm/companies/${company.id}`}
-                      className="text-[#D4AF37] hover:underline"
+                      className="text-[#B8965D] hover:underline"
                     >
                       {company.name}
                     </Link>
@@ -144,56 +144,56 @@ export default async function DealDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-[#A89878]">Expected close</dt>
+                <dt className="text-[#9AABC4]">Expected close</dt>
                 <dd>{deal.expectedCloseDate ?? "—"}</dd>
               </div>
             </dl>
             {deal.notes && (
-              <p className="mt-3 text-xs text-[#A89878]">{deal.notes}</p>
+              <p className="mt-3 text-xs text-[#9AABC4]">{deal.notes}</p>
             )}
           </section>
 
-          <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">Tasks</h3>
+          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">Tasks</h3>
             <ul className="mt-3 space-y-2">
               {tasks.map((task) => (
                 <li
                   key={task.id}
-                  className="rounded-lg border border-[#3d3528] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[#243656] px-3 py-2 text-sm"
                 >
-                  <p className="font-medium text-[#F5E6C8]">{task.title}</p>
-                  <p className="text-xs text-[#A89878]">{task.status}</p>
+                  <p className="font-medium text-[#FFFFFF]">{task.title}</p>
+                  <p className="text-xs text-[#9AABC4]">{task.status}</p>
                 </li>
               ))}
               {tasks.length === 0 && (
-                <p className="text-sm text-[#A89878]">No tasks linked.</p>
+                <p className="text-sm text-[#9AABC4]">No tasks linked.</p>
               )}
             </ul>
           </section>
         </div>
 
-        <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Activities</h3>
+        <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Activities</h3>
           <ul className="mt-3 space-y-3">
             {activities.map((activity) => (
               <li
                 key={activity.id}
-                className="border-l-2 border-[#D4AF37]/40 pl-3 text-sm"
+                className="border-l-2 border-[#B8965D]/40 pl-3 text-sm"
               >
-                <p className="font-medium text-[#F5E6C8]">
+                <p className="font-medium text-[#FFFFFF]">
                   [{activity.type}] {activity.title}
                 </p>
                 {activity.description && (
-                  <p className="text-[#A89878]">{activity.description}</p>
+                  <p className="text-[#9AABC4]">{activity.description}</p>
                 )}
-                <p className="text-xs text-[#A89878]">
+                <p className="text-xs text-[#9AABC4]">
                   {format(new Date(activity.occurredAt), "dd MMM yyyy HH:mm")}
                   {activity.authorName ? ` · ${activity.authorName}` : ""}
                 </p>
               </li>
             ))}
             {activities.length === 0 && (
-              <p className="text-sm text-[#A89878]">No activities logged.</p>
+              <p className="text-sm text-[#9AABC4]">No activities logged.</p>
             )}
           </ul>
         </section>

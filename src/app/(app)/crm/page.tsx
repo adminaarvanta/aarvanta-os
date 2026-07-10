@@ -62,9 +62,9 @@ export default async function CrmOverviewPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">CRM</h2>
-        <p className="text-xs text-[#A89878] sm:text-sm">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">CRM</h2>
+        <p className="text-xs text-[#9AABC4] sm:text-sm">
           Module 3 — leads, contacts, companies, deals, AI scoring, and insights.
         </p>
       </header>
@@ -77,13 +77,13 @@ export default async function CrmOverviewPage() {
               <Link
                 key={stat.label}
                 href={stat.href}
-                className="rounded-xl border border-[#3d3528] bg-[#101010] p-4 hover:border-[#D4AF37]/40 transition-colors"
+                className="rounded-xl border border-[#243656] bg-[#0D1524] p-4 hover:border-[#B8965D]/40 transition-colors"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-[#A89878]">{stat.label}</p>
-                  <Icon className="h-4 w-4 text-[#D4AF37]" />
+                  <p className="text-sm text-[#9AABC4]">{stat.label}</p>
+                  <Icon className="h-4 w-4 text-[#B8965D]" />
                 </div>
-                <p className="mt-2 text-2xl font-semibold text-[#F5E6C8]">
+                <p className="mt-2 text-2xl font-semibold text-[#FFFFFF]">
                   {stat.value}
                 </p>
               </Link>
@@ -92,24 +92,24 @@ export default async function CrmOverviewPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">
+          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">
               Pipeline forecast
             </h3>
             <div className="mt-3 space-y-2 text-sm">
-              <p className="text-[#A89878]">
+              <p className="text-[#9AABC4]">
                 Total pipeline:{" "}
-                <span className="font-semibold text-[#F5E6C8]">
+                <span className="font-semibold text-[#FFFFFF]">
                   £{pipelineValue.toLocaleString()}
                 </span>
               </p>
-              <p className="text-[#A89878]">
+              <p className="text-[#9AABC4]">
                 Weighted forecast:{" "}
-                <span className="font-semibold text-[#D4AF37]">
+                <span className="font-semibold text-[#B8965D]">
                   £{Math.round(weightedForecast).toLocaleString()}
                 </span>
               </p>
-              <p className="text-xs text-[#A89878]">
+              <p className="text-xs text-[#9AABC4]">
                 {pipelines.length} pipeline
                 {pipelines.length !== 1 ? "s" : ""}:{" "}
                 {pipelines.map((p) => p.name).join(", ")}
@@ -117,12 +117,12 @@ export default async function CrmOverviewPage() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
+          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#F5E6C8]">
+              <h3 className="text-sm font-semibold text-[#FFFFFF]">
                 Top leads
               </h3>
-              <Link href="/crm/contacts" className="text-xs text-[#D4AF37] hover:underline">
+              <Link href="/crm/contacts" className="text-xs text-[#B8965D] hover:underline">
                 View all
               </Link>
             </div>
@@ -134,9 +134,9 @@ export default async function CrmOverviewPage() {
                   <li key={c.id}>
                     <Link
                       href={`/crm/contacts/${c.id}`}
-                      className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[#141414]"
+                      className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[#121E32]"
                     >
-                      <span className="text-sm text-[#F5E6C8]">
+                      <span className="text-sm text-[#FFFFFF]">
                         {contactDisplayName(c)}
                       </span>
                       <LeadScoreBadge score={c.leadScore} />
@@ -149,8 +149,8 @@ export default async function CrmOverviewPage() {
 
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#F5E6C8]">Open tasks</h3>
-            <Link href="/crm/tasks" className="text-xs text-[#D4AF37] hover:underline">
+            <h3 className="text-sm font-semibold text-[#FFFFFF]">Open tasks</h3>
+            <Link href="/crm/tasks" className="text-xs text-[#B8965D] hover:underline">
               View all ({openTasks.length})
             </Link>
           </div>

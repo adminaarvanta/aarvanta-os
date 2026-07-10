@@ -53,23 +53,23 @@ export default async function AgentPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
         <Link
           href="/workforce"
-          className="text-xs text-[#D4AF37] hover:underline"
+          className="text-xs text-[#B8965D] hover:underline"
         >
           ← AI Workforce
         </Link>
         <div className="mt-2 flex items-start gap-3">
-          <div className="rounded-lg bg-[#D4AF37]/15 p-2.5 ring-1 ring-[#D4AF37]/30">
-            <Icon className="h-5 w-5 text-[#D4AF37]" />
+          <div className="rounded-lg bg-[#B8965D]/15 p-2.5 ring-1 ring-[#B8965D]/30">
+            <Icon className="h-5 w-5 text-[#B8965D]" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">
+            <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">
               {agent.name}
             </h2>
-            <p className="text-xs text-[#D4AF37]">{agent.title}</p>
-            <p className="mt-1 text-xs text-[#A89878] sm:text-sm">
+            <p className="text-xs text-[#B8965D]">{agent.title}</p>
+            <p className="mt-1 text-xs text-[#9AABC4] sm:text-sm">
               {agent.tagline} · {agent.primaryFunction}
             </p>
           </div>

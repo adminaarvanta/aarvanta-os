@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 const statusStyles: Record<CoverageStatus, string> = {
   complete: "bg-emerald-950/40 text-emerald-300 ring-emerald-800/50",
   partial: "bg-amber-950/40 text-amber-200 ring-amber-800/50",
-  planned: "bg-[#141414] text-[#A89878] ring-[#3d3528]",
+  planned: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
 };
 
 function StatusBadge({ status }: { status: CoverageStatus }) {
@@ -30,23 +30,23 @@ function StatusBadge({ status }: { status: CoverageStatus }) {
 
 function ModuleRow({ module }: { module: SpecModule }) {
   return (
-    <li className="rounded-xl border border-[#3d3528] bg-[#101010] p-4">
+    <li className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="font-medium text-[#F5E6C8]">
+          <p className="font-medium text-[#FFFFFF]">
             {module.href ? (
-              <Link href={module.href} className="hover:text-[#F9E076]">
+              <Link href={module.href} className="hover:text-[#C9AA72]">
                 {module.name}
               </Link>
             ) : (
               module.name
             )}
           </p>
-          <p className="mt-1 text-xs text-[#A89878]">Phase {module.phase}</p>
+          <p className="mt-1 text-xs text-[#9AABC4]">Phase {module.phase}</p>
         </div>
         <StatusBadge status={module.status} />
       </div>
-      <p className="mt-2 text-sm text-[#A89878]">{module.summary}</p>
+      <p className="mt-2 text-sm text-[#9AABC4]">{module.summary}</p>
     </li>
   );
 }
@@ -70,28 +70,28 @@ export default function PlatformCoveragePage() {
           ].map((item) => (
             <div
               key={item.label}
-              className="rounded-xl border border-[#3d3528] bg-[#101010] p-4"
+              className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
             >
-              <p className="text-[10px] uppercase tracking-wide text-[#A89878]">
+              <p className="text-[10px] uppercase tracking-wide text-[#9AABC4]">
                 {item.label}
               </p>
-              <p className="mt-1 text-2xl font-semibold text-[#F5E6C8]">
+              <p className="mt-1 text-2xl font-semibold text-[#FFFFFF]">
                 {item.value}
               </p>
             </div>
           ))}
         </section>
 
-        <p className="text-sm text-[#A89878]">
-          <strong className="text-[#F5E6C8]">Complete</strong> = spec MVP delivered
-          in app. <strong className="text-[#F5E6C8]">Partial</strong> = UI +
+        <p className="text-sm text-[#9AABC4]">
+          <strong className="text-[#FFFFFF]">Complete</strong> = spec MVP delivered
+          in app. <strong className="text-[#FFFFFF]">Partial</strong> = UI +
           demo/API scaffold; live third-party hooks or advanced features pending.{" "}
-          <strong className="text-[#F5E6C8]">Planned</strong> = roadmap only.
+          <strong className="text-[#FFFFFF]">Planned</strong> = roadmap only.
         </p>
 
         {SPEC_PHASES.map((phase) => (
           <section key={phase.id}>
-            <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">
+            <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">
               {phase.label}
             </h3>
             <ul className="space-y-3">
@@ -102,14 +102,14 @@ export default function PlatformCoveragePage() {
           </section>
         ))}
 
-        <section className="rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/5 p-4">
-          <p className="text-sm text-[#F5E6C8]">
+        <section className="rounded-xl border border-[#B8965D]/30 bg-[#B8965D]/5 p-4">
+          <p className="text-sm text-[#FFFFFF]">
             Run the live demo:{" "}
-            <Link href="/dashboard?help=open" className="text-[#F9E076] hover:underline">
+            <Link href="/dashboard?help=open" className="text-[#C9AA72] hover:underline">
               Help (header)
             </Link>{" "}
             · Browse all modules:{" "}
-            <Link href="/platform" className="text-[#F9E076] hover:underline">
+            <Link href="/platform" className="text-[#C9AA72] hover:underline">
               /platform
             </Link>
           </p>

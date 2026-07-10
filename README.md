@@ -125,6 +125,8 @@ npm run seed:firestore
 4. **Voice**: same webhook URL for call status; outbound calls use `/api/webhooks/twilio/twiml`
 5. Trial accounts: verify recipient numbers first
 
+**Gmail setup guide:** See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for free alternatives and App Password steps.
+
 ### 9. Email (Gmail — free with Google Workspace)
 
 Uses your existing Google Workspace / Gmail mailbox. **No third-party email provider, no DNS/MX changes** — company inboxes keep working normally.
@@ -135,6 +137,7 @@ Uses your existing Google Workspace / Gmail mailbox. **No third-party email prov
    ```bash
    GMAIL_USER=support@yourdomain.com
    GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+   CRON_SECRET=your-long-random-secret
    EMAIL_FROM=support@yourdomain.com
    ```
 4. **Inbound sync** — poll Gmail inbox via IMAP (every few minutes):

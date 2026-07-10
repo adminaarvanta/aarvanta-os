@@ -17,3 +17,9 @@ export const colors = {
   textDim: "#94A3B8",
   outboundBubble: "#F1F5F9",
 } as const;
+
+export const brand = {
+  name: "Aarvanta",
+  product: "Business OS",
+  fullName: "Aarvanta Business OS",
+} as const;

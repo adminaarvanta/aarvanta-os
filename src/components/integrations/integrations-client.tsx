@@ -17,7 +17,7 @@ type ProviderRow = {
 
 const statusClass: Record<string, string> = {
   connected: "bg-emerald-950/60 text-emerald-300 ring-emerald-700/50",
-  disconnected: "bg-[#141414] text-[#A89878] ring-[#3d3528]",
+  disconnected: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
   syncing: "bg-blue-950/60 text-blue-300 ring-blue-700/50",
   error: "bg-red-950/60 text-red-300 ring-red-700/50",
 };
@@ -76,13 +76,13 @@ export function IntegrationsClient({ providers }: { providers: ProviderRow[] }) 
         return (
           <li
             key={p.provider}
-            className="rounded-xl border border-[#3d3528] bg-[#101010] p-5"
+            className="rounded-xl border border-[#243656] bg-[#0D1524] p-5"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-[#F5E6C8]">{p.name}</h3>
-                <p className="mt-1 text-xs text-[#A89878]">{p.description}</p>
-                <Badge className="mt-2 bg-[#141414] text-[#A89878] ring-[#3d3528]">
+                <h3 className="font-semibold text-[#FFFFFF]">{p.name}</h3>
+                <p className="mt-1 text-xs text-[#9AABC4]">{p.description}</p>
+                <Badge className="mt-2 bg-[#121E32] text-[#9AABC4] ring-[#243656]">
                   {p.category}
                 </Badge>
               </div>
@@ -91,12 +91,12 @@ export function IntegrationsClient({ providers }: { providers: ProviderRow[] }) 
               </Badge>
             </div>
             {p.connection?.accountLabel && (
-              <p className="mt-3 text-xs text-[#A89878]">
+              <p className="mt-3 text-xs text-[#9AABC4]">
                 Account: {p.connection.accountLabel}
               </p>
             )}
             {p.connection?.lastSyncAt && (
-              <p className="mt-1 text-[10px] text-[#A89878]/70">
+              <p className="mt-1 text-[10px] text-[#9AABC4]/70">
                 Last sync {formatRelative(p.connection.lastSyncAt)}
               </p>
             )}

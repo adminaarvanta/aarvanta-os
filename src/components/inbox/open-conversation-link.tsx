@@ -12,7 +12,7 @@ export function OpenConversationLink({
   return (
     <PendingLink
       href={`/inbox/${conversationId}`}
-      className="inline-flex rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black hover:bg-[#F9E076]"
+      className="inline-flex rounded-lg bg-[#B8965D] px-4 py-2 text-sm font-semibold text-black hover:bg-[#C9AA72]"
     >
       Open {label}
     </PendingLink>

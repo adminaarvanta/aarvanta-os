@@ -11,7 +11,7 @@ export const DEMO_PROJECTS: Project[] = [
     name: "Meridian Consulting — Onboarding",
     description: "Implement Aarvanta OS for Meridian Consulting post-sale.",
     status: "active",
-    color: "#D4AF37",
+    color: "#B8965D",
     startDate: "2026-06-01",
     dueDate: "2026-07-01",
     contactId: "contact_sarah",

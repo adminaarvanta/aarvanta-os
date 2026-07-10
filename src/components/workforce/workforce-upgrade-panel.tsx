@@ -40,8 +40,8 @@ export function WorkforceUpgradePanel({
     <div className="space-y-8">
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Shared memory</h3>
-          <Badge className="bg-[#141414] text-[#A89878] ring-[#3d3528]">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Shared memory</h3>
+          <Badge className="bg-[#121E32] text-[#9AABC4] ring-[#243656]">
             Cross-agent
           </Badge>
         </div>
@@ -49,17 +49,17 @@ export function WorkforceUpgradePanel({
           {sharedMemory.map((entry) => (
             <li
               key={entry.id}
-              className="rounded-xl border border-[#3d3528] bg-[#101010] p-4"
+              className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
             >
-              <p className="font-medium text-[#F5E6C8]">{entry.title}</p>
-              <p className="mt-2 text-xs text-[#A89878] line-clamp-3">
+              <p className="font-medium text-[#FFFFFF]">{entry.title}</p>
+              <p className="mt-2 text-xs text-[#9AABC4] line-clamp-3">
                 {entry.content}
               </p>
               <div className="mt-3 flex flex-wrap gap-1">
                 {entry.contributedBy.map((a) => (
                   <Badge
                     key={a}
-                    className="bg-[#D4AF37]/10 text-[#F9E076] ring-[#D4AF37]/30"
+                    className="bg-[#B8965D]/10 text-[#C9AA72] ring-[#B8965D]/30"
                   >
                     {getAgentDefinition(a as AgentType).name}
                   </Badge>
@@ -72,7 +72,7 @@ export function WorkforceUpgradePanel({
 
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Agent collaboration</h3>
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Agent collaboration</h3>
           <Button size="sm" onClick={runCollaboration} disabled={busy}>
             Run collaboration
           </Button>
@@ -81,23 +81,23 @@ export function WorkforceUpgradePanel({
           {collaborations.map((c) => (
             <li
               key={c.id}
-              className="rounded-xl border border-[#3d3528] bg-[#101010] p-4"
+              className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
             >
-              <p className="font-medium text-[#F5E6C8]">{c.title}</p>
-              <p className="mt-1 text-xs text-[#A89878]">
+              <p className="font-medium text-[#FFFFFF]">{c.title}</p>
+              <p className="mt-1 text-xs text-[#9AABC4]">
                 Lead: {getAgentDefinition(c.leadAgent).name} ·{" "}
                 {formatRelative(c.createdAt)}
               </p>
               <p className="mt-2 text-sm text-[#C4B896]">{c.summary}</p>
               <ul className="mt-3 space-y-1">
                 {c.insights.map((insight) => (
-                  <li key={insight} className="text-xs text-[#A89878]">
+                  <li key={insight} className="text-xs text-[#9AABC4]">
                     · {insight}
                   </li>
                 ))}
               </ul>
               {c.assignedTaskIds.length > 0 && (
-                <p className="mt-2 text-[10px] text-[#D4AF37]">
+                <p className="mt-2 text-[10px] text-[#B8965D]">
                   {c.assignedTaskIds.length} task(s) assigned to agents
                 </p>
               )}

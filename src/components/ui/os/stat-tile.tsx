@@ -51,7 +51,7 @@ export function StatTile({
   const classes = cn(
     "group block rounded-xl border border-border bg-surface-elevated p-4 transition-all",
     href &&
-      "hover:border-gold/35 hover:bg-surface-hover hover:shadow-[0_0_0_1px_rgba(212,175,55,0.08)]",
+      "hover:border-gold/35 hover:bg-surface-hover hover:shadow-[0_0_0_1px_rgba(184, 150, 93,0.08)]",
     className
   );
 

@@ -37,12 +37,12 @@ export function WorkflowBuilder() {
   }
 
   return (
-    <div className="rounded-xl border border-[#3d3528] bg-[#141414] p-4 sm:p-5">
+    <div className="rounded-xl border border-[#243656] bg-[#121E32] p-4 sm:p-5">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-        <h3 className="text-sm font-semibold text-[#F5E6C8]">AI Workflow Builder</h3>
+        <Sparkles className="h-4 w-4 text-[#B8965D]" />
+        <h3 className="text-sm font-semibold text-[#FFFFFF]">AI Workflow Builder</h3>
       </div>
-      <p className="mt-1 text-xs text-[#A89878]">
+      <p className="mt-1 text-xs text-[#9AABC4]">
         Describe what you want to automate — we map it to triggers, agents, and approvals.
       </p>
       <form onSubmit={handleGenerate} className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -50,12 +50,12 @@ export function WorkflowBuilder() {
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
           placeholder="e.g. When a deal closes, notify ops and create onboarding tasks"
-          className="min-w-0 flex-1 rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37]"
+          className="min-w-0 flex-1 rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF] outline-none focus:border-[#B8965D]"
         />
         <button
           type="submit"
           disabled={loading || !intent.trim()}
-          className="shrink-0 rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black hover:bg-[#F9E076] disabled:opacity-50"
+          className="shrink-0 rounded-lg bg-[#B8965D] px-4 py-2 text-sm font-semibold text-black hover:bg-[#C9AA72] disabled:opacity-50"
         >
           {loading ? "Generating…" : "Generate workflow"}
         </button>

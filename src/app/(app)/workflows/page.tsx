@@ -15,12 +15,12 @@ export default async function WorkflowsPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-[#F5E6C8] sm:text-xl">
-          <Workflow className="h-5 w-5 text-[#D4AF37]" />
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-[#FFFFFF] sm:text-xl">
+          <Workflow className="h-5 w-5 text-[#B8965D]" />
           Workflows
         </h2>
-        <p className="text-xs text-[#A89878] sm:text-sm">
+        <p className="text-xs text-[#9AABC4] sm:text-sm">
           Workflow OS — trigger → condition → agent → approval → action.
         </p>
       </header>
@@ -28,14 +28,14 @@ export default async function WorkflowsPage() {
         <WorkflowBuilder />
 
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-[#F5E6C8]">
+          <h3 className="mb-4 text-sm font-semibold text-[#FFFFFF]">
             Active workflows ({workflows.length})
           </h3>
           <WorkflowList workflows={workflows} />
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Recent runs</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Recent runs</h3>
           <WorkflowRunList runs={runs.slice(0, 10)} />
         </section>
       </div>

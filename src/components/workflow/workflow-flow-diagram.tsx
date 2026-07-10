@@ -20,7 +20,7 @@ const stepIcons: Record<WorkflowStep["type"], typeof Zap> = {
 
 const stepColors: Record<WorkflowStep["type"], string> = {
   condition: "border-violet-800/50 bg-violet-950/30 text-violet-300",
-  agent: "border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#F9E076]",
+  agent: "border-[#B8965D]/40 bg-[#B8965D]/10 text-[#C9AA72]",
   approval: "border-amber-800/50 bg-amber-950/30 text-amber-300",
   action: "border-emerald-800/50 bg-emerald-950/30 text-emerald-300",
   delay: "border-slate-700/50 bg-slate-950/30 text-slate-300",
@@ -28,9 +28,9 @@ const stepColors: Record<WorkflowStep["type"], string> = {
 
 export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
   return (
-    <div className="rounded-xl border border-[#3d3528] bg-[#101010] p-5">
+    <div className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[#141414] px-3 py-1 text-xs text-[#A89878] ring-1 ring-[#3d3528]">
+        <span className="rounded-full bg-[#121E32] px-3 py-1 text-xs text-[#9AABC4] ring-1 ring-[#243656]">
           Trigger: {workflow.trigger.label}
         </span>
         {!workflow.enabled && (
@@ -41,7 +41,7 @@ export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <div className="w-full max-w-md rounded-lg border border-[#3d3528] bg-[#141414] px-4 py-3 text-center text-sm text-[#F5E6C8]">
+        <div className="w-full max-w-md rounded-lg border border-[#243656] bg-[#121E32] px-4 py-3 text-center text-sm text-[#FFFFFF]">
           {workflow.trigger.label}
         </div>
 
@@ -49,7 +49,7 @@ export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
           const Icon = stepIcons[step.type];
           return (
             <div key={step.id} className="flex w-full max-w-md flex-col items-center gap-2">
-              <ArrowDown className="h-4 w-4 text-[#3d3528]" aria-hidden />
+              <ArrowDown className="h-4 w-4 text-[#243656]" aria-hidden />
               <div
                 className={cn(
                   "w-full rounded-lg border px-4 py-3",

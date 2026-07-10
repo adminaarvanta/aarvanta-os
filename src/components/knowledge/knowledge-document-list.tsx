@@ -17,7 +17,7 @@ export function KnowledgeDocumentList({
 }) {
   if (documents.length === 0) {
     return (
-      <p className="text-sm text-[#A89878]">
+      <p className="text-sm text-[#9AABC4]">
         No documents yet. Upload your first PDF, DOCX, or TXT file above.
       </p>
     );
@@ -29,22 +29,22 @@ export function KnowledgeDocumentList({
         <li key={doc.id}>
           <Link
             href={`/knowledge/${doc.id}`}
-            className="flex gap-3 rounded-xl border border-[#3d3528] bg-[#101010] p-4 transition-colors hover:border-[#D4AF37]/40"
+            className="flex gap-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4 transition-colors hover:border-[#B8965D]/40"
           >
-            <div className="rounded-lg bg-[#D4AF37]/15 p-2 ring-1 ring-[#D4AF37]/30">
-              <FileText className="h-4 w-4 text-[#D4AF37]" />
+            <div className="rounded-lg bg-[#B8965D]/15 p-2 ring-1 ring-[#B8965D]/30">
+              <FileText className="h-4 w-4 text-[#B8965D]" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium text-[#F5E6C8] truncate">{doc.title}</p>
+                <p className="font-medium text-[#FFFFFF] truncate">{doc.title}</p>
                 <Badge className={statusColors[doc.status]}>{doc.status}</Badge>
               </div>
-              <p className="mt-0.5 text-xs text-[#A89878]">
+              <p className="mt-0.5 text-xs text-[#9AABC4]">
                 {doc.fileName} · {doc.fileType.toUpperCase()} · {doc.chunkCount}{" "}
                 chunks
               </p>
               {doc.summary && (
-                <p className="mt-2 text-xs text-[#A89878] line-clamp-2">
+                <p className="mt-2 text-xs text-[#9AABC4] line-clamp-2">
                   {doc.summary}
                 </p>
               )}
@@ -53,14 +53,14 @@ export function KnowledgeDocumentList({
                   {doc.tags.map((tag) => (
                     <Badge
                       key={tag}
-                      className="bg-[#0a0a0a] text-[#A89878] ring-[#3d3528]"
+                      className="bg-[#040608] text-[#9AABC4] ring-[#243656]"
                     >
                       {tag}
                     </Badge>
                   ))}
                 </div>
               )}
-              <p className="mt-2 text-[10px] text-[#A89878]">
+              <p className="mt-2 text-[10px] text-[#9AABC4]">
                 Updated {formatRelative(doc.updatedAt)}
               </p>
             </div>

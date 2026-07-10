@@ -33,12 +33,12 @@ export function PayrollRunButton() {
         type="button"
         onClick={runPayroll}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black hover:bg-[#F9E076] disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg bg-[#B8965D] px-4 py-2 text-sm font-semibold text-black hover:bg-[#C9AA72] disabled:opacity-50"
       >
         <Banknote className="h-4 w-4" />
         {loading ? "Running…" : "Run UK payroll"}
       </button>
-      {message ? <p className="text-xs text-[#A89878]">{message}</p> : null}
+      {message ? <p className="text-xs text-[#9AABC4]">{message}</p> : null}
     </div>
   );
 }

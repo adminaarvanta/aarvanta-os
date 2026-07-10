@@ -36,7 +36,7 @@ export default async function PortalPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Access directory</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Access directory</h3>
           <CardList
             items={accessList.map((record) => ({
               id: record.id,

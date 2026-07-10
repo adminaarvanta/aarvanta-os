@@ -25,6 +25,6 @@ export function parseMentions(
 export function highlightMentions(text: string) {
   return text.replace(
     /@([A-Za-z][A-Za-z0-9_.\- ]{0,40})/g,
-    '<span class="text-[#F9E076] font-medium">@$1</span>'
+    '<span class="text-[#C9AA72] font-medium">@$1</span>'
   );
 }

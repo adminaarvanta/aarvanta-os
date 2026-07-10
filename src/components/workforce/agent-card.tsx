@@ -26,21 +26,21 @@ export function AgentCard({ agent }: { agent: AgentDefinition }) {
   const Icon = icons[agent.type];
 
   return (
-    <article className="flex flex-col rounded-xl border border-[#3d3528] bg-[#101010] p-5 transition-colors hover:border-[#D4AF37]/40">
+    <article className="flex flex-col rounded-xl border border-[#243656] bg-[#0D1524] p-5 transition-colors hover:border-[#B8965D]/40">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-[#D4AF37]/15 p-2.5 ring-1 ring-[#D4AF37]/30">
-          <Icon className="h-5 w-5 text-[#D4AF37]" />
+        <div className="rounded-lg bg-[#B8965D]/15 p-2.5 ring-1 ring-[#B8965D]/30">
+          <Icon className="h-5 w-5 text-[#B8965D]" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-[#F5E6C8]">{agent.name}</h3>
-          <p className="text-[10px] text-[#D4AF37]">{agent.primaryFunction}</p>
-          <p className="mt-1 text-xs text-[#A89878]">{agent.tagline}</p>
+          <h3 className="font-semibold text-[#FFFFFF]">{agent.name}</h3>
+          <p className="text-[10px] text-[#B8965D]">{agent.primaryFunction}</p>
+          <p className="mt-1 text-xs text-[#9AABC4]">{agent.tagline}</p>
         </div>
       </div>
-      <ul className="mt-4 flex-1 space-y-1.5 text-xs text-[#A89878]">
+      <ul className="mt-4 flex-1 space-y-1.5 text-xs text-[#9AABC4]">
         {agent.responsibilities.slice(0, 3).map((item) => (
           <li key={item} className="flex gap-2">
-            <span className="text-[#D4AF37]">·</span>
+            <span className="text-[#B8965D]">·</span>
             <span>{item}</span>
           </li>
         ))}
@@ -49,7 +49,7 @@ export function AgentCard({ agent }: { agent: AgentDefinition }) {
         <RunAgentButton agentType={agent.type} label="Run now" />
         <Link
           href={`/workforce/${agent.type}`}
-          className="inline-flex items-center justify-center rounded-lg border border-[#3d3528] px-4 py-2 text-sm font-medium text-[#A89878] hover:border-[#D4AF37]/40 hover:text-[#F5E6C8]"
+          className="inline-flex items-center justify-center rounded-lg border border-[#243656] px-4 py-2 text-sm font-medium text-[#9AABC4] hover:border-[#B8965D]/40 hover:text-[#FFFFFF]"
         >
           Profile
         </Link>

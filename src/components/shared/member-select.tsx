@@ -4,7 +4,7 @@ import type { MemberOption } from "@/lib/crm/members";
 import { cn } from "@/lib/utils";
 
 const inputClass =
-  "w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30";
+  "w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF] outline-none focus:border-[#B8965D] focus:ring-1 focus:ring-[#B8965D]/30";
 
 export function MemberSelect({
   members,

@@ -1,3 +1,4 @@
+import { getHrApproverEmail } from "@/lib/config/company-profile";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { crmNow } from "@/lib/data/crm-helpers";
 import { getHrStore } from "@/lib/data/platform-store";
@@ -63,7 +64,7 @@ async function escalateHrCase(hrCase: HrCase, scope: TenantScope): Promise<void>
   await getNotificationsRepository().createNotification(
     {
       title: "HR case escalated",
-      body: `${hrCase.subjectName} requires human review — ${hrCase.aiSummary}`,
+      body: `${hrCase.subjectName} requires review by ${getHrApproverEmail()} — ${hrCase.aiSummary}`,
       kind: "alert",
       priority: "high",
       actionUrl: `/inbox/${hrCase.conversationId}`,

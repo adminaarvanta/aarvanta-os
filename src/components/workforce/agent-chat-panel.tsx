@@ -87,11 +87,11 @@ export function AgentChatPanel({
   }
 
   return (
-    <section className="flex h-[min(520px,60vh)] min-h-[280px] flex-col overflow-hidden rounded-xl border border-[#3d3528] bg-[#101010]">
-      <div className="flex items-center justify-between border-b border-[#3d3528] px-4 py-3">
+    <section className="flex h-[min(520px,60vh)] min-h-[280px] flex-col overflow-hidden rounded-xl border border-[#243656] bg-[#0D1524]">
+      <div className="flex items-center justify-between border-b border-[#243656] px-4 py-3">
         <div>
-          <h3 className="text-sm font-semibold text-[#F5E6C8]">Agent chat</h3>
-          <p className="text-xs text-[#A89878]">
+          <h3 className="text-sm font-semibold text-[#FFFFFF]">Agent chat</h3>
+          <p className="text-xs text-[#9AABC4]">
             Talk to {agentName} about your business
           </p>
         </div>
@@ -99,7 +99,7 @@ export function AgentChatPanel({
           <button
             type="button"
             onClick={clearChat}
-            className="inline-flex items-center gap-1 text-xs text-[#A89878] hover:text-red-300"
+            className="inline-flex items-center gap-1 text-xs text-[#9AABC4] hover:text-red-300"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Clear
@@ -113,9 +113,9 @@ export function AgentChatPanel({
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
       >
         {initialLoading ? (
-          <p className="text-sm text-[#A89878]">Loading conversation…</p>
+          <p className="text-sm text-[#9AABC4]">Loading conversation…</p>
         ) : messages.length === 0 ? (
-          <p className="text-sm text-[#A89878]">
+          <p className="text-sm text-[#9AABC4]">
             Ask {agentName} anything — pipeline status, priorities, recommendations.
           </p>
         ) : (
@@ -125,8 +125,8 @@ export function AgentChatPanel({
               className={cn(
                 "max-w-[85%] rounded-lg px-3 py-2 text-sm",
                 msg.role === "user"
-                  ? "ml-auto bg-[#D4AF37]/15 text-[#F5E6C8] ring-1 ring-[#D4AF37]/25"
-                  : "bg-[#141414] text-[#A89878] ring-1 ring-[#3d3528]"
+                  ? "ml-auto bg-[#B8965D]/15 text-[#FFFFFF] ring-1 ring-[#B8965D]/25"
+                  : "bg-[#121E32] text-[#9AABC4] ring-1 ring-[#243656]"
               )}
             >
               <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -134,7 +134,7 @@ export function AgentChatPanel({
           ))
         )}
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-[#A89878]">
+          <div className="flex items-center gap-2 text-xs text-[#9AABC4]">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             {agentName} is thinking…
           </div>
@@ -143,13 +143,13 @@ export function AgentChatPanel({
 
       <form
         onSubmit={sendMessage}
-        className="flex gap-2 border-t border-[#3d3528] p-3"
+        className="flex gap-2 border-t border-[#243656] p-3"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={`Message ${agentName}…`}
-          className="flex-1 rounded-lg border border-[#3d3528] bg-[#141414] px-3 py-2 text-sm text-[#F5E6C8] placeholder:text-[#A89878]/60"
+          className="flex-1 rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF] placeholder:text-[#9AABC4]/60"
           disabled={loading}
         />
         <Button type="submit" disabled={loading || !input.trim()}>

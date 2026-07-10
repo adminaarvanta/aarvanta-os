@@ -18,9 +18,9 @@ export default async function CompaniesPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">Companies</h2>
-        <p className="text-xs text-[#A89878] sm:text-sm">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Companies</h2>
+        <p className="text-xs text-[#9AABC4] sm:text-sm">
           Create and manage accounts — assign owners, log activities, and track deals.
         </p>
       </header>
@@ -36,31 +36,31 @@ export default async function CompaniesPage() {
               <Link
                 key={company.id}
                 href={`/crm/companies/${company.id}`}
-                className="block rounded-xl border border-[#3d3528] bg-[#101010] p-5 transition-colors hover:border-[#D4AF37]/30"
+                className="block rounded-xl border border-[#243656] bg-[#0D1524] p-5 transition-colors hover:border-[#B8965D]/30"
               >
-                <h3 className="truncate text-lg font-semibold text-[#F5E6C8]">
+                <h3 className="truncate text-lg font-semibold text-[#FFFFFF]">
                   {company.name}
                 </h3>
                 {company.domain && (
-                  <p className="text-sm text-[#A89878]">{company.domain}</p>
+                  <p className="text-sm text-[#9AABC4]">{company.domain}</p>
                 )}
                 <dl className="mt-4 space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <dt className="text-[#A89878]">Owner</dt>
+                    <dt className="text-[#9AABC4]">Owner</dt>
                     <dd>{memberNameByUserId(members, company.ownerId)}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-[#A89878]">Industry</dt>
+                    <dt className="text-[#9AABC4]">Industry</dt>
                     <dd>{company.industry ?? "—"}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-[#A89878]">Revenue</dt>
-                    <dd className="font-medium text-[#D4AF37]">
+                    <dt className="text-[#9AABC4]">Revenue</dt>
+                    <dd className="font-medium text-[#B8965D]">
                       £{company.purchaseTotal.toLocaleString()}
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-[#A89878]">Contacts</dt>
+                    <dt className="text-[#9AABC4]">Contacts</dt>
                     <dd>{companyContacts.length}</dd>
                   </div>
                 </dl>
@@ -69,7 +69,7 @@ export default async function CompaniesPage() {
           })}
         </div>
         {companies.length === 0 && (
-          <p className="text-center text-sm text-[#A89878]">
+          <p className="text-center text-sm text-[#9AABC4]">
             No companies yet. Use &quot;Add company&quot; to create your first account.
           </p>
         )}

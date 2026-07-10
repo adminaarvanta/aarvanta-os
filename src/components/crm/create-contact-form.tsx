@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
 
 const inputClass =
-  "w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8] outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30";
+  "w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF] outline-none focus:border-[#B8965D] focus:ring-1 focus:ring-[#B8965D]/30";
 
 export function CreateContactForm({
   members,
@@ -73,9 +73,9 @@ export function CreateContactForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-xl border border-[#3d3528] bg-[#101010] p-4 space-y-3"
+      className="rounded-xl border border-[#243656] bg-[#0D1524] p-4 space-y-3"
     >
-      <p className="text-sm font-medium text-[#F5E6C8]">New contact</p>
+      <p className="text-sm font-medium text-[#FFFFFF]">New contact</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <input
           value={firstName}

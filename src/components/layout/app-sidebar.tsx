@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Globe2, LogOut, Settings } from "lucide-react";
+import { ChevronRight, LogOut, Settings } from "lucide-react";
+import { BrandLogo } from "@/components/brand/logo";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { AllToolsPanel } from "@/components/layout/all-tools-panel";
 import {
@@ -51,11 +52,9 @@ export function AppSidebar({
       <aside className="relative z-20 hidden h-full w-[260px] shrink-0 flex-col border-r border-border bg-surface md:flex">
         <Link
           href={SIDEBAR_BRAND.href}
-          className="flex h-16 shrink-0 items-center gap-2.5 border-b border-border-subtle px-5 transition-colors hover:bg-surface-muted"
+          className="flex h-16 shrink-0 items-center gap-2 border-b border-border-subtle px-4 transition-colors hover:bg-surface-muted"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-primary">
-            <Globe2 className="h-5 w-5" />
-          </span>
+          <BrandLogo size="sidebar" variant="icon" className="shrink-0" />
           <div className="min-w-0 leading-tight">
             <p className="truncate text-[11px] font-bold tracking-[0.12em] text-foreground">
               {SIDEBAR_BRAND.title}

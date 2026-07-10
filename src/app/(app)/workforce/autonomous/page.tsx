@@ -36,7 +36,7 @@ export default async function AutonomousPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Task queue</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Task queue</h3>
           <CardList
             items={tasks.map((task) => ({
               id: task.id,

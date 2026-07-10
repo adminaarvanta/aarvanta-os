@@ -41,28 +41,28 @@ export function ProjectKanbanBoard({
         return (
           <section
             key={col.id}
-            className="rounded-xl border border-[#3d3528] bg-[#0a0a0a] p-3 min-h-[280px]"
+            className="rounded-xl border border-[#243656] bg-[#040608] p-3 min-h-[280px]"
           >
-            <h3 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-[#A89878]">
+            <h3 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-[#9AABC4]">
               {col.label}{" "}
-              <span className="text-[#D4AF37]">({colTasks.length})</span>
+              <span className="text-[#B8965D]">({colTasks.length})</span>
             </h3>
             <ul className="space-y-2">
               {colTasks.map((task) => (
                 <li
                   key={task.id}
                   className={cn(
-                    "rounded-lg border border-[#3d3528] border-l-4 bg-[#101010] p-3",
+                    "rounded-lg border border-[#243656] border-l-4 bg-[#0D1524] p-3",
                     priorityColors[task.priority]
                   )}
                 >
-                  <p className="text-sm font-medium text-[#F5E6C8]">{task.title}</p>
+                  <p className="text-sm font-medium text-[#FFFFFF]">{task.title}</p>
                   {task.description && (
-                    <p className="mt-1 text-xs text-[#A89878] line-clamp-2">
+                    <p className="mt-1 text-xs text-[#9AABC4] line-clamp-2">
                       {task.description}
                     </p>
                   )}
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-[#A89878]">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-[#9AABC4]">
                     {task.assignee && <span>{task.assignee}</span>}
                     {task.dueDate && <span>Due {task.dueDate}</span>}
                   </div>
@@ -74,7 +74,7 @@ export function ProjectKanbanBoard({
                           key={c.id}
                           type="button"
                           onClick={() => moveTask(task.id, c.id)}
-                          className="rounded border border-[#3d3528] px-2 py-0.5 text-[10px] text-[#A89878] hover:border-[#D4AF37]/40 hover:text-[#F5E6C8]"
+                          className="rounded border border-[#243656] px-2 py-0.5 text-[10px] text-[#9AABC4] hover:border-[#B8965D]/40 hover:text-[#FFFFFF]"
                         >
                           → {c.label}
                         </button>

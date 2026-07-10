@@ -145,7 +145,7 @@ export function DemoTourOverlay() {
       {rect ? (
         <>
           <div
-            className="pointer-events-none fixed rounded-xl ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-transparent transition-all duration-300 ease-out"
+            className="pointer-events-none fixed rounded-xl ring-2 ring-[#B8965D] ring-offset-2 ring-offset-transparent transition-all duration-300 ease-out"
             style={{
               top: rect.top,
               left: rect.left,
@@ -161,29 +161,29 @@ export function DemoTourOverlay() {
       )}
 
       <div
-        className="fixed z-[201] rounded-xl border border-[#3d3528] bg-[#101010] p-5 shadow-2xl shadow-black/50"
+        className="fixed z-[201] rounded-xl border border-[#243656] bg-[#0D1524] p-5 shadow-2xl shadow-black/50"
         style={tooltipPosition(rect, placement)}
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-[#D4AF37]">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-[#B8965D]">
               Step {stepIndex + 1} of {totalSteps}
             </p>
-            <h3 className="mt-1 text-base font-semibold text-[#F5E6C8]">{step.title}</h3>
+            <h3 className="mt-1 text-base font-semibold text-[#FFFFFF]">{step.title}</h3>
           </div>
           <button
             type="button"
             onClick={endTour}
-            className="rounded-lg p-1 text-[#A89878] hover:bg-[#1a1714] hover:text-[#F5E6C8]"
+            className="rounded-lg p-1 text-[#9AABC4] hover:bg-[#162840] hover:text-[#FFFFFF]"
             aria-label="Close tour"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <p className="text-sm leading-relaxed text-[#A89878]">{step.description}</p>
+        <p className="text-sm leading-relaxed text-[#9AABC4]">{step.description}</p>
         {step.tip && (
-          <p className="mt-3 rounded-lg border border-[#D4AF37]/20 bg-[#D4AF37]/5 px-3 py-2 text-xs text-[#D4AF37]">
+          <p className="mt-3 rounded-lg border border-[#B8965D]/20 bg-[#B8965D]/5 px-3 py-2 text-xs text-[#B8965D]">
             {step.tip}
           </p>
         )}
@@ -192,7 +192,7 @@ export function DemoTourOverlay() {
           <button
             type="button"
             onClick={endTour}
-            className="text-xs text-[#A89878] hover:text-[#F5E6C8] hover:underline"
+            className="text-xs text-[#9AABC4] hover:text-[#FFFFFF] hover:underline"
           >
             Skip tour
           </button>
@@ -203,7 +203,7 @@ export function DemoTourOverlay() {
               variant="ghost"
               onClick={prevStep}
               disabled={isFirst}
-              className="text-[#F5E6C8]"
+              className="text-[#FFFFFF]"
             >
               <ChevronLeft className="mr-1 h-4 w-4" />
               Previous
@@ -212,7 +212,7 @@ export function DemoTourOverlay() {
               type="button"
               size="sm"
               onClick={nextStep}
-              className="bg-[#D4AF37] text-black hover:bg-[#F9E076]"
+              className="bg-[#B8965D] text-black hover:bg-[#C9AA72]"
             >
               {isLast ? "Finish" : "Next"}
               {!isLast && <ChevronRight className="ml-1 h-4 w-4" />}
@@ -226,8 +226,8 @@ export function DemoTourOverlay() {
               key={index}
               className={
                 index === stepIndex
-                  ? "h-1.5 w-4 rounded-full bg-[#D4AF37]"
-                  : "h-1.5 w-1.5 rounded-full bg-[#3d3528]"
+                  ? "h-1.5 w-4 rounded-full bg-[#B8965D]"
+                  : "h-1.5 w-1.5 rounded-full bg-[#243656]"
               }
             />
           ))}

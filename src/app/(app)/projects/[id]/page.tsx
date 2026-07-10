@@ -21,20 +21,20 @@ export default async function ProjectDetailPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <Link href="/projects" className="text-xs text-[#D4AF37] hover:underline">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+        <Link href="/projects" className="text-xs text-[#B8965D] hover:underline">
           ← Projects
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">
+          <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">
             {project.name}
           </h2>
-          <Badge className="bg-[#141414] text-[#A89878] ring-[#3d3528]">
+          <Badge className="bg-[#121E32] text-[#9AABC4] ring-[#243656]">
             {project.status.replace("_", " ")}
           </Badge>
         </div>
         {project.description && (
-          <p className="mt-1 text-xs text-[#A89878] sm:text-sm">{project.description}</p>
+          <p className="mt-1 text-xs text-[#9AABC4] sm:text-sm">{project.description}</p>
         )}
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">

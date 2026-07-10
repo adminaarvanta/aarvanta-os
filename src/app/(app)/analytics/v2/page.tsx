@@ -47,7 +47,7 @@ export default async function AnalyticsV2Page() {
     >
       <div className="space-y-8">
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Revenue</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Revenue</h3>
           <StatGrid
             items={[
               { label: "Revenue total", value: formatCurrency(revenueTotal), sub: "Closed revenue" },
@@ -71,7 +71,7 @@ export default async function AnalyticsV2Page() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Sales</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Sales</h3>
           <StatGrid
             items={[
               { label: "Won deals", value: snapshot.revenue.wonDeals, sub: "Closed opportunities" },
@@ -95,7 +95,7 @@ export default async function AnalyticsV2Page() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">Operations</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Operations</h3>
           <StatGrid
             items={[
               { label: "Active projects", value: snapshot.projects.active, sub: "Delivery workload" },
@@ -119,7 +119,7 @@ export default async function AnalyticsV2Page() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#F5E6C8]">AI workforce</h3>
+          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">AI workforce</h3>
           <StatGrid
             items={[
               {

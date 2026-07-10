@@ -17,26 +17,26 @@ export default async function InboxPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#3d3528] bg-[#101010] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#F5E6C8] sm:text-xl">Unified Inbox</h2>
-        <p className="text-xs text-[#A89878] sm:text-sm">
+      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Unified Inbox</h2>
+        <p className="text-xs text-[#9AABC4] sm:text-sm">
           WhatsApp, email, voice, SMS, and website chat in one place.
         </p>
         {showInboundHint && (
-          <p className="mt-2 rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-2 text-xs text-[#F9E076]">
+          <p className="mt-2 rounded-lg border border-[#B8965D]/30 bg-[#B8965D]/10 px-3 py-2 text-xs text-[#C9AA72]">
             Website chat and other inbound channels route to your main workspace. Switch
             back to see those conversations.
           </p>
         )}
       </header>
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain bg-[#101010] md:w-80 md:border-r md:border-[#3d3528]">
+        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain bg-[#0D1524] md:w-80 md:border-r md:border-[#243656]">
           <ConversationList conversations={conversations} />
         </div>
-        <section className="hidden flex-1 flex-col items-center justify-center bg-[#101010] text-[#A89878] md:flex">
+        <section className="hidden flex-1 flex-col items-center justify-center bg-[#0D1524] text-[#9AABC4] md:flex">
           {first ? (
             <div className="text-center space-y-3">
-              <Inbox className="mx-auto h-12 w-12 text-[#D4AF37]/60" />
+              <Inbox className="mx-auto h-12 w-12 text-[#B8965D]/60" />
               <p className="text-sm">Select a conversation or open the latest</p>
               <OpenConversationLink
                 conversationId={first.id}

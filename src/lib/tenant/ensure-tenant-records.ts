@@ -1,3 +1,4 @@
+import { getCompanyLegalName } from "@/lib/config/company-profile";
 import { crmNow } from "@/lib/data/crm-helpers";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import type { SessionContext } from "@/lib/tenant/context";
@@ -19,7 +20,7 @@ export async function ensureTenantRecords(
   if (!organization) {
     organization = await repo.upsertOrganization({
       id: scope.tenantId,
-      name: process.env.ORGANIZATION_NAME?.trim() || "Aarvanta OS",
+      name: getCompanyLegalName(),
       slug: slugFromId(scope.tenantId),
       plan: "growth",
       createdAt: now,

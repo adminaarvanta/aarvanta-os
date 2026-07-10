@@ -74,7 +74,7 @@ export function TaskList({
   }
 
   if (tasks.length === 0) {
-    return <p className="text-sm text-[#A89878]">No tasks yet.</p>;
+    return <p className="text-sm text-[#9AABC4]">No tasks yet.</p>;
   }
 
   function assigneeName(userId?: string) {
@@ -83,7 +83,7 @@ export function TaskList({
   }
 
   return (
-    <ul className="divide-y divide-[#3d3528] rounded-xl border border-[#3d3528] bg-[#101010]">
+    <ul className="divide-y divide-[#243656] rounded-xl border border-[#243656] bg-[#0D1524]">
       {tasks.map((task) => {
         const Icon = statusIcon[task.status];
         return (
@@ -91,7 +91,7 @@ export function TaskList({
             <button
               type="button"
               onClick={() => cycleStatus(task)}
-              className="mt-0.5 text-[#D4AF37] hover:opacity-80"
+              className="mt-0.5 text-[#B8965D] hover:opacity-80"
               title="Click to advance status"
             >
               <Icon className="h-5 w-5" />
@@ -100,22 +100,22 @@ export function TaskList({
               <div>
                 <p
                   className={cn(
-                    "text-sm font-medium text-[#F5E6C8]",
-                    task.status === "done" && "line-through text-[#A89878]"
+                    "text-sm font-medium text-[#FFFFFF]",
+                    task.status === "done" && "line-through text-[#9AABC4]"
                   )}
                 >
                   {task.title}
                 </p>
                 {task.description && (
-                  <p className="mt-0.5 text-xs text-[#A89878]">{task.description}</p>
+                  <p className="mt-0.5 text-xs text-[#9AABC4]">{task.description}</p>
                 )}
-                <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-[#A89878]">
+                <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-[#9AABC4]">
                   <span className={priorityColor[task.priority]}>
                     {task.priority} priority
                   </span>
                   {task.dueDate && <span>Due {task.dueDate}</span>}
                   {task.source === "ai" && (
-                    <span className="text-[#D4AF37]">AI-created</span>
+                    <span className="text-[#B8965D]">AI-created</span>
                   )}
                 </div>
               </div>
@@ -127,7 +127,7 @@ export function TaskList({
                   placeholder="Assign to…"
                 />
                 {task.assignedTo && (
-                  <p className="mt-1 text-[10px] text-[#A89878]">
+                  <p className="mt-1 text-[10px] text-[#9AABC4]">
                     Assigned: {assigneeName(task.assignedTo)}
                   </p>
                 )}

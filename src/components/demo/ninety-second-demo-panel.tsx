@@ -27,9 +27,9 @@ function StepIcon({ status }: { status: "completed" | "skipped" | "failed" | "pe
     return <XCircle className="h-4 w-4 shrink-0 text-red-400" />;
   }
   if (status === "pending") {
-    return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#D4AF37]" />;
+    return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#B8965D]" />;
   }
-  return <Circle className="h-4 w-4 shrink-0 text-[#3d3528]" />;
+  return <Circle className="h-4 w-4 shrink-0 text-[#243656]" />;
 }
 
 export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }) {
@@ -67,17 +67,17 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
     <div
       className={
         compact
-          ? "rounded-xl border border-[#3d3528] bg-[#101010] p-5"
+          ? "rounded-xl border border-[#243656] bg-[#0D1524] p-5"
           : "space-y-8"
       }
     >
-      <div className={compact ? undefined : "rounded-xl border border-[#3d3528] bg-[#101010] p-5 sm:p-6"}>
+      <div className={compact ? undefined : "rounded-xl border border-[#243656] bg-[#0D1524] p-5 sm:p-6"}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-[#F5E6C8] sm:text-base">
+            <h3 className="text-sm font-semibold text-[#FFFFFF] sm:text-base">
               90-Second Business Journey
             </h3>
-            <p className="mt-1 max-w-2xl text-xs text-[#A89878] sm:text-sm">
+            <p className="mt-1 max-w-2xl text-xs text-[#9AABC4] sm:text-sm">
               One click runs the full story: inbound lead → AI sales &amp; marketing →
               human alert → deal won → invoice → portal → project → COO monitoring.
             </p>
@@ -86,7 +86,7 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
             type="button"
             onClick={runDemo}
             disabled={loading}
-            className="bg-[#D4AF37] text-black hover:bg-[#F9E076]"
+            className="bg-[#B8965D] text-black hover:bg-[#C9AA72]"
           >
             {loading ? (
               <>
@@ -103,15 +103,15 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
         </div>
 
         {!result && !loading && (
-          <ol className="mt-5 space-y-2 border-t border-[#3d3528] pt-4">
+          <ol className="mt-5 space-y-2 border-t border-[#243656] pt-4">
             {FLOW.map((step, index) => (
-              <li key={step} className="flex items-center gap-2 text-sm text-[#A89878]">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#3d3528] text-[10px] text-[#D4AF37]">
+              <li key={step} className="flex items-center gap-2 text-sm text-[#9AABC4]">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#243656] text-[10px] text-[#B8965D]">
                   {index + 1}
                 </span>
                 {step}
                 {index < FLOW.length - 1 && (
-                  <span className="ml-auto hidden text-[#3d3528] sm:inline">↓</span>
+                  <span className="ml-auto hidden text-[#243656] sm:inline">↓</span>
                 )}
               </li>
             ))}
@@ -143,19 +143,19 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
             {result.steps.map((step) => (
               <li
                 key={step.id}
-                className="rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-4 py-3"
+                className="rounded-lg border border-[#243656] bg-[#040608] px-4 py-3"
               >
                 <div className="flex items-start gap-3">
                   <StepIcon
                     status={loading ? "pending" : step.status}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#F5E6C8]">{step.label}</p>
-                    <p className="mt-1 text-xs text-[#A89878]">{step.summary}</p>
+                    <p className="text-sm font-medium text-[#FFFFFF]">{step.label}</p>
+                    <p className="mt-1 text-xs text-[#9AABC4]">{step.summary}</p>
                     {step.href && (
                       <Link
                         href={step.href}
-                        className="mt-2 inline-block text-xs font-medium text-[#D4AF37] hover:underline"
+                        className="mt-2 inline-block text-xs font-medium text-[#B8965D] hover:underline"
                       >
                         Open →
                       </Link>
@@ -167,13 +167,13 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
           </ol>
 
           {result.ok && result.links && (
-            <div className="flex flex-wrap gap-2 border-t border-[#3d3528] pt-4">
+            <div className="flex flex-wrap gap-2 border-t border-[#243656] pt-4">
               {Object.entries(result.links).map(([key, href]) =>
                 href ? (
                   <Link
                     key={key}
                     href={href}
-                    className="rounded-lg border border-[#3d3528] px-3 py-1.5 text-xs text-[#F5E6C8] hover:border-[#D4AF37]/40"
+                    className="rounded-lg border border-[#243656] px-3 py-1.5 text-xs text-[#FFFFFF] hover:border-[#B8965D]/40"
                   >
                     {key.replace(/_/g, " ")}
                   </Link>

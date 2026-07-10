@@ -33,7 +33,7 @@ export default async function MemoryPage() {
 
         {ORDERED_LAYERS.map((layer) => (
           <section key={layer}>
-            <h3 className="mb-3 text-sm font-semibold capitalize text-[#F5E6C8]">
+            <h3 className="mb-3 text-sm font-semibold capitalize text-[#FFFFFF]">
               {layer} layer ({byLayer[layer]?.length ?? 0})
             </h3>
             <CardList

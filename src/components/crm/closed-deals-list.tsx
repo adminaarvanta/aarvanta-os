@@ -32,35 +32,35 @@ export function ClosedDealsList({
   }
 
   return (
-    <section className="rounded-xl border border-[#3d3528] bg-[#101010]">
+    <section className="rounded-xl border border-[#243656] bg-[#0D1524]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-4 py-3 text-left"
       >
-        <span className="text-sm font-semibold text-[#F5E6C8]">
+        <span className="text-sm font-semibold text-[#FFFFFF]">
           Closed deals ({closed.length})
         </span>
-        <span className="text-xs text-[#A89878]">{open ? "Hide" : "Show"}</span>
+        <span className="text-xs text-[#9AABC4]">{open ? "Hide" : "Show"}</span>
       </button>
       {open && (
-        <ul className="divide-y divide-[#3d3528] border-t border-[#3d3528]">
+        <ul className="divide-y divide-[#243656] border-t border-[#243656]">
           {closed.map((deal) => (
             <li key={deal.id}>
               <Link
                 href={`/crm/deals/${deal.id}`}
-                className="flex flex-col gap-1 px-4 py-3 text-sm transition-colors hover:bg-[#141414] sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-1 px-4 py-3 text-sm transition-colors hover:bg-[#121E32] sm:flex-row sm:items-center sm:justify-between"
               >
               <div>
-                <p className="font-medium text-[#F5E6C8]">{deal.title}</p>
+                <p className="font-medium text-[#FFFFFF]">{deal.title}</p>
                 {contactName(deal.contactId) && (
-                  <p className="text-xs text-[#A89878]">
+                  <p className="text-xs text-[#9AABC4]">
                     {contactName(deal.contactId)}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <p className="font-medium text-[#D4AF37]">
+                <p className="font-medium text-[#B8965D]">
                   {formatCurrency(deal.value, deal.currency)}
                 </p>
                 <p

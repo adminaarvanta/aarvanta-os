@@ -12,7 +12,7 @@ const statusColors: Record<WorkflowRun["status"], string> = {
 
 export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {
   if (!runs.length) {
-    return <p className="text-sm text-[#A89878]">No runs yet.</p>;
+    return <p className="text-sm text-[#9AABC4]">No runs yet.</p>;
   }
 
   return (
@@ -21,11 +21,11 @@ export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {
         <li key={run.id}>
           <Link
             href={`/workflows/runs/${run.id}`}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#3d3528] bg-[#141414] px-4 py-3 hover:border-[#D4AF37]/40"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#243656] bg-[#121E32] px-4 py-3 hover:border-[#B8965D]/40"
           >
             <div>
-              <p className="text-sm font-medium text-[#F5E6C8]">{run.workflowName}</p>
-              <p className="text-[10px] text-[#A89878]">
+              <p className="text-sm font-medium text-[#FFFFFF]">{run.workflowName}</p>
+              <p className="text-[10px] text-[#9AABC4]">
                 {formatRelative(run.createdAt)}
                 {run.context.contactName ? ` · ${run.context.contactName}` : ""}
               </p>

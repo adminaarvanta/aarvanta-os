@@ -49,7 +49,7 @@ function proposalHtml(proposal: Parameters<typeof proposalDocument>[0]) {
   <title>${proposal.title}</title>
   <style>
     body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; color: #111; line-height: 1.6; }
-    h1 { color: #996515; }
+    h1 { color: #94784A; }
     hr { border: none; border-top: 1px solid #ddd; margin: 1.5rem 0; }
   </style>
 </head>

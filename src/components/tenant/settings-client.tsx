@@ -51,11 +51,11 @@ type SettingsClientProps = {
 };
 
 const roleBadgeClass: Record<MemberRole, string> = {
-  owner: "bg-[#D4AF37]/20 text-[#F9E076] ring-[#D4AF37]/40",
+  owner: "bg-[#B8965D]/20 text-[#C9AA72] ring-[#B8965D]/40",
   admin: "bg-blue-950/60 text-blue-300 ring-blue-700/50",
   manager: "bg-purple-950/60 text-purple-300 ring-purple-700/50",
-  member: "bg-[#141414] text-[#A89878] ring-[#3d3528]",
-  guest: "bg-[#141414] text-[#A89878]/70 ring-[#3d3528]",
+  member: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
+  guest: "bg-[#121E32] text-[#9AABC4]/70 ring-[#243656]",
 };
 
 export function SettingsClient({
@@ -207,7 +207,7 @@ export function SettingsClient({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {message && (
-        <p className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-sm text-[#F9E076]">
+        <p className="rounded-lg border border-[#B8965D]/30 bg-[#B8965D]/10 px-4 py-2 text-sm text-[#C9AA72]">
           {message}
         </p>
       )}

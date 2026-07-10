@@ -16,14 +16,18 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Aarvanta OS — Hire Your First AI Workforce",
-    template: "%s | Aarvanta OS",
+    default: "Aarvanta Business OS — Hire Your First AI Workforce",
+    template: "%s | Aarvanta Business OS",
   },
   description:
     "Run sales, marketing, operations and customer support from one dashboard. CRM, projects, AI employees, and automation for SMEs.",
   icons: {
-    icon: "/aarvanta-logo.png",
-    apple: "/aarvanta-logo.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
 };
 

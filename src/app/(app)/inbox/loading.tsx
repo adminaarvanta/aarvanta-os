@@ -7,8 +7,8 @@ export default function InboxLoading() {
       <span className="sr-only">Loading inbox…</span>
       <PageHeaderLoading />
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain border-r border-[#3d3528] bg-[#101010] md:w-80">
-          <ul className="divide-y divide-[#3d3528]/80">
+        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain border-r border-[#243656] bg-[#0D1524] md:w-80">
+          <ul className="divide-y divide-[#243656]/80">
             {Array.from({ length: 8 }).map((_, i) => (
               <li key={i} className="px-4 py-3.5 space-y-2">
                 <Skeleton className="h-4 w-32" />
@@ -18,7 +18,7 @@ export default function InboxLoading() {
             ))}
           </ul>
         </div>
-        <section className="hidden flex-1 items-center justify-center bg-[#0a0a0a] md:flex">
+        <section className="hidden flex-1 items-center justify-center bg-[#040608] md:flex">
           <Skeleton className="h-4 w-48" />
         </section>
       </div>

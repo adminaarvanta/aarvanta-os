@@ -110,39 +110,39 @@ export function LaunchClient() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-[#3d3528] bg-[#101010] p-4">
-        <p className="text-sm font-medium text-[#F5E6C8]">
+      <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+        <p className="text-sm font-medium text-[#FFFFFF]">
           Step 1 — Express your business intent
         </p>
-        <p className="mt-1 text-xs text-[#A89878]">
+        <p className="mt-1 text-xs text-[#9AABC4]">
           Launch OS converts your idea into a fully configured operating system — no manual setup.
         </p>
         <form onSubmit={onInterpret} className="mt-4 space-y-3">
-          <label className="block space-y-1 text-xs text-[#A89878]">
+          <label className="block space-y-1 text-xs text-[#9AABC4]">
             Business idea
             <textarea
               value={businessIdea}
               onChange={(e) => setBusinessIdea(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
               placeholder="Sell handmade candles online..."
             />
           </label>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className="space-y-1 text-xs text-[#A89878]">
+            <label className="space-y-1 text-xs text-[#9AABC4]">
               Country base
               <input
                 value={countryBase}
                 onChange={(e) => setCountryBase(e.target.value)}
-                className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+                className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
               />
             </label>
-            <label className="space-y-1 text-xs text-[#A89878]">
+            <label className="space-y-1 text-xs text-[#9AABC4]">
               Scale
               <select
                 value={scale}
                 onChange={(e) => setScale(e.target.value as (typeof SCALES)[number])}
-                className="w-full rounded-lg border border-[#3d3528] bg-[#0a0a0a] px-3 py-2 text-sm text-[#F5E6C8]"
+                className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
               >
                 {SCALES.map((s) => (
                   <option key={s} value={s}>
@@ -151,7 +151,7 @@ export function LaunchClient() {
                 ))}
               </select>
             </label>
-            <div className="space-y-1 text-xs text-[#A89878]">
+            <div className="space-y-1 text-xs text-[#9AABC4]">
               Channels
               <div className="flex flex-wrap gap-2 pt-1">
                 {CHANNELS.map((ch) => (
@@ -161,8 +161,8 @@ export function LaunchClient() {
                     onClick={() => toggleChannel(ch)}
                     className={`rounded-full border px-2 py-0.5 text-[11px] ${
                       channels.includes(ch)
-                        ? "border-[#D4AF37] text-[#F9E076]"
-                        : "border-[#3d3528] text-[#A89878]"
+                        ? "border-[#B8965D] text-[#C9AA72]"
+                        : "border-[#243656] text-[#9AABC4]"
                     }`}
                   >
                     {ch}
@@ -179,9 +179,9 @@ export function LaunchClient() {
       </section>
 
       {session && (
-        <section className="space-y-4 rounded-xl border border-[#D4AF37]/30 bg-[#101010] p-4">
+        <section className="space-y-4 rounded-xl border border-[#B8965D]/30 bg-[#0D1524] p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-medium text-[#F5E6C8]">
+            <p className="text-sm font-medium text-[#FFFFFF]">
               Step 2 — Review generated system
             </p>
             <StatusPill
@@ -196,13 +196,13 @@ export function LaunchClient() {
               {session.status}
             </StatusPill>
             {usedAi && (
-              <span className="text-[10px] text-[#A89878]">AI-enhanced</span>
+              <span className="text-[10px] text-[#9AABC4]">AI-enhanced</span>
             )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-[#3d3528] p-3">
-              <p className="text-xs font-medium text-[#D4AF37]">Brand</p>
+            <div className="rounded-lg border border-[#243656] p-3">
+              <p className="text-xs font-medium text-[#B8965D]">Brand</p>
               <div className="mt-2 flex items-center gap-3">
                 {session.commercial?.branding.logoDataUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -213,35 +213,35 @@ export function LaunchClient() {
                   />
                 ) : null}
                 <div>
-                  <p className="text-sm text-[#F5E6C8]">{session.brandName}</p>
-                  <p className="text-[10px] text-[#A89878]">
+                  <p className="text-sm text-[#FFFFFF]">{session.brandName}</p>
+                  <p className="text-[10px] text-[#9AABC4]">
                     {session.commercial?.branding.tagline}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="rounded-lg border border-[#3d3528] p-3">
-              <p className="text-xs font-medium text-[#D4AF37]">Industry</p>
-              <p className="mt-1 text-sm text-[#F5E6C8]">
+            <div className="rounded-lg border border-[#243656] p-3">
+              <p className="text-xs font-medium text-[#B8965D]">Industry</p>
+              <p className="mt-1 text-sm text-[#FFFFFF]">
                 {session.industry?.primaryIndustry} — {session.industry?.hybridModel}
               </p>
-              <p className="text-[10px] text-[#A89878]">
+              <p className="text-[10px] text-[#9AABC4]">
                 Confidence {Math.round((session.industry?.confidence ?? 0) * 100)}%
               </p>
             </div>
           </div>
 
           {session.commercial?.domainSuggestions?.length ? (
-            <div className="rounded-lg border border-[#3d3528] p-3">
-              <p className="text-xs font-medium text-[#D4AF37]">Domain suggestions</p>
+            <div className="rounded-lg border border-[#243656] p-3">
+              <p className="text-xs font-medium text-[#B8965D]">Domain suggestions</p>
               <ul className="mt-2 space-y-1">
                 {session.commercial.domainSuggestions.map((d) => (
                   <li key={d.domain} className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="font-mono text-[#F5E6C8]">{d.domain}</span>
+                    <span className="font-mono text-[#FFFFFF]">{d.domain}</span>
                     <StatusPill variant={d.available ? "success" : "default"}>
                       {d.available ? "recommended" : "alt"}
                     </StatusPill>
-                    <span className="text-[#A89878]">{d.note}</span>
+                    <span className="text-[#9AABC4]">{d.note}</span>
                   </li>
                 ))}
               </ul>
@@ -249,25 +249,25 @@ export function LaunchClient() {
           ) : null}
 
           {session.commercial?.legalDocs?.length ? (
-            <div className="rounded-lg border border-[#3d3528] p-3">
-              <p className="text-xs font-medium text-[#D4AF37]">Legal documents (draft)</p>
-              <ul className="mt-2 space-y-1 text-xs text-[#A89878]">
+            <div className="rounded-lg border border-[#243656] p-3">
+              <p className="text-xs font-medium text-[#B8965D]">Legal documents (draft)</p>
+              <ul className="mt-2 space-y-1 text-xs text-[#9AABC4]">
                 {session.commercial.legalDocs.map((doc) => (
                   <li key={doc.type}>· {doc.title}</li>
                 ))}
               </ul>
-              <p className="mt-2 text-[10px] text-[#6B5D48]">
+              <p className="mt-2 text-[10px] text-[#6B7F9E]">
                 Uploaded to Knowledge Hub on deploy — review with legal counsel.
               </p>
             </div>
           ) : null}
 
           {session.commercial?.storeSlug ? (
-            <div className="rounded-lg border border-[#3d3528] p-3">
-              <p className="text-xs font-medium text-[#D4AF37]">Store preview</p>
-              <p className="mt-1 text-xs text-[#A89878]">
+            <div className="rounded-lg border border-[#243656] p-3">
+              <p className="text-xs font-medium text-[#B8965D]">Store preview</p>
+              <p className="mt-1 text-xs text-[#9AABC4]">
                 Public URL after deploy:{" "}
-                <span className="font-mono text-[#F5E6C8]">
+                <span className="font-mono text-[#FFFFFF]">
                   /store/{session.commercial.storeSlug}
                 </span>
               </p>
@@ -275,15 +275,15 @@ export function LaunchClient() {
           ) : null}
 
           {session.businessModel && (
-            <div className="rounded-lg border border-[#3d3528] p-3">
-              <p className="text-xs font-medium text-[#D4AF37]">AI business designer</p>
-              <p className="mt-1 text-sm text-[#F5E6C8]">
+            <div className="rounded-lg border border-[#243656] p-3">
+              <p className="text-xs font-medium text-[#B8965D]">AI business designer</p>
+              <p className="mt-1 text-sm text-[#FFFFFF]">
                 {session.businessModel.aiInsight}
               </p>
-              <p className="mt-2 text-xs text-[#A89878]">
+              <p className="mt-2 text-xs text-[#9AABC4]">
                 Revenue: {session.businessModel.revenueStreams.join(" · ")}
               </p>
-              <p className="text-xs text-[#A89878]">
+              <p className="text-xs text-[#9AABC4]">
                 Pricing: {session.businessModel.pricingModel}
               </p>
             </div>
@@ -291,14 +291,14 @@ export function LaunchClient() {
 
           {session.buddies && session.buddies.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-medium text-[#D4AF37]">AI Buddies assigned</p>
+              <p className="mb-2 text-xs font-medium text-[#B8965D]">AI Buddies assigned</p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {session.buddies.map((b) => (
                   <li
                     key={b.buddyId}
-                    className="rounded-lg border border-[#3d3528] px-3 py-2 text-xs text-[#A89878]"
+                    className="rounded-lg border border-[#243656] px-3 py-2 text-xs text-[#9AABC4]"
                   >
-                    <span className="font-medium text-[#F5E6C8]">{b.name}</span>
+                    <span className="font-medium text-[#FFFFFF]">{b.name}</span>
                     <p className="mt-0.5">{b.reason}</p>
                   </li>
                 ))}
@@ -312,34 +312,34 @@ export function LaunchClient() {
             </Button>
           ) : (
             <div className="space-y-3">
-              <div className="rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/5 p-4">
-                <p className="text-sm font-semibold text-[#F9E076]">Your business is live</p>
-                <p className="mt-1 text-xs text-[#A89878]">
+              <div className="rounded-lg border border-[#B8965D]/40 bg-[#B8965D]/5 p-4">
+                <p className="text-sm font-semibold text-[#C9AA72]">Your business is live</p>
+                <p className="mt-1 text-xs text-[#9AABC4]">
                   CRM, finance, workflows, legal docs, store, and AI buddies are active.
                 </p>
                 {session.commercial?.storeSlug ? (
                   <Link
                     href={`/store/${session.commercial.storeSlug}`}
                     target="_blank"
-                    className="mt-3 inline-block text-sm font-medium text-[#D4AF37] hover:underline"
+                    className="mt-3 inline-block text-sm font-medium text-[#B8965D] hover:underline"
                   >
                     Open live store →
                   </Link>
                 ) : null}
               </div>
-              <p className="text-xs font-medium text-[#D4AF37]">Deployed artifacts</p>
+              <p className="text-xs font-medium text-[#B8965D]">Deployed artifacts</p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {session.artifacts?.map((a) => (
                   <li key={`${a.kind}-${a.id}`}>
                     {a.href ? (
                       <Link
                         href={a.href}
-                        className="block rounded-lg border border-[#3d3528] px-3 py-2 text-xs text-[#F5E6C8] hover:border-[#D4AF37]/40"
+                        className="block rounded-lg border border-[#243656] px-3 py-2 text-xs text-[#FFFFFF] hover:border-[#B8965D]/40"
                       >
                         {a.label}
                       </Link>
                     ) : (
-                      <span className="block rounded-lg border border-[#3d3528] px-3 py-2 text-xs text-[#A89878]">
+                      <span className="block rounded-lg border border-[#243656] px-3 py-2 text-xs text-[#9AABC4]">
                         {a.label}
                       </span>
                     )}

@@ -4,10 +4,10 @@ import { COMPANY } from "@/lib/marketing/content";
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
-      <h1 className="text-3xl font-bold text-[#F5E6C8] sm:text-4xl">About Aarvanta OS</h1>
-      <p className="mt-2 text-sm text-[#D4AF37]">{COMPANY.name}</p>
+      <h1 className="text-3xl font-bold text-[#FFFFFF] sm:text-4xl">About Aarvanta OS</h1>
+      <p className="mt-2 text-sm text-[#B8965D]">{COMPANY.name}</p>
 
-      <div className="mt-10 space-y-6 text-sm leading-relaxed text-[#A89878]">
+      <div className="mt-10 space-y-6 text-sm leading-relaxed text-[#9AABC4]">
         <p>
           Aarvanta OS is built by {COMPANY.name} with a single mission: create the
           world&apos;s first AI Workforce &amp; Business Operating System — one
@@ -27,9 +27,9 @@ export default function AboutPage() {
         </p>
       </div>
 
-      <section className="mt-12 rounded-xl border border-[#3d3528] bg-[#101010] p-6">
-        <h2 className="text-sm font-semibold text-[#F5E6C8]">What we believe</h2>
-        <ul className="mt-4 space-y-3 text-sm text-[#A89878]">
+      <section className="mt-12 rounded-xl border border-[#243656] bg-[#0D1524] p-6">
+        <h2 className="text-sm font-semibold text-[#FFFFFF]">What we believe</h2>
+        <ul className="mt-4 space-y-3 text-sm text-[#9AABC4]">
           <li>AI employees should be managed like real team members.</li>
           <li>Company knowledge should be searchable, cited, and actionable.</li>
           <li>Founders should control their business through a single command center.</li>
@@ -39,7 +39,7 @@ export default function AboutPage() {
 
       <Link
         href="/inbox"
-        className="mt-10 inline-flex rounded-lg bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#F9E076]"
+        className="mt-10 inline-flex rounded-lg bg-[#B8965D] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#C9AA72]"
       >
         Explore the demo
       </Link>

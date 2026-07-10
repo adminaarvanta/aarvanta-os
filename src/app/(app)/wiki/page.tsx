@@ -24,7 +24,7 @@ export default async function WikiPage() {
       <div className="space-y-8">
         {SECTION_ORDER.map((section) => (
           <section key={section}>
-            <h3 className="mb-3 text-sm font-semibold capitalize text-[#F5E6C8]">
+            <h3 className="mb-3 text-sm font-semibold capitalize text-[#FFFFFF]">
               {section.replaceAll("_", " ")} ({bySection[section]?.length ?? 0})
             </h3>
             <CardList

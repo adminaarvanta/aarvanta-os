@@ -1,4 +1,5 @@
 import { getAiConfig } from "@/lib/ai/config";
+import { COMPANY_PROFILE } from "@/lib/config/company-profile";
 import { crmNow } from "@/lib/data/crm-helpers";
 import {
   loadWorkspaceSettingsRecord,
@@ -14,8 +15,13 @@ export function buildDefaultWorkspaceSettings(workspaceId: string): WorkspaceSet
   return {
     workspaceId,
     inboxAutomationEnabled: true,
+    hrApproverEmail: COMPANY_PROFILE.hrApproverEmail,
     aiAutoSummarize: ai.autoSummarize,
     crmQualificationThreshold: ai.crmQualificationThreshold,
+    defaultCurrency: COMPANY_PROFILE.currency,
+    businessName: COMPANY_PROFILE.legalName,
+    countryCode: COMPANY_PROFILE.countryCode,
+    industryProfileId: COMPANY_PROFILE.defaultIndustryProfileId,
     updatedAt: crmNow(),
   };
 }
