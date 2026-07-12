@@ -330,6 +330,15 @@ export const SPEC_PHASES: Array<{
     label: "AGEB 2.0 — Global Blueprint",
     modules: [
       {
+        id: "build-os",
+        phase: "siteos-1",
+        name: "Build OS",
+        href: "/build",
+        status: "partial",
+        summary:
+          "Site preferences wizard, AI site plan preview, approve-before-generate flow. Generation pipeline next.",
+      },
+      {
         id: "launch-os",
         phase: 11,
         name: "Launch OS",

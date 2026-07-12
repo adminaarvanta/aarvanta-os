@@ -8,6 +8,7 @@ import {
   CreditCard,
   FileText,
   Globe,
+  Hammer,
   Inbox,
   Kanban,
   Landmark,
@@ -111,6 +112,15 @@ export const CORE_MODULES: PlatformModule[] = [
     icon: Workflow,
     group: "Core",
     phase: "1c",
+  },
+  {
+    id: "build",
+    label: "Build OS",
+    description: "Site preferences → AI plan → approve before generation",
+    href: "/build",
+    icon: Hammer,
+    group: "Core",
+    phase: "siteos-1",
   },
   {
     id: "launch",
