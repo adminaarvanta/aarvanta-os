@@ -5,6 +5,7 @@ import {
   generateSitePlan,
   updateSitePreferences,
 } from "@/lib/site-builder/orchestrate";
+import { normalizeSitePreferences } from "@/lib/site-builder/normalize-preferences";
 import { sitePreferencesSchema } from "@/lib/site-builder/schemas";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -39,10 +40,7 @@ export async function POST(req: Request, context: RouteContext) {
     );
   }
 
-  const preferences = {
-    ...parsed.data,
-    referenceUrl: parsed.data.referenceUrl || undefined,
-  };
+  const preferences = normalizeSitePreferences(parsed.data);
 
   const updated = updateSitePreferences(job, preferences);
   const planned = await generateSitePlan(updated);

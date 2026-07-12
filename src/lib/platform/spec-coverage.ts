@@ -336,7 +336,7 @@ export const SPEC_PHASES: Array<{
         href: "/build",
         status: "partial",
         summary:
-          "Site preferences wizard, AI site plan preview, approve-before-generate flow. Generation pipeline next.",
+          "Preferences wizard with theme presets, reference screenshots, custom prompt, feature picker, Vercel deploy notes, and AI plan approval.",
       },
       {
         id: "launch-os",

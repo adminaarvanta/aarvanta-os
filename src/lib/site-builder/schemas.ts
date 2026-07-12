@@ -5,6 +5,13 @@ export const siteTypeSchema = z.enum(["landing", "business", "store", "portfolio
 export const siteDesignStyleSchema = z.enum(["minimal", "modern", "bold", "classic"]);
 export const siteColorMoodSchema = z.enum(["warm", "cool", "neutral", "vibrant"]);
 export const siteCtaGoalSchema = z.enum(["book_call", "buy", "subscribe", "contact"]);
+export const siteThemePresetSchema = z.enum([
+  "gold_navy",
+  "minimal_light",
+  "bold_dark",
+  "ocean_cool",
+  "sunset_warm",
+]);
 
 export const sitePageOptionSchema = z.enum([
   "home",
@@ -26,7 +33,26 @@ export const siteFeatureOptionSchema = z.enum([
   "ecommerce",
   "testimonials",
   "newsletter",
+  "analytics",
+  "seo_pack",
+  "booking",
+  "live_chat",
 ]);
+
+export const siteReferenceScreenshotSchema = z.object({
+  id: z.string(),
+  name: z.string().max(120),
+  dataUrl: z.string().startsWith("data:image/").max(2_500_000),
+  uploadedAt: z.string(),
+});
+
+export const siteDeploymentConfigSchema = z.object({
+  hostingProvider: z.enum(["vercel", "self_hosted"]).default("vercel"),
+  projectName: z.string().max(80).optional(),
+  customDomain: z.string().max(120).optional(),
+  vercelTeam: z.string().max(80).optional(),
+  autoDeployOnApprove: z.boolean().optional(),
+});
 
 export const sitePreferencesSchema = z.object({
   businessName: z.string().min(2).max(80),
@@ -37,11 +63,15 @@ export const sitePreferencesSchema = z.object({
   siteType: siteTypeSchema.default("business"),
   designStyle: siteDesignStyleSchema.default("modern"),
   colorMood: siteColorMoodSchema.default("neutral"),
+  themePreset: siteThemePresetSchema.default("gold_navy"),
   pages: z.array(sitePageOptionSchema).min(1).default(["home", "about", "contact"]),
   features: z.array(siteFeatureOptionSchema).default(["contact_form"]),
   ctaGoal: siteCtaGoalSchema.default("contact"),
   keyMessages: z.string().max(500).optional(),
-  referenceUrl: z.string().url().optional().or(z.literal("")),
+  customPrompt: z.string().max(2000).optional(),
+  referenceUrl: z.union([z.string().url(), z.literal("")]).optional(),
+  referenceScreenshots: z.array(siteReferenceScreenshotSchema).max(3).optional(),
+  deployment: siteDeploymentConfigSchema.default({ hostingProvider: "vercel" }),
 });
 
 export const sitePlanSectionSchema = z.object({
@@ -62,8 +92,10 @@ export const sitePlanSchema = z.object({
   slug: z.string(),
   summary: z.string(),
   theme: z.object({
+    presetId: siteThemePresetSchema,
     primaryColor: z.string(),
     accentColor: z.string(),
+    backgroundColor: z.string(),
     fontStyle: z.string(),
     styleNotes: z.string(),
   }),
@@ -74,4 +106,16 @@ export const sitePlanSchema = z.object({
     })
   ),
   pages: z.array(sitePlanPageSchema),
+  deployment: z.object({
+    hostingProvider: z.enum(["vercel", "self_hosted"]),
+    projectName: z.string().optional(),
+    customDomain: z.string().optional(),
+    previewUrl: z.string(),
+    vercelNotes: z.array(
+      z.object({
+        title: z.string(),
+        body: z.string(),
+      })
+    ),
+  }),
 });

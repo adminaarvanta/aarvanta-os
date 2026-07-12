@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,6 +8,8 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
+
+const themeInitScript = `(function(){try{var t=localStorage.getItem("aarvanta-theme");document.documentElement.classList.add(t==="light"?"light":"dark");}catch(e){document.documentElement.classList.add("dark");}})();`;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -37,16 +40,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} h-full dark`}
-      style={{ colorScheme: "dark", backgroundColor: "#000000" }}
-    >
-      <body
-        className="h-full min-h-full overflow-x-hidden bg-black text-white antialiased"
-        style={{ backgroundColor: "#000000", color: "#ffffff" }}
-      >
-        {children}
+    <html lang="en" className={`${inter.variable} h-full dark`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="h-full min-h-full overflow-x-hidden bg-background text-foreground antialiased">
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

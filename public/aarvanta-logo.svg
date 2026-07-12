@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 72" fill="none" role="img" aria-label="Aarvanta Business OS">
+  <circle cx="36" cy="36" r="28" stroke="#B8965D" stroke-width="2.5" fill="#0D1524"/>
+  <path d="M36 18 L48 42 L24 42 Z" fill="#B8965D"/>
+  <text x="76" y="34" fill="#FFFFFF" font-family="system-ui,sans-serif" font-size="22" font-weight="700" letter-spacing="3">AARVANTA</text>
+  <text x="76" y="54" fill="#9AABC4" font-family="system-ui,sans-serif" font-size="11" font-weight="600" letter-spacing="2">BUSINESS OS</text>
+</svg>

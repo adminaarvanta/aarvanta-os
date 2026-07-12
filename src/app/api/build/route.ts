@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
 import { createSiteBuildJob, generateSitePlan } from "@/lib/site-builder/orchestrate";
+import { normalizeSitePreferences } from "@/lib/site-builder/normalize-preferences";
 import { sitePreferencesSchema } from "@/lib/site-builder/schemas";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -36,10 +37,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const preferences = {
-    ...parsed.data,
-    referenceUrl: parsed.data.referenceUrl || undefined,
-  };
+  const preferences = normalizeSitePreferences(parsed.data);
 
   const draft = createSiteBuildJob(preferences, scope);
   const planned = await generateSitePlan(draft);

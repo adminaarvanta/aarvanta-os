@@ -1,6 +1,8 @@
 import { detectIndustryFromText } from "@/lib/ageb/industries";
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
+import { getThemePreset } from "@/lib/site-builder/theme-presets";
+import { buildVercelDeployNotes } from "@/lib/site-builder/vercel-deploy-notes";
 import type { SitePlan, SitePreferences } from "@/types/site-builder";
 
 const PAGE_LABELS: Record<string, string> = {
@@ -14,32 +16,6 @@ const PAGE_LABELS: Record<string, string> = {
   faq: "FAQ",
   blog: "Blog",
   contact: "Contact",
-};
-
-const COLOR_MOODS: Record<
-  SitePreferences["colorMood"],
-  { primary: string; accent: string; notes: string }
-> = {
-  warm: {
-    primary: "#B8965D",
-    accent: "#C9AA72",
-    notes: "Warm gold accents with dark backgrounds for premium feel.",
-  },
-  cool: {
-    primary: "#3B82F6",
-    accent: "#60A5FA",
-    notes: "Cool blue palette conveying trust and professionalism.",
-  },
-  neutral: {
-    primary: "#64748B",
-    accent: "#94A3B8",
-    notes: "Balanced neutral palette suitable for most industries.",
-  },
-  vibrant: {
-    primary: "#8B5CF6",
-    accent: "#A78BFA",
-    notes: "Vibrant purple accents for bold, modern brands.",
-  },
 };
 
 function slugify(name: string): string {
@@ -188,7 +164,8 @@ function defaultSectionsForPage(
             ? "Lead capture form with email and message fields."
             : "Contact details and location information.",
         },
-        ...(preferences.features.includes("chat_widget")
+        ...(preferences.features.includes("chat_widget") ||
+        preferences.features.includes("live_chat")
           ? [
               {
                 type: "chat",
@@ -209,9 +186,34 @@ function defaultSectionsForPage(
   }
 }
 
+function buildDeploymentPlan(preferences: SitePreferences, slug: string): SitePlan["deployment"] {
+  const projectName = preferences.deployment.projectName?.trim() || slug;
+  const customDomain = preferences.deployment.customDomain?.trim();
+  const previewUrl =
+    preferences.deployment.hostingProvider === "vercel"
+      ? `https://${projectName}.vercel.app`
+      : `/sites/${slug}`;
+
+  return {
+    hostingProvider: preferences.deployment.hostingProvider,
+    projectName,
+    customDomain: customDomain || undefined,
+    previewUrl: customDomain ? `https://${customDomain}` : previewUrl,
+    vercelNotes:
+      preferences.deployment.hostingProvider === "vercel"
+        ? buildVercelDeployNotes({ ...preferences.deployment, projectName })
+        : [
+            {
+              title: "Self-hosted deployment",
+              body: "Export the generated site bundle and deploy to your own server or CDN. Configure DNS at your registrar to point to your host.",
+            },
+          ],
+  };
+}
+
 function heuristicPlan(preferences: SitePreferences): SitePlan {
   const { profile } = detectIndustryFromText(preferences.businessIdea);
-  const mood = COLOR_MOODS[preferences.colorMood];
+  const preset = getThemePreset(preferences.themePreset);
   const slug = slugify(preferences.businessName) || "my-site";
 
   const orderedPages = ["home", ...preferences.pages.filter((p) => p !== "home")];
@@ -232,23 +234,48 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
     slug: pageKey === "home" ? "" : pageKey,
   }));
 
+  const screenshotNote = preferences.referenceScreenshots?.length
+    ? ` Reference screenshots (${preferences.referenceScreenshots.length}) inform layout direction.`
+    : "";
+
+  const promptNote = preferences.customPrompt?.trim()
+    ? ` Custom brief: ${preferences.customPrompt.trim().slice(0, 160)}`
+    : "";
+
   return {
     siteName: preferences.businessName,
     slug,
-    summary: `A ${preferences.designStyle} ${preferences.siteType} site for ${preferences.businessName} targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.`,
+    summary: `A ${preset.label} themed ${preferences.siteType} site for ${preferences.businessName} targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.${screenshotNote}${promptNote}`,
     theme: {
-      primaryColor: mood.primary,
-      accentColor: mood.accent,
-      fontStyle:
-        preferences.designStyle === "classic"
-          ? "Serif headings, clean sans body"
-          : preferences.designStyle === "bold"
-            ? "Bold sans-serif, high contrast"
-            : "Modern sans-serif, generous spacing",
-      styleNotes: `${mood.notes} Design style: ${preferences.designStyle}.`,
+      presetId: preset.id,
+      primaryColor: preset.primaryColor,
+      accentColor: preset.accentColor,
+      backgroundColor: preset.backgroundColor,
+      fontStyle: preset.fontStyle,
+      styleNotes: `${preset.description} User style: ${preferences.designStyle}. Color mood: ${preferences.colorMood}.`,
     },
     navigation,
     pages,
+    deployment: buildDeploymentPlan(preferences, slug),
+  };
+}
+
+function enrichAiPlan(plan: SitePlan, preferences: SitePreferences): SitePlan {
+  const slug = plan.slug || slugify(preferences.businessName) || "my-site";
+  const preset = getThemePreset(preferences.themePreset);
+
+  return {
+    ...plan,
+    slug,
+    theme: {
+      presetId: preset.id,
+      primaryColor: plan.theme?.primaryColor ?? preset.primaryColor,
+      accentColor: plan.theme?.accentColor ?? preset.accentColor,
+      backgroundColor: plan.theme?.backgroundColor ?? preset.backgroundColor,
+      fontStyle: plan.theme?.fontStyle ?? preset.fontStyle,
+      styleNotes: plan.theme?.styleNotes ?? preset.description,
+    },
+    deployment: plan.deployment ?? buildDeploymentPlan(preferences, slug),
   };
 }
 
@@ -265,22 +292,34 @@ Given site creation preferences, return JSON matching this shape:
   "siteName": string,
   "slug": string (lowercase, hyphenated, max 48 chars),
   "summary": string (2-3 sentences),
-  "theme": { "primaryColor": hex, "accentColor": hex, "fontStyle": string, "styleNotes": string },
+  "theme": {
+    "presetId": one of gold_navy|minimal_light|bold_dark|ocean_cool|sunset_warm,
+    "primaryColor": hex, "accentColor": hex, "backgroundColor": hex,
+    "fontStyle": string, "styleNotes": string
+  },
   "navigation": [{ "label": string, "slug": string }],
   "pages": [{
     "slug": string (empty string for home),
     "title": string,
     "purpose": string,
     "sections": [{ "type": string, "label": string, "description": string }]
-  }]
+  }],
+  "deployment": {
+    "hostingProvider": "vercel"|"self_hosted",
+    "projectName": string,
+    "customDomain": string optional,
+    "previewUrl": string,
+    "vercelNotes": [{ "title": string, "body": string }]
+  }
 }
-Respect ALL user preferences: tone, siteType, designStyle, colorMood, pages, features, ctaGoal, keyMessages.
-Include only pages the user selected. Home page slug must be empty string.
-Section types: hero, features, testimonials, cta, story, team, services_grid, pricing, faq, products, gallery, blog_list, contact, chat, newsletter.`,
+Respect ALL user preferences including themePreset, customPrompt, referenceScreenshots, deployment config, pages, and features.
+Honor the user's customPrompt as hard constraints when planning sections and copy direction.
+If referenceScreenshots are provided, note layout inspiration from them in styleNotes.
+Include only pages the user selected. Home page slug must be empty string.`,
         user: JSON.stringify(preferences),
         temperature: 0.3,
       });
-      return { plan, usedAi: true };
+      return { plan: enrichAiPlan(plan, preferences), usedAi: true };
     } catch {
       return { plan: heuristicPlan(preferences), usedAi: false };
     }
