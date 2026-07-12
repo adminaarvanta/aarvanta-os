@@ -44,14 +44,47 @@ export type SiteReferenceScreenshot = {
   uploadedAt: string;
 };
 
-export type SiteHostingProvider = "vercel" | "self_hosted";
+/** Domains are purchased exclusively through Aarvanta — no external registrar. */
+export type DomainPurchaseStatus = "none" | "selected" | "purchased";
+
+export type SiteDomainListing = {
+  domain: string;
+  tld: string;
+  available: boolean;
+  priceAnnual: number;
+  currency: string;
+  note: string;
+};
+
+export type SiteDomainPurchase = {
+  status: DomainPurchaseStatus;
+  selectedDomain?: string;
+  tld?: string;
+  priceAnnual?: number;
+  currency: string;
+  autoRenew: boolean;
+  registrarOrderId?: string;
+  purchasedAt?: string;
+  expiresAt?: string;
+};
+
+export type AwsEc2InstanceType = "t3.micro" | "t3.small" | "t3.medium";
+export type AwsRegion = "eu-west-2" | "eu-west-1" | "us-east-1" | "ap-south-1";
+
+export type SiteEc2Config = {
+  region: AwsRegion;
+  instanceType: AwsEc2InstanceType;
+  stackName?: string;
+  sslEnabled: boolean;
+  autoDeployOnApprove: boolean;
+};
+
+export type SiteHostingProvider = "aws_ec2";
 
 export type SiteDeploymentConfig = {
   hostingProvider: SiteHostingProvider;
-  projectName?: string;
-  customDomain?: string;
-  vercelTeam?: string;
-  autoDeployOnApprove?: boolean;
+  domain: SiteDomainPurchase;
+  ec2: SiteEc2Config;
 };
 
 export type SitePreferences = {
@@ -101,12 +134,18 @@ export type SitePlanTheme = {
   styleNotes: string;
 };
 
+export type SiteDeployNote = {
+  title: string;
+  body: string;
+};
+
 export type SitePlanDeployment = {
   hostingProvider: SiteHostingProvider;
-  projectName?: string;
-  customDomain?: string;
+  domain: SiteDomainPurchase;
+  ec2: SiteEc2Config;
   previewUrl: string;
-  vercelNotes: Array<{ title: string; body: string }>;
+  liveUrl?: string;
+  deployNotes: SiteDeployNote[];
 };
 
 export type SitePlan = {
@@ -141,3 +180,17 @@ export type SiteBuildJob = TenantScope & {
 };
 
 export type CreateSiteBuildJobInput = SitePreferences;
+
+export type DomainOrder = TenantScope & {
+  id: string;
+  domain: string;
+  tld: string;
+  priceAnnual: number;
+  currency: string;
+  status: "completed" | "pending" | "failed";
+  registrarOrderId: string;
+  buildJobId?: string;
+  purchasedAt: string;
+  expiresAt: string;
+  autoRenew: boolean;
+};

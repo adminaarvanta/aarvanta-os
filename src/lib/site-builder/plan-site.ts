@@ -2,7 +2,7 @@ import { detectIndustryFromText } from "@/lib/ageb/industries";
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
 import { getThemePreset } from "@/lib/site-builder/theme-presets";
-import { buildVercelDeployNotes } from "@/lib/site-builder/vercel-deploy-notes";
+import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import type { SitePlan, SitePreferences } from "@/types/site-builder";
 
 const PAGE_LABELS: Record<string, string> = {
@@ -187,27 +187,19 @@ function defaultSectionsForPage(
 }
 
 function buildDeploymentPlan(preferences: SitePreferences, slug: string): SitePlan["deployment"] {
-  const projectName = preferences.deployment.projectName?.trim() || slug;
-  const customDomain = preferences.deployment.customDomain?.trim();
-  const previewUrl =
-    preferences.deployment.hostingProvider === "vercel"
-      ? `https://${projectName}.vercel.app`
-      : `/sites/${slug}`;
+  const domain = preferences.deployment.domain.selectedDomain;
+  const liveUrl = domain ? `https://${domain}` : undefined;
+  const previewUrl = domain
+    ? liveUrl!
+    : `https://${slug}.sites.aarvanta.cloud`;
 
   return {
-    hostingProvider: preferences.deployment.hostingProvider,
-    projectName,
-    customDomain: customDomain || undefined,
-    previewUrl: customDomain ? `https://${customDomain}` : previewUrl,
-    vercelNotes:
-      preferences.deployment.hostingProvider === "vercel"
-        ? buildVercelDeployNotes({ ...preferences.deployment, projectName })
-        : [
-            {
-              title: "Self-hosted deployment",
-              body: "Export the generated site bundle and deploy to your own server or CDN. Configure DNS at your registrar to point to your host.",
-            },
-          ],
+    hostingProvider: "aws_ec2",
+    domain: preferences.deployment.domain,
+    ec2: preferences.deployment.ec2,
+    previewUrl,
+    liveUrl,
+    deployNotes: buildEc2DeployNotes(preferences.deployment),
   };
 }
 
@@ -275,7 +267,7 @@ function enrichAiPlan(plan: SitePlan, preferences: SitePreferences): SitePlan {
       fontStyle: plan.theme?.fontStyle ?? preset.fontStyle,
       styleNotes: plan.theme?.styleNotes ?? preset.description,
     },
-    deployment: plan.deployment ?? buildDeploymentPlan(preferences, slug),
+    deployment: buildDeploymentPlan(preferences, slug),
   };
 }
 
@@ -305,13 +297,15 @@ Given site creation preferences, return JSON matching this shape:
     "sections": [{ "type": string, "label": string, "description": string }]
   }],
   "deployment": {
-    "hostingProvider": "vercel"|"self_hosted",
-    "projectName": string,
-    "customDomain": string optional,
+    "hostingProvider": "aws_ec2",
+    "domain": { "status": string, "selectedDomain": string, ... },
+    "ec2": { "region": string, "instanceType": string, "sslEnabled": boolean },
     "previewUrl": string,
-    "vercelNotes": [{ "title": string, "body": string }]
+    "liveUrl": string optional,
+    "deployNotes": [{ "title": string, "body": string }]
   }
 }
+Domains are purchased only through Aarvanta. Hosting is AWS EC2 only.
 Respect ALL user preferences including themePreset, customPrompt, referenceScreenshots, deployment config, pages, and features.
 Honor the user's customPrompt as hard constraints when planning sections and copy direction.
 If referenceScreenshots are provided, note layout inspiration from them in styleNotes.

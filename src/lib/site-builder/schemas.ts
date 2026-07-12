@@ -46,12 +46,35 @@ export const siteReferenceScreenshotSchema = z.object({
   uploadedAt: z.string(),
 });
 
+export const siteDomainPurchaseSchema = z.object({
+  status: z.enum(["none", "selected", "purchased"]).default("none"),
+  selectedDomain: z.string().max(120).optional(),
+  tld: z.string().max(12).optional(),
+  priceAnnual: z.number().positive().optional(),
+  currency: z.enum(["GBP", "USD"]).default("GBP"),
+  autoRenew: z.boolean().default(true),
+  registrarOrderId: z.string().optional(),
+  purchasedAt: z.string().optional(),
+  expiresAt: z.string().optional(),
+});
+
+export const siteEc2ConfigSchema = z.object({
+  region: z.enum(["eu-west-2", "eu-west-1", "us-east-1", "ap-south-1"]).default("eu-west-2"),
+  instanceType: z.enum(["t3.micro", "t3.small", "t3.medium"]).default("t3.small"),
+  stackName: z.string().max(80).optional(),
+  sslEnabled: z.boolean().default(true),
+  autoDeployOnApprove: z.boolean().default(false),
+});
+
 export const siteDeploymentConfigSchema = z.object({
-  hostingProvider: z.enum(["vercel", "self_hosted"]).default("vercel"),
-  projectName: z.string().max(80).optional(),
-  customDomain: z.string().max(120).optional(),
-  vercelTeam: z.string().max(80).optional(),
-  autoDeployOnApprove: z.boolean().optional(),
+  hostingProvider: z.literal("aws_ec2").default("aws_ec2"),
+  domain: siteDomainPurchaseSchema.default({ status: "none", currency: "GBP", autoRenew: true }),
+  ec2: siteEc2ConfigSchema.default({
+    region: "eu-west-2",
+    instanceType: "t3.small",
+    sslEnabled: true,
+    autoDeployOnApprove: false,
+  }),
 });
 
 export const sitePreferencesSchema = z.object({
@@ -71,7 +94,7 @@ export const sitePreferencesSchema = z.object({
   customPrompt: z.string().max(2000).optional(),
   referenceUrl: z.union([z.string().url(), z.literal("")]).optional(),
   referenceScreenshots: z.array(siteReferenceScreenshotSchema).max(3).optional(),
-  deployment: siteDeploymentConfigSchema.default({ hostingProvider: "vercel" }),
+  deployment: siteDeploymentConfigSchema,
 });
 
 export const sitePlanSectionSchema = z.object({
@@ -107,11 +130,12 @@ export const sitePlanSchema = z.object({
   ),
   pages: z.array(sitePlanPageSchema),
   deployment: z.object({
-    hostingProvider: z.enum(["vercel", "self_hosted"]),
-    projectName: z.string().optional(),
-    customDomain: z.string().optional(),
+    hostingProvider: z.literal("aws_ec2"),
+    domain: siteDomainPurchaseSchema,
+    ec2: siteEc2ConfigSchema,
     previewUrl: z.string(),
-    vercelNotes: z.array(
+    liveUrl: z.string().optional(),
+    deployNotes: z.array(
       z.object({
         title: z.string(),
         body: z.string(),

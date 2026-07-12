@@ -4,16 +4,18 @@ import Link from "next/link";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { VercelDeployNotesPanel } from "@/components/build/vercel-deploy-notes-panel";
+import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
+import { Ec2HostingPanel } from "@/components/build/ec2-hosting-panel";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/os/status-pill";
+import { DEFAULT_DEPLOYMENT } from "@/lib/site-builder/normalize-preferences";
 import { SITE_THEME_PRESETS } from "@/lib/site-builder/theme-presets";
+import { formatDomainPrice } from "@/lib/site-builder/domain-catalog";
 import type {
   SiteBuildJob,
   SiteCtaGoal,
   SiteDesignStyle,
   SiteFeatureOption,
-  SiteHostingProvider,
   SitePageOption,
   SitePreferences,
   SiteReferenceScreenshot,
@@ -80,10 +82,12 @@ const DEFAULT_PREFERENCES: SitePreferences = {
     "Emphasize gift-ready packaging and UK fast delivery. Hero should feel warm and cozy.",
   referenceScreenshots: [],
   deployment: {
-    hostingProvider: "vercel",
-    projectName: "artisan-candles-co",
-    customDomain: "",
-    autoDeployOnApprove: false,
+    ...DEFAULT_DEPLOYMENT,
+    domain: { ...DEFAULT_DEPLOYMENT.domain, status: "none" as const },
+    ec2: {
+      ...DEFAULT_DEPLOYMENT.ec2,
+      stackName: "artisan-candles-co",
+    },
   },
 };
 
@@ -147,13 +151,17 @@ export function BuildOsClient() {
     setPreferences((prev) => ({ ...prev, [key]: value }));
   }
 
-  function updateDeployment<K extends keyof SitePreferences["deployment"]>(
-    key: K,
-    value: SitePreferences["deployment"][K]
-  ) {
+  function updateDomain(domain: SitePreferences["deployment"]["domain"]) {
     setPreferences((prev) => ({
       ...prev,
-      deployment: { ...prev.deployment, [key]: value },
+      deployment: { ...prev.deployment, domain },
+    }));
+  }
+
+  function updateEc2(ec2: SitePreferences["deployment"]["ec2"]) {
+    setPreferences((prev) => ({
+      ...prev,
+      deployment: { ...prev.deployment, ec2 },
     }));
   }
 
@@ -247,10 +255,6 @@ export function BuildOsClient() {
       const payload = {
         ...preferences,
         referenceUrl: preferences.referenceUrl || undefined,
-        deployment: {
-          ...preferences.deployment,
-          customDomain: preferences.deployment.customDomain || undefined,
-        },
       };
 
       const endpoint = job ? `/api/build/${job.id}/plan` : "/api/build";
@@ -297,6 +301,7 @@ export function BuildOsClient() {
     preferences.businessName.trim().length >= 2 &&
     preferences.businessIdea.trim().length >= 10;
   const canProceedStep2 = preferences.pages.length >= 1;
+  const canProceedDeploy = preferences.deployment.domain.status === "purchased";
 
   return (
     <div className="space-y-6">
@@ -305,8 +310,8 @@ export function BuildOsClient() {
           Step 1 — Set your site preferences
         </p>
         <p className="mt-1 text-xs text-muted">
-          Build OS collects your brief, theme, reference screenshots, and Vercel
-          deployment config before generating pages.
+          Build OS collects your brief, theme, reference screenshots, Aarvanta domain purchase,
+          and AWS EC2 hosting before generating pages.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -331,15 +336,13 @@ export function BuildOsClient() {
                   value={preferences.businessName}
                   onChange={(e) => {
                     updatePreferences("businessName", e.target.value);
-                    if (!preferences.deployment.projectName) {
-                      updateDeployment(
-                        "projectName",
-                        e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9]+/g, "-")
-                          .replace(/^-|-$/g, "")
-                          .slice(0, 48)
-                      );
+                    const slug = e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/^-|-$/g, "")
+                      .slice(0, 48);
+                    if (!preferences.deployment.ec2.stackName) {
+                      updateEc2({ ...preferences.deployment.ec2, stackName: slug });
                     }
                   }}
                   className={inputClassName()}
@@ -645,58 +648,23 @@ export function BuildOsClient() {
 
           {step === 3 && (
             <>
-              <label className="block space-y-1 text-xs text-muted">
-                Hosting provider
-                <select
-                  value={preferences.deployment.hostingProvider}
-                  onChange={(e) =>
-                    updateDeployment(
-                      "hostingProvider",
-                      e.target.value as SiteHostingProvider
-                    )
-                  }
-                  className={inputClassName()}
-                >
-                  <option value="vercel">Vercel (recommended)</option>
-                  <option value="self_hosted">Self-hosted</option>
-                </select>
-              </label>
-
-              <label className="block space-y-1 text-xs text-muted">
-                Vercel project name
-                <input
-                  value={preferences.deployment.projectName ?? ""}
-                  onChange={(e) => updateDeployment("projectName", e.target.value)}
-                  className={inputClassName()}
-                  placeholder="my-business-site"
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-foreground">1. Buy your domain (Aarvanta only)</p>
+                <DomainPurchasePanel
+                  businessName={preferences.businessName}
+                  countryBase={preferences.countryBase}
+                  domain={preferences.deployment.domain}
+                  buildJobId={job?.id}
+                  onDomainChange={updateDomain}
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-1 text-xs text-muted">
-                Custom domain (optional — configure DNS in Vercel)
-                <input
-                  value={preferences.deployment.customDomain ?? ""}
-                  onChange={(e) => updateDeployment("customDomain", e.target.value)}
-                  className={inputClassName()}
-                  placeholder="www.yourbusiness.com"
+              <div className="space-y-1 border-t border-border pt-4">
+                <p className="text-xs font-medium text-foreground">2. AWS EC2 hosting</p>
+                <Ec2HostingPanel
+                  deployment={preferences.deployment}
+                  onEc2Change={updateEc2}
                 />
-              </label>
-
-              <label className="flex items-center gap-2 text-xs text-muted">
-                <input
-                  type="checkbox"
-                  checked={preferences.deployment.autoDeployOnApprove ?? false}
-                  onChange={(e) => updateDeployment("autoDeployOnApprove", e.target.checked)}
-                  className="rounded border-border"
-                />
-                Auto-deploy to Vercel when plan is approved (coming soon)
-              </label>
-
-              <div className="rounded-lg border border-gold/30 bg-primary-soft p-3">
-                <p className="text-xs font-medium text-gold-bright">Vercel deployment notes</p>
-                <div className="mt-3">
-                  <VercelDeployNotesPanel deployment={preferences.deployment} compact />
-                </div>
               </div>
             </>
           )}
@@ -718,13 +686,20 @@ export function BuildOsClient() {
                 Continue
               </Button>
             ) : (
-              <Button
-                type="button"
-                onClick={onGeneratePlan}
-                disabled={busy || !canProceedStep0 || !canProceedStep2}
-              >
-                {busy ? "Planning site…" : job ? "Regenerate plan" : "Generate site plan"}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  onClick={onGeneratePlan}
+                  disabled={busy || !canProceedStep0 || !canProceedStep2 || !canProceedDeploy}
+                >
+                  {busy ? "Planning site…" : job ? "Regenerate plan" : "Generate site plan"}
+                </Button>
+                {!canProceedDeploy && (
+                  <p className="w-full text-xs text-dim">
+                    Purchase a domain through Aarvanta before generating your site plan.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -774,18 +749,31 @@ export function BuildOsClient() {
           </div>
 
           <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-medium text-gold">Deployment</p>
+            <p className="text-xs font-medium text-gold">Deployment — AWS EC2</p>
             <p className="mt-1 text-xs text-muted">
-              Host: {job.plan.deployment.hostingProvider} · Preview:{" "}
-              <span className="font-mono text-foreground">
-                {job.plan.deployment.previewUrl}
-              </span>
+              Region: {job.plan.deployment.ec2.region} · Instance:{" "}
+              {job.plan.deployment.ec2.instanceType}
             </p>
-            {job.plan.deployment.customDomain && (
+            {job.plan.deployment.domain.selectedDomain && (
               <p className="mt-1 text-xs text-muted">
-                Custom domain: {job.plan.deployment.customDomain} (configure DNS in Vercel)
+                Domain:{" "}
+                <span className="font-mono text-foreground">
+                  {job.plan.deployment.domain.selectedDomain}
+                </span>
+                {job.plan.deployment.domain.priceAnnual
+                  ? ` · ${formatDomainPrice(
+                      job.plan.deployment.domain.priceAnnual,
+                      job.plan.deployment.domain.currency
+                    )}/yr`
+                  : null}
               </p>
             )}
+            <p className="mt-1 text-xs text-muted">
+              Live URL:{" "}
+              <span className="font-mono text-foreground">
+                {job.plan.deployment.liveUrl ?? job.plan.deployment.previewUrl}
+              </span>
+            </p>
           </div>
 
           {(job.preferences.referenceScreenshots?.length ?? 0) > 0 && (
@@ -839,20 +827,18 @@ export function BuildOsClient() {
             ))}
           </div>
 
-          {job.plan.deployment.hostingProvider === "vercel" && (
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Vercel setup instructions</p>
-              <ol className="mt-2 space-y-2">
-                {job.plan.deployment.vercelNotes.map((note) => (
-                  <li key={note.title} className="text-xs text-muted">
-                    <span className="font-medium text-foreground">{note.title}</span>
-                    {" — "}
-                    {note.body}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+          <div className="rounded-lg border border-border bg-surface-muted p-3">
+            <p className="text-xs font-medium text-gold">AWS EC2 deployment pipeline</p>
+            <ol className="mt-2 space-y-2">
+              {job.plan.deployment.deployNotes.map((note) => (
+                <li key={note.title} className="text-xs text-muted">
+                  <span className="font-medium text-foreground">{note.title}</span>
+                  {" — "}
+                  {note.body}
+                </li>
+              ))}
+            </ol>
+          </div>
 
           {job.status === "plan_ready" && (
             <div className="flex flex-wrap gap-2">
@@ -869,8 +855,8 @@ export function BuildOsClient() {
             <div className="rounded-lg border border-gold/40 bg-primary-soft p-4">
               <p className="text-sm font-semibold text-gold-bright">Plan approved</p>
               <p className="mt-1 text-xs text-muted">
-                Site generation is next. Deploy to Vercel using the instructions above once pages
-                are generated.
+                Site generation is next. Your domain and EC2 instance will be provisioned on AWS
+                when pages are generated.
               </p>
               <Link
                 href="/launch"
