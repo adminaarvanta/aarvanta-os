@@ -336,7 +336,7 @@ export const SPEC_PHASES: Array<{
         href: "/build",
         status: "partial",
         summary:
-          "Preferences wizard with theme presets, reference screenshots, custom prompt, Aarvanta domain purchase, AWS EC2 hosting, and AI plan approval.",
+          "Preferences wizard with theme presets, reference screenshots, custom prompt, instant site preview (deploy bypassed).",
       },
       {
         id: "launch-os",

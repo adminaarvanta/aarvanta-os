@@ -4,13 +4,11 @@ import Link from "next/link";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
-import { Ec2HostingPanel } from "@/components/build/ec2-hosting-panel";
+import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/os/status-pill";
 import { DEFAULT_DEPLOYMENT } from "@/lib/site-builder/normalize-preferences";
 import { SITE_THEME_PRESETS } from "@/lib/site-builder/theme-presets";
-import { formatDomainPrice } from "@/lib/site-builder/domain-catalog";
 import type {
   SiteBuildJob,
   SiteCtaGoal,
@@ -24,7 +22,7 @@ import type {
   SiteType,
 } from "@/types/site-builder";
 
-const STEPS = ["Business", "Design & theme", "Content & features", "Deploy"] as const;
+const STEPS = ["Business", "Design & theme", "Content & features"] as const;
 
 const TONES: SiteTone[] = ["professional", "friendly", "bold", "luxury"];
 const SITE_TYPES: SiteType[] = ["landing", "business", "store", "portfolio"];
@@ -151,13 +149,6 @@ export function BuildOsClient() {
     setPreferences((prev) => ({ ...prev, [key]: value }));
   }
 
-  function updateDomain(domain: SitePreferences["deployment"]["domain"]) {
-    setPreferences((prev) => ({
-      ...prev,
-      deployment: { ...prev.deployment, domain },
-    }));
-  }
-
   function updateEc2(ec2: SitePreferences["deployment"]["ec2"]) {
     setPreferences((prev) => ({
       ...prev,
@@ -279,29 +270,10 @@ export function BuildOsClient() {
     }
   }
 
-  async function onApprovePlan() {
-    if (!job) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/build/${job.id}/approve`, { method: "POST" });
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: { message?: string } };
-        setError(body.error?.message ?? "Could not approve plan.");
-        return;
-      }
-      const data = (await res.json()) as { job: SiteBuildJob };
-      setJob(data.job);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const canProceedStep0 =
     preferences.businessName.trim().length >= 2 &&
     preferences.businessIdea.trim().length >= 10;
   const canProceedStep2 = preferences.pages.length >= 1;
-  const canProceedDeploy = preferences.deployment.domain.status === "purchased";
 
   return (
     <div className="space-y-6">
@@ -310,8 +282,8 @@ export function BuildOsClient() {
           Step 1 — Set your site preferences
         </p>
         <p className="mt-1 text-xs text-muted">
-          Build OS collects your brief, theme, reference screenshots, Aarvanta domain purchase,
-          and AWS EC2 hosting before generating pages.
+          Set your preferences, then generate a live site preview. Domain purchase and AWS
+          deployment are skipped for now.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -646,29 +618,6 @@ export function BuildOsClient() {
             </>
           )}
 
-          {step === 3 && (
-            <>
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-foreground">1. Buy your domain (Aarvanta only)</p>
-                <DomainPurchasePanel
-                  businessName={preferences.businessName}
-                  countryBase={preferences.countryBase}
-                  domain={preferences.deployment.domain}
-                  buildJobId={job?.id}
-                  onDomainChange={updateDomain}
-                />
-              </div>
-
-              <div className="space-y-1 border-t border-border pt-4">
-                <p className="text-xs font-medium text-foreground">2. AWS EC2 hosting</p>
-                <Ec2HostingPanel
-                  deployment={preferences.deployment}
-                  onEc2Change={updateEc2}
-                />
-              </div>
-            </>
-          )}
-
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <div className="flex flex-wrap gap-2 pt-1">
@@ -686,186 +635,42 @@ export function BuildOsClient() {
                 Continue
               </Button>
             ) : (
-              <>
-                <Button
-                  type="button"
-                  onClick={onGeneratePlan}
-                  disabled={busy || !canProceedStep0 || !canProceedStep2 || !canProceedDeploy}
-                >
-                  {busy ? "Planning site…" : job ? "Regenerate plan" : "Generate site plan"}
-                </Button>
-                {!canProceedDeploy && (
-                  <p className="w-full text-xs text-dim">
-                    Purchase a domain through Aarvanta before generating your site plan.
-                  </p>
-                )}
-              </>
+              <Button
+                type="button"
+                onClick={onGeneratePlan}
+                disabled={busy || !canProceedStep0 || !canProceedStep2}
+              >
+                {busy ? "Generating preview…" : job ? "Regenerate preview" : "Generate site preview"}
+              </Button>
             )}
           </div>
         </div>
       </section>
 
-      {job?.plan && (
+      {job?.generatedSite && (
         <section className="space-y-4 rounded-xl border border-gold/30 bg-surface-elevated p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-medium text-foreground">Step 2 — Review site plan</p>
-            <StatusPill
-              variant={
-                job.status === "approved"
-                  ? "success"
-                  : job.status === "plan_ready"
-                    ? "warning"
-                    : "default"
-              }
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-foreground">Site preview</p>
+              <StatusPill variant="success">generated</StatusPill>
+              {usedAi && <span className="text-[10px] text-dim">AI-enhanced</span>}
+            </div>
+            <Link
+              href={`/build/preview/${job.id}`}
+              target="_blank"
+              className="text-sm font-medium text-gold hover:underline"
             >
-              {job.status}
-            </StatusPill>
-            {usedAi && <span className="text-[10px] text-dim">AI-enhanced</span>}
+              Open full preview →
+            </Link>
           </div>
+          <p className="text-sm text-muted">{job.plan?.summary}</p>
+          <GeneratedSitePreview site={job.generatedSite} compact />
+        </section>
+      )}
 
-          <p className="text-sm text-muted">{job.plan.summary}</p>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Site</p>
-              <p className="mt-1 text-sm text-foreground">{job.plan.siteName}</p>
-              <p className="mt-1 font-mono text-xs text-muted">/sites/{job.plan.slug}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Theme — {job.plan.theme.presetId}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <span
-                  className="h-6 w-6 rounded border border-border"
-                  style={{ backgroundColor: job.plan.theme.primaryColor }}
-                />
-                <span
-                  className="h-6 w-6 rounded border border-border"
-                  style={{ backgroundColor: job.plan.theme.accentColor }}
-                />
-                <span className="text-xs text-muted">{job.plan.theme.fontStyle}</span>
-              </div>
-              <p className="mt-2 text-[10px] text-dim">{job.plan.theme.styleNotes}</p>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-medium text-gold">Deployment — AWS EC2</p>
-            <p className="mt-1 text-xs text-muted">
-              Region: {job.plan.deployment.ec2.region} · Instance:{" "}
-              {job.plan.deployment.ec2.instanceType}
-            </p>
-            {job.plan.deployment.domain.selectedDomain && (
-              <p className="mt-1 text-xs text-muted">
-                Domain:{" "}
-                <span className="font-mono text-foreground">
-                  {job.plan.deployment.domain.selectedDomain}
-                </span>
-                {job.plan.deployment.domain.priceAnnual
-                  ? ` · ${formatDomainPrice(
-                      job.plan.deployment.domain.priceAnnual,
-                      job.plan.deployment.domain.currency
-                    )}/yr`
-                  : null}
-              </p>
-            )}
-            <p className="mt-1 text-xs text-muted">
-              Live URL:{" "}
-              <span className="font-mono text-foreground">
-                {job.plan.deployment.liveUrl ?? job.plan.deployment.previewUrl}
-              </span>
-            </p>
-          </div>
-
-          {(job.preferences.referenceScreenshots?.length ?? 0) > 0 && (
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Reference screenshots</p>
-              <p className="mt-1 text-xs text-muted">
-                {job.preferences.referenceScreenshots!.length} inspiration image(s) included in
-                planning context.
-              </p>
-            </div>
-          )}
-
-          {job.preferences.customPrompt && (
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Custom prompt</p>
-              <p className="mt-1 text-xs text-muted">{job.preferences.customPrompt}</p>
-            </div>
-          )}
-
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-medium text-gold">Navigation</p>
-            <p className="mt-2 text-xs text-muted">
-              {job.plan.navigation.map((n) => n.label).join(" · ")}
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs font-medium text-gold">Pages & sections</p>
-            {job.plan.pages.map((page) => (
-              <div
-                key={page.slug || "home"}
-                className="rounded-lg border border-border bg-surface-muted p-3"
-              >
-                <p className="text-sm font-medium text-foreground">
-                  {page.title}
-                  <span className="ml-2 font-mono text-[10px] text-dim">
-                    {page.slug ? `/${page.slug}` : "/"}
-                  </span>
-                </p>
-                <p className="mt-1 text-xs text-muted">{page.purpose}</p>
-                <ul className="mt-2 space-y-1">
-                  {page.sections.map((section) => (
-                    <li key={section.type + section.label} className="text-xs text-muted">
-                      <span className="font-medium text-foreground">{section.label}</span>
-                      {" — "}
-                      {section.description}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-medium text-gold">AWS EC2 deployment pipeline</p>
-            <ol className="mt-2 space-y-2">
-              {job.plan.deployment.deployNotes.map((note) => (
-                <li key={note.title} className="text-xs text-muted">
-                  <span className="font-medium text-foreground">{note.title}</span>
-                  {" — "}
-                  {note.body}
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          {job.status === "plan_ready" && (
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={onApprovePlan} disabled={busy}>
-                {busy ? "Approving…" : "Approve plan & continue"}
-              </Button>
-              <Button type="button" variant="secondary" onClick={() => setStep(0)}>
-                Edit preferences
-              </Button>
-            </div>
-          )}
-
-          {job.status === "approved" && (
-            <div className="rounded-lg border border-gold/40 bg-primary-soft p-4">
-              <p className="text-sm font-semibold text-gold-bright">Plan approved</p>
-              <p className="mt-1 text-xs text-muted">
-                Site generation is next. Your domain and EC2 instance will be provisioned on AWS
-                when pages are generated.
-              </p>
-              <Link
-                href="/launch"
-                className="mt-3 inline-block text-sm font-medium text-gold hover:underline"
-              >
-                Deploy full business OS via Launch OS →
-              </Link>
-            </div>
-          )}
+      {job?.status === "failed" && job.error && (
+        <section className="rounded-xl border border-red-400/30 bg-surface-elevated p-4">
+          <p className="text-sm text-red-400">{job.error}</p>
         </section>
       )}
     </div>
