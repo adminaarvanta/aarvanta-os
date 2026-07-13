@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { BrandLogo } from "@/components/brand/logo";
 
 const links = [
@@ -10,7 +11,7 @@ const links = [
 export function MarketingNav({ production }: { production: boolean }) {
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#243656]/80 bg-black/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <BrandLogo href="/" size="header" />
         <nav className="hidden items-center gap-6 md:flex">
@@ -18,13 +19,14 @@ export function MarketingNav({ production }: { production: boolean }) {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm text-[#9AABC4] transition-colors hover:text-[#FFFFFF]"
+              className="text-sm text-muted transition-colors hover:text-foreground"
             >
               {link.label}
             </Link>
           ))}
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle />
           {production ? (
             <Link
               href="/login"
@@ -47,7 +49,7 @@ export function MarketingNav({ production }: { production: boolean }) {
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-[#243656] bg-[#040608]">
+    <footer className="border-t border-border bg-surface">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
           <p className="text-sm font-medium text-[#FFFFFF]">Aarvanta Business OS</p>

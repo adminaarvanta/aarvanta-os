@@ -74,8 +74,8 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
   },
   {
     id: "site",
-    label: "SiteOS",
-    href: "/launch",
+    label: "Build OS",
+    href: "/build",
     dotClass: "bg-cyan-500",
     iconClass: "text-cyan-600 bg-cyan-50",
   },

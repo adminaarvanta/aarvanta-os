@@ -19,7 +19,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "shrink-0 border-b border-border bg-[#040608] px-4 py-3 sm:px-6 sm:py-4",
+        "shrink-0 border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4",
         className
       )}
     >

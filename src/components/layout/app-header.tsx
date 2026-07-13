@@ -24,6 +24,8 @@ const GlobalSearch = dynamic(
   }
 );
 
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+
 const HelpMenu = dynamic(
   () => import("@/components/layout/help-menu").then((mod) => mod.HelpMenu),
   {
@@ -45,7 +47,7 @@ export function AppHeader() {
   const [quickOpen, setQuickOpen] = useState(false);
 
   return (
-    <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-[#040608] px-4 sm:px-6">
+    <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
       <div className="min-w-0 flex-1">
         <GlobalSearch className="w-full max-w-xl" placeholder="Search across OS…" />
       </div>
@@ -61,6 +63,8 @@ export function AppHeader() {
             5
           </span>
         </button>
+
+        <ThemeToggle />
 
         <Suspense fallback={null}>
           <HelpMenu />
@@ -85,7 +89,7 @@ export function AppHeader() {
                 aria-label="Close quick actions"
                 onClick={() => setQuickOpen(false)}
               />
-              <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-[#0D1524] py-1 shadow-lg">
+              <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface-elevated py-1 shadow-lg">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (

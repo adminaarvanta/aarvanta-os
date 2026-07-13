@@ -49,7 +49,7 @@ export function AppSidebar({
 
   return (
     <>
-      <aside className="relative z-20 hidden h-full w-[260px] shrink-0 flex-col border-r border-[#1A2840] bg-[#040608] md:flex">
+      <aside className="relative z-20 hidden h-full w-[260px] shrink-0 flex-col border-r border-border-subtle bg-surface md:flex">
         <Link
           href={SIDEBAR_BRAND.href}
           className="flex h-16 shrink-0 items-center gap-2 border-b border-border-subtle px-4 transition-colors hover:bg-surface-muted"

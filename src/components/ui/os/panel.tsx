@@ -12,7 +12,7 @@ export function Panel({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-[#0D1524]",
+        "rounded-xl border border-border bg-surface-elevated",
         padding === "sm" && "p-3",
         padding === "md" && "p-4 sm:p-5",
         padding === "lg" && "p-5 sm:p-6",

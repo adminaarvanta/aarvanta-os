@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useThemeMode } from "@/components/theme/theme-provider";
 import { brand } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -18,21 +21,30 @@ const DISPLAY_HEIGHT = {
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
 export type BrandLogoVariant = "full" | "icon";
 
+const LOGO_PATHS = {
+  dark: { full: "/aarvanta-logo.svg", icon: "/aarvanta-logo-icon.svg" },
+  light: { full: "/aarvanta-logo-light.svg", icon: "/aarvanta-logo-icon-light.svg" },
+} as const;
+
 export function BrandLogo({
   className,
   href,
   size = "md",
   variant = "full",
   fullWidth = false,
+  mode,
 }: {
   className?: string;
   href?: string;
   size?: BrandLogoSize;
   variant?: BrandLogoVariant;
   fullWidth?: boolean;
+  mode?: "dark" | "light";
 }) {
+  const { mode: contextMode } = useThemeMode();
+  const themeMode = mode ?? contextMode;
   const displayHeight = DISPLAY_HEIGHT[size];
-  const src = variant === "icon" ? "/aarvanta-logo-icon.png" : "/aarvanta-logo.png";
+  const src = LOGO_PATHS[themeMode][variant];
   const intrinsicHeight = displayHeight * 2;
   const intrinsicWidth =
     variant === "icon"
