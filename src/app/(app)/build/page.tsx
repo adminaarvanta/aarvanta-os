@@ -1,19 +1,22 @@
 import { Suspense } from "react";
-import { Hammer } from "lucide-react";
 import { BuildOsClient } from "@/components/build/build-os-client";
-import { ModulePageShell } from "@/components/platform/module-page-shell";
+import { PageFrame } from "@/components/layout/page-scroll";
 
 export default function BuildPage() {
   return (
-    <ModulePageShell
-      icon={Hammer}
-      title="Build OS"
-      description="Preferences → AI site plan → approve before generation (SiteOS)"
-    >
-      <Suspense fallback={<p className="text-sm text-[#9AABC4]">Loading…</p>}>
-        <BuildOsClient />
-      </Suspense>
-    </ModulePageShell>
+    <PageFrame>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <Suspense
+          fallback={
+            <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted">
+              Loading Build OS…
+            </div>
+          }
+        >
+          <BuildOsClient />
+        </Suspense>
+      </div>
+    </PageFrame>
   );
 }
 

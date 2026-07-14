@@ -336,7 +336,7 @@ export const SPEC_PHASES: Array<{
         href: "/build",
         status: "partial",
         summary:
-          "Preferences wizard with theme presets, reference screenshots, custom prompt, instant site preview (deploy bypassed).",
+          "Prompt-first AI studio (Durable/Framer-style): one brief, visual vibe + site-type cards, split preview with refine chat. Deploy step bypassed.",
       },
       {
         id: "launch-os",
