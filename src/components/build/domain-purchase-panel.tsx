@@ -101,8 +101,8 @@ export function DomainPurchasePanel({
       <div className="flex items-start gap-2 rounded-lg border border-gold/30 bg-primary-soft p-3">
         <Globe className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
         <p className="text-xs text-muted">
-          Domains are purchased <strong className="text-foreground">exclusively through Aarvanta</strong>.
-          We register via Route 53 and auto-configure DNS for your EC2 host — no external registrar needed.
+          Domains are purchased <strong className="text-foreground">through Aarvanta</strong>.
+          DNS is configured automatically when you publish — no external registrar or tech setup needed.
         </p>
       </div>
 

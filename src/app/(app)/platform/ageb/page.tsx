@@ -26,7 +26,7 @@ export default function AgebBlueprintPage() {
       actions={
         <Link
           href="/platform/engines"
-          className="inline-flex items-center gap-2 rounded-lg border border-[#B8965D]/40 px-3 py-2 text-xs font-medium text-[#C9AA72] hover:bg-[#B8965D]/10"
+          className="inline-flex items-center gap-2 rounded-lg border border-gold/40 px-3 py-2 text-xs font-medium text-gold-bright hover:bg-gold/10"
         >
           <Cog className="h-3.5 w-3.5" />
           Core engines
@@ -44,17 +44,17 @@ export default function AgebBlueprintPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Volumes</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Volumes</h3>
           <ul className="space-y-2">
             {AGEB_VOLUMES.map((vol) => (
               <li
                 key={vol.number}
-                className="flex flex-wrap items-start gap-2 rounded-xl border border-[#243656] bg-[#0D1524] p-3"
+                className="flex flex-wrap items-start gap-2 rounded-xl border border-border bg-surface-elevated p-3"
               >
-                <span className="text-xs font-mono text-[#B8965D]">V{vol.number}</span>
+                <span className="text-xs font-mono text-gold">V{vol.number}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-[#FFFFFF]">{vol.title}</p>
-                  <p className="text-xs text-[#9AABC4]">{vol.summary}</p>
+                  <p className="text-sm font-medium text-foreground">{vol.title}</p>
+                  <p className="text-xs text-muted">{vol.summary}</p>
                 </div>
                 <StatusPill variant={statusVariant(vol.status)}>{vol.status}</StatusPill>
               </li>
@@ -63,8 +63,8 @@ export default function AgebBlueprintPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">System principles (Volume 1)</h3>
-          <ul className="grid gap-2 sm:grid-cols-2 text-xs text-[#9AABC4]">
+          <h3 className="mb-3 text-sm font-semibold text-foreground">System principles (Volume 1)</h3>
+          <ul className="grid gap-2 sm:grid-cols-2 text-xs text-muted">
             {[
               "Global first — countries, languages, currencies",
               "AI-native — workers, not assistants",
@@ -77,7 +77,7 @@ export default function AgebBlueprintPage() {
             ].map((principle) => (
               <li
                 key={principle}
-                className="rounded-lg border border-[#243656] bg-[#0D1524] px-3 py-2"
+                className="rounded-lg border border-border bg-surface-elevated px-3 py-2"
               >
                 {principle}
               </li>
@@ -86,7 +86,7 @@ export default function AgebBlueprintPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Quick links</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Quick links</h3>
           <div className="flex flex-wrap gap-2">
             {[
               { href: "/launch", label: "Launch OS" },
@@ -99,7 +99,7 @@ export default function AgebBlueprintPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg border border-[#243656] px-3 py-2 text-xs text-[#FFFFFF] hover:border-[#B8965D]/40"
+                className="rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:border-gold/40"
               >
                 {link.label}
               </Link>

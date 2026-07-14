@@ -21,9 +21,9 @@ export function TaskFilters({ members }: { members: MemberOption[] }) {
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface-elevated p-4">
       <div className="min-w-[12rem]">
-        <label className="mb-1 block text-xs text-[#9AABC4]">Filter by assignee</label>
+        <label className="mb-1 block text-xs text-muted">Filter by assignee</label>
         <MemberSelect
           members={members}
           value={assignedTo}
@@ -35,7 +35,7 @@ export function TaskFilters({ members }: { members: MemberOption[] }) {
         <button
           type="button"
           onClick={() => updateAssignedTo("")}
-          className="text-xs text-[#B8965D] hover:underline"
+          className="text-xs text-gold hover:underline"
         >
           Clear filter
         </button>

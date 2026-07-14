@@ -164,6 +164,9 @@ export function CommandCenterDashboard({
                       {os.label.slice(0, 1)}
                     </div>
                     <p className="font-semibold text-foreground">{os.label}</p>
+                    {os.description ? (
+                      <p className="mt-1 text-xs text-muted">{os.description}</p>
+                    ) : null}
                     <div className="mt-2 flex items-center gap-1.5 text-xs text-success">
                       <span className="h-1.5 w-1.5 rounded-full bg-success" />
                       Active

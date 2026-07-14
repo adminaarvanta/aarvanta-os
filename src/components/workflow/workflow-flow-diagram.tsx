@@ -19,29 +19,29 @@ const stepIcons: Record<WorkflowStep["type"], typeof Zap> = {
 };
 
 const stepColors: Record<WorkflowStep["type"], string> = {
-  condition: "border-[#4DA6FF]/30 bg-[#0D1A2E] text-[#4DA6FF]",
-  agent: "border-[#B8965D]/40 bg-[#B8965D]/10 text-[#C9AA72]",
-  approval: "border-[#B8965D]/35 bg-[#2A2210] text-[#C9AA72]",
-  action: "border-[#4DA6FF]/30 bg-[#0A2A33] text-[#4DA6FF]",
-  delay: "border-[#243656] bg-[#121E32] text-[#9AABC4]",
+  condition: "border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan",
+  agent: "border-gold/40 bg-gold/10 text-gold-bright",
+  approval: "border-gold/35 bg-gold/10 text-gold-bright",
+  action: "border-accent-cyan/30 bg-accent-cyan/15 text-accent-cyan",
+  delay: "border-border bg-surface-muted text-muted",
 };
 
 export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
   return (
-    <div className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
+    <div className="rounded-xl border border-border bg-surface-elevated p-5">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[#121E32] px-3 py-1 text-xs text-[#9AABC4] ring-1 ring-[#243656]">
+        <span className="rounded-full bg-surface-muted px-3 py-1 text-xs text-muted ring-1 ring-border">
           Trigger: {workflow.trigger.label}
         </span>
         {!workflow.enabled && (
-          <span className="rounded-full bg-[#2A1218] px-3 py-1 text-xs text-[#F0A0A8]">
+          <span className="rounded-full bg-danger/15 px-3 py-1 text-xs text-danger">
             Disabled
           </span>
         )}
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <div className="w-full max-w-md rounded-lg border border-[#243656] bg-[#121E32] px-4 py-3 text-center text-sm text-[#FFFFFF]">
+        <div className="w-full max-w-md rounded-lg border border-border bg-surface-muted px-4 py-3 text-center text-sm text-foreground">
           {workflow.trigger.label}
         </div>
 
@@ -49,7 +49,7 @@ export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
           const Icon = stepIcons[step.type];
           return (
             <div key={step.id} className="flex w-full max-w-md flex-col items-center gap-2">
-              <ArrowDown className="h-4 w-4 text-[#243656]" aria-hidden />
+              <ArrowDown className="h-4 w-4 text-border" aria-hidden />
               <div
                 className={cn(
                   "w-full rounded-lg border px-4 py-3",

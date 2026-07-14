@@ -8,9 +8,9 @@ export default function BuildPage() {
     <ModulePageShell
       icon={Hammer}
       title="Build OS"
-      description="Preferences → AI site plan → approve before generation (SiteOS)"
+      description="Describe your business, customize the look, preview live, then generate your site plan"
     >
-      <Suspense fallback={<p className="text-sm text-[#9AABC4]">Loading…</p>}>
+      <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
         <BuildOsClient />
       </Suspense>
     </ModulePageShell>

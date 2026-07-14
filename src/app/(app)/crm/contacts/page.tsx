@@ -20,25 +20,25 @@ function ContactCard({
   return (
     <Link
       href={`/crm/contacts/${contact.id}`}
-      className="block rounded-xl border border-[#243656] bg-[#0D1524] p-4 active:bg-[#121E32]"
+      className="block rounded-xl border border-border bg-surface-elevated p-4 active:bg-surface-muted"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-medium text-[#FFFFFF]">{contactDisplayName(contact)}</p>
+          <p className="font-medium text-foreground">{contactDisplayName(contact)}</p>
           {contact.jobTitle && (
-            <p className="text-xs text-[#9AABC4]">{contact.jobTitle}</p>
+            <p className="text-xs text-muted">{contact.jobTitle}</p>
           )}
         </div>
         <LeadScoreBadge score={contact.leadScore} />
       </div>
-      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#9AABC4]">
+      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted">
         <div>
           <dt className="text-[10px] uppercase tracking-wide">Company</dt>
-          <dd className="mt-0.5 truncate text-[#FFFFFF]">{companyName}</dd>
+          <dd className="mt-0.5 truncate text-foreground">{companyName}</dd>
         </div>
         <div>
           <dt className="text-[10px] uppercase tracking-wide">Purchases</dt>
-          <dd className="mt-0.5 text-[#FFFFFF]">
+          <dd className="mt-0.5 text-foreground">
             {contact.purchaseTotal > 0
               ? `£${contact.purchaseTotal.toLocaleString()}`
               : "—"}
@@ -47,12 +47,12 @@ function ContactCard({
         {contact.email && (
           <div className="col-span-2">
             <dt className="text-[10px] uppercase tracking-wide">Email</dt>
-            <dd className="mt-0.5 break-all text-[#FFFFFF]">{contact.email}</dd>
+            <dd className="mt-0.5 break-all text-foreground">{contact.email}</dd>
           </div>
         )}
         <div>
           <dt className="text-[10px] uppercase tracking-wide">Owner</dt>
-          <dd className="mt-0.5 text-[#FFFFFF]">{ownerName}</dd>
+          <dd className="mt-0.5 text-foreground">{ownerName}</dd>
         </div>
       </dl>
     </Link>
@@ -80,9 +80,9 @@ export default async function ContactsPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Contacts</h2>
-        <p className="text-xs text-[#9AABC4] sm:text-sm">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-foreground sm:text-xl">Contacts</h2>
+        <p className="text-xs text-muted sm:text-sm">
           People, communication history, purchases, and AI lead scores.
         </p>
       </header>
@@ -103,17 +103,17 @@ export default async function ContactsPage() {
             />
           ))}
           {contacts.length === 0 && (
-            <p className="py-8 text-center text-sm text-[#9AABC4]">
+            <p className="py-8 text-center text-sm text-muted">
               No contacts yet. Qualified inbound conversations create CRM contacts
               automatically.
             </p>
           )}
         </div>
 
-        <div className="hidden overflow-hidden rounded-xl border border-[#243656] bg-[#0D1524] md:block">
+        <div className="hidden overflow-hidden rounded-xl border border-border bg-surface-elevated md:block">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="border-b border-[#243656] bg-[#121E32] text-left text-xs text-[#9AABC4]">
+              <thead className="border-b border-border bg-surface-muted text-left text-xs text-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Company</th>
@@ -123,33 +123,33 @@ export default async function ContactsPage() {
                   <th className="px-4 py-3 font-medium">Purchases</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#243656]">
+              <tbody className="divide-y divide-border">
                 {contacts.map((contact) => (
-                  <tr key={contact.id} className="hover:bg-[#121E32]/50">
+                  <tr key={contact.id} className="hover:bg-surface-muted/50">
                     <td className="px-4 py-3">
                       <Link
                         href={`/crm/contacts/${contact.id}`}
-                        className="font-medium text-[#FFFFFF] hover:text-[#B8965D]"
+                        className="font-medium text-foreground hover:text-gold"
                       >
                         {contactDisplayName(contact)}
                       </Link>
                       {contact.jobTitle && (
-                        <p className="text-xs text-[#9AABC4]">{contact.jobTitle}</p>
+                        <p className="text-xs text-muted">{contact.jobTitle}</p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-[#9AABC4]">
+                    <td className="px-4 py-3 text-muted">
                       {companyName(contact.accountId)}
                     </td>
-                    <td className="px-4 py-3 text-[#9AABC4]">
+                    <td className="px-4 py-3 text-muted">
                       {contact.email ?? "—"}
                     </td>
                     <td className="px-4 py-3">
                       <LeadScoreBadge score={contact.leadScore} />
                     </td>
-                    <td className="px-4 py-3 text-[#9AABC4]">
+                    <td className="px-4 py-3 text-muted">
                       {ownerName(contact.ownerId)}
                     </td>
-                    <td className="px-4 py-3 text-[#9AABC4]">
+                    <td className="px-4 py-3 text-muted">
                       {contact.purchaseTotal > 0
                         ? `£${contact.purchaseTotal.toLocaleString()}`
                         : "—"}
@@ -160,7 +160,7 @@ export default async function ContactsPage() {
             </table>
           </div>
           {contacts.length === 0 && (
-            <p className="p-8 text-center text-sm text-[#9AABC4]">
+            <p className="p-8 text-center text-sm text-muted">
               No contacts yet. Qualified inbound conversations in the inbox create
               CRM contacts automatically.
             </p>

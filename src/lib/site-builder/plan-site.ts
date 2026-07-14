@@ -305,7 +305,8 @@ Given site creation preferences, return JSON matching this shape:
     "deployNotes": [{ "title": string, "body": string }]
   }
 }
-Domains are purchased only through Aarvanta. Hosting is AWS EC2 only.
+Domains are purchased only through Aarvanta. Hosting is managed by Aarvanta (do not mention cloud vendor names in deployNotes).
+deployNotes should be short customer-facing steps (domain, hosting, publish, monitoring) with no infrastructure jargon.
 Respect ALL user preferences including themePreset, customPrompt, referenceScreenshots, deployment config, pages, and features.
 Honor the user's customPrompt as hard constraints when planning sections and copy direction.
 If referenceScreenshots are provided, note layout inspiration from them in styleNotes.

@@ -25,6 +25,8 @@ const GlobalSearch = dynamic(
 );
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { BrandLogo } from "@/components/brand/logo";
 
 const HelpMenu = dynamic(
   () => import("@/components/layout/help-menu").then((mod) => mod.HelpMenu),
@@ -48,6 +50,13 @@ export function AppHeader() {
 
   return (
     <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
+      <Link
+        href="/dashboard"
+        className="shrink-0 md:hidden"
+        aria-label="Aarvanta Business OS"
+      >
+        <BrandLogo variant="icon" size="sm" />
+      </Link>
       <div className="min-w-0 flex-1">
         <GlobalSearch className="w-full max-w-xl" placeholder="Search across OS…" />
       </div>
@@ -65,6 +74,8 @@ export function AppHeader() {
         </button>
 
         <ThemeToggle />
+
+        <LanguageSwitcher />
 
         <Suspense fallback={null}>
           <HelpMenu />

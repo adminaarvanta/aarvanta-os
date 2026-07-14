@@ -51,11 +51,11 @@ type SettingsClientProps = {
 };
 
 const roleBadgeClass: Record<MemberRole, string> = {
-  owner: "bg-[#B8965D]/20 text-[#C9AA72] ring-[#B8965D]/40",
-  admin: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
-  manager: "bg-[#1A2B48]/60 text-[#C9AA72] ring-[#B8965D]/30",
-  member: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
-  guest: "bg-[#121E32] text-[#9AABC4]/70 ring-[#243656]",
+  owner: "bg-gold/20 text-gold-bright ring-gold/40",
+  admin: "bg-accent-cyan/10 text-accent-cyan ring-accent-cyan/30",
+  manager: "bg-navy/60 text-gold-bright ring-gold/30",
+  member: "bg-surface-muted text-muted ring-border",
+  guest: "bg-surface-muted text-muted/70 ring-border",
 };
 
 export function SettingsClient({
@@ -207,7 +207,7 @@ export function SettingsClient({
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {message && (
-        <p className="rounded-lg border border-[#B8965D]/30 bg-[#B8965D]/10 px-4 py-2 text-sm text-[#C9AA72]">
+        <p className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-2 text-sm text-gold-bright">
           {message}
         </p>
       )}
@@ -256,7 +256,7 @@ export function SettingsClient({
       <Panel>
         <SectionHeader
           title="Organization"
-          description={`Tenant slug: ${organization.slug}`}
+          description={`${organization.name} workspace settings`}
         />
         {canManageOrg ? (
           <form onSubmit={saveOrganization} className="mt-4 space-y-3">
@@ -449,7 +449,7 @@ export function SettingsClient({
                   <Badge
                     className={
                       inv.status === "pending"
-                        ? "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35"
+                        ? "bg-gold/10 text-gold-bright ring-gold/35"
                         : "bg-surface-muted text-muted ring-border"
                     }
                   >

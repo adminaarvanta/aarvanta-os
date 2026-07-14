@@ -22,17 +22,17 @@ function ModuleGrid({
           <li key={mod.id}>
             <Link
               href={mod.href}
-              className="flex h-full flex-col rounded-xl border border-[#243656] bg-[#0D1524] p-4 transition-colors hover:border-[#B8965D]/40 hover:bg-[#121E32]"
+              className="flex h-full flex-col rounded-xl border border-border bg-surface-elevated p-4 transition-colors hover:border-gold/40 hover:bg-surface-muted"
             >
               <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-[#B8965D]" />
-                <span className="font-medium text-[#FFFFFF]">{mod.label}</span>
-                <span className="ml-auto text-[10px] text-[#9AABC4]">
+                <Icon className="h-4 w-4 text-gold" />
+                <span className="font-medium text-foreground">{mod.label}</span>
+                <span className="ml-auto text-[10px] text-muted">
                   {phasePrefix ?? "M"}
                   {mod.phase}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-[#9AABC4]">{mod.description}</p>
+              <p className="mt-2 text-xs text-muted">{mod.description}</p>
             </Link>
           </li>
         );
@@ -52,10 +52,10 @@ export default function PlatformHubPage() {
       description="All Aarvanta OS modules mapped to os-new.txt"
     >
       <div className="space-y-8">
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4">
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-elevated p-4">
           <div>
-            <p className="text-sm font-medium text-[#FFFFFF]">Roadmap coverage</p>
-            <p className="text-xs text-[#9AABC4]">
+            <p className="text-sm font-medium text-foreground">Roadmap coverage</p>
+            <p className="text-xs text-muted">
               {stats.complete} complete · {stats.partial} partial · {stats.planned}{" "}
               planned
             </p>
@@ -63,20 +63,20 @@ export default function PlatformHubPage() {
           <div className="flex flex-wrap gap-2">
           <Link
             href="/platform/events"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#243656] px-3 py-2 text-xs font-medium text-[#FFFFFF] hover:border-[#B8965D]/40"
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-gold/40"
           >
-            <Activity className="h-3.5 w-3.5 text-[#B8965D]" />
+            <Activity className="h-3.5 w-3.5 text-gold" />
             Event audit log
           </Link>
           <Link
             href="/platform/ageb"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#243656] px-3 py-2 text-xs font-medium text-[#FFFFFF] hover:border-[#B8965D]/40"
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-gold/40"
           >
             AGEB 2.0 blueprint
           </Link>
           <Link
             href="/platform/coverage"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#B8965D]/40 px-3 py-2 text-xs font-medium text-[#C9AA72] hover:bg-[#B8965D]/10"
+            className="inline-flex items-center gap-2 rounded-lg border border-gold/40 px-3 py-2 text-xs font-medium text-gold-bright hover:bg-gold/10"
           >
             <ClipboardCheck className="h-3.5 w-3.5" />
             View full coverage report
@@ -85,7 +85,7 @@ export default function PlatformHubPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Core (Phase 1–10)</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Core (Phase 1–10)</h3>
           <ModuleGrid modules={CORE_MODULES} phasePrefix="" />
         </section>
 
@@ -93,7 +93,7 @@ export default function PlatformHubPage() {
           const modules = PLATFORM_MODULES.filter((m) => m.group === group);
           return (
             <section key={group}>
-              <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">{group}</h3>
+              <h3 className="mb-3 text-sm font-semibold text-foreground">{group}</h3>
               <ModuleGrid modules={modules} />
             </section>
           );

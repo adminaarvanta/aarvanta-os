@@ -8,9 +8,9 @@ import { formatRelative } from "@/lib/utils";
 import type { AiDigest, AppNotification } from "@/types/notifications";
 
 const priorityClass = {
-  high: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
-  medium: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
-  low: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
+  high: "bg-danger/15 text-danger ring-danger/45",
+  medium: "bg-gold/10 text-gold-bright ring-gold/35",
+  low: "bg-surface-muted text-muted ring-border",
 };
 
 const kindLabel = {
@@ -41,16 +41,16 @@ export function CommunicationsClient({
   return (
     <div className="space-y-8">
       {digest && (
-        <section className="rounded-xl border border-[#B8965D]/30 bg-[#B8965D]/5 p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-[#B8965D]">
+        <section className="rounded-xl border border-gold/30 bg-gold/5 p-5">
+          <p className="text-xs font-medium uppercase tracking-wide text-gold">
             AI Digest · {digest.period}
           </p>
-          <h3 className="mt-2 text-lg font-semibold text-[#FFFFFF]">
+          <h3 className="mt-2 text-lg font-semibold text-foreground">
             {digest.headline}
           </h3>
           <ul className="mt-3 space-y-1">
             {digest.highlights.map((h) => (
-              <li key={h} className="text-sm text-[#C4B896]">
+              <li key={h} className="text-sm text-gold-bright">
                 · {h}
               </li>
             ))}
@@ -58,32 +58,32 @@ export function CommunicationsClient({
           <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {digest.stats.newLeads != null && (
               <div>
-                <dt className="text-[10px] text-[#9AABC4]">New leads</dt>
-                <dd className="text-lg font-semibold text-[#C9AA72]">
+                <dt className="text-[10px] text-muted">New leads</dt>
+                <dd className="text-lg font-semibold text-gold-bright">
                   {digest.stats.newLeads}
                 </dd>
               </div>
             )}
             {digest.stats.dealsNeedAttention != null && (
               <div>
-                <dt className="text-[10px] text-[#9AABC4]">Deals need attention</dt>
-                <dd className="text-lg font-semibold text-[#C9AA72]">
+                <dt className="text-[10px] text-muted">Deals need attention</dt>
+                <dd className="text-lg font-semibold text-gold-bright">
                   {digest.stats.dealsNeedAttention}
                 </dd>
               </div>
             )}
             {digest.stats.revenueChangePct != null && (
               <div>
-                <dt className="text-[10px] text-[#9AABC4]">Revenue change</dt>
-                <dd className="text-lg font-semibold text-[#4DA6FF]">
+                <dt className="text-[10px] text-muted">Revenue change</dt>
+                <dd className="text-lg font-semibold text-accent-cyan">
                   +{digest.stats.revenueChangePct}%
                 </dd>
               </div>
             )}
             {digest.stats.unreadMessages != null && (
               <div>
-                <dt className="text-[10px] text-[#9AABC4]">Unread messages</dt>
-                <dd className="text-lg font-semibold text-[#C9AA72]">
+                <dt className="text-[10px] text-muted">Unread messages</dt>
+                <dd className="text-lg font-semibold text-gold-bright">
                   {digest.stats.unreadMessages}
                 </dd>
               </div>
@@ -94,7 +94,7 @@ export function CommunicationsClient({
 
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#FFFFFF]">Notifications & alerts</h3>
+          <h3 className="text-sm font-semibold text-foreground">Notifications & alerts</h3>
           <Button size="sm" variant="secondary" onClick={markAllRead}>
             Mark all read
           </Button>
@@ -105,8 +105,8 @@ export function CommunicationsClient({
               key={n.id}
               className={`rounded-xl border p-4 ${
                 n.read
-                  ? "border-[#243656] bg-[#0D1524] opacity-70"
-                  : "border-[#B8965D]/20 bg-[#0D1524]"
+                  ? "border-border bg-surface-elevated opacity-70"
+                  : "border-gold/20 bg-surface-elevated"
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -116,12 +116,12 @@ export function CommunicationsClient({
                       {kindLabel[n.kind]}
                     </Badge>
                     {!n.read && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#B8965D]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-gold" />
                     )}
                   </div>
-                  <p className="mt-2 font-medium text-[#FFFFFF]">{n.title}</p>
-                  <p className="mt-1 text-sm text-[#9AABC4]">{n.body}</p>
-                  <p className="mt-2 text-[10px] text-[#9AABC4]/70">
+                  <p className="mt-2 font-medium text-foreground">{n.title}</p>
+                  <p className="mt-1 text-sm text-muted">{n.body}</p>
+                  <p className="mt-2 text-[10px] text-muted/70">
                     {formatRelative(n.createdAt)}
                   </p>
                 </div>
@@ -130,7 +130,7 @@ export function CommunicationsClient({
                     <button
                       type="button"
                       onClick={() => markRead(n.id)}
-                      className="text-xs text-[#B8965D] hover:underline"
+                      className="text-xs text-gold hover:underline"
                     >
                       Mark read
                     </button>
@@ -138,7 +138,7 @@ export function CommunicationsClient({
                   {n.actionUrl && (
                     <Link
                       href={n.actionUrl}
-                      className="text-xs text-[#C9AA72] hover:underline"
+                      className="text-xs text-gold-bright hover:underline"
                     >
                       View
                     </Link>

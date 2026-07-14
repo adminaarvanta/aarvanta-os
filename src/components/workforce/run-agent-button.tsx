@@ -54,7 +54,7 @@ export function RunAgentButton({
         type="button"
         onClick={run}
         disabled={pending}
-        className="w-full gap-2 bg-[#B8965D] text-black hover:bg-[#C9AA72] sm:w-auto"
+        className="w-full gap-2 bg-gold text-black hover:bg-gold-bright sm:w-auto"
       >
         {pending ? (
           <Loader2 className="h-4 w-4 animate-spin" />

@@ -32,7 +32,7 @@ export default async function PipelinesPage({
 
   if (!activePipeline) {
     return (
-      <div className="p-8 text-sm text-[#9AABC4]">
+      <div className="p-8 text-sm text-muted">
         No pipelines configured yet. Pipelines are created when you add deals from qualified leads.
       </div>
     );
@@ -44,9 +44,9 @@ export default async function PipelinesPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Pipelines</h2>
-        <p className="text-xs text-[#9AABC4] sm:text-sm">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-foreground sm:text-xl">Pipelines</h2>
+        <p className="text-xs text-muted sm:text-sm">
           Create deals, move stages, assign owners, and mark won/lost manually.
         </p>
       </header>
@@ -60,8 +60,8 @@ export default async function PipelinesPage({
               href={`/crm/pipelines?pipeline=${p.id}`}
               className={
                 p.id === activePipeline.id
-                  ? "rounded-full bg-[#B8965D] px-4 py-1.5 text-sm font-semibold text-black"
-                  : "rounded-full border border-[#243656] bg-[#0D1524] px-4 py-1.5 text-sm text-[#9AABC4] hover:border-[#B8965D]/40"
+                  ? "rounded-full bg-gold px-4 py-1.5 text-sm font-semibold text-black"
+                  : "rounded-full border border-border bg-surface-elevated px-4 py-1.5 text-sm text-muted hover:border-gold/40"
               }
             >
               {p.name}

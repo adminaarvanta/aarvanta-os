@@ -52,31 +52,31 @@ export function ProposalsClient() {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+      className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4"
     >
-      <p className="text-sm font-medium text-[#FFFFFF]">Create proposal</p>
+      <p className="text-sm font-medium text-foreground">Create proposal</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1 text-xs text-[#9AABC4]">
+        <label className="space-y-1 text-xs text-muted">
           Proposal title
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Expansion proposal"
-            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           />
         </label>
-        <label className="space-y-1 text-xs text-[#9AABC4]">
+        <label className="space-y-1 text-xs text-muted">
           Client name
           <input
             value={clientName}
             onChange={(event) => setClientName(event.target.value)}
             placeholder="Meridian Health"
-            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           />
         </label>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1 text-xs text-[#9AABC4]">
+        <label className="space-y-1 text-xs text-muted">
           Value
           <input
             type="number"
@@ -85,27 +85,27 @@ export function ProposalsClient() {
             value={value}
             onChange={(event) => setValue(event.target.value)}
             placeholder="25000"
-            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           />
         </label>
-        <label className="space-y-1 text-xs text-[#9AABC4]">
+        <label className="space-y-1 text-xs text-muted">
           Currency
           <input
             value={currency}
             onChange={(event) => setCurrency(event.target.value.toUpperCase())}
             placeholder="GBP"
-            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           />
         </label>
       </div>
-      <label className="space-y-1 text-xs text-[#9AABC4]">
+      <label className="space-y-1 text-xs text-muted">
         Content
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
           rows={3}
           placeholder="Proposal summary..."
-          className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
         />
       </label>
       <div className="flex items-center gap-3">

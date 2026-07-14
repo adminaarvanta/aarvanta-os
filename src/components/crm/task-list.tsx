@@ -14,8 +14,8 @@ const statusIcon = {
 };
 
 const priorityColor = {
-  low: "text-[#9AABC4]",
-  medium: "text-[#C9AA72]",
+  low: "text-muted",
+  medium: "text-gold-bright",
   high: "text-red-400",
 };
 
@@ -74,7 +74,7 @@ export function TaskList({
   }
 
   if (tasks.length === 0) {
-    return <p className="text-sm text-[#9AABC4]">No tasks yet.</p>;
+    return <p className="text-sm text-muted">No tasks yet.</p>;
   }
 
   function assigneeName(userId?: string) {
@@ -83,7 +83,7 @@ export function TaskList({
   }
 
   return (
-    <ul className="divide-y divide-[#243656] rounded-xl border border-[#243656] bg-[#0D1524]">
+    <ul className="divide-y divide-border rounded-xl border border-border bg-surface-elevated">
       {tasks.map((task) => {
         const Icon = statusIcon[task.status];
         return (
@@ -91,7 +91,7 @@ export function TaskList({
             <button
               type="button"
               onClick={() => cycleStatus(task)}
-              className="mt-0.5 text-[#B8965D] hover:opacity-80"
+              className="mt-0.5 text-gold hover:opacity-80"
               title="Click to advance status"
             >
               <Icon className="h-5 w-5" />
@@ -100,22 +100,22 @@ export function TaskList({
               <div>
                 <p
                   className={cn(
-                    "text-sm font-medium text-[#FFFFFF]",
-                    task.status === "done" && "line-through text-[#9AABC4]"
+                    "text-sm font-medium text-foreground",
+                    task.status === "done" && "line-through text-muted"
                   )}
                 >
                   {task.title}
                 </p>
                 {task.description && (
-                  <p className="mt-0.5 text-xs text-[#9AABC4]">{task.description}</p>
+                  <p className="mt-0.5 text-xs text-muted">{task.description}</p>
                 )}
-                <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-[#9AABC4]">
+                <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-muted">
                   <span className={priorityColor[task.priority]}>
                     {task.priority} priority
                   </span>
                   {task.dueDate && <span>Due {task.dueDate}</span>}
                   {task.source === "ai" && (
-                    <span className="text-[#B8965D]">AI-created</span>
+                    <span className="text-gold">AI-created</span>
                   )}
                 </div>
               </div>
@@ -127,7 +127,7 @@ export function TaskList({
                   placeholder="Assign to…"
                 />
                 {task.assignedTo && (
-                  <p className="mt-1 text-[10px] text-[#9AABC4]">
+                  <p className="mt-1 text-[10px] text-muted">
                     Assigned: {assigneeName(task.assignedTo)}
                   </p>
                 )}

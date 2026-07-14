@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { ImagePlus, Trash2, Upload } from "lucide-react";
+import {
+  Briefcase,
+  ImagePlus,
+  LayoutTemplate,
+  ShoppingBag,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
-import { Ec2HostingPanel } from "@/components/build/ec2-hosting-panel";
+import { SiteLivePreview } from "@/components/build/site-live-preview";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/os/status-pill";
 import { DEFAULT_DEPLOYMENT } from "@/lib/site-builder/normalize-preferences";
@@ -24,30 +32,48 @@ import type {
   SiteType,
 } from "@/types/site-builder";
 
-const STEPS = ["Business", "Design & theme", "Content & features", "Deploy"] as const;
+const STEPS = ["Business", "Style", "Pages", "Go live"] as const;
 
-const TONES: SiteTone[] = ["professional", "friendly", "bold", "luxury"];
-const SITE_TYPES: SiteType[] = ["landing", "business", "store", "portfolio"];
+const TONES: { value: SiteTone; label: string; hint: string }[] = [
+  { value: "professional", label: "Professional", hint: "Clear & credible" },
+  { value: "friendly", label: "Friendly", hint: "Warm & approachable" },
+  { value: "bold", label: "Bold", hint: "Confident & punchy" },
+  { value: "luxury", label: "Luxury", hint: "Premium & refined" },
+];
+
+const SITE_TYPES: {
+  value: SiteType;
+  label: string;
+  hint: string;
+  icon: typeof Briefcase;
+}[] = [
+  { value: "landing", label: "Landing page", hint: "One page to convert visitors", icon: LayoutTemplate },
+  { value: "business", label: "Business site", hint: "Services, about, contact", icon: Briefcase },
+  { value: "store", label: "Online store", hint: "Sell products online", icon: ShoppingBag },
+  { value: "portfolio", label: "Portfolio", hint: "Showcase your work", icon: Sparkles },
+];
+
 const DESIGN_STYLES: SiteDesignStyle[] = ["minimal", "modern", "bold", "classic"];
 const COLOR_MOODS = ["warm", "cool", "neutral", "vibrant"] as const;
+
 const CTA_GOALS: { value: SiteCtaGoal; label: string }[] = [
-  { value: "contact", label: "Contact us" },
+  { value: "contact", label: "Get in touch" },
   { value: "book_call", label: "Book a call" },
-  { value: "buy", label: "Buy now" },
+  { value: "buy", label: "Buy / shop" },
   { value: "subscribe", label: "Subscribe" },
 ];
 
-const PAGE_OPTIONS: { value: SitePageOption; label: string }[] = [
-  { value: "home", label: "Home" },
-  { value: "about", label: "About" },
-  { value: "services", label: "Services" },
-  { value: "pricing", label: "Pricing" },
-  { value: "products", label: "Products" },
-  { value: "portfolio", label: "Portfolio" },
-  { value: "testimonials", label: "Testimonials" },
-  { value: "faq", label: "FAQ" },
-  { value: "blog", label: "Blog" },
-  { value: "contact", label: "Contact" },
+const PAGE_OPTIONS: { value: SitePageOption; label: string; hint: string }[] = [
+  { value: "home", label: "Home", hint: "Always included" },
+  { value: "about", label: "About", hint: "Your story" },
+  { value: "services", label: "Services", hint: "What you offer" },
+  { value: "pricing", label: "Pricing", hint: "Plans & packages" },
+  { value: "products", label: "Products", hint: "Catalog" },
+  { value: "portfolio", label: "Portfolio", hint: "Case studies" },
+  { value: "testimonials", label: "Reviews", hint: "Social proof" },
+  { value: "faq", label: "FAQ", hint: "Common questions" },
+  { value: "blog", label: "Blog", hint: "Articles" },
+  { value: "contact", label: "Contact", hint: "Reach you" },
 ];
 
 const FEATURE_OPTIONS: { value: SiteFeatureOption; label: string; group: string }[] = [
@@ -63,31 +89,99 @@ const FEATURE_OPTIONS: { value: SiteFeatureOption; label: string; group: string 
   { value: "seo_pack", label: "SEO pack", group: "Insights" },
 ];
 
-const DEFAULT_PREFERENCES: SitePreferences = {
-  businessName: "Artisan Candles Co",
-  businessIdea:
-    "Sell handmade soy candles online to UK customers with subscription boxes and gift sets.",
-  targetAudience: "Eco-conscious home fragrance buyers aged 25–45",
+type QuickStart = {
+  id: string;
+  label: string;
+  description: string;
+  patch: Partial<SitePreferences>;
+};
+
+const QUICK_STARTS: QuickStart[] = [
+  {
+    id: "store",
+    label: "Online shop",
+    description: "Products, checkout, trust signals",
+    patch: {
+      siteType: "store",
+      tone: "friendly",
+      themePreset: "sunset_warm",
+      designStyle: "modern",
+      colorMood: "warm",
+      pages: ["home", "about", "products", "faq", "contact"],
+      features: ["ecommerce", "contact_form", "testimonials", "seo_pack"],
+      ctaGoal: "buy",
+      keyMessages: "Quality products, fast delivery, easy returns",
+    },
+  },
+  {
+    id: "service",
+    label: "Local service",
+    description: "Bookings, reviews, contact",
+    patch: {
+      siteType: "business",
+      tone: "professional",
+      themePreset: "ocean_cool",
+      designStyle: "modern",
+      colorMood: "cool",
+      pages: ["home", "about", "services", "pricing", "contact"],
+      features: ["contact_form", "booking", "testimonials", "seo_pack"],
+      ctaGoal: "book_call",
+      keyMessages: "Trusted locally · Free consultation",
+    },
+  },
+  {
+    id: "agency",
+    label: "Agency / studio",
+    description: "Portfolio and case studies",
+    patch: {
+      siteType: "portfolio",
+      tone: "bold",
+      themePreset: "bold_dark",
+      designStyle: "bold",
+      colorMood: "vibrant",
+      pages: ["home", "about", "portfolio", "services", "contact"],
+      features: ["contact_form", "testimonials", "analytics"],
+      ctaGoal: "contact",
+      keyMessages: "Strategy, craft, results",
+    },
+  },
+  {
+    id: "saas",
+    label: "Product launch",
+    description: "Landing page that converts",
+    patch: {
+      siteType: "landing",
+      tone: "professional",
+      themePreset: "gold_navy",
+      designStyle: "minimal",
+      colorMood: "neutral",
+      pages: ["home", "pricing", "faq", "contact"],
+      features: ["contact_form", "newsletter", "analytics", "seo_pack"],
+      ctaGoal: "subscribe",
+      keyMessages: "Simple setup · Clear results",
+    },
+  },
+];
+
+const EMPTY_PREFERENCES: SitePreferences = {
+  businessName: "",
+  businessIdea: "",
+  targetAudience: "",
   countryBase: "UK",
-  tone: "friendly",
-  siteType: "store",
+  tone: "professional",
+  siteType: "business",
   designStyle: "modern",
-  colorMood: "warm",
+  colorMood: "neutral",
   themePreset: "gold_navy",
-  pages: ["home", "about", "products", "contact"],
-  features: ["contact_form", "ecommerce", "testimonials", "seo_pack"],
-  ctaGoal: "buy",
-  keyMessages: "Hand-poured, sustainable, gift-ready",
-  customPrompt:
-    "Emphasize gift-ready packaging and UK fast delivery. Hero should feel warm and cozy.",
+  pages: ["home", "about", "services", "contact"],
+  features: ["contact_form", "seo_pack"],
+  ctaGoal: "contact",
+  keyMessages: "",
+  customPrompt: "",
   referenceScreenshots: [],
   deployment: {
     ...DEFAULT_DEPLOYMENT,
     domain: { ...DEFAULT_DEPLOYMENT.domain, status: "none" as const },
-    ec2: {
-      ...DEFAULT_DEPLOYMENT.ec2,
-      stackName: "artisan-candles-co",
-    },
   },
 };
 
@@ -95,19 +189,15 @@ const MAX_SCREENSHOTS = 3;
 const MAX_SCREENSHOT_BYTES = 1_500_000;
 
 function inputClassName() {
-  return "w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground";
+  return "w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim";
 }
 
 function chipClassName(active: boolean) {
-  return `rounded-full border px-2.5 py-1 text-[11px] capitalize transition-colors ${
+  return `rounded-lg border px-3 py-1.5 text-xs transition-colors ${
     active
       ? "border-gold bg-primary-soft text-gold-bright"
       : "border-border text-muted hover:border-gold/40"
   }`;
-}
-
-function sectionClassName() {
-  return "rounded-xl border border-border bg-surface-elevated p-4";
 }
 
 export function BuildOsClient() {
@@ -117,11 +207,12 @@ export function BuildOsClient() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(0);
-  const [preferences, setPreferences] = useState<SitePreferences>(DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useState<SitePreferences>(EMPTY_PREFERENCES);
   const [job, setJob] = useState<SiteBuildJob | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usedAi, setUsedAi] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const loadJob = useCallback(async (id: string) => {
     const res = await fetch(`/api/build/${id}`);
@@ -129,10 +220,10 @@ export function BuildOsClient() {
     const data = (await res.json()) as { job: SiteBuildJob };
     setJob(data.job);
     setPreferences({
-      ...DEFAULT_PREFERENCES,
+      ...EMPTY_PREFERENCES,
       ...data.job.preferences,
       deployment: {
-        ...DEFAULT_PREFERENCES.deployment,
+        ...EMPTY_PREFERENCES.deployment,
         ...data.job.preferences.deployment,
       },
       referenceScreenshots: data.job.preferences.referenceScreenshots ?? [],
@@ -158,10 +249,16 @@ export function BuildOsClient() {
     }));
   }
 
-  function updateEc2(ec2: SitePreferences["deployment"]["ec2"]) {
+  function applyQuickStart(start: QuickStart) {
     setPreferences((prev) => ({
       ...prev,
-      deployment: { ...prev.deployment, ec2 },
+      ...start.patch,
+      deployment: prev.deployment,
+      businessName: prev.businessName,
+      businessIdea: prev.businessIdea,
+      targetAudience: prev.targetAudience,
+      countryBase: prev.countryBase,
+      referenceScreenshots: prev.referenceScreenshots,
     }));
   }
 
@@ -205,7 +302,7 @@ export function BuildOsClient() {
     const existing = preferences.referenceScreenshots ?? [];
     const remaining = MAX_SCREENSHOTS - existing.length;
     if (remaining <= 0) {
-      setError(`Maximum ${MAX_SCREENSHOTS} reference screenshots allowed.`);
+      setError(`Maximum ${MAX_SCREENSHOTS} reference images allowed.`);
       return;
     }
 
@@ -217,7 +314,7 @@ export function BuildOsClient() {
         continue;
       }
       if (file.size > MAX_SCREENSHOT_BYTES) {
-        setError("Each screenshot must be under 1.5 MB.");
+        setError("Each image must be under 1.5 MB.");
         continue;
       }
 
@@ -255,6 +352,9 @@ export function BuildOsClient() {
       const payload = {
         ...preferences,
         referenceUrl: preferences.referenceUrl || undefined,
+        customPrompt: preferences.customPrompt || undefined,
+        keyMessages: preferences.keyMessages || undefined,
+        targetAudience: preferences.targetAudience || undefined,
       };
 
       const endpoint = job ? `/api/build/${job.id}/plan` : "/api/build";
@@ -301,414 +401,490 @@ export function BuildOsClient() {
     preferences.businessName.trim().length >= 2 &&
     preferences.businessIdea.trim().length >= 10;
   const canProceedStep2 = preferences.pages.length >= 1;
-  const canProceedDeploy = preferences.deployment.domain.status === "purchased";
+  const previewReady = canProceedStep0;
 
   return (
     <div className="space-y-6">
-      <section className={sectionClassName()}>
-        <p className="text-sm font-medium text-foreground">
-          Step 1 — Set your site preferences
-        </p>
-        <p className="mt-1 text-xs text-muted">
-          Build OS collects your brief, theme, reference screenshots, Aarvanta domain purchase,
-          and AWS EC2 hosting before generating pages.
-        </p>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+        <section className="rounded-xl border border-border bg-surface-elevated p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">Design your website</p>
+              <p className="mt-1 text-xs text-muted">
+                Answer a few plain questions — watch the preview update on the right. Domain is optional until you go live.
+              </p>
+            </div>
+          </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {STEPS.map((label, index) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => setStep(index)}
-              className={chipClassName(step === index)}
-            >
-              {index + 1}. {label}
-            </button>
-          ))}
-        </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {STEPS.map((label, index) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setStep(index)}
+                className={chipClassName(step === index)}
+              >
+                {index + 1}. {label}
+              </button>
+            ))}
+          </div>
 
-        <div className="mt-4 space-y-3">
-          {step === 0 && (
-            <>
-              <label className="block space-y-1 text-xs text-muted">
-                Business name
-                <input
-                  value={preferences.businessName}
-                  onChange={(e) => {
-                    updatePreferences("businessName", e.target.value);
-                    const slug = e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, "-")
-                      .replace(/^-|-$/g, "")
-                      .slice(0, 48);
-                    if (!preferences.deployment.ec2.stackName) {
-                      updateEc2({ ...preferences.deployment.ec2, stackName: slug });
-                    }
-                  }}
-                  className={inputClassName()}
-                />
-              </label>
-              <label className="block space-y-1 text-xs text-muted">
-                What does your business do?
-                <textarea
-                  value={preferences.businessIdea}
-                  onChange={(e) => updatePreferences("businessIdea", e.target.value)}
-                  rows={3}
-                  className={inputClassName()}
-                />
-              </label>
-              <label className="block space-y-1 text-xs text-muted">
-                Target audience (optional)
-                <input
-                  value={preferences.targetAudience ?? ""}
-                  onChange={(e) => updatePreferences("targetAudience", e.target.value)}
-                  className={inputClassName()}
-                />
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="space-y-1 text-xs text-muted">
-                  Country base
+          <div className="mt-5 space-y-4">
+            {step === 0 && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-foreground">Start from a template</p>
+                  <p className="text-[11px] text-dim">
+                    Pick a starting point — you can change anything after.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {QUICK_STARTS.map((start) => (
+                      <button
+                        key={start.id}
+                        type="button"
+                        onClick={() => applyQuickStart(start)}
+                        className="rounded-lg border border-border bg-surface-muted p-3 text-left transition-colors hover:border-gold/50"
+                      >
+                        <p className="text-xs font-medium text-foreground">{start.label}</p>
+                        <p className="mt-0.5 text-[11px] text-dim">{start.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="block space-y-1.5 text-xs text-muted">
+                  What&apos;s your business called?
+                  <input
+                    value={preferences.businessName}
+                    onChange={(e) => updatePreferences("businessName", e.target.value)}
+                    className={inputClassName()}
+                    placeholder="e.g. Northstar Coffee"
+                    autoComplete="organization"
+                  />
+                </label>
+
+                <label className="block space-y-1.5 text-xs text-muted">
+                  In one or two sentences, what do you do?
+                  <textarea
+                    value={preferences.businessIdea}
+                    onChange={(e) => updatePreferences("businessIdea", e.target.value)}
+                    rows={3}
+                    className={inputClassName()}
+                    placeholder="e.g. We roast specialty coffee and deliver subscription boxes across the UK."
+                  />
+                </label>
+
+                <label className="block space-y-1.5 text-xs text-muted">
+                  Who is this for? <span className="text-dim">(optional)</span>
+                  <input
+                    value={preferences.targetAudience ?? ""}
+                    onChange={(e) => updatePreferences("targetAudience", e.target.value)}
+                    className={inputClassName()}
+                    placeholder="e.g. Busy professionals who care about quality coffee"
+                  />
+                </label>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-foreground">What kind of site?</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {SITE_TYPES.map((type) => {
+                      const Icon = type.icon;
+                      const active = preferences.siteType === type.value;
+                      return (
+                        <button
+                          key={type.value}
+                          type="button"
+                          onClick={() => updatePreferences("siteType", type.value)}
+                          className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                            active
+                              ? "border-gold bg-primary-soft"
+                              : "border-border bg-surface-muted hover:border-gold/40"
+                          }`}
+                        >
+                          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                          <span>
+                            <span className="block text-xs font-medium text-foreground">
+                              {type.label}
+                            </span>
+                            <span className="mt-0.5 block text-[11px] text-dim">{type.hint}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <label className="block space-y-1.5 text-xs text-muted">
+                  Primary market / country
                   <input
                     value={preferences.countryBase}
                     onChange={(e) => updatePreferences("countryBase", e.target.value)}
                     className={inputClassName()}
+                    placeholder="UK"
                   />
                 </label>
-                <label className="space-y-1 text-xs text-muted">
-                  Site type
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-foreground">Pick a look</p>
+                  <p className="text-[11px] text-dim">Tap a theme — the preview updates instantly.</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {SITE_THEME_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => selectThemePreset(preset.id)}
+                        className={`overflow-hidden rounded-lg border text-left transition-colors ${
+                          preferences.themePreset === preset.id
+                            ? "border-gold ring-1 ring-gold/40"
+                            : "border-border hover:border-gold/40"
+                        }`}
+                      >
+                        <div
+                          className="flex h-14 items-end justify-between px-3 pb-2"
+                          style={{ backgroundColor: preset.backgroundColor }}
+                        >
+                          <span
+                            className="h-6 w-6 rounded-full border border-white/20"
+                            style={{ backgroundColor: preset.primaryColor }}
+                          />
+                          <span
+                            className="h-6 w-6 rounded-full border border-white/20"
+                            style={{ backgroundColor: preset.accentColor }}
+                          />
+                        </div>
+                        <div className="bg-surface-muted px-3 py-2">
+                          <p className="text-xs font-medium text-foreground">{preset.label}</p>
+                          <p className="mt-0.5 text-[10px] leading-relaxed text-dim">
+                            {preset.description}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Tone of voice</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {TONES.map((tone) => (
+                      <button
+                        key={tone.value}
+                        type="button"
+                        onClick={() => updatePreferences("tone", tone.value)}
+                        className={`rounded-lg border p-3 text-left ${
+                          preferences.tone === tone.value
+                            ? "border-gold bg-primary-soft"
+                            : "border-border bg-surface-muted hover:border-gold/40"
+                        }`}
+                      >
+                        <p className="text-xs font-medium text-foreground">{tone.label}</p>
+                        <p className="mt-0.5 text-[11px] text-dim">{tone.hint}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="block space-y-1.5 text-xs text-muted">
+                  Main button on the site should say…
                   <select
-                    value={preferences.siteType}
+                    value={preferences.ctaGoal}
                     onChange={(e) =>
-                      updatePreferences("siteType", e.target.value as SiteType)
+                      updatePreferences("ctaGoal", e.target.value as SiteCtaGoal)
                     }
                     className={inputClassName()}
                   >
-                    {SITE_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
+                    {CTA_GOALS.map((cta) => (
+                      <option key={cta.value} value={cta.value}>
+                        {cta.label}
                       </option>
                     ))}
                   </select>
                 </label>
-              </div>
-            </>
-          )}
 
-          {step === 1 && (
-            <>
-              <div className="space-y-2">
-                <p className="text-xs text-muted">Site theme preset</p>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {SITE_THEME_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => selectThemePreset(preset.id)}
-                      className={`rounded-lg border p-3 text-left transition-colors ${
-                        preferences.themePreset === preset.id
-                          ? "border-gold bg-primary-soft"
-                          : "border-border bg-surface-muted hover:border-gold/40"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-5 w-5 rounded-full border border-border"
-                          style={{ backgroundColor: preset.primaryColor }}
-                        />
-                        <span
-                          className="h-5 w-5 rounded-full border border-border"
-                          style={{ backgroundColor: preset.accentColor }}
-                        />
-                        <span className="text-xs font-medium text-foreground">
-                          {preset.label}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-[10px] leading-relaxed text-dim">
-                        {preset.description}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                <label className="block space-y-1.5 text-xs text-muted">
+                  Tagline or key promise <span className="text-dim">(optional)</span>
+                  <input
+                    value={preferences.keyMessages ?? ""}
+                    onChange={(e) => updatePreferences("keyMessages", e.target.value)}
+                    className={inputClassName()}
+                    placeholder="e.g. Hand-roasted · Next-day UK delivery"
+                  />
+                </label>
 
-              <div className="space-y-1 text-xs text-muted">
-                Tone of voice
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {TONES.map((tone) => (
-                    <button
-                      key={tone}
-                      type="button"
-                      onClick={() => updatePreferences("tone", tone)}
-                      className={chipClassName(preferences.tone === tone)}
-                    >
-                      {tone}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1 text-xs text-muted">
-                Design style
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {DESIGN_STYLES.map((style) => (
-                    <button
-                      key={style}
-                      type="button"
-                      onClick={() => updatePreferences("designStyle", style)}
-                      className={chipClassName(preferences.designStyle === style)}
-                    >
-                      {style}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1 text-xs text-muted">
-                Color mood
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {COLOR_MOODS.map((mood) => (
-                    <button
-                      key={mood}
-                      type="button"
-                      onClick={() => updatePreferences("colorMood", mood)}
-                      className={chipClassName(preferences.colorMood === mood)}
-                    >
-                      {mood}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <label className="block space-y-1 text-xs text-muted">
-                Custom prompt — tell the AI exactly what you want
-                <textarea
-                  value={preferences.customPrompt ?? ""}
-                  onChange={(e) => updatePreferences("customPrompt", e.target.value)}
-                  rows={4}
-                  className={inputClassName()}
-                  placeholder="E.g. Make the hero feel premium and cozy. Highlight subscription boxes. Use large product photography."
-                />
-              </label>
-
-              <div className="space-y-2">
-                <p className="text-xs text-muted">Reference screenshots (max {MAX_SCREENSHOTS})</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    void onScreenshotFiles(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={(preferences.referenceScreenshots?.length ?? 0) >= MAX_SCREENSHOTS}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload screenshot
-                  </Button>
-                  <span className="self-center text-[10px] text-dim">
-                    PNG, JPG, WebP — 1.5 MB max each
-                  </span>
-                </div>
-                {(preferences.referenceScreenshots?.length ?? 0) > 0 && (
-                  <ul className="grid gap-2 sm:grid-cols-3">
-                    {preferences.referenceScreenshots!.map((shot) => (
-                      <li
-                        key={shot.id}
-                        className="relative overflow-hidden rounded-lg border border-border bg-surface-muted"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={shot.dataUrl}
-                          alt={shot.name}
-                          className="h-28 w-full object-cover"
-                        />
-                        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-                          <span className="truncate text-[10px] text-muted">{shot.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeScreenshot(shot.id)}
-                            className="text-dim hover:text-foreground"
-                            aria-label={`Remove ${shot.name}`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {(preferences.referenceScreenshots?.length ?? 0) === 0 && (
-                  <div className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-6 text-xs text-dim">
-                    <ImagePlus className="h-4 w-4" />
-                    Upload inspiration screenshots to guide layout and style.
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <div className="space-y-1 text-xs text-muted">
-                Pages to include
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {PAGE_OPTIONS.map((page) => (
-                    <button
-                      key={page.value}
-                      type="button"
-                      onClick={() => togglePage(page.value)}
-                      disabled={page.value === "home"}
-                      className={chipClassName(
-                        preferences.pages.includes(page.value) || page.value === "home"
-                      )}
-                    >
-                      {page.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs text-muted">
-                Features
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {["Lead capture", "Commerce", "Growth", "Social proof", "Insights"].map(
-                    (group) => (
-                      <div
-                        key={group}
-                        className="rounded-lg border border-border bg-surface-muted p-3"
-                      >
-                        <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-dim">
-                          {group}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {FEATURE_OPTIONS.filter((f) => f.group === group).map((feature) => (
-                            <button
-                              key={feature.value}
-                              type="button"
-                              onClick={() => toggleFeature(feature.value)}
-                              className={chipClassName(
-                                preferences.features.includes(feature.value)
-                              )}
-                            >
-                              {feature.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-
-              <label className="block space-y-1 text-xs text-muted">
-                Primary goal (CTA)
-                <select
-                  value={preferences.ctaGoal}
-                  onChange={(e) =>
-                    updatePreferences("ctaGoal", e.target.value as SiteCtaGoal)
-                  }
-                  className={inputClassName()}
-                >
-                  {CTA_GOALS.map((cta) => (
-                    <option key={cta.value} value={cta.value}>
-                      {cta.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block space-y-1 text-xs text-muted">
-                Key messages (optional)
-                <input
-                  value={preferences.keyMessages ?? ""}
-                  onChange={(e) => updatePreferences("keyMessages", e.target.value)}
-                  className={inputClassName()}
-                />
-              </label>
-
-              <label className="block space-y-1 text-xs text-muted">
-                Reference site URL (optional)
-                <input
-                  value={preferences.referenceUrl ?? ""}
-                  onChange={(e) => updatePreferences("referenceUrl", e.target.value)}
-                  className={inputClassName()}
-                  placeholder="https://example.com"
-                />
-              </label>
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-foreground">1. Buy your domain (Aarvanta only)</p>
-                <DomainPurchasePanel
-                  businessName={preferences.businessName}
-                  countryBase={preferences.countryBase}
-                  domain={preferences.deployment.domain}
-                  buildJobId={job?.id}
-                  onDomainChange={updateDomain}
-                />
-              </div>
-
-              <div className="space-y-1 border-t border-border pt-4">
-                <p className="text-xs font-medium text-foreground">2. AWS EC2 hosting</p>
-                <Ec2HostingPanel
-                  deployment={preferences.deployment}
-                  onEc2Change={updateEc2}
-                />
-              </div>
-            </>
-          )}
-
-          {error && <p className="text-xs text-red-400">{error}</p>}
-
-          <div className="flex flex-wrap gap-2 pt-1">
-            {step > 0 && (
-              <Button type="button" variant="secondary" onClick={() => setStep(step - 1)}>
-                Back
-              </Button>
-            )}
-            {step < STEPS.length - 1 ? (
-              <Button
-                type="button"
-                onClick={() => setStep(step + 1)}
-                disabled={(step === 0 && !canProceedStep0) || (step === 2 && !canProceedStep2)}
-              >
-                Continue
-              </Button>
-            ) : (
-              <>
-                <Button
+                <button
                   type="button"
-                  onClick={onGeneratePlan}
-                  disabled={busy || !canProceedStep0 || !canProceedStep2 || !canProceedDeploy}
+                  onClick={() => setShowAdvanced((v) => !v)}
+                  className="text-xs font-medium text-gold hover:underline"
                 >
-                  {busy ? "Planning site…" : job ? "Regenerate plan" : "Generate site plan"}
-                </Button>
-                {!canProceedDeploy && (
-                  <p className="w-full text-xs text-dim">
-                    Purchase a domain through Aarvanta before generating your site plan.
-                  </p>
+                  {showAdvanced ? "Hide fine-tuning" : "Fine-tune style & inspiration"}
+                </button>
+
+                {showAdvanced && (
+                  <div className="space-y-4 rounded-lg border border-border bg-surface-muted p-3">
+                    <div className="space-y-1 text-xs text-muted">
+                      Design style
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {DESIGN_STYLES.map((style) => (
+                          <button
+                            key={style}
+                            type="button"
+                            onClick={() => updatePreferences("designStyle", style)}
+                            className={chipClassName(preferences.designStyle === style)}
+                          >
+                            {style}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-xs text-muted">
+                      Color mood
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {COLOR_MOODS.map((mood) => (
+                          <button
+                            key={mood}
+                            type="button"
+                            onClick={() => updatePreferences("colorMood", mood)}
+                            className={chipClassName(preferences.colorMood === mood)}
+                          >
+                            {mood}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <label className="block space-y-1.5 text-xs text-muted">
+                      Extra notes for the AI <span className="text-dim">(optional)</span>
+                      <textarea
+                        value={preferences.customPrompt ?? ""}
+                        onChange={(e) => updatePreferences("customPrompt", e.target.value)}
+                        rows={3}
+                        className={inputClassName()}
+                        placeholder="e.g. Large product photos, gift-focused hero, soft shadows"
+                      />
+                    </label>
+
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted">
+                        Inspiration screenshots <span className="text-dim">(max {MAX_SCREENSHOTS})</span>
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          void onScreenshotFiles(e.target.files);
+                          e.target.value = "";
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={(preferences.referenceScreenshots?.length ?? 0) >= MAX_SCREENSHOTS}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload inspiration
+                      </Button>
+                      {(preferences.referenceScreenshots?.length ?? 0) > 0 ? (
+                        <ul className="grid gap-2 sm:grid-cols-3">
+                          {preferences.referenceScreenshots!.map((shot) => (
+                            <li
+                              key={shot.id}
+                              className="relative overflow-hidden rounded-lg border border-border bg-surface"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={shot.dataUrl}
+                                alt={shot.name}
+                                className="h-24 w-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeScreenshot(shot.id)}
+                                className="absolute right-1 top-1 rounded bg-black/60 p-1 text-white"
+                                aria-label={`Remove ${shot.name}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-4 text-xs text-dim">
+                          <ImagePlus className="h-4 w-4" />
+                          Optional — sites you like for layout inspiration.
+                        </div>
+                      )}
+                    </div>
+
+                    <label className="block space-y-1.5 text-xs text-muted">
+                      Reference website <span className="text-dim">(optional)</span>
+                      <input
+                        value={preferences.referenceUrl ?? ""}
+                        onChange={(e) => updatePreferences("referenceUrl", e.target.value)}
+                        className={inputClassName()}
+                        placeholder="https://example.com"
+                      />
+                    </label>
+                  </div>
                 )}
               </>
             )}
+
+            {step === 2 && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-foreground">Which pages do you need?</p>
+                  <p className="text-[11px] text-dim">Home is always included. Toggle the rest.</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {PAGE_OPTIONS.map((page) => {
+                      const active =
+                        preferences.pages.includes(page.value) || page.value === "home";
+                      return (
+                        <button
+                          key={page.value}
+                          type="button"
+                          onClick={() => togglePage(page.value)}
+                          disabled={page.value === "home"}
+                          className={`rounded-lg border p-3 text-left ${
+                            active
+                              ? "border-gold bg-primary-soft"
+                              : "border-border bg-surface-muted hover:border-gold/40"
+                          } disabled:opacity-80`}
+                        >
+                          <p className="text-xs font-medium text-foreground">{page.label}</p>
+                          <p className="mt-0.5 text-[11px] text-dim">{page.hint}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-foreground">Add-ons</p>
+                  <p className="text-[11px] text-dim">Only turn on what you&apos;ll use.</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {["Lead capture", "Commerce", "Growth", "Social proof", "Insights"].map(
+                      (group) => (
+                        <div
+                          key={group}
+                          className="rounded-lg border border-border bg-surface-muted p-3"
+                        >
+                          <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-dim">
+                            {group}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {FEATURE_OPTIONS.filter((f) => f.group === group).map((feature) => (
+                              <button
+                                key={feature.value}
+                                type="button"
+                                onClick={() => toggleFeature(feature.value)}
+                                className={chipClassName(
+                                  preferences.features.includes(feature.value)
+                                )}
+                              >
+                                {feature.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <div className="rounded-lg border border-gold/30 bg-primary-soft p-3">
+                  <p className="text-xs font-medium text-foreground">Preview first, domain when ready</p>
+                  <p className="mt-1 text-[11px] text-muted">
+                    You can generate a site plan with the details above. Buying a domain is only needed
+                    when you&apos;re ready to publish under your own URL. Hosting is managed by Aarvanta
+                    automatically.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-foreground">Domain (optional)</p>
+                  <DomainPurchasePanel
+                    businessName={preferences.businessName || "yoursite"}
+                    countryBase={preferences.countryBase}
+                    domain={preferences.deployment.domain}
+                    buildJobId={job?.id}
+                    onDomainChange={updateDomain}
+                  />
+                </div>
+              </>
+            )}
+
+            {error && <p className="text-xs text-red-400">{error}</p>}
+
+            <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+              {step > 0 && (
+                <Button type="button" variant="secondary" onClick={() => setStep(step - 1)}>
+                  Back
+                </Button>
+              )}
+              {step < STEPS.length - 1 ? (
+                <Button
+                  type="button"
+                  onClick={() => setStep(step + 1)}
+                  disabled={(step === 0 && !canProceedStep0) || (step === 2 && !canProceedStep2)}
+                >
+                  Continue
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={onGeneratePlan}
+                  disabled={busy || !canProceedStep0 || !canProceedStep2}
+                >
+                  {busy ? "Building plan…" : job ? "Update site plan" : "Generate site plan"}
+                </Button>
+              )}
+              {step < STEPS.length - 1 && canProceedStep0 && canProceedStep2 && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setStep(STEPS.length - 1)}
+                >
+                  Skip to go live
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <aside className="xl:sticky xl:top-4 xl:self-start">
+          <div className="rounded-xl border border-border bg-surface-elevated p-4">
+            {previewReady ? (
+              <SiteLivePreview preferences={preferences} />
+            ) : (
+              <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 text-center">
+                <LayoutTemplate className="h-8 w-8 text-gold/70" />
+                <p className="mt-3 text-sm font-medium text-foreground">Your preview appears here</p>
+                <p className="mt-1 text-xs text-muted">
+                  Add a business name and a short description to see a live mockup of your site.
+                </p>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
 
       {job?.plan && (
-        <section className="space-y-4 rounded-xl border border-gold/30 bg-surface-elevated p-4">
+        <section className="space-y-4 rounded-xl border border-gold/30 bg-surface-elevated p-4 sm:p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-medium text-foreground">Step 2 — Review site plan</p>
+            <p className="text-sm font-medium text-foreground">Site plan ready</p>
             <StatusPill
               variant={
                 job.status === "approved"
@@ -749,12 +925,8 @@ export function BuildOsClient() {
           </div>
 
           <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-medium text-gold">Deployment — AWS EC2</p>
-            <p className="mt-1 text-xs text-muted">
-              Region: {job.plan.deployment.ec2.region} · Instance:{" "}
-              {job.plan.deployment.ec2.instanceType}
-            </p>
-            {job.plan.deployment.domain.selectedDomain && (
+            <p className="text-xs font-medium text-gold">Publishing</p>
+            {job.plan.deployment.domain.selectedDomain ? (
               <p className="mt-1 text-xs text-muted">
                 Domain:{" "}
                 <span className="font-mono text-foreground">
@@ -767,31 +939,19 @@ export function BuildOsClient() {
                     )}/yr`
                   : null}
               </p>
+            ) : (
+              <p className="mt-1 text-xs text-muted">
+                No domain yet — you can publish on a preview URL first.
+              </p>
             )}
             <p className="mt-1 text-xs text-muted">
-              Live URL:{" "}
+              URL:{" "}
               <span className="font-mono text-foreground">
                 {job.plan.deployment.liveUrl ?? job.plan.deployment.previewUrl}
               </span>
             </p>
+            <p className="mt-1 text-xs text-dim">Hosting is managed automatically by Aarvanta.</p>
           </div>
-
-          {(job.preferences.referenceScreenshots?.length ?? 0) > 0 && (
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Reference screenshots</p>
-              <p className="mt-1 text-xs text-muted">
-                {job.preferences.referenceScreenshots!.length} inspiration image(s) included in
-                planning context.
-              </p>
-            </div>
-          )}
-
-          {job.preferences.customPrompt && (
-            <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Custom prompt</p>
-              <p className="mt-1 text-xs text-muted">{job.preferences.customPrompt}</p>
-            </div>
-          )}
 
           <div className="rounded-lg border border-border bg-surface-muted p-3">
             <p className="text-xs font-medium text-gold">Navigation</p>
@@ -828,7 +988,7 @@ export function BuildOsClient() {
           </div>
 
           <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs font-medium text-gold">AWS EC2 deployment pipeline</p>
+            <p className="text-xs font-medium text-gold">What happens next</p>
             <ol className="mt-2 space-y-2">
               {job.plan.deployment.deployNotes.map((note) => (
                 <li key={note.title} className="text-xs text-muted">
@@ -855,8 +1015,8 @@ export function BuildOsClient() {
             <div className="rounded-lg border border-gold/40 bg-primary-soft p-4">
               <p className="text-sm font-semibold text-gold-bright">Plan approved</p>
               <p className="mt-1 text-xs text-muted">
-                Site generation is next. Your domain and EC2 instance will be provisioned on AWS
-                when pages are generated.
+                Site generation is next. Aarvanta Hosting will publish your pages when generation
+                completes.
               </p>
               <Link
                 href="/launch"

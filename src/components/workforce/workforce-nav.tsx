@@ -19,7 +19,7 @@ export function WorkforceNav() {
 
   return (
     <nav
-      className="shrink-0 overflow-x-auto border-b border-[#243656] bg-[#040608] [-webkit-overflow-scrolling:touch]"
+      className="shrink-0 overflow-x-auto border-b border-border bg-surface [-webkit-overflow-scrolling:touch]"
       aria-label="AI Workforce sections"
     >
       <div className="flex min-w-max gap-1 px-3 sm:px-6">
@@ -35,8 +35,8 @@ export function WorkforceNav() {
               className={cn(
                 "whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors",
                 active
-                  ? "border-[#B8965D] text-[#C9AA72]"
-                  : "border-transparent text-[#9AABC4] hover:text-[#FFFFFF]"
+                  ? "border-gold text-gold-bright"
+                  : "border-transparent text-muted hover:text-foreground"
               )}
             >
               {link.label}

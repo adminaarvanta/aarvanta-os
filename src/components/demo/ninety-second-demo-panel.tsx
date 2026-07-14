@@ -21,15 +21,15 @@ const FLOW = [
 
 function StepIcon({ status }: { status: "completed" | "skipped" | "failed" | "pending" }) {
   if (status === "completed") {
-    return <CheckCircle2 className="h-4 w-4 shrink-0 text-[#4DA6FF]" />;
+    return <CheckCircle2 className="h-4 w-4 shrink-0 text-accent-cyan" />;
   }
   if (status === "failed") {
     return <XCircle className="h-4 w-4 shrink-0 text-red-400" />;
   }
   if (status === "pending") {
-    return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#B8965D]" />;
+    return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gold" />;
   }
-  return <Circle className="h-4 w-4 shrink-0 text-[#243656]" />;
+  return <Circle className="h-4 w-4 shrink-0 text-border" />;
 }
 
 export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }) {
@@ -67,17 +67,17 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
     <div
       className={
         compact
-          ? "rounded-xl border border-[#243656] bg-[#0D1524] p-5"
+          ? "rounded-xl border border-border bg-surface-elevated p-5"
           : "space-y-8"
       }
     >
-      <div className={compact ? undefined : "rounded-xl border border-[#243656] bg-[#0D1524] p-5 sm:p-6"}>
+      <div className={compact ? undefined : "rounded-xl border border-border bg-surface-elevated p-5 sm:p-6"}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-[#FFFFFF] sm:text-base">
+            <h3 className="text-sm font-semibold text-foreground sm:text-base">
               90-Second Business Journey
             </h3>
-            <p className="mt-1 max-w-2xl text-xs text-[#9AABC4] sm:text-sm">
+            <p className="mt-1 max-w-2xl text-xs text-muted sm:text-sm">
               One click runs the full story: inbound lead → AI sales &amp; marketing →
               human alert → deal won → invoice → portal → project → COO monitoring.
             </p>
@@ -86,7 +86,7 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
             type="button"
             onClick={runDemo}
             disabled={loading}
-            className="bg-[#B8965D] text-black hover:bg-[#C9AA72]"
+            className="bg-gold text-black hover:bg-gold-bright"
           >
             {loading ? (
               <>
@@ -103,15 +103,15 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
         </div>
 
         {!result && !loading && (
-          <ol className="mt-5 space-y-2 border-t border-[#243656] pt-4">
+          <ol className="mt-5 space-y-2 border-t border-border pt-4">
             {FLOW.map((step, index) => (
-              <li key={step} className="flex items-center gap-2 text-sm text-[#9AABC4]">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#243656] text-[10px] text-[#B8965D]">
+              <li key={step} className="flex items-center gap-2 text-sm text-muted">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px] text-gold">
                   {index + 1}
                 </span>
                 {step}
                 {index < FLOW.length - 1 && (
-                  <span className="ml-auto hidden text-[#243656] sm:inline">↓</span>
+                  <span className="ml-auto hidden text-border sm:inline">↓</span>
                 )}
               </li>
             ))}
@@ -119,7 +119,7 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
         )}
 
         {error && (
-          <p className="mt-4 rounded-lg border border-[#8B3A45]/45 bg-[#2A1218] px-3 py-2 text-sm text-red-300">
+          <p className="mt-4 rounded-lg border border-danger/45 bg-danger/15 px-3 py-2 text-sm text-red-300">
             {error}
           </p>
         )}
@@ -130,8 +130,8 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
           <div
             className={`rounded-lg border px-4 py-3 text-sm ${
               result.ok
-                ? "border-[#4DA6FF]/30 bg-[#0A2A33] text-[#4DA6FF]"
-                : "border-[#8B3A45]/45 bg-[#2A1218] text-[#F0A0A8]"
+                ? "border-accent-cyan/30 bg-accent-cyan/15 text-accent-cyan"
+                : "border-danger/45 bg-danger/15 text-danger"
             }`}
           >
             {result.ok
@@ -143,19 +143,19 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
             {result.steps.map((step) => (
               <li
                 key={step.id}
-                className="rounded-lg border border-[#243656] bg-[#040608] px-4 py-3"
+                className="rounded-lg border border-border bg-background px-4 py-3"
               >
                 <div className="flex items-start gap-3">
                   <StepIcon
                     status={loading ? "pending" : step.status}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#FFFFFF]">{step.label}</p>
-                    <p className="mt-1 text-xs text-[#9AABC4]">{step.summary}</p>
+                    <p className="text-sm font-medium text-foreground">{step.label}</p>
+                    <p className="mt-1 text-xs text-muted">{step.summary}</p>
                     {step.href && (
                       <Link
                         href={step.href}
-                        className="mt-2 inline-block text-xs font-medium text-[#B8965D] hover:underline"
+                        className="mt-2 inline-block text-xs font-medium text-gold hover:underline"
                       >
                         Open →
                       </Link>
@@ -167,13 +167,13 @@ export function NinetySecondDemoPanel({ compact = false }: { compact?: boolean }
           </ol>
 
           {result.ok && result.links && (
-            <div className="flex flex-wrap gap-2 border-t border-[#243656] pt-4">
+            <div className="flex flex-wrap gap-2 border-t border-border pt-4">
               {Object.entries(result.links).map(([key, href]) =>
                 href ? (
                   <Link
                     key={key}
                     href={href}
-                    className="rounded-lg border border-[#243656] px-3 py-1.5 text-xs text-[#FFFFFF] hover:border-[#B8965D]/40"
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs text-foreground hover:border-gold/40"
                   >
                     {key.replace(/_/g, " ")}
                   </Link>

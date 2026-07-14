@@ -24,34 +24,34 @@ export default async function InboxPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Unified Inbox</h2>
-            <p className="text-xs text-[#9AABC4] sm:text-sm">
+            <h2 className="text-lg font-semibold text-foreground sm:text-xl">Unified Inbox</h2>
+            <p className="text-xs text-muted sm:text-sm">
               WhatsApp, email, voice, SMS, and website chat in one place.
               {liveEmailSync && (
-                <span className="ml-1 text-[#9AABC4]/80">· Email syncs every 60s while open</span>
+                <span className="ml-1 text-muted/80">· Email syncs every 60s while open</span>
               )}
             </p>
           </div>
           <InboxLiveSync enabled={liveEmailSync} />
         </div>
         {showInboundHint && (
-          <p className="mt-2 rounded-lg border border-[#B8965D]/30 bg-[#B8965D]/10 px-3 py-2 text-xs text-[#C9AA72]">
+          <p className="mt-2 rounded-lg border border-gold/30 bg-gold/10 px-3 py-2 text-xs text-gold-bright">
             Website chat and other inbound channels route to your main workspace. Switch
             back to see those conversations.
           </p>
         )}
       </header>
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain bg-[#0D1524] md:w-80 md:border-r md:border-[#243656]">
+        <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain bg-surface-elevated md:w-80 md:border-r md:border-border">
           <ConversationList conversations={conversations} />
         </div>
-        <section className="hidden flex-1 flex-col items-center justify-center bg-[#0D1524] text-[#9AABC4] md:flex">
+        <section className="hidden flex-1 flex-col items-center justify-center bg-surface-elevated text-muted md:flex">
           {first ? (
             <div className="text-center space-y-3">
-              <Inbox className="mx-auto h-12 w-12 text-[#B8965D]/60" />
+              <Inbox className="mx-auto h-12 w-12 text-gold/60" />
               <p className="text-sm">Select a conversation or open the latest</p>
               <OpenConversationLink
                 conversationId={first.id}

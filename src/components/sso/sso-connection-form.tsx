@@ -44,16 +44,16 @@ export function SsoConnectionForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-[#243656] bg-[#121E32] p-4 space-y-3"
+      className="rounded-xl border border-border bg-surface-muted p-4 space-y-3"
     >
-      <h3 className="text-sm font-semibold text-[#FFFFFF]">Add OIDC connection</h3>
+      <h3 className="text-sm font-semibold text-foreground">Add OIDC connection</h3>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-xs text-[#9AABC4]">
+        <label className="block text-xs text-muted">
           Provider
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           >
             {PROVIDERS.map((p) => (
               <option key={p.id} value={p.id}>
@@ -62,28 +62,28 @@ export function SsoConnectionForm() {
             ))}
           </select>
         </label>
-        <label className="block text-xs text-[#9AABC4]">
+        <label className="block text-xs text-muted">
           Email domain
           <input
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             placeholder="company.com"
             required
-            className="mt-1 w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           />
         </label>
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="rounded-lg bg-[#B8965D] px-4 py-2 text-sm font-semibold text-black hover:bg-[#C9AA72] disabled:opacity-50"
+        className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-black hover:bg-gold-bright disabled:opacity-50"
       >
         {loading ? "Saving…" : "Add connection"}
       </button>
       {error ? <p className="text-xs text-red-400">{error}</p> : null}
-      <p className="text-[10px] text-[#9AABC4]">
-        Set <code className="text-[#B8965D]">SSO_GOOGLE_ISSUER</code> and{" "}
-        <code className="text-[#B8965D]">SSO_GOOGLE_CLIENT_ID</code> env vars to enable live OIDC sign-in.
+      <p className="text-[10px] text-muted">
+        Set <code className="text-gold">SSO_GOOGLE_ISSUER</code> and{" "}
+        <code className="text-gold">SSO_GOOGLE_CLIENT_ID</code> env vars to enable live OIDC sign-in.
       </p>
     </form>
   );

@@ -1,71 +1,77 @@
 @import "tailwindcss";
 
+/* Palette sampled from official Aarvanta Business OS logo: deep navy, brass gold, globe silver on black. */
 :root,
 html.dark {
   color-scheme: dark;
-  --background: #000000;
-  --foreground: #ffffff;
-  --surface: #040608;
-  --surface-elevated: #0d1524;
-  --surface-muted: #121e32;
-  --surface-hover: #162840;
-  --border: #243656;
-  --border-subtle: #1a2840;
-  --primary: #b8965d;
+  --background: #050505;
+  --foreground: #f4f7fb;
+  --surface: #080b10;
+  --surface-elevated: #0e1522;
+  --surface-muted: #131c2d;
+  --surface-hover: #182438;
+  --border: #253656;
+  --border-subtle: #1a2740;
+  --primary: #b3965d;
   --primary-bright: #c9aa72;
-  --primary-dark: #94784a;
+  --primary-dark: #8f7347;
   --primary-hover: #a88952;
-  --primary-soft: rgba(184, 150, 93, 0.15);
-  --navy: #1a2b48;
-  --gold: #b8965d;
+  --primary-soft: rgba(179, 150, 93, 0.16);
+  --navy: #1a2f59;
+  --gold: #b3965d;
   --gold-bright: #c9aa72;
-  --gold-dark: #94784a;
+  --gold-dark: #8f7347;
   --gold-hover: #a88952;
-  --accent-cyan: #4da6ff;
+  --accent-cyan: #6eb8c9;
   --text-muted: #9aabc4;
   --text-dim: #6b7f9e;
-  --success: #4da6ff;
-  --danger: #f0a0a8;
-  --input-bg: #121e32;
-  --input-autofill-bg: #121e32;
-  --scrollbar: #243656;
-  --selection-bg: rgba(184, 150, 93, 0.28);
+  --success: #6eb8c9;
+  --danger: #e8a0a8;
+  --input-bg: #131c2d;
+  --input-autofill-bg: #131c2d;
+  --scrollbar: #253656;
+  --selection-bg: rgba(179, 150, 93, 0.3);
   --selection-fg: #ffffff;
   --font-sans: var(--font-inter);
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --focus-ring: rgba(179, 150, 93, 0.55);
+  --dot-grid: rgba(110, 184, 201, 0.06);
 }
 
 html.light {
   color-scheme: light;
-  --background: #f4f6f9;
-  --foreground: #0d1524;
+  --background: #f5f7fa;
+  --foreground: #0e1522;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
-  --surface-muted: #f0f3f8;
-  --surface-hover: #e8edf4;
-  --border: #d4dce8;
+  --surface-muted: #eef2f7;
+  --surface-hover: #e4eaf2;
+  --border: #d0d9e6;
   --border-subtle: #e2e8f0;
-  --primary: #94784a;
-  --primary-bright: #b8965d;
-  --primary-dark: #7a6239;
-  --primary-hover: #a88952;
-  --primary-soft: rgba(148, 120, 74, 0.12);
-  --navy: #1a2b48;
-  --gold: #94784a;
-  --gold-bright: #b8965d;
-  --gold-dark: #7a6239;
-  --gold-hover: #a88952;
-  --accent-cyan: #2563eb;
-  --text-muted: #5a6b85;
-  --text-dim: #8494ab;
-  --success: #2563eb;
-  --danger: #dc2626;
+  /* Navy leads structure; gold stays the CTA accent (matches logo hierarchy). */
+  --primary: #1a2f59;
+  --primary-bright: #243a6b;
+  --primary-dark: #122240;
+  --primary-hover: #1f3766;
+  --primary-soft: rgba(26, 47, 89, 0.1);
+  --navy: #1a2f59;
+  --gold: #a8894f;
+  --gold-bright: #b3965d;
+  --gold-dark: #8f7347;
+  --gold-hover: #b3965d;
+  --accent-cyan: #2f7f92;
+  --text-muted: #4f6078;
+  --text-dim: #7a8ba3;
+  --success: #2f7f92;
+  --danger: #c53030;
   --input-bg: #ffffff;
-  --input-autofill-bg: #f0f3f8;
-  --scrollbar: #d4dce8;
-  --selection-bg: rgba(148, 120, 74, 0.22);
-  --selection-fg: #0d1524;
+  --input-autofill-bg: #eef2f7;
+  --scrollbar: #d0d9e6;
+  --selection-bg: rgba(26, 47, 89, 0.16);
+  --selection-fg: #0e1522;
+  --focus-ring: rgba(168, 137, 79, 0.55);
+  --dot-grid: rgba(26, 47, 89, 0.05);
 }
 
 @theme inline {
@@ -115,7 +121,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid rgba(184, 150, 93, 0.55);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

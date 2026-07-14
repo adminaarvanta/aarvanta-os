@@ -22,20 +22,20 @@ export default async function WorkforcePage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-[#FFFFFF] sm:text-xl">
-              <Sparkles className="h-5 w-5 text-[#B8965D]" />
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+              <Sparkles className="h-5 w-5 text-gold" />
               AI Workforce
             </h2>
-            <p className="text-xs text-[#9AABC4] sm:text-sm">
+            <p className="text-xs text-muted sm:text-sm">
               AI Employee Directory — 7 agents with shared memory, collaboration, chat, and tasks.
             </p>
           </div>
-          <div className="rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-xs text-[#9AABC4]">
+          <div className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-muted">
             AI:{" "}
-            <span className="font-medium text-[#C9AA72]">
+            <span className="font-medium text-gold-bright">
               {ai.status === "live"
                 ? `OpenAI · ${ai.model}`
                 : ai.status === "heuristic"
@@ -48,14 +48,14 @@ export default async function WorkforcePage() {
       <WorkforceNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-[#FFFFFF]">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">
             AI Employee Directory
           </h3>
           <AgentDirectory />
         </section>
 
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-[#FFFFFF]">Quick access</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">Quick access</h3>
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {AGENT_DEFINITIONS.map((agent) => (
               <AgentCard key={agent.type} agent={agent} />
@@ -64,7 +64,7 @@ export default async function WorkforcePage() {
         </section>
 
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-[#FFFFFF]">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">
             Shared memory & agent collaboration
           </h3>
           <WorkforceUpgradePanel
@@ -74,7 +74,7 @@ export default async function WorkforcePage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Recent runs</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Recent runs</h3>
           <RunList runs={runs} />
         </section>
       </div>

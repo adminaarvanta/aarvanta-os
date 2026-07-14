@@ -31,16 +31,16 @@ export default function ContactPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-16 sm:px-6 sm:py-20">
-      <h1 className="text-3xl font-bold text-[#FFFFFF] sm:text-4xl">Contact us</h1>
-      <p className="mt-3 text-sm text-[#9AABC4]">
+      <h1 className="text-3xl font-bold text-foreground sm:text-4xl">Contact us</h1>
+      <p className="mt-3 text-sm text-muted">
         Questions about Aarvanta OS, enterprise plans, or partnerships? We&apos;d
         love to hear from you.
       </p>
 
-      <div className="mt-6 rounded-xl border border-[#243656] bg-[#0D1524] p-4 text-sm text-[#9AABC4]">
+      <div className="mt-6 rounded-xl border border-border bg-surface-elevated p-4 text-sm text-muted">
         <p>
           Email:{" "}
-          <a href={`mailto:${COMPANY.email}`} className="text-[#B8965D] hover:underline">
+          <a href={`mailto:${COMPANY.email}`} className="text-gold hover:underline">
             {COMPANY.email}
           </a>
         </p>
@@ -48,38 +48,38 @@ export default function ContactPage() {
       </div>
 
       {status === "sent" ? (
-        <div className="mt-8 rounded-xl border border-[#4DA6FF]/30 bg-[#0A2A33] p-5 text-sm text-[#4DA6FF]">
+        <div className="mt-8 rounded-xl border border-accent-cyan/30 bg-accent-cyan/15 p-5 text-sm text-accent-cyan">
           Thank you — we&apos;ve received your message and will respond shortly.
         </div>
       ) : (
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#FFFFFF]">Name</label>
+            <label className="block text-sm font-medium text-foreground">Name</label>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
+              className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#FFFFFF]">Email</label>
+            <label className="block text-sm font-medium text-foreground">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
+              className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#FFFFFF]">Message</label>
+            <label className="block text-sm font-medium text-foreground">Message</label>
             <textarea
               required
               rows={5}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
+              className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
             />
           </div>
           {status === "error" && (

@@ -39,7 +39,7 @@ export default async function SuccessPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Health scorecards</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Health scorecards</h3>
           <CardList
             items={healthRecords.map((record) => ({
               id: record.id,

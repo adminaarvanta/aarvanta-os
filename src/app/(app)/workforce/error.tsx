@@ -17,10 +17,10 @@ export default function WorkforceError({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-      <h2 className="text-lg font-semibold text-[#FFFFFF]">
+      <h2 className="text-lg font-semibold text-foreground">
         AI Workforce failed to load
       </h2>
-      <p className="max-w-md text-sm text-[#9AABC4]">
+      <p className="max-w-md text-sm text-muted">
         This is usually a temporary server or database issue. Try again, or return
         to the overview.
       </p>
@@ -30,7 +30,7 @@ export default function WorkforceError({
         </Button>
         <Link
           href="/workforce"
-          className="inline-flex items-center rounded-lg border border-[#243656] px-4 py-2 text-sm text-[#9AABC4] hover:text-[#FFFFFF]"
+          className="inline-flex items-center rounded-lg border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
         >
           Back to overview
         </Link>

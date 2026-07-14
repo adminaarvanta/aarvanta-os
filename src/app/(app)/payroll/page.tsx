@@ -46,7 +46,7 @@ export default async function PayrollPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Pay runs</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Pay runs</h3>
           <CardList
             items={payRuns.map((run) => ({
               id: run.id,
@@ -59,7 +59,7 @@ export default async function PayrollPage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Recent payslips</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Recent payslips</h3>
           <CardList
             items={payslips.slice(0, 12).map((slip) => ({
               id: slip.id,

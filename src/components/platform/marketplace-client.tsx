@@ -46,7 +46,7 @@ export function MarketplaceClient({ catalog, installedIds }: MarketplaceClientPr
   return (
     <div className="space-y-4">
       {error && (
-        <p className="rounded-lg border border-[#8B3A45]/45 bg-[#2A1218] px-3 py-2 text-xs text-red-300">
+        <p className="rounded-lg border border-danger/45 bg-danger/15 px-3 py-2 text-xs text-red-300">
           {error}
         </p>
       )}
@@ -57,21 +57,21 @@ export function MarketplaceClient({ catalog, installedIds }: MarketplaceClientPr
           return (
             <li
               key={agent.id}
-              className="space-y-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+              className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-[#FFFFFF]">{agent.name}</p>
-                  <p className="text-xs text-[#9AABC4]">
+                  <p className="font-medium text-foreground">{agent.name}</p>
+                  <p className="text-xs text-muted">
                     {agent.author} · {agent.category}
                   </p>
                 </div>
-                <span className="rounded-full bg-[#B8965D]/15 px-2 py-0.5 text-[10px] text-[#C9AA72] ring-1 ring-[#B8965D]/30">
+                <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] text-gold-bright ring-1 ring-gold/30">
                   {agent.price}
                 </span>
               </div>
-              <p className="text-sm text-[#9AABC4]">{agent.description}</p>
-              <p className="text-[10px] text-[#9AABC4]/80">
+              <p className="text-sm text-muted">{agent.description}</p>
+              <p className="text-[10px] text-muted/80">
                 {agent.installs.toLocaleString()} installs · {agent.rating.toFixed(1)} rating
               </p>
               <Button

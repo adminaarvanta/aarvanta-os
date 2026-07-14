@@ -20,10 +20,10 @@ export default async function KnowledgeDocumentPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
         <Link
           href="/knowledge"
-          className="text-xs text-[#B8965D] hover:underline"
+          className="text-xs text-gold hover:underline"
         >
           ← Knowledge Hub
         </Link>

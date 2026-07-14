@@ -8,10 +8,10 @@ import type { AgentMemoryEntry, AgentType } from "@/types/workforce";
 import { formatRelative } from "@/lib/utils";
 
 const categoryColors: Record<AgentMemoryEntry["category"], string> = {
-  insight: "bg-[#1A2B48]/60 text-[#C9AA72] ring-[#B8965D]/30",
-  decision: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
-  preference: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
-  fact: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
+  insight: "bg-navy/60 text-gold-bright ring-gold/30",
+  decision: "bg-accent-cyan/10 text-accent-cyan ring-accent-cyan/30",
+  preference: "bg-gold/10 text-gold-bright ring-gold/35",
+  fact: "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30",
 };
 
 export function AgentMemoryPanel({
@@ -62,14 +62,14 @@ export function AgentMemoryPanel({
   }
 
   return (
-    <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 space-y-4">
+    <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-[#B8965D]/15 p-2 ring-1 ring-[#B8965D]/30">
-          <Brain className="h-4 w-4 text-[#B8965D]" />
+        <div className="rounded-lg bg-gold/15 p-2 ring-1 ring-gold/30">
+          <Brain className="h-4 w-4 text-gold" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-[#FFFFFF]">Agent memory</h3>
-          <p className="text-xs text-[#9AABC4]">
+          <h3 className="text-sm font-semibold text-foreground">Agent memory</h3>
+          <p className="text-xs text-muted">
             Long-term context saved from runs, chat, and manual notes
           </p>
         </div>
@@ -80,7 +80,7 @@ export function AgentMemoryPanel({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Add a memory for this agent…"
-          className="flex-1 rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
+          className="flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
         />
         <Button type="submit" disabled={adding || !content.trim()}>
           <Plus className="h-4 w-4" />
@@ -88,7 +88,7 @@ export function AgentMemoryPanel({
       </form>
 
       {memory.length === 0 ? (
-        <p className="text-sm text-[#9AABC4]">
+        <p className="text-sm text-muted">
           No memories yet. Run the agent or chat to build context automatically.
         </p>
       ) : (
@@ -96,30 +96,30 @@ export function AgentMemoryPanel({
           {memory.map((entry) => (
             <li
               key={entry.id}
-              className="rounded-lg border border-[#243656] bg-[#121E32] p-3"
+              className="rounded-lg border border-border bg-surface-muted p-3"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={categoryColors[entry.category]}>
                   {entry.category}
                 </Badge>
-                <Badge className="bg-[#040608] text-[#9AABC4] ring-[#243656]">
+                <Badge className="bg-background text-muted ring-border">
                   {entry.source}
                 </Badge>
-                <span className="text-[10px] text-[#9AABC4]">
+                <span className="text-[10px] text-muted">
                   {formatRelative(entry.createdAt)}
                 </span>
                 {entry.source === "manual" && (
                   <button
                     type="button"
                     onClick={() => deleteEntry(entry.id)}
-                    className="ml-auto text-[#9AABC4] hover:text-red-300"
+                    className="ml-auto text-muted hover:text-red-300"
                     aria-label="Delete memory"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
-              <p className="mt-2 text-sm text-[#FFFFFF]">{entry.content}</p>
+              <p className="mt-2 text-sm text-foreground">{entry.content}</p>
             </li>
           ))}
         </ul>

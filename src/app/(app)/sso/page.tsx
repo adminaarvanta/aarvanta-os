@@ -39,7 +39,7 @@ export default async function SsoPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Connections</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Connections</h3>
           <CardList
             items={connections.map((connection) => ({
               id: connection.id,

@@ -50,7 +50,7 @@ export default async function ProposalsPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Proposal list</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Proposal list</h3>
           <ProposalsList proposals={proposals} />
         </section>
       </div>

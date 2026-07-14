@@ -31,7 +31,7 @@ export default async function LegalPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Contracts</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Contracts</h3>
           <CardList
             items={contracts.map((contract) => ({
               id: contract.id,
@@ -43,12 +43,12 @@ export default async function LegalPage() {
           />
         </section>
 
-        <section className="rounded-xl border border-[#243656] bg-[#121E32] p-4 text-xs text-[#9AABC4]">
-          <p className="font-medium text-[#FFFFFF]">Business Action API</p>
+        <section className="rounded-xl border border-border bg-surface-muted p-4 text-xs text-muted">
+          <p className="font-medium text-foreground">Business Action API</p>
           <p className="mt-1">
-            Use <code className="text-[#B8965D]">analyze_contract</code> or{" "}
-            <code className="text-[#B8965D]">generate_contract</code> intents via{" "}
-            <code className="text-[#B8965D]">/api/v1/action/execute</code> for programmatic access.
+            Use <code className="text-gold">analyze_contract</code> or{" "}
+            <code className="text-gold">generate_contract</code> intents via{" "}
+            <code className="text-gold">/api/v1/action/execute</code> for programmatic access.
           </p>
         </section>
       </div>

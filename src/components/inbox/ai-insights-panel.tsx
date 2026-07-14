@@ -64,40 +64,40 @@ export function AiInsightsPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[#FFFFFF]">
-          <Sparkles className="h-4 w-4 text-[#B8965D]" />
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <Sparkles className="h-4 w-4 text-gold" />
           AI insights
         </h3>
         <SentimentBadge sentiment={conversation.sentiment} />
       </div>
 
       {aiLive && (
-        <p className="text-[10px] text-[#9AABC4]">
+        <p className="text-[10px] text-muted">
           OpenAI · {aiStatus.model}
           {aiStatus.autoSummarize ? " · auto-updates on new messages" : ""}
         </p>
       )}
 
-      <div className="rounded-xl border border-[#243656] bg-[#121E32] p-3 text-sm text-[#FFFFFF] leading-relaxed">
+      <div className="rounded-xl border border-border bg-surface-muted p-3 text-sm text-foreground leading-relaxed">
         {conversation.aiSummary ?? (
-          <span className="text-[#9AABC4]">{emptySummaryMessage(aiStatus)}</span>
+          <span className="text-muted">{emptySummaryMessage(aiStatus)}</span>
         )}
       </div>
 
       {conversation.aiSummaryUpdatedAt && (
-        <p className="text-[10px] text-[#9AABC4]">
+        <p className="text-[10px] text-muted">
           Updated {formatRelative(conversation.aiSummaryUpdatedAt)}
         </p>
       )}
 
       {qualification ? (
-        <div className="rounded-lg border border-[#243656] bg-[#0D1524] px-3 py-2 text-xs text-[#9AABC4]">
+        <div className="rounded-lg border border-border bg-surface-elevated px-3 py-2 text-xs text-muted">
           <p>
             Intent:{" "}
-            <span className="capitalize text-[#FFFFFF]">{qualification.intent}</span>
+            <span className="capitalize text-foreground">{qualification.intent}</span>
             {" · "}
             Score:{" "}
-            <span className="text-[#FFFFFF]">
+            <span className="text-foreground">
               {qualification.qualificationScore}/{qualificationThreshold}
             </span>
           </p>
@@ -105,9 +105,9 @@ export function AiInsightsPanel({
             CRM lead:{" "}
             {qualification.intent === "sales" &&
             qualification.qualificationScore >= qualificationThreshold ? (
-              <span className="text-[#4DA6FF]">qualified</span>
+              <span className="text-accent-cyan">qualified</span>
             ) : (
-              <span className="text-[#9AABC4]">inbox only</span>
+              <span className="text-muted">inbox only</span>
             )}
           </p>
         </div>
@@ -133,14 +133,14 @@ export function AiInsightsPanel({
         </p>
       )}
       {aiStatus.status === "heuristic" && (
-        <p className="text-[10px] text-[#9AABC4] leading-relaxed">
+        <p className="text-[10px] text-muted leading-relaxed">
           Using keyword heuristics in demo mode. Production without an API key returns an error on
           refresh.
         </p>
       )}
       {aiStatus.status === "disabled" && (
-        <p className="text-[10px] text-[#C9AA72] leading-relaxed">
-          AI is disabled. Set <code className="text-[#B8965D]">OPENAI_API_KEY</code> on the server
+        <p className="text-[10px] text-gold-bright leading-relaxed">
+          AI is disabled. Set <code className="text-gold">OPENAI_API_KEY</code> on the server
           and redeploy.
         </p>
       )}

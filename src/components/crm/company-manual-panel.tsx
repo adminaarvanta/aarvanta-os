@@ -20,9 +20,9 @@ export function CompanyManualPanel({
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 space-y-4">
+      <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-[#FFFFFF]">Manual CRM actions</h3>
+          <h3 className="text-sm font-semibold text-foreground">Manual CRM actions</h3>
           <EditCompanyForm company={company} />
         </div>
         <AssignOwnerField

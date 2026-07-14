@@ -10,11 +10,11 @@ import type { ActivityFeedItem, TeamChannel, TeamComment, TeamNote } from "@/typ
 import { formatRelative } from "@/lib/utils";
 
 const roleBadge: Record<string, string> = {
-  owner: "bg-[#B8965D]/20 text-[#C9AA72] ring-[#B8965D]/40",
-  admin: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
-  manager: "bg-[#1A2B48]/60 text-[#C9AA72] ring-[#B8965D]/30",
-  member: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
-  guest: "bg-[#121E32] text-[#9AABC4]/70 ring-[#243656]",
+  owner: "bg-gold/20 text-gold-bright ring-gold/40",
+  admin: "bg-accent-cyan/10 text-accent-cyan ring-accent-cyan/30",
+  manager: "bg-navy/60 text-gold-bright ring-gold/30",
+  member: "bg-surface-muted text-muted ring-border",
+  guest: "bg-surface-muted text-muted/70 ring-border",
 };
 
 export function TeamClient({
@@ -88,8 +88,8 @@ export function TeamClient({
             onClick={() => setTab(t.id)}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
               tab === t.id
-                ? "bg-[#B8965D]/15 text-[#C9AA72] ring-1 ring-[#B8965D]/30"
-                : "text-[#9AABC4] hover:bg-[#162840]"
+                ? "bg-gold/15 text-gold-bright ring-1 ring-gold/30"
+                : "text-muted hover:bg-surface-hover"
             }`}
           >
             {t.label}
@@ -102,17 +102,17 @@ export function TeamClient({
           {members.map((m) => (
             <li
               key={m.id}
-              className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+              className="rounded-xl border border-border bg-surface-elevated p-4"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-medium text-[#FFFFFF]">
+                  <p className="font-medium text-foreground">
                     {m.name}
                     {m.userId === currentUserId && (
-                      <span className="ml-1 text-xs text-[#9AABC4]">(you)</span>
+                      <span className="ml-1 text-xs text-muted">(you)</span>
                     )}
                   </p>
-                  <p className="text-xs text-[#9AABC4]">{m.email}</p>
+                  <p className="text-xs text-muted">{m.email}</p>
                 </div>
                 <Badge className={roleBadge[m.role] ?? roleBadge.member}>
                   {ROLE_LABELS[m.role]}
@@ -138,22 +138,22 @@ export function TeamClient({
           {channels.map((channel) => (
             <li
               key={channel.id}
-              className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+              className="rounded-xl border border-border bg-surface-elevated p-4"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-medium text-[#FFFFFF]">{channel.name}</p>
-                  <p className="mt-0.5 text-xs text-[#9AABC4]">{channel.description}</p>
-                  <p className="mt-2 text-sm text-[#9AABC4]">
+                  <p className="font-medium text-foreground">{channel.name}</p>
+                  <p className="mt-0.5 text-xs text-muted">{channel.description}</p>
+                  <p className="mt-2 text-sm text-muted">
                     {channel.lastMessagePreview}
                   </p>
-                  <p className="mt-1 text-[10px] text-[#9AABC4]/70">
+                  <p className="mt-1 text-[10px] text-muted/70">
                     {channel.memberCount} members ·{" "}
                     {formatRelative(channel.lastMessageAt)}
                   </p>
                 </div>
                 {channel.unreadCount > 0 && (
-                  <Badge className="bg-[#B8965D]/20 text-[#C9AA72] ring-[#B8965D]/40">
+                  <Badge className="bg-gold/20 text-gold-bright ring-gold/40">
                     {channel.unreadCount} new
                   </Badge>
                 )}
@@ -167,21 +167,21 @@ export function TeamClient({
         <div className="space-y-6">
           <form
             onSubmit={addNote}
-            className="rounded-xl border border-[#243656] bg-[#0D1524] p-4 space-y-3"
+            className="rounded-xl border border-border bg-surface-elevated p-4 space-y-3"
           >
-            <p className="text-sm font-medium text-[#FFFFFF]">New internal note</p>
+            <p className="text-sm font-medium text-foreground">New internal note</p>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Title"
-              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
             />
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write a note… Use @Sarah Chen or @John for mentions"
               rows={3}
-              className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
             />
             <Button type="submit" disabled={busy} size="sm">
               Add note
@@ -194,34 +194,34 @@ export function TeamClient({
               return (
                 <li
                   key={note.id}
-                  className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+                  className="rounded-xl border border-border bg-surface-elevated p-4"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-[#FFFFFF]">{note.title}</p>
-                      <p className="mt-1 text-xs text-[#9AABC4]">
+                      <p className="font-medium text-foreground">{note.title}</p>
+                      <p className="mt-1 text-xs text-muted">
                         {note.authorName} · {formatRelative(note.createdAt)}
                       </p>
                     </div>
                     {note.pinned && (
-                      <Badge className="bg-[#B8965D]/20 text-[#C9AA72] ring-[#B8965D]/40">
+                      <Badge className="bg-gold/20 text-gold-bright ring-gold/40">
                         Pinned
                       </Badge>
                     )}
                   </div>
-                  <p className="mt-2 text-sm text-[#C4B896] whitespace-pre-wrap">
+                  <p className="mt-2 text-sm text-gold-bright whitespace-pre-wrap">
                     {note.body}
                   </p>
                   {note.mentionNames.length > 0 && (
-                    <p className="mt-2 text-xs text-[#C9AA72]">
+                    <p className="mt-2 text-xs text-gold-bright">
                       Mentions: {note.mentionNames.map((n) => `@${n}`).join(", ")}
                     </p>
                   )}
                   {noteComments.length > 0 && (
-                    <ul className="mt-3 space-y-2 border-t border-[#243656] pt-3">
+                    <ul className="mt-3 space-y-2 border-t border-border pt-3">
                       {noteComments.map((c) => (
-                        <li key={c.id} className="text-xs text-[#9AABC4]">
-                          <span className="text-[#FFFFFF]">{c.authorName}</span>:{" "}
+                        <li key={c.id} className="text-xs text-muted">
+                          <span className="text-foreground">{c.authorName}</span>:{" "}
                           {c.body}
                         </li>
                       ))}
@@ -239,15 +239,15 @@ export function TeamClient({
           {activity.map((item) => (
             <li
               key={item.id}
-              className="flex gap-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+              className="flex gap-3 rounded-xl border border-border bg-surface-elevated p-4"
             >
-              <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#B8965D]" />
+              <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-gold" />
               <div>
-                <p className="text-sm font-medium text-[#FFFFFF]">{item.title}</p>
+                <p className="text-sm font-medium text-foreground">{item.title}</p>
                 {item.description && (
-                  <p className="mt-0.5 text-xs text-[#9AABC4]">{item.description}</p>
+                  <p className="mt-0.5 text-xs text-muted">{item.description}</p>
                 )}
-                <p className="mt-1 text-[10px] text-[#9AABC4]/70">
+                <p className="mt-1 text-[10px] text-muted/70">
                   {formatRelative(item.createdAt)}
                 </p>
               </div>

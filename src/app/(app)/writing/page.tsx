@@ -32,7 +32,7 @@ export default async function WritingPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Recent drafts</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Recent drafts</h3>
           <CardList
             items={drafts.map((draft) => ({
               id: draft.id,

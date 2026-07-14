@@ -65,7 +65,7 @@ export default async function FinancePage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Invoices</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Invoices</h3>
           <CardList
             items={invoices.map((invoice) => ({
               id: invoice.id,
@@ -78,7 +78,7 @@ export default async function FinancePage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Expenses</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Expenses</h3>
           <CardList
             items={expenses.map((expense) => ({
               id: expense.id,
@@ -91,7 +91,7 @@ export default async function FinancePage() {
 
         {journalEntries.length > 0 ? (
           <section>
-            <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Journal ledger</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Journal ledger</h3>
             <CardList
               items={journalEntries.map((entry) => ({
                 id: entry.id,
@@ -106,7 +106,7 @@ export default async function FinancePage() {
 
         {trialBalance.length > 0 ? (
           <section>
-            <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Trial balance</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Trial balance</h3>
             <CardList
               items={trialBalance.map((row) => ({
                 id: row.accountCode,
@@ -120,7 +120,7 @@ export default async function FinancePage() {
         ) : null}
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Profit &amp; loss</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Profit &amp; loss</h3>
           <CardList
             items={[
               {
@@ -149,7 +149,7 @@ export default async function FinancePage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Balance sheet</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Balance sheet</h3>
           <CardList
             items={[
               {
@@ -174,7 +174,7 @@ export default async function FinancePage() {
 
         {chartOfAccounts.length > 0 ? (
           <section>
-            <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
               Chart of accounts (UK)
             </h3>
             <CardList
@@ -190,7 +190,7 @@ export default async function FinancePage() {
         ) : null}
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Budgets</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Budgets</h3>
           <CardList
             items={budgets.map((budget) => ({
               id: budget.id,

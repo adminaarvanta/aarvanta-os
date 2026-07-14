@@ -26,7 +26,7 @@ export default async function ContactDetailPage({
   const contact = await repo.getContact(id, scope);
   if (!contact) {
     return (
-      <div className="p-8 text-sm text-[#9AABC4]">Contact not found.</div>
+      <div className="p-8 text-sm text-muted">Contact not found.</div>
     );
   }
 
@@ -51,26 +51,26 @@ export default async function ContactDetailPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div className="min-w-0">
             <Link
               href="/crm/contacts"
-              className="text-xs text-[#B8965D] hover:underline"
+              className="text-xs text-gold hover:underline"
             >
               ← Contacts
             </Link>
-            <h2 className="mt-1 text-lg font-semibold text-[#FFFFFF] sm:text-xl">
+            <h2 className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
               {contactDisplayName(contact)}
             </h2>
-            <p className="text-xs text-[#9AABC4] sm:text-sm">
+            <p className="text-xs text-muted sm:text-sm">
               {contact.jobTitle}
               {company ? (
                 <>
                   {" · "}
                   <Link
                     href={`/crm/companies/${company.id}`}
-                    className="text-[#B8965D] hover:underline"
+                    className="text-gold hover:underline"
                   >
                     {company.name}
                   </Link>
@@ -86,7 +86,7 @@ export default async function ContactDetailPage({
           </div>
         </div>
         {contact.leadScoreReason && (
-          <p className="mt-2 text-xs text-[#9AABC4] sm:text-sm">{contact.leadScoreReason}</p>
+          <p className="mt-2 text-xs text-muted sm:text-sm">{contact.leadScoreReason}</p>
         )}
       </header>
       <CrmNav />
@@ -101,23 +101,23 @@ export default async function ContactDetailPage({
         <CrmAiInsightsPanel contactId={contact.id} />
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 lg:col-span-1">
-            <h3 className="text-sm font-semibold text-[#FFFFFF]">Details</h3>
+          <section className="rounded-xl border border-border bg-surface-elevated p-5 lg:col-span-1">
+            <h3 className="text-sm font-semibold text-foreground">Details</h3>
             <dl className="mt-3 space-y-2 text-sm">
               <div>
-                <dt className="text-[#9AABC4]">Email</dt>
+                <dt className="text-muted">Email</dt>
                 <dd className="break-all">{contact.email ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-[#9AABC4]">Phone</dt>
+                <dt className="text-muted">Phone</dt>
                 <dd>{contact.phone ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-[#9AABC4]">Owner</dt>
+                <dt className="text-muted">Owner</dt>
                 <dd>{memberNameByUserId(members, contact.ownerId)}</dd>
               </div>
               <div>
-                <dt className="text-[#9AABC4]">Purchase total</dt>
+                <dt className="text-muted">Purchase total</dt>
                 <dd>
                   {contact.purchaseTotal > 0
                     ? `£${contact.purchaseTotal.toLocaleString()}`
@@ -125,12 +125,12 @@ export default async function ContactDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-[#9AABC4]">Tags</dt>
+                <dt className="text-muted">Tags</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {contact.tags.map((tag) => (
                     <Badge
                       key={tag}
-                      className="bg-[#121E32] text-[#9AABC4] ring-[#243656]"
+                      className="bg-surface-muted text-muted ring-border"
                     >
                       {tag.replace("_", " ")}
                     </Badge>
@@ -140,12 +140,12 @@ export default async function ContactDetailPage({
             </dl>
           </section>
 
-          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 lg:col-span-2">
-            <h3 className="text-sm font-semibold text-[#FFFFFF]">
+          <section className="rounded-xl border border-border bg-surface-elevated p-5 lg:col-span-2">
+            <h3 className="text-sm font-semibold text-foreground">
               Communication history
             </h3>
             {linkedConversations.length === 0 ? (
-              <p className="mt-2 text-sm text-[#9AABC4]">
+              <p className="mt-2 text-sm text-muted">
                 No linked inbox conversations.
               </p>
             ) : (
@@ -154,12 +154,12 @@ export default async function ContactDetailPage({
                   <li key={conv.id}>
                     <Link
                       href={`/inbox/${conv.id}`}
-                      className="block rounded-lg border border-[#243656] px-3 py-2 hover:bg-[#121E32]"
+                      className="block rounded-lg border border-border px-3 py-2 hover:bg-surface-muted"
                     >
-                      <p className="text-sm font-medium text-[#FFFFFF]">
+                      <p className="text-sm font-medium text-foreground">
                         Inbox thread
                       </p>
-                      <p className="text-xs text-[#9AABC4]">
+                      <p className="text-xs text-muted">
                         {conv.channels.join(", ")} ·{" "}
                         {conv.timelineEventCount ?? conv.timeline.length} events
                       </p>
@@ -172,69 +172,69 @@ export default async function ContactDetailPage({
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
-            <h3 className="text-sm font-semibold text-[#FFFFFF]">Opportunities</h3>
+          <section className="rounded-xl border border-border bg-surface-elevated p-5">
+            <h3 className="text-sm font-semibold text-foreground">Opportunities</h3>
             <ul className="mt-3 space-y-2">
               {deals.map((deal) => (
                 <li key={deal.id}>
                   <Link
                     href={`/crm/deals/${deal.id}`}
-                    className="flex flex-col gap-1 rounded-lg border border-[#243656] px-3 py-2 text-sm transition-colors hover:bg-[#121E32] sm:flex-row sm:justify-between sm:gap-2"
+                    className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-surface-muted sm:flex-row sm:justify-between sm:gap-2"
                   >
                     <span>{deal.title}</span>
-                    <span className="font-medium text-[#B8965D]">
+                    <span className="font-medium text-gold">
                       £{deal.value.toLocaleString()}
                     </span>
                   </Link>
                 </li>
               ))}
               {deals.length === 0 && (
-                <p className="text-sm text-[#9AABC4]">No deals linked.</p>
+                <p className="text-sm text-muted">No deals linked.</p>
               )}
             </ul>
           </section>
 
-          <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
-            <h3 className="text-sm font-semibold text-[#FFFFFF]">Tasks</h3>
+          <section className="rounded-xl border border-border bg-surface-elevated p-5">
+            <h3 className="text-sm font-semibold text-foreground">Tasks</h3>
             <ul className="mt-3 space-y-2">
               {tasks.map((task) => (
                 <li
                   key={task.id}
-                  className="rounded-lg border border-[#243656] px-3 py-2 text-sm"
+                  className="rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   <p className="font-medium">{task.title}</p>
-                  <p className="text-xs text-[#9AABC4]">{task.status}</p>
+                  <p className="text-xs text-muted">{task.status}</p>
                 </li>
               ))}
               {tasks.length === 0 && (
-                <p className="text-sm text-[#9AABC4]">No tasks linked.</p>
+                <p className="text-sm text-muted">No tasks linked.</p>
               )}
             </ul>
           </section>
         </div>
 
-        <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5">
-          <h3 className="text-sm font-semibold text-[#FFFFFF]">Activities</h3>
+        <section className="rounded-xl border border-border bg-surface-elevated p-5">
+          <h3 className="text-sm font-semibold text-foreground">Activities</h3>
           <ul className="mt-3 space-y-3">
             {activities.map((activity) => (
               <li
                 key={activity.id}
-                className="border-l-2 border-[#B8965D]/40 pl-3 text-sm"
+                className="border-l-2 border-gold/40 pl-3 text-sm"
               >
-                <p className="font-medium text-[#FFFFFF]">
+                <p className="font-medium text-foreground">
                   [{activity.type}] {activity.title}
                 </p>
                 {activity.description && (
-                  <p className="text-[#9AABC4]">{activity.description}</p>
+                  <p className="text-muted">{activity.description}</p>
                 )}
-                <p className="text-xs text-[#9AABC4]">
+                <p className="text-xs text-muted">
                   {format(new Date(activity.occurredAt), "dd MMM yyyy HH:mm")}
                   {activity.authorName ? ` · ${activity.authorName}` : ""}
                 </p>
               </li>
             ))}
             {activities.length === 0 && (
-              <p className="text-sm text-[#9AABC4]">No activities logged.</p>
+              <p className="text-sm text-muted">No activities logged.</p>
             )}
           </ul>
         </section>

@@ -29,7 +29,7 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-[#FFFFFF]"
+          className="block text-sm font-medium text-foreground"
         >
           Email
         </label>
@@ -39,13 +39,13 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
           type="email"
           required
           autoComplete="email"
-          className="mt-1 w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF] outline-none focus:border-[#B8965D] focus:ring-1 focus:ring-[#B8965D]/30"
+          className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
         />
       </div>
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-[#FFFFFF]"
+          className="block text-sm font-medium text-foreground"
         >
           Password
         </label>
@@ -55,7 +55,7 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
           type="password"
           required
           autoComplete="current-password"
-          className="mt-1 w-full rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF] outline-none focus:border-[#B8965D] focus:ring-1 focus:ring-[#B8965D]/30"
+          className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
         />
       </div>
 
@@ -67,23 +67,23 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-[#B8965D] px-4 py-2.5 text-sm font-semibold text-black hover:bg-[#C9AA72]"
+        className="w-full rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-black hover:bg-gold-bright"
       >
         Sign in
       </button>
 
       <div className="relative my-2">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-[#243656]" />
+          <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-[#040608] px-2 text-[#9AABC4]">or</span>
+          <span className="bg-background px-2 text-muted">or</span>
         </div>
       </div>
 
       <a
         href={`/api/auth/sso/start?provider=google&next=${encodeURIComponent(safeNextPath)}`}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#243656] bg-[#121E32] px-4 py-2.5 text-sm font-medium text-[#FFFFFF] hover:border-[#B8965D]"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
       >
         Sign in with SSO
       </a>
@@ -95,7 +95,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   return (
     <Suspense
       fallback={
-        <div className="mt-8 h-48 animate-pulse rounded-lg bg-[#121E32]" />
+        <div className="mt-8 h-48 animate-pulse rounded-lg bg-surface-muted" />
       }
     >
       <LoginFormInner nextPath={nextPath} />
@@ -108,24 +108,24 @@ export function LoginPageShell({ nextPath }: { nextPath: string }) {
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-black px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border border-[#243656] bg-[#040608] p-6 shadow-lg shadow-[#B8965D]/5 sm:p-10">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-lg shadow-gold/5 sm:p-10">
         <div className="flex justify-center px-2">
-          <BrandLogo size="xl" fullWidth />
+          <BrandLogo size="xl" fullWidth mode="dark" />
         </div>
-        <p className="mt-4 text-center text-sm text-[#9AABC4]">
+        <p className="mt-4 text-center text-sm text-muted">
           Sign in to access your business operating system.
         </p>
 
         <LoginForm nextPath={safeNextPath} />
 
-        <p className="mt-6 text-center text-xs text-[#9AABC4]">
-          <Link href="/" className="text-[#B8965D] hover:underline">
+        <p className="mt-6 text-center text-xs text-muted">
+          <Link href="/" className="text-gold hover:underline">
             ← Back to home
           </Link>
           {" · "}
           <a
             href={`/login?next=${encodeURIComponent("/dashboard?help=open")}`}
-            className="text-[#B8965D] hover:underline"
+            className="text-gold hover:underline"
           >
             Tour &amp; demo after sign-in
           </a>

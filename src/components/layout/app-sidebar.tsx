@@ -9,8 +9,8 @@ import { PendingLink } from "@/components/layout/navigation-provider";
 import { AllToolsPanel } from "@/components/layout/all-tools-panel";
 import {
   COMMAND_CENTER_NAV,
-  OPERATING_SYSTEMS,
   SIDEBAR_BRAND,
+  SIDEBAR_SHORTCUTS,
 } from "@/lib/navigation/command-center-nav";
 import { cn } from "@/lib/utils";
 import type { Organization, Workspace } from "@/types/tenant";
@@ -52,17 +52,10 @@ export function AppSidebar({
       <aside className="relative z-20 hidden h-full w-[260px] shrink-0 flex-col border-r border-border-subtle bg-surface md:flex">
         <Link
           href={SIDEBAR_BRAND.href}
-          className="flex h-16 shrink-0 items-center gap-2 border-b border-border-subtle px-4 transition-colors hover:bg-surface-muted"
+          className="flex h-[72px] shrink-0 items-center justify-center border-b border-border-subtle px-3 transition-colors hover:bg-surface-muted"
+          aria-label={SIDEBAR_BRAND.title}
         >
-          <BrandLogo size="sidebar" variant="icon" className="shrink-0" />
-          <div className="min-w-0 leading-tight">
-            <p className="truncate text-[11px] font-bold tracking-[0.12em] text-foreground">
-              {SIDEBAR_BRAND.title}
-            </p>
-            <p className="truncate text-[10px] font-medium tracking-[0.08em] text-muted">
-              {SIDEBAR_BRAND.subtitle}
-            </p>
-          </div>
+          <BrandLogo size="sidebar" variant="full" className="max-h-14 w-auto" />
         </Link>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
@@ -115,21 +108,21 @@ export function AppSidebar({
 
           <div className="mt-6">
             <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-dim">
-              Operating Systems
+              Shortcuts
             </p>
             <ul className="space-y-0.5">
-              {OPERATING_SYSTEMS.map((os) => (
-                <li key={os.id}>
+              {SIDEBAR_SHORTCUTS.map((item) => (
+                <li key={item.id}>
                   <PendingLink
-                    href={os.href}
+                    href={item.href}
                     pendingClassName="opacity-70"
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground",
-                      isActive(pathname, os.href) && "bg-surface-muted text-foreground"
+                      isActive(pathname, item.href) && "bg-surface-muted text-foreground"
                     )}
                   >
-                    <span className={cn("h-2 w-2 shrink-0 rounded-full", os.dotClass)} />
-                    <span className="truncate">{os.label}</span>
+                    <span className={cn("h-2 w-2 shrink-0 rounded-full", item.dotClass)} />
+                    <span className="truncate">{item.label}</span>
                   </PendingLink>
                 </li>
               ))}

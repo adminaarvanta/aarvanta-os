@@ -32,9 +32,9 @@ export default async function TasksPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Tasks</h2>
-        <p className="text-xs text-[#9AABC4] sm:text-sm">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-foreground sm:text-xl">Tasks</h2>
+        <p className="text-xs text-muted sm:text-sm">
           Create, assign, and track tasks manually — or let AI create them from inbound leads.
         </p>
       </header>
@@ -47,19 +47,19 @@ export default async function TasksPage({
 
         <div className="grid gap-6 lg:grid-cols-3">
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-[#FFFFFF]">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
               To do ({todo.length})
             </h3>
             <TaskList tasks={todo} members={memberOptions} />
           </section>
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-[#FFFFFF]">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
               In progress ({inProgress.length})
             </h3>
             <TaskList tasks={inProgress} members={memberOptions} />
           </section>
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-[#FFFFFF]">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
               Done ({done.length})
             </h3>
             <TaskList tasks={done} members={memberOptions} />

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Briefcase,
+  Brain,
   Globe2,
   Inbox,
   Kanban,
@@ -24,8 +25,10 @@ export type OperatingSystemItem = {
   id: string;
   label: string;
   href: string;
+  /** Theme-safe token classes (not fixed light-only Tailwind hues) */
   dotClass: string;
   iconClass: string;
+  description?: string;
 };
 
 /** Primary sidebar navigation — Command Center design */
@@ -42,64 +45,117 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "#all-tools", label: "All Tools", icon: LayoutGrid },
 ];
 
-/** Operating Systems section in sidebar + dashboard grid */
+/**
+ * Sidebar shortcuts — unique destinations not already in primary nav.
+ * (CRM / Inbox / Finance / Analytics live only in primary nav.)
+ */
+export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
+  {
+    id: "leads",
+    label: "Lead pipeline",
+    href: "/crm/leads",
+    description: "Capture and qualify new leads",
+    dotClass: "bg-gold",
+    iconClass: "text-gold bg-gold/10",
+  },
+  {
+    id: "build",
+    label: "Build sites",
+    href: "/build",
+    description: "Create and publish websites",
+    dotClass: "bg-accent-cyan",
+    iconClass: "text-accent-cyan bg-accent-cyan/10",
+  },
+  {
+    id: "knowledge",
+    label: "Knowledge hub",
+    href: "/knowledge",
+    description: "Docs, FAQs, and company brain",
+    dotClass: "bg-primary-bright",
+    iconClass: "text-primary-bright bg-primary-soft",
+  },
+  {
+    id: "team",
+    label: "Team",
+    href: "/team",
+    description: "People and roles",
+    dotClass: "bg-success",
+    iconClass: "text-success bg-success/10",
+  },
+];
+
+/**
+ * Dashboard OS map — branded modules.
+ * Paths that overlap primary nav are intentional for the visual map only.
+ */
 export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
   {
     id: "lead",
     label: "LeadOS",
     href: "/crm/leads",
-    dotClass: "bg-orange-500",
-    iconClass: "text-orange-500 bg-orange-50",
+    description: "Lead capture & qualification",
+    dotClass: "bg-gold",
+    iconClass: "text-gold bg-gold/10",
   },
   {
     id: "crm",
     label: "CRMOS",
     href: "/crm",
-    dotClass: "bg-blue-500",
-    iconClass: "text-blue-600 bg-blue-50",
+    description: "Customers, deals & pipelines",
+    dotClass: "bg-accent-cyan",
+    iconClass: "text-accent-cyan bg-accent-cyan/10",
   },
   {
     id: "voice",
-    label: "VoiceOS",
+    label: "Inbox OS",
     href: "/inbox",
-    dotClass: "bg-violet-500",
-    iconClass: "text-violet-600 bg-violet-50",
-  },
-  {
-    id: "whatsapp",
-    label: "WhatsAppOS",
-    href: "/inbox",
-    dotClass: "bg-green-500",
-    iconClass: "text-green-600 bg-green-50",
+    description: "Voice, WhatsApp, email & chat",
+    dotClass: "bg-primary-bright",
+    iconClass: "text-primary-bright bg-primary-soft",
   },
   {
     id: "site",
     label: "Build OS",
     href: "/build",
-    dotClass: "bg-cyan-500",
-    iconClass: "text-cyan-600 bg-cyan-50",
+    description: "Websites & landing pages",
+    dotClass: "bg-success",
+    iconClass: "text-success bg-success/10",
   },
   {
     id: "analytics",
     label: "AnalyticsOS",
     href: "/analytics",
-    dotClass: "bg-indigo-500",
-    iconClass: "text-indigo-600 bg-indigo-50",
+    description: "Reports & performance",
+    dotClass: "bg-gold-dark",
+    iconClass: "text-gold-dark bg-gold/10",
   },
   {
     id: "content",
     label: "ContentOS",
     href: "/knowledge",
-    dotClass: "bg-pink-500",
-    iconClass: "text-pink-600 bg-pink-50",
+    description: "Knowledge & content",
+    dotClass: "bg-gold",
+    iconClass: "text-gold bg-primary-soft",
   },
   {
     id: "finance",
     label: "FinanceOS",
     href: "/finance",
-    dotClass: "bg-emerald-500",
-    iconClass: "text-emerald-600 bg-emerald-50",
+    description: "Billing & cashflow",
+    dotClass: "bg-accent-cyan",
+    iconClass: "text-accent-cyan bg-accent-cyan/10",
   },
+];
+
+/** Mobile bottom bar — keep lean; deeper tools via sidebar shortcuts on desktop */
+export const MOBILE_NAV: CommandNavItem[] = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
+  { href: "/crm", label: "CRM", icon: Briefcase },
+  { href: "/workforce", label: "AI", icon: Sparkles },
+  { href: "/projects", label: "Projects", icon: Kanban },
+  { href: "/workflows", label: "Flows", icon: Workflow },
+  { href: "/knowledge", label: "Knowledge", icon: Brain },
 ];
 
 export const SIDEBAR_BRAND = {

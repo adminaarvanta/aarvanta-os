@@ -39,7 +39,7 @@ export default async function MeetingsPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Meeting records</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Meeting records</h3>
           <CardList
             items={meetings.map((meeting) => ({
               id: meeting.id,

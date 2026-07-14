@@ -20,7 +20,7 @@ export function AgentProfileTabs({
 }) {
   return (
     <nav
-      className="flex gap-1 overflow-x-auto border-b border-[#243656] [-webkit-overflow-scrolling:touch]"
+      className="flex gap-1 overflow-x-auto border-b border-border [-webkit-overflow-scrolling:touch]"
       aria-label="Agent profile sections"
     >
       {tabs.map((tab) => (
@@ -31,8 +31,8 @@ export function AgentProfileTabs({
           className={cn(
             "whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors",
             active === tab.id
-              ? "border-[#B8965D] text-[#C9AA72]"
-              : "border-transparent text-[#9AABC4] hover:text-[#FFFFFF]"
+              ? "border-gold text-gold-bright"
+              : "border-transparent text-muted hover:text-foreground"
           )}
         >
           {tab.label}

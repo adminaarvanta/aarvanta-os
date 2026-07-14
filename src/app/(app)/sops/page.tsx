@@ -39,7 +39,7 @@ export default async function SopsPage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">SOP library</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">SOP library</h3>
           <CardList
             items={sops.map((sop) => ({
               id: sop.id,

@@ -40,23 +40,22 @@ export default async function GovernancePage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Audit timeline</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Audit timeline</h3>
           <ol className="space-y-3">
             {orderedEntries.map((entry) => (
               <li
                 key={entry.id}
-                className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+                className="rounded-xl border border-border bg-surface-elevated p-4"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium text-[#FFFFFF]">
+                  <p className="font-medium text-foreground">
                     {entry.actorName} · {entry.action.replaceAll("_", " ")}
                   </p>
-                  <span className="rounded-full bg-[#B8965D]/15 px-2 py-0.5 text-[10px] text-[#C9AA72] ring-1 ring-[#B8965D]/30">
+                  <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] text-gold-bright ring-1 ring-gold/30">
                     {new Date(entry.createdAt).toLocaleString()}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-[#9AABC4]">{entry.detail}</p>
-                <p className="mt-1 text-[10px] text-[#9AABC4]/70">Resource: {entry.resource}</p>
+                <p className="mt-2 text-sm text-muted">{entry.detail}</p>
               </li>
             ))}
           </ol>

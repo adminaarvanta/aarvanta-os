@@ -28,14 +28,14 @@ export function KnowledgeSearchBar() {
   }
 
   return (
-    <section className="rounded-xl border border-[#243656] bg-[#0D1524] p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-[#FFFFFF]">Semantic search</h3>
+    <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
+      <h3 className="text-sm font-semibold text-foreground">Semantic search</h3>
       <form onSubmit={onSearch} className="flex gap-2">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search policies, SOPs, playbooks…"
-          className="flex-1 rounded-lg border border-[#243656] bg-[#121E32] px-3 py-2 text-sm text-[#FFFFFF]"
+          className="flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
         />
         <Button type="submit" disabled={loading || !query.trim()}>
           {loading ? (
@@ -51,23 +51,23 @@ export function KnowledgeSearchBar() {
           {hits.map((hit) => (
             <li
               key={hit.chunk.id}
-              className="rounded-lg border border-[#243656] bg-[#121E32] p-3"
+              className="rounded-lg border border-border bg-surface-muted p-3"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/knowledge/${hit.chunk.documentId}`}
-                  className="text-sm font-medium text-[#B8965D] hover:underline"
+                  className="text-sm font-medium text-gold hover:underline"
                 >
                   {hit.chunk.documentTitle}
                 </Link>
-                <Badge className="bg-[#040608] text-[#9AABC4] ring-[#243656]">
+                <Badge className="bg-background text-muted ring-border">
                   {hit.method}
                 </Badge>
-                <span className="text-[10px] text-[#9AABC4]">
+                <span className="text-[10px] text-muted">
                   score {(hit.score * 100).toFixed(0)}%
                 </span>
               </div>
-              <p className="mt-2 text-xs text-[#9AABC4] line-clamp-3">
+              <p className="mt-2 text-xs text-muted line-clamp-3">
                 {hit.chunk.content}
               </p>
             </li>

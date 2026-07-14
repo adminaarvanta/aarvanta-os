@@ -5,6 +5,7 @@ import { NavigationProvider } from "@/components/layout/navigation-provider";
 import { ScrollRestoration } from "@/components/layout/scroll-restoration";
 import { DemoTourOverlay } from "@/components/demo/demo-tour-overlay";
 import { DemoTourProvider } from "@/components/demo/demo-tour-provider";
+import { SupportAssistant } from "@/components/support/support-assistant";
 import type { Organization, Workspace } from "@/types/tenant";
 
 export function AppShell({
@@ -44,6 +45,7 @@ export function AppShell({
           </main>
           <MobileNav production={production} />
         </div>
+        <SupportAssistant />
         <DemoTourOverlay />
       </DemoTourProvider>
     </NavigationProvider>

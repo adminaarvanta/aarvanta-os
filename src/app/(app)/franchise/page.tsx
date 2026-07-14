@@ -45,7 +45,7 @@ export default async function FranchisePage() {
         />
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Location performance</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">Location performance</h3>
           <CardList
             items={locations.map((location) => ({
               id: location.id,

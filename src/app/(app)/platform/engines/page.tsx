@@ -4,6 +4,12 @@ import { AGEB_ENGINES, engineStats } from "@/lib/ageb/engines";
 import { ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
 import { StatusPill } from "@/components/ui/os/status-pill";
 
+function statusLabel(status: string) {
+  if (status === "live") return "Live";
+  if (status === "partial") return "In progress";
+  return "Coming soon";
+}
+
 function statusVariant(
   status: string
 ): "success" | "warning" | "default" | "danger" {
@@ -19,13 +25,13 @@ export default function EnginesPage() {
     <ModulePageShell
       icon={Cog}
       title="Core Engines"
-      description="AGEB Volume 3 — reusable systems powering all OS modules"
+      description="Reusable systems that power your modules — shown in plain language."
       actions={
         <Link
           href="/platform/ageb"
-          className="rounded-lg border border-[#243656] px-3 py-2 text-xs text-[#FFFFFF] hover:border-[#B8965D]/40"
+          className="rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:border-gold/40"
         >
-          AGEB blueprint
+          Platform overview
         </Link>
       }
     >
@@ -36,9 +42,9 @@ export default function EnginesPage() {
             { label: "Partial / live", value: stats.partial + stats.live },
             { label: "Planned", value: stats.planned },
             {
-              label: "Action API",
-              value: "POST",
-              sub: "/api/v1/action/execute",
+              label: "Ready to use",
+              value: stats.live,
+              sub: "Fully live engines",
             },
           ]}
         />
@@ -47,25 +53,31 @@ export default function EnginesPage() {
           {AGEB_ENGINES.map((engine) => (
             <li
               key={engine.id}
-              className="rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+              className="rounded-xl border border-border bg-surface-elevated p-4"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="font-medium text-[#FFFFFF]">{engine.name}</p>
-                <StatusPill variant={statusVariant(engine.status)}>{engine.status}</StatusPill>
+                <p className="font-medium text-foreground">{engine.name}</p>
+                <StatusPill variant={statusVariant(engine.status)}>
+                  {statusLabel(engine.status)}
+                </StatusPill>
               </div>
-              <p className="mt-1 text-xs text-[#9AABC4]">{engine.description}</p>
-              <p className="mt-2 text-[10px] uppercase tracking-wide text-[#6B7F9E]">
-                Vol. {engine.volume} · {engine.kind}
+              <p className="mt-1 text-xs text-muted">{engine.description}</p>
+              <p className="mt-2 text-[10px] uppercase tracking-wide text-dim">
+                {engine.kind === "os_module"
+                  ? "Operating module"
+                  : engine.kind === "fabric"
+                    ? "Platform fabric"
+                    : "Core engine"}
               </p>
-              <ul className="mt-2 space-y-0.5 text-[11px] text-[#9AABC4]">
+              <ul className="mt-2 space-y-0.5 text-[11px] text-muted">
                 {engine.capabilities.slice(0, 4).map((cap) => (
                   <li key={cap}>· {cap}</li>
                 ))}
               </ul>
-              {engine.apiPath && (
+              {engine.apiPath && !engine.apiPath.startsWith("/api") && (
                 <Link
                   href={engine.apiPath}
-                  className="mt-2 inline-block text-[11px] text-[#B8965D] hover:underline"
+                  className="mt-2 inline-block text-[11px] text-gold hover:underline"
                 >
                   Open module →
                 </Link>

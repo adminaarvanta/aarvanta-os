@@ -16,10 +16,10 @@ type ProviderRow = {
 };
 
 const statusClass: Record<string, string> = {
-  connected: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
-  disconnected: "bg-[#121E32] text-[#9AABC4] ring-[#243656]",
-  syncing: "bg-[#0D1A2E] text-[#4DA6FF] ring-[#4DA6FF]/30",
-  error: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
+  connected: "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30",
+  disconnected: "bg-surface-muted text-muted ring-border",
+  syncing: "bg-accent-cyan/10 text-accent-cyan ring-accent-cyan/30",
+  error: "bg-danger/15 text-danger ring-danger/45",
 };
 
 export function IntegrationsClient({ providers }: { providers: ProviderRow[] }) {
@@ -76,13 +76,13 @@ export function IntegrationsClient({ providers }: { providers: ProviderRow[] }) 
         return (
           <li
             key={p.provider}
-            className="rounded-xl border border-[#243656] bg-[#0D1524] p-5"
+            className="rounded-xl border border-border bg-surface-elevated p-5"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-[#FFFFFF]">{p.name}</h3>
-                <p className="mt-1 text-xs text-[#9AABC4]">{p.description}</p>
-                <Badge className="mt-2 bg-[#121E32] text-[#9AABC4] ring-[#243656]">
+                <h3 className="font-semibold text-foreground">{p.name}</h3>
+                <p className="mt-1 text-xs text-muted">{p.description}</p>
+                <Badge className="mt-2 bg-surface-muted text-muted ring-border">
                   {p.category}
                 </Badge>
               </div>
@@ -91,12 +91,12 @@ export function IntegrationsClient({ providers }: { providers: ProviderRow[] }) 
               </Badge>
             </div>
             {p.connection?.accountLabel && (
-              <p className="mt-3 text-xs text-[#9AABC4]">
+              <p className="mt-3 text-xs text-muted">
                 Account: {p.connection.accountLabel}
               </p>
             )}
             {p.connection?.lastSyncAt && (
-              <p className="mt-1 text-[10px] text-[#9AABC4]/70">
+              <p className="mt-1 text-[10px] text-muted/70">
                 Last sync {formatRelative(p.connection.lastSyncAt)}
               </p>
             )}

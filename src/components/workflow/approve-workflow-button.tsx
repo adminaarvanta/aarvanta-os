@@ -26,9 +26,9 @@ export function ApproveWorkflowButton({ run }: { run: WorkflowRun }) {
   }
 
   return (
-    <div className="rounded-xl border border-[#B8965D]/35 bg-[#2A2210] p-4">
-      <p className="text-sm font-medium text-[#C9AA72]">Approval required</p>
-      <p className="mt-1 text-xs text-[#C9AA72]/80">
+    <div className="rounded-xl border border-gold/35 bg-gold/10 p-4">
+      <p className="text-sm font-medium text-gold-bright">Approval required</p>
+      <p className="mt-1 text-xs text-gold-bright/80">
         {run.pendingApproval?.message}
       </p>
       <Button type="button" className="mt-3" onClick={approve} disabled={loading}>

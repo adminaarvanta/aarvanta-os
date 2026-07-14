@@ -7,23 +7,29 @@ import { brand } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /** Full wordmark aspect (globe + AARVANTA + BUSINESS OS). */
-const FULL_LOGO_ASPECT = 1.05;
+const FULL_LOGO_ASPECT = 1;
 
 const DISPLAY_HEIGHT = {
-  header: 72,
-  sm: 64,
-  md: 96,
-  lg: 128,
-  xl: 168,
-  sidebar: 64,
+  header: 56,
+  sm: 40,
+  md: 72,
+  lg: 96,
+  xl: 140,
+  sidebar: 56,
 } as const;
 
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
 export type BrandLogoVariant = "full" | "icon";
 
 const LOGO_PATHS = {
-  dark: { full: "/aarvanta-logo.svg", icon: "/aarvanta-logo-icon.svg" },
-  light: { full: "/aarvanta-logo-light.svg", icon: "/aarvanta-logo-icon-light.svg" },
+  dark: {
+    full: "/aarvanta-logo-dark.png",
+    icon: "/aarvanta-logo-icon-dark.png",
+  },
+  light: {
+    full: "/aarvanta-logo-light.png",
+    icon: "/aarvanta-logo-icon-light.png",
+  },
 } as const;
 
 export function BrandLogo({
@@ -62,7 +68,7 @@ export function BrandLogo({
       priority
       className={cn(
         "bg-transparent object-contain",
-        fullWidth ? "mx-auto h-auto w-full max-w-[320px]" : "h-auto w-auto",
+        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : "h-auto w-auto",
         className
       )}
       style={
@@ -71,7 +77,8 @@ export function BrandLogo({
           : {
               height: displayHeight,
               width: variant === "icon" ? displayHeight : "auto",
-              maxWidth: variant === "full" ? displayHeight * FULL_LOGO_ASPECT : displayHeight,
+              maxWidth:
+                variant === "full" ? displayHeight * FULL_LOGO_ASPECT : displayHeight,
             }
       }
     />

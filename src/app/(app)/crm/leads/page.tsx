@@ -26,16 +26,16 @@ export default async function LeadsPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-[#243656] bg-[#0D1524] px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-[#FFFFFF] sm:text-xl">Leads</h2>
-        <p className="text-xs text-[#9AABC4] sm:text-sm">
+      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
+        <h2 className="text-lg font-semibold text-foreground sm:text-xl">Leads</h2>
+        <p className="text-xs text-muted sm:text-sm">
           Prospects and hot leads with AI lead scoring
         </p>
       </header>
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         {leads.length === 0 ? (
-          <p className="text-sm text-[#9AABC4]">
+          <p className="text-sm text-muted">
             No leads yet. Contacts qualify from inbound conversations or manual
             entry.
           </p>
@@ -45,19 +45,19 @@ export default async function LeadsPage() {
               <li key={contact.id}>
                 <Link
                   href={`/crm/contacts/${contact.id}`}
-                  className="block rounded-xl border border-[#243656] bg-[#0D1524] p-4 hover:border-[#B8965D]/40"
+                  className="block rounded-xl border border-border bg-surface-elevated p-4 hover:border-gold/40"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium text-[#FFFFFF]">
+                      <p className="font-medium text-foreground">
                         {contactDisplayName(contact)}
                       </p>
-                      <p className="text-xs text-[#9AABC4]">
+                      <p className="text-xs text-muted">
                         {contact.jobTitle}
                         {contact.email ? ` · ${contact.email}` : ""}
                       </p>
                       {contact.leadScoreReason && (
-                        <p className="mt-2 text-xs text-[#9AABC4] line-clamp-2">
+                        <p className="mt-2 text-xs text-muted line-clamp-2">
                           {contact.leadScoreReason}
                         </p>
                       )}
@@ -68,7 +68,7 @@ export default async function LeadsPage() {
                     {contact.tags.map((tag) => (
                       <Badge
                         key={tag}
-                        className="bg-[#121E32] text-[#9AABC4] ring-[#243656]"
+                        className="bg-surface-muted text-muted ring-border"
                       >
                         {tag.replace("_", " ")}
                       </Badge>

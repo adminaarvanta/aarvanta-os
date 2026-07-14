@@ -42,7 +42,7 @@ export function AgentProfileView({
               conversations={conversations}
             />
             <section>
-              <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">
                 Recent runs
               </h3>
               <RunList runs={runs} />

@@ -18,17 +18,17 @@ export function RetailIndustryPanel({
     <Panel>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-[#FFFFFF]">
+          <p className="text-sm font-semibold text-foreground">
             {profile.label} dashboard
           </p>
-          <p className="text-xs text-[#9AABC4]">
+          <p className="text-xs text-muted">
             Industry KPIs for {businessName ?? "your business"}
           </p>
         </div>
         {storeSlug ? (
           <Link
             href={`/store/${storeSlug}`}
-            className="text-xs font-medium text-[#B8965D] hover:underline"
+            className="text-xs font-medium text-gold hover:underline"
             target="_blank"
           >
             View live store →
@@ -50,9 +50,9 @@ export function RetailIndustryPanel({
           />
         ))}
       </dl>
-      <ul className="mt-4 flex flex-wrap gap-2 text-[10px] text-[#9AABC4]">
+      <ul className="mt-4 flex flex-wrap gap-2 text-[10px] text-muted">
         {profile.kpis.map((kpi) => (
-          <li key={kpi} className="rounded-full border border-[#243656] px-2 py-0.5">
+          <li key={kpi} className="rounded-full border border-border px-2 py-0.5">
             {kpi.replaceAll("_", " ")}
           </li>
         ))}

@@ -33,20 +33,20 @@ function HelpLiveDemoModal({ open, onClose }: { open: boolean; onClose: () => vo
         onClick={onClose}
         aria-label="Close"
       />
-      <div className="relative z-10 max-h-[min(90vh,720px)] w-full max-w-2xl overflow-y-auto rounded-xl border border-[#3d3528] bg-[#101010] p-4 shadow-2xl sm:p-6">
+      <div className="relative z-10 max-h-[min(90vh,720px)] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-background p-4 shadow-2xl sm:p-6">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 id="help-live-demo-title" className="text-lg font-semibold text-[#F5E6C8]">
+            <h2 id="help-live-demo-title" className="text-lg font-semibold text-gold-bright">
               90-Second Live Demo
             </h2>
-            <p className="mt-1 text-sm text-[#A89878]">
+            <p className="mt-1 text-sm text-muted">
               One click runs the full business story for your audience.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-[#A89878] hover:bg-[#1a1714] hover:text-[#F5E6C8]"
+            className="rounded-lg p-1.5 text-muted hover:bg-surface hover:text-gold-bright"
           >
             <X className="h-5 w-5" />
           </button>
@@ -141,13 +141,13 @@ export function HelpMenu() {
         {menuOpen && (
           <div
             role="menu"
-            className="absolute right-0 top-full z-50 mt-2 w-[min(calc(100vw-1.5rem),20rem)] overflow-hidden rounded-xl border border-[#3d3528] bg-[#101010] shadow-2xl shadow-black/50"
+            className="absolute right-0 top-full z-50 mt-2 w-[min(calc(100vw-1.5rem),20rem)] overflow-hidden rounded-xl border border-border bg-background shadow-2xl shadow-black/50"
           >
-            <div className="border-b border-[#3d3528] bg-gradient-to-r from-[#D4AF37]/10 to-transparent px-4 py-3">
-              <p className="text-xs font-medium uppercase tracking-wider text-[#D4AF37]">
+            <div className="border-b border-border bg-gradient-to-r from-gold/10 to-transparent px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-wider text-gold">
                 Help &amp; demo
               </p>
-              <p className="mt-0.5 text-sm text-[#F5E6C8]">Learn and present Aarvanta OS</p>
+              <p className="mt-0.5 text-sm text-gold-bright">Learn and present Aarvanta OS</p>
             </div>
 
             <ul className="p-2">
@@ -156,16 +156,16 @@ export function HelpMenu() {
                   type="button"
                   role="menuitem"
                   onClick={startTour}
-                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[#1a1714]"
+                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
                 >
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#D4AF37]/15 text-[#D4AF37]">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/15 text-gold">
                     <Compass className="h-4 w-4" />
                   </span>
                   <span>
-                    <span className="block text-sm font-medium text-[#F5E6C8]">
+                    <span className="block text-sm font-medium text-gold-bright">
                       Product tour
                     </span>
-                    <span className="mt-0.5 block text-xs text-[#A89878]">
+                    <span className="mt-0.5 block text-xs text-muted">
                       Step-by-step walkthrough with spotlight highlights
                     </span>
                   </span>
@@ -177,16 +177,16 @@ export function HelpMenu() {
                   role="menuitem"
                   data-demo-tour="help-live-demo"
                   onClick={openLiveDemo}
-                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[#1a1714]"
+                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
                 >
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A2A33] text-[#4DA6FF]">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-cyan/15 text-accent-cyan">
                     <Play className="h-4 w-4" />
                   </span>
                   <span>
-                    <span className="block text-sm font-medium text-[#F5E6C8]">
+                    <span className="block text-sm font-medium text-gold-bright">
                       90-second live demo
                     </span>
-                    <span className="mt-0.5 block text-xs text-[#A89878]">
+                    <span className="mt-0.5 block text-xs text-muted">
                       Full lead-to-delivery journey in one click
                     </span>
                   </span>
@@ -197,16 +197,16 @@ export function HelpMenu() {
                   type="button"
                   role="menuitem"
                   onClick={jumpToLiveDemoTour}
-                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-[#1a1714]"
+                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
                 >
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#141414] text-[#D4AF37]">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-gold">
                     <Sparkles className="h-4 w-4" />
                   </span>
                   <span>
-                    <span className="block text-sm font-medium text-[#F5E6C8]">
+                    <span className="block text-sm font-medium text-gold-bright">
                       Tour demo step only
                     </span>
-                    <span className="mt-0.5 block text-xs text-[#A89878]">
+                    <span className="mt-0.5 block text-xs text-muted">
                       Jump to the live demo highlight in the tour
                     </span>
                   </span>
@@ -214,15 +214,15 @@ export function HelpMenu() {
               </li>
             </ul>
 
-            <div className="border-t border-[#3d3528] px-4 py-3 space-y-2">
-              <p className="flex items-center gap-2 text-[10px] text-[#A89878]">
+            <div className="border-t border-border px-4 py-3 space-y-2">
+              <p className="flex items-center gap-2 text-[10px] text-muted">
                 <Keyboard className="h-3 w-3 shrink-0" />
                 During tour: ← → navigate · Esc to exit
               </p>
               <Link
                 href="/knowledge"
                 onClick={closeMenu}
-                className="flex items-center gap-2 text-xs text-[#D4AF37] hover:underline"
+                className="flex items-center gap-2 text-xs text-gold hover:underline"
               >
                 <BookOpen className="h-3 w-3" />
                 Browse knowledge base

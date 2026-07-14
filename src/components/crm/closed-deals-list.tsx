@@ -32,41 +32,41 @@ export function ClosedDealsList({
   }
 
   return (
-    <section className="rounded-xl border border-[#243656] bg-[#0D1524]">
+    <section className="rounded-xl border border-border bg-surface-elevated">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-4 py-3 text-left"
       >
-        <span className="text-sm font-semibold text-[#FFFFFF]">
+        <span className="text-sm font-semibold text-foreground">
           Closed deals ({closed.length})
         </span>
-        <span className="text-xs text-[#9AABC4]">{open ? "Hide" : "Show"}</span>
+        <span className="text-xs text-muted">{open ? "Hide" : "Show"}</span>
       </button>
       {open && (
-        <ul className="divide-y divide-[#243656] border-t border-[#243656]">
+        <ul className="divide-y divide-border border-t border-border">
           {closed.map((deal) => (
             <li key={deal.id}>
               <Link
                 href={`/crm/deals/${deal.id}`}
-                className="flex flex-col gap-1 px-4 py-3 text-sm transition-colors hover:bg-[#121E32] sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-1 px-4 py-3 text-sm transition-colors hover:bg-surface-muted sm:flex-row sm:items-center sm:justify-between"
               >
               <div>
-                <p className="font-medium text-[#FFFFFF]">{deal.title}</p>
+                <p className="font-medium text-foreground">{deal.title}</p>
                 {contactName(deal.contactId) && (
-                  <p className="text-xs text-[#9AABC4]">
+                  <p className="text-xs text-muted">
                     {contactName(deal.contactId)}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <p className="font-medium text-[#B8965D]">
+                <p className="font-medium text-gold">
                   {formatCurrency(deal.value, deal.currency)}
                 </p>
                 <p
                   className={
                     deal.status === "won"
-                      ? "text-xs text-[#4DA6FF]"
+                      ? "text-xs text-accent-cyan"
                       : "text-xs text-red-400"
                   }
                 >

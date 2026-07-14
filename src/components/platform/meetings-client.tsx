@@ -47,27 +47,27 @@ export function MeetingsClient() {
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-3 rounded-xl border border-[#243656] bg-[#0D1524] p-4"
+      className="space-y-3 rounded-xl border border-border bg-surface-elevated p-4"
     >
-      <p className="text-sm font-medium text-[#FFFFFF]">Upload transcript</p>
+      <p className="text-sm font-medium text-foreground">Upload transcript</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="space-y-1 text-xs text-[#9AABC4]">
+        <label className="space-y-1 text-xs text-muted">
           Meeting title
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Q3 planning sync"
-            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           />
         </label>
-        <label className="space-y-1 text-xs text-[#9AABC4]">
+        <label className="space-y-1 text-xs text-muted">
           Source
           <select
             value={source}
             onChange={(event) =>
               setSource(event.target.value as (typeof MEETING_SOURCES)[number])
             }
-            className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
           >
             {MEETING_SOURCES.map((option) => (
               <option key={option} value={option}>
@@ -77,14 +77,14 @@ export function MeetingsClient() {
           </select>
         </label>
       </div>
-      <label className="space-y-1 text-xs text-[#9AABC4]">
+      <label className="space-y-1 text-xs text-muted">
         Transcript
         <textarea
           value={transcript}
           onChange={(event) => setTranscript(event.target.value)}
           rows={4}
           placeholder="Paste transcript here..."
-          className="w-full rounded-lg border border-[#243656] bg-[#040608] px-3 py-2 text-sm text-[#FFFFFF]"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
         />
       </label>
       <div className="flex items-center gap-3">

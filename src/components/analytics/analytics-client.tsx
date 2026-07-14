@@ -17,12 +17,12 @@ function StatCard({
   change?: number;
 }) {
   return (
-    <div className="rounded-xl border border-[#243656] bg-[#0D1524] p-4">
-      <p className="text-[10px] uppercase tracking-wide text-[#9AABC4]">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-[#FFFFFF]">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-[#9AABC4]">{sub}</p>}
+    <div className="rounded-xl border border-border bg-surface-elevated p-4">
+      <p className="text-[10px] uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
       {change != null && (
-        <p className={`mt-1 text-xs ${change >= 0 ? "text-[#4DA6FF]" : "text-red-400"}`}>
+        <p className={`mt-1 text-xs ${change >= 0 ? "text-accent-cyan" : "text-red-400"}`}>
           {change >= 0 ? "+" : ""}
           {change}% vs prior period
         </p>
@@ -74,8 +74,8 @@ export function AnalyticsClient({
               disabled={loading}
               className={`rounded-lg px-3 py-1.5 text-sm capitalize ${
                 period === p
-                  ? "bg-[#B8965D]/15 text-[#C9AA72] ring-1 ring-[#B8965D]/30"
-                  : "text-[#9AABC4] hover:bg-[#162840]"
+                  ? "bg-gold/15 text-gold-bright ring-1 ring-gold/30"
+                  : "text-muted hover:bg-surface-hover"
               }`}
             >
               {p}
@@ -96,7 +96,7 @@ export function AnalyticsClient({
       </div>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Revenue</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Revenue</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Total revenue"
@@ -116,7 +116,7 @@ export function AnalyticsClient({
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Pipeline & projects</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Pipeline & projects</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Open deals" value={String(snapshot.pipeline.openDeals)} />
           <StatCard
@@ -133,7 +133,7 @@ export function AnalyticsClient({
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Tasks & AI usage</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Tasks & AI usage</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Open CRM tasks" value={String(snapshot.tasks.open)} />
           <StatCard
@@ -150,22 +150,22 @@ export function AnalyticsClient({
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-[#FFFFFF]">Key metrics</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Key metrics</h3>
         <ul className="grid gap-3 sm:grid-cols-2">
           {snapshot.metrics.map((m) => (
             <li
               key={m.label}
-              className="flex items-center justify-between rounded-lg border border-[#243656] px-4 py-3"
+              className="flex items-center justify-between rounded-lg border border-border px-4 py-3"
             >
-              <span className="text-sm text-[#9AABC4]">{m.label}</span>
+              <span className="text-sm text-muted">{m.label}</span>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#FFFFFF]">
+                <span className="font-semibold text-foreground">
                   {m.unit === "GBP"
                     ? fmt(Number(m.value))
                     : String(m.value)}
                 </span>
                 {m.changePct != null && (
-                  <Badge className="bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30">
+                  <Badge className="bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30">
                     +{m.changePct}%
                   </Badge>
                 )}

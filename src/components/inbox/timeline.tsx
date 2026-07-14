@@ -43,8 +43,8 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
           className={cn(
             "max-w-[min(100%,20rem)] rounded-2xl px-4 py-2.5 text-sm sm:max-w-[80%]",
             outbound
-              ? "bg-[#162840] text-[#FFFFFF] ring-1 ring-[#B8965D]/30"
-              : "bg-[#121E32] border border-[#243656] text-[#FFFFFF]"
+              ? "bg-surface-hover text-foreground ring-1 ring-gold/30"
+              : "bg-surface-muted border border-border text-foreground"
           )}
         >
           <div className="mb-1 flex items-center gap-2 text-[10px] opacity-80">
@@ -60,7 +60,7 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
           <p
             className={cn(
               "mt-1 text-[10px]",
-              outbound ? "text-[#C9AA72]" : "text-[#9AABC4]"
+              outbound ? "text-gold-bright" : "text-muted"
             )}
           >
             {formatRelative(event.occurredAt)}
@@ -73,14 +73,14 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
 
   if (event.type === "note") {
     return (
-      <div className="rounded-xl border border-[#B8965D]/35 bg-[#2A2210] px-4 py-3 text-sm">
-        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#C9AA72]">
+      <div className="rounded-xl border border-gold/35 bg-gold/10 px-4 py-3 text-sm">
+        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-gold-bright">
           <StickyNote className="h-4 w-4" />
           {event.isInternal ? "Internal note" : "Note"}
           {event.authorName && ` · ${event.authorName}`}
         </div>
-        <p className="text-[#FFFFFF]">{event.content}</p>
-        <p className="mt-1 text-[10px] text-[#9AABC4]">
+        <p className="text-foreground">{event.content}</p>
+        <p className="mt-1 text-[10px] text-muted">
           {formatRelative(event.occurredAt)}
         </p>
       </div>
@@ -89,16 +89,16 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
 
   if (event.type === "call") {
     return (
-      <div className="rounded-xl border border-[#243656] bg-[#0D1524] px-4 py-3 text-sm">
-        <div className="flex items-center gap-2 font-medium text-[#FFFFFF]">
-          <Phone className="h-4 w-4 text-[#B8965D]" />
+      <div className="rounded-xl border border-border bg-surface-elevated px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 font-medium text-foreground">
+          <Phone className="h-4 w-4 text-gold" />
           {event.direction === "inbound" ? "Inbound" : "Outbound"} call ·{" "}
           {Math.round(event.durationSeconds / 60)} min
         </div>
         {event.summary && (
-          <p className="mt-1 text-[#9AABC4]">{event.summary}</p>
+          <p className="mt-1 text-muted">{event.summary}</p>
         )}
-        <p className="mt-1 text-[10px] text-[#9AABC4]">
+        <p className="mt-1 text-[10px] text-muted">
           {formatRelative(event.occurredAt)}
         </p>
       </div>
@@ -107,13 +107,13 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
 
   if (event.type === "email") {
     return (
-      <div className="rounded-xl border border-[#243656] bg-[#0D1524] px-4 py-3 text-sm">
-        <div className="flex items-center gap-2 font-medium text-[#FFFFFF]">
-          <Mail className="h-4 w-4 text-[#B8965D]" />
+      <div className="rounded-xl border border-border bg-surface-elevated px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 font-medium text-foreground">
+          <Mail className="h-4 w-4 text-gold" />
           {event.direction === "inbound" ? "Received" : "Sent"}: {event.subject}
         </div>
-        <p className="mt-1 text-[#9AABC4]">{event.bodyPreview}</p>
-        <p className="mt-1 text-[10px] text-[#9AABC4]">
+        <p className="mt-1 text-muted">{event.bodyPreview}</p>
+        <p className="mt-1 text-[10px] text-muted">
           {formatRelative(event.occurredAt)}
           {event.authorName && ` · ${event.authorName}`}
         </p>
@@ -123,15 +123,15 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
 
   if (event.type === "meeting") {
     return (
-      <div className="rounded-xl border border-[#243656] bg-[#121E32] px-4 py-3 text-sm">
-        <div className="flex items-center gap-2 font-medium text-[#FFFFFF]">
-          <Calendar className="h-4 w-4 text-[#B8965D]" />
+      <div className="rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm">
+        <div className="flex items-center gap-2 font-medium text-foreground">
+          <Calendar className="h-4 w-4 text-gold" />
           {event.title}
         </div>
-        <p className="mt-1 text-xs capitalize text-[#9AABC4]">
+        <p className="mt-1 text-xs capitalize text-muted">
           {event.status} · {event.durationMinutes} min
         </p>
-        <p className="mt-1 text-[10px] text-[#9AABC4]">
+        <p className="mt-1 text-[10px] text-muted">
           {formatRelative(event.occurredAt)}
         </p>
       </div>

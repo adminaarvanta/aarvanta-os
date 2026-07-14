@@ -4,15 +4,15 @@ import type { WorkflowRun } from "@/types/workflow";
 import { formatRelative } from "@/lib/utils";
 
 const statusColors: Record<WorkflowRun["status"], string> = {
-  running: "bg-[#2A2210] text-[#C9AA72] ring-[#B8965D]/35",
-  completed: "bg-[#0A2A33] text-[#4DA6FF] ring-[#4DA6FF]/30",
-  failed: "bg-[#2A1218] text-[#F0A0A8] ring-[#8B3A45]/45",
-  awaiting_approval: "bg-[#1A2B48]/60 text-[#C9AA72] ring-[#B8965D]/30",
+  running: "bg-gold/10 text-gold-bright ring-gold/35",
+  completed: "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30",
+  failed: "bg-danger/15 text-danger ring-danger/45",
+  awaiting_approval: "bg-navy/60 text-gold-bright ring-gold/30",
 };
 
 export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {
   if (!runs.length) {
-    return <p className="text-sm text-[#9AABC4]">No runs yet.</p>;
+    return <p className="text-sm text-muted">No runs yet.</p>;
   }
 
   return (
@@ -21,11 +21,11 @@ export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {
         <li key={run.id}>
           <Link
             href={`/workflows/runs/${run.id}`}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#243656] bg-[#121E32] px-4 py-3 hover:border-[#B8965D]/40"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface-muted px-4 py-3 hover:border-gold/40"
           >
             <div>
-              <p className="text-sm font-medium text-[#FFFFFF]">{run.workflowName}</p>
-              <p className="text-[10px] text-[#9AABC4]">
+              <p className="text-sm font-medium text-foreground">{run.workflowName}</p>
+              <p className="text-[10px] text-muted">
                 {formatRelative(run.createdAt)}
                 {run.context.contactName ? ` · ${run.context.contactName}` : ""}
               </p>
