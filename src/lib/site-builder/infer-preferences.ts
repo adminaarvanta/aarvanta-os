@@ -12,22 +12,26 @@ import { getThemePreset } from "@/lib/site-builder/theme-presets";
 
 const EXAMPLE_PROMPTS = [
   {
-    label: "Online store",
+    id: "candles",
+    label: "Candle shop",
     prompt:
       "Artisan Candles Co — handmade soy candles for UK homes. Warm, gift-ready shop with subscriptions.",
   },
   {
-    label: "Local services",
+    id: "dental",
+    label: "Family dentist",
     prompt:
       "North Peak Dental — modern family dentist in Manchester. Calm, trustworthy site to book appointments.",
   },
   {
-    label: "SaaS landing",
+    id: "saas",
+    label: "Bookkeeping app",
     prompt:
       "Ledgerly — simple bookkeeping software for freelancers. Clean product landing with pricing and signup.",
   },
   {
-    label: "Portfolio",
+    id: "portfolio",
+    label: "Architecture studio",
     prompt:
       "Maya Chen Studio — architecture portfolio. Editorial, minimal, photography-led with project case studies.",
   },

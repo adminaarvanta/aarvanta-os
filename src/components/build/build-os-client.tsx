@@ -296,14 +296,17 @@ export function BuildOsClient() {
           />
 
           <div className="mt-2 flex flex-wrap gap-2 px-1">
+            <span className="self-center text-[10px] font-medium uppercase tracking-wide text-dim">
+              Example briefs
+            </span>
             {EXAMPLE_PROMPTS.map((ex) => (
               <button
-                key={ex.label}
+                key={ex.id}
                 type="button"
                 onClick={() => setPrompt(ex.prompt)}
                 className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-[11px] text-muted transition hover:border-gold/40 hover:text-foreground"
               >
-                Try: {ex.label}
+                {ex.label}
               </button>
             ))}
           </div>
@@ -377,7 +380,8 @@ export function BuildOsClient() {
 
         <div className="mt-10 animate-fade-up">
           <p className="text-center text-xs font-medium uppercase tracking-[0.12em] text-dim">
-            Site type <span className="font-normal normal-case tracking-normal">(optional)</span>
+            What kind of site?{" "}
+            <span className="font-normal normal-case tracking-normal">(optional)</span>
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {SITE_TYPE_CARDS.map((card) => {
