@@ -52,10 +52,10 @@ export function AppSidebar({
       <aside className="relative z-20 hidden h-full w-[260px] shrink-0 flex-col border-r border-border-subtle bg-surface md:flex">
         <Link
           href={SIDEBAR_BRAND.href}
-          className="flex h-[100px] shrink-0 items-center justify-center border-b border-border-subtle px-3 py-2 transition-colors hover:bg-surface-muted"
+          className="flex h-[120px] shrink-0 items-center justify-center border-b border-border-subtle bg-transparent px-2 py-2 transition-colors hover:bg-surface-muted"
           aria-label={SIDEBAR_BRAND.title}
         >
-          <BrandLogo size="sidebar" variant="full" />
+          <BrandLogo size="sidebar" variant="full" className="bg-transparent" />
         </Link>
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">

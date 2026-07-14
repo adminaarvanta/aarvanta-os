@@ -15,8 +15,8 @@ const DISPLAY_HEIGHT = {
   md: 72,
   lg: 96,
   xl: 140,
-  /** Sidebar brand mark — large enough to read in the 260px rail */
-  sidebar: 88,
+  /** Sidebar brand mark — fills most of the rail header */
+  sidebar: 112,
 } as const;
 
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
@@ -79,7 +79,7 @@ export function BrandLogo({
             ? {
                 height: displayHeight,
                 width: "auto",
-                maxWidth: 220,
+                maxWidth: 236,
               }
             : {
                 height: displayHeight,
