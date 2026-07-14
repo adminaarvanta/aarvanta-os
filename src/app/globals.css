@@ -196,3 +196,84 @@ html.light ::-webkit-calendar-picker-indicator {
     transform: translateX(400%);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Google Translate — hide ALL native chrome. Language is controlled only via
+   our header LanguageSwitcher. The host node stays in the DOM but invisible.
+--------------------------------------------------------------------------- */
+.google-translate-host,
+#google_translate_element {
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+}
+
+/* Banner / tooltip / branding injected by Google */
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame,
+.goog-te-balloon-frame,
+#goog-gt-tt,
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-text-highlight,
+.VIpgJd-ZVi9od-ORHb,
+.VIpgJd-ZVi9od-ORHb-OEYmcd,
+.VIpgJd-ZVi9od-l4eHX-hSRGPd,
+div#goog-gt-,
+body > .skiptranslate,
+body > .skiptranslate > iframe {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: none !important;
+}
+
+.goog-te-gadget,
+.goog-te-gadget-simple,
+.goog-te-menu-value,
+.goog-logo-link,
+a.goog-te-menu-value,
+.goog-te-gadget span {
+  display: none !important;
+}
+
+/* Keep the hidden combo usable by JS, but never visible */
+.goog-te-combo {
+  position: absolute !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.translated-ltr,
+html.translated-rtl,
+body.translated-ltr,
+body.translated-rtl,
+html,
+body {
+  top: 0 !important;
+}
+
+body {
+  position: static !important;
+  min-height: 100% !important;
+}
+
+/* Prevent Google Translate from restyling fonts oddly */
+font {
+  vertical-align: inherit !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Languages, Search } from "lucide-react";
+import { Check, ChevronDown, Globe2, Search } from "lucide-react";
 import { useLanguage } from "@/components/i18n/language-provider";
 import {
   APP_LANGUAGES,
@@ -26,10 +26,12 @@ export function LanguageSwitcher({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) {
-      const popular = POPULAR_LANGUAGE_CODES.map((code) => languageByCode(code)!).filter(
-        Boolean
+      const popular = POPULAR_LANGUAGE_CODES.map((code) =>
+        languageByCode(code)
+      ).filter((l): l is NonNullable<typeof l> => Boolean(l));
+      const rest = APP_LANGUAGES.filter(
+        (l) => !POPULAR_LANGUAGE_CODES.includes(l.code)
       );
-      const rest = APP_LANGUAGES.filter((l) => !POPULAR_LANGUAGE_CODES.includes(l.code));
       return [...popular, ...rest];
     }
     return APP_LANGUAGES.filter(
@@ -41,23 +43,25 @@ export function LanguageSwitcher({
   }, [query]);
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative notranslate", className)} translate="no">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex items-center gap-2 rounded-lg p-2.5 text-muted transition-colors hover:bg-surface-hover hover:text-foreground",
-          compact ? "" : "sm:px-3"
+          "inline-flex h-10 items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 text-muted transition-colors hover:border-gold/40 hover:bg-surface-hover hover:text-foreground",
+          compact && "px-2"
         )}
         aria-label={`Language: ${current.name}`}
-        title="Language"
+        aria-expanded={open}
+        title="Change language"
       >
-        <Languages className="h-[18px] w-[18px]" />
+        <Globe2 className="h-4 w-4 shrink-0 text-gold" />
         {!compact && (
-          <span className="hidden max-w-[5.5rem] truncate text-xs font-medium sm:inline">
-            {current.nativeName}
+          <span className="hidden max-w-[4.5rem] truncate text-xs font-medium text-foreground sm:inline">
+            {current.name}
           </span>
         )}
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
       </button>
 
       {open && (
@@ -66,16 +70,22 @@ export function LanguageSwitcher({
             type="button"
             className="fixed inset-0 z-40"
             aria-label="Close language menu"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              setQuery("");
+            }}
           />
-          <div className="absolute right-0 z-50 mt-2 flex w-[min(calc(100vw-1.5rem),18rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface-elevated shadow-lg">
-            <div className="border-b border-border-subtle p-2">
-              <div className="flex items-center gap-2 rounded-lg bg-surface-muted px-2.5 py-2">
+          <div className="absolute right-0 z-50 mt-2 flex w-[min(calc(100vw-1.5rem),17.5rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface-elevated shadow-xl">
+            <div className="border-b border-border-subtle px-3 pt-3 pb-2">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-dim">
+                Language
+              </p>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-2.5 py-2">
                 <Search className="h-3.5 w-3.5 shrink-0 text-dim" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search languages…"
+                  placeholder="Search…"
                   className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-dim"
                   autoFocus
                 />
@@ -90,18 +100,23 @@ export function LanguageSwitcher({
                       type="button"
                       onClick={() => {
                         setOpen(false);
+                        setQuery("");
                         if (lang.code !== language) setLanguage(lang.code);
                       }}
                       className={cn(
                         "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-hover",
-                        active ? "text-gold" : "text-foreground"
+                        active ? "bg-gold/10 text-gold" : "text-foreground"
                       )}
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{lang.nativeName}</span>
-                        <span className="block truncate text-[11px] text-muted">
+                        <span className="block truncate font-medium">
                           {lang.name}
                         </span>
+                        {lang.nativeName !== lang.name && (
+                          <span className="block truncate text-[11px] text-muted">
+                            {lang.nativeName}
+                          </span>
+                        )}
                       </span>
                       {active && <Check className="h-4 w-4 shrink-0 text-gold" />}
                     </button>
@@ -109,12 +124,11 @@ export function LanguageSwitcher({
                 );
               })}
               {filtered.length === 0 && (
-                <li className="px-3 py-4 text-center text-sm text-muted">No matches</li>
+                <li className="px-3 py-4 text-center text-sm text-muted">
+                  No matches
+                </li>
               )}
             </ul>
-            <p className="border-t border-border-subtle px-3 py-2 text-[10px] text-dim">
-              Powered by Google Translate (free)
-            </p>
           </div>
         </>
       )}

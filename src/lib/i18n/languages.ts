@@ -156,9 +156,24 @@ export function languageByCode(code: string) {
 }
 
 export function setGoogTransCookie(lang: string) {
-  const value = lang === SOURCE_LANGUAGE ? "" : `/en/${lang}`;
-  const domains = ["", window.location.hostname, `.${window.location.hostname}`];
-  for (const domain of domains) {
+  const expire = "Thu, 01 Jan 1970 00:00:00 GMT";
+  const hosts = [
+    "",
+    window.location.hostname,
+    `.${window.location.hostname}`,
+  ];
+
+  for (const domain of hosts) {
+    const domainPart = domain ? `;domain=${domain}` : "";
+    // Clear any previous value first
+    document.cookie = `googtrans=;expires=${expire};path=/${domainPart}`;
+    document.cookie = `googtrans=/;expires=${expire};path=/${domainPart}`;
+  }
+
+  if (lang === SOURCE_LANGUAGE) return;
+
+  const value = `/en/${lang}`;
+  for (const domain of hosts) {
     const domainPart = domain ? `;domain=${domain}` : "";
     document.cookie = `googtrans=${value};path=/${domainPart}`;
     document.cookie = `googtrans=${value};path=/;Secure;SameSite=Lax${domainPart}`;
