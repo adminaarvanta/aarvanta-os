@@ -37,29 +37,61 @@ declare global {
   }
 }
 
-/** Hide Google chrome without destroying the translate engine in the DOM. */
-function hideGoogleTranslateChrome() {
-  document
-    .querySelectorAll<HTMLElement>(
-      ".goog-te-banner-frame, iframe.goog-te-banner-frame, #goog-gt-tt, .goog-te-balloon-frame"
-    )
-    .forEach((el) => {
-      el.style.setProperty("display", "none", "important");
-      el.style.setProperty("visibility", "hidden", "important");
-    });
+const BANNER_SELECTORS = [
+  "iframe.goog-te-banner-frame",
+  ".goog-te-banner-frame",
+  "iframe.skiptranslate",
+  "#goog-gt-tt",
+  ".goog-te-balloon-frame",
+  ".goog-te-menu-frame",
+  ".VIpgJd-ZVi9od-ORHb",
+  ".VIpgJd-ZVi9od-ORHb-OEYmcd",
+  ".VIpgJd-ZVi9od-l4eHX-hSRGPd",
+  ".VIpgJd-yAWNEb-L7lbkb",
+].join(", ");
 
-  document.querySelectorAll<HTMLElement>("body > .skiptranslate").forEach((el) => {
-    if (el.id === "google_translate_element") return;
-    if (el.querySelector("#google_translate_element")) return;
-    // Top bar Google injects after a language is active
-    if (el.querySelector("iframe.goog-te-banner-frame, .goog-te-banner-frame")) {
-      el.style.setProperty("display", "none", "important");
-      el.style.setProperty("height", "0", "important");
-      el.style.setProperty("visibility", "hidden", "important");
-    }
+function nukeBannerEl(el: HTMLElement) {
+  el.style.setProperty("display", "none", "important");
+  el.style.setProperty("visibility", "hidden", "important");
+  el.style.setProperty("opacity", "0", "important");
+  el.style.setProperty("height", "0", "important");
+  el.style.setProperty("width", "0", "important");
+  el.style.setProperty("max-height", "0", "important");
+  el.style.setProperty("border", "none", "important");
+  el.style.setProperty("pointer-events", "none", "important");
+  el.setAttribute("aria-hidden", "true");
+}
+
+/** Hide Google chrome without destroying the translate engine host. */
+function hideGoogleTranslateChrome() {
+  document.querySelectorAll<HTMLElement>(BANNER_SELECTORS).forEach((el) => {
+    if (el.closest("#google_translate_element")) return;
+    nukeBannerEl(el);
   });
 
+  // Banner wrappers: direct body children Google injects (not our host)
+  Array.from(document.body.children).forEach((child) => {
+    if (!(child instanceof HTMLElement)) return;
+    if (child.id === "google_translate_element") return;
+    if (child.querySelector?.("#google_translate_element")) return;
+
+    const isBannerWrapper =
+      child.classList.contains("skiptranslate") ||
+      (child.tagName === "IFRAME" &&
+        (child.classList.contains("skiptranslate") ||
+          child.classList.contains("goog-te-banner-frame"))) ||
+      Boolean(
+        child.querySelector?.(
+          "iframe.goog-te-banner-frame, .goog-te-banner-frame"
+        )
+      );
+
+    if (isBannerWrapper) nukeBannerEl(child);
+  });
+
+  // Undo the layout offset Google applies for the banner
   document.body.style.setProperty("top", "0", "important");
+  document.body.style.setProperty("position", "static", "important");
   document.documentElement.style.setProperty("top", "0", "important");
 }
 
@@ -96,22 +128,40 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         "google_translate_element"
       );
       hideGoogleTranslateChrome();
+      // Banner often injects a beat after init
+      window.setTimeout(hideGoogleTranslateChrome, 200);
+      window.setTimeout(hideGoogleTranslateChrome, 800);
+      window.setTimeout(hideGoogleTranslateChrome, 2000);
       setReady(true);
     };
 
     loadGoogleTranslateScript();
 
     const observer = new MutationObserver(() => hideGoogleTranslateChrome());
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
 
-    const timer = window.setTimeout(() => {
+    // Keep forcing body top:0 — Google re-applies it periodically
+    const offsetTimer = window.setInterval(() => {
+      if (document.body.style.top && document.body.style.top !== "0px") {
+        document.body.style.setProperty("top", "0", "important");
+      }
+      hideGoogleTranslateChrome();
+    }, 1000);
+
+    const readyTimer = window.setTimeout(() => {
       hideGoogleTranslateChrome();
       setReady(true);
     }, 3000);
 
     return () => {
       observer.disconnect();
-      window.clearTimeout(timer);
+      window.clearInterval(offsetTimer);
+      window.clearTimeout(readyTimer);
     };
   }, []);
 
@@ -127,7 +177,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       ? code
       : code.split("-")[0];
 
-    // Full reload — googtrans cookie is the reliable activation path
     window.location.reload();
   }, []);
 

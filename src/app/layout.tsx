@@ -15,6 +15,9 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem("aarvanta-th
 /** Set googtrans before Google Translate script boots so the first paint is already localized */
 const languageInitScript = `(function(){try{var lang=localStorage.getItem("aarvanta-language")||"en";var expire="Thu, 01 Jan 1970 00:00:00 GMT";document.cookie="googtrans=;expires="+expire+";path=/";if(lang&&lang!=="en"){document.cookie="googtrans=/en/"+lang+";path=/";document.documentElement.lang=lang.indexOf("zh")===0?lang:lang.split("-")[0];}else{document.documentElement.lang="en";}}catch(e){}})();`;
 
+/** Kill the Google Translate top bar as soon as it appears (before React hydrates) */
+const hideTranslateBannerScript = `(function(){function hide(){try{document.querySelectorAll("iframe.goog-te-banner-frame,.goog-te-banner-frame,iframe.skiptranslate,.goog-te-menu-frame,#goog-gt-tt,.VIpgJd-ZVi9od-ORHb-OEYmcd,.VIpgJd-yAWNEb-L7lbkb").forEach(function(el){if(el.closest&&el.closest("#google_translate_element"))return;el.style.setProperty("display","none","important");el.style.setProperty("visibility","hidden","important");el.style.setProperty("height","0","important");el.style.setProperty("opacity","0","important");});if(document.body){document.body.style.setProperty("top","0","important");document.body.style.setProperty("position","static","important");var kids=document.body.children;for(var i=0;i<kids.length;i++){var c=kids[i];if(c.id==="google_translate_element")continue;if(c.classList&&c.classList.contains("skiptranslate")){c.style.setProperty("display","none","important");c.style.setProperty("visibility","hidden","important");c.style.setProperty("height","0","important");}}}}catch(e){}}hide();document.addEventListener("DOMContentLoaded",hide);var obs=new MutationObserver(hide);obs.observe(document.documentElement,{childList:true,subtree:true});setInterval(hide,800);})();`;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -48,6 +51,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: languageInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: hideTranslateBannerScript }} />
       </head>
       <body className="h-full min-h-full overflow-x-hidden bg-background text-foreground antialiased">
         <ThemeProvider>

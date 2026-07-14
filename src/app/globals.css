@@ -198,9 +198,8 @@ html.light ::-webkit-calendar-picker-indicator {
 }
 
 /* ---------------------------------------------------------------------------
-   Google Translate — hide native chrome only. Do NOT use display:none on the
-   host element or delete .skiptranslate nodes — that breaks the engine.
-   Language is controlled via our header LanguageSwitcher + googtrans cookie.
+   Google Translate — hide the top bar / gadget chrome completely.
+   Keep #google_translate_element in the DOM (off-screen) so the engine works.
 --------------------------------------------------------------------------- */
 .google-translate-host,
 #google_translate_element {
@@ -215,9 +214,11 @@ html.light ::-webkit-calendar-picker-indicator {
   pointer-events: none !important;
 }
 
-/* Top banner Google injects after translation */
+/* Classic + modern Google Translate top banner / frames */
 .goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
 iframe.goog-te-banner-frame,
+iframe.skiptranslate,
 .goog-te-balloon-frame,
 #goog-gt-tt,
 .goog-tooltip,
@@ -226,33 +227,63 @@ iframe.goog-te-banner-frame,
 .VIpgJd-ZVi9od-ORHb,
 .VIpgJd-ZVi9od-ORHb-OEYmcd,
 .VIpgJd-ZVi9od-l4eHX-hSRGPd,
-div#goog-gt- {
+.VIpgJd-yAWNEb-L7lbkb,
+div#goog-gt-,
+.goog-te-spinner-pos,
+.goog-te-menu-frame {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  border: none !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  z-index: -1 !important;
+}
+
+/* Banner wrapper Google inserts as a direct body child (not our host) */
+body > .skiptranslate:not(#google_translate_element),
+body > iframe.skiptranslate,
+body > iframe.goog-te-banner-frame {
   display: none !important;
   visibility: hidden !important;
   height: 0 !important;
   max-height: 0 !important;
+  width: 0 !important;
   overflow: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
   border: none !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 
-/* Hide gadget chrome but keep the combo in the DOM for the engine */
 #google_translate_element .goog-te-gadget,
 #google_translate_element .goog-te-gadget-simple,
 #google_translate_element .goog-logo-link,
-#google_translate_element .goog-te-menu-value {
+#google_translate_element .goog-te-menu-value,
+#google_translate_element span {
   display: none !important;
 }
 
+/* Google pushes the page down ~40px when the banner shows — undo it */
+html,
 html.translated-ltr,
 html.translated-rtl,
-body {
+body,
+body.translated-ltr,
+body.translated-rtl {
   top: 0 !important;
+  margin-top: 0 !important;
+  position: static !important;
 }
 
 body {
-  position: static !important;
   min-height: 100% !important;
 }
 
