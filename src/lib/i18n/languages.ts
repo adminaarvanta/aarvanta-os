@@ -160,20 +160,17 @@ export function clearGoogTransCookies() {
 
   const expire = "Thu, 01 Jan 1970 00:00:00 GMT";
   const hostname = window.location.hostname;
-  const domains = ["", hostname];
+  const domains = ["", hostname, `.${hostname}`];
   if (hostname.includes(".")) {
-    domains.push(`.${hostname}`);
-    // e.g. os.aarvanta.co → .aarvanta.co
     const parts = hostname.split(".");
     if (parts.length > 2) {
       domains.push(`.${parts.slice(-2).join(".")}`);
     }
   }
 
-  const paths = ["/", window.location.pathname];
+  const paths = ["/", window.location.pathname || "/"];
   const names = new Set<string>(["googtrans"]);
 
-  // Catch any googtrans* cookies currently present
   for (const part of document.cookie.split(";")) {
     const name = part.split("=")[0]?.trim();
     if (name && /googtrans/i.test(name)) names.add(name);
@@ -184,13 +181,11 @@ export function clearGoogTransCookies() {
       for (const domain of domains) {
         const domainPart = domain ? `;domain=${domain}` : "";
         document.cookie = `${name}=;expires=${expire};path=${path}${domainPart}`;
-        document.cookie = `${name}=;expires=${expire};path=${path};Secure;SameSite=None${domainPart}`;
-        document.cookie = `${name}=;expires=${expire};path=${path};SameSite=Lax${domainPart}`;
+        document.cookie = `${name}=;Max-Age=0;path=${path}${domainPart}`;
       }
     }
   }
 
-  // Strip #googtrans(en|xx) hash Google sometimes uses
   if (window.location.hash && /googtrans/i.test(window.location.hash)) {
     history.replaceState(
       null,
@@ -200,23 +195,46 @@ export function clearGoogTransCookies() {
   }
 }
 
+/**
+ * Set exactly one host-only googtrans cookie (no Domain=).
+ * Multiple domain-scoped cookies caused sticky first-language bugs (e.g. Hindi).
+ */
 export function setGoogTransCookie(lang: string) {
   clearGoogTransCookies();
 
-  if (!lang || lang === SOURCE_LANGUAGE) {
-    // Do not leave any googtrans cookie for English — GT must stay off
-    return;
+  if (!lang || lang === SOURCE_LANGUAGE) return;
+
+  // Host-only cookie — strongest, no Domain attribute so it won't leak/stick across variants
+  document.cookie = `googtrans=/en/${lang};path=/;max-age=31536000;SameSite=Lax`;
+}
+
+/** Persist preference + cookie, then hard-navigate (avoids BFCache / stale GT session). */
+export function persistAndNavigateToLanguage(code: string) {
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
+  } catch {
+    /* ignore */
   }
 
-  const value = `/en/${lang}`;
-  const hostname = window.location.hostname;
-  document.cookie = `googtrans=${value};path=/`;
-  if (hostname) {
-    document.cookie = `googtrans=${value};path=/;domain=${hostname}`;
-    if (hostname.includes(".")) {
-      document.cookie = `googtrans=${value};path=/;domain=.${hostname}`;
-    }
+  clearGoogTransCookies();
+  if (code && code !== SOURCE_LANGUAGE) {
+    document.cookie = `googtrans=/en/${code};path=/;max-age=31536000;SameSite=Lax`;
   }
+
+  if (window.location.hash) {
+    history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search
+    );
+  }
+
+  const url = new URL(window.location.href);
+  url.hash = "";
+  // Cache-bust so the browser does not restore the previous translated page
+  url.searchParams.set("_lang", code);
+  url.searchParams.set("_t", String(Date.now()));
+  window.location.assign(url.toString());
 }
 
 export function readStoredLanguage(): string {
@@ -225,4 +243,14 @@ export function readStoredLanguage(): string {
   } catch {
     return SOURCE_LANGUAGE;
   }
+}
+
+/** Drop cache-bust params from the URL after boot (no reload). */
+export function stripLanguageNavParams() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("_lang") && !url.searchParams.has("_t")) return;
+  url.searchParams.delete("_lang");
+  url.searchParams.delete("_t");
+  history.replaceState(null, "", url.pathname + url.search + url.hash);
 }

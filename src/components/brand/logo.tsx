@@ -15,7 +15,8 @@ const DISPLAY_HEIGHT = {
   md: 72,
   lg: 96,
   xl: 140,
-  sidebar: 56,
+  /** Sidebar brand mark — large enough to read in the 260px rail */
+  sidebar: 88,
 } as const;
 
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
@@ -74,12 +75,20 @@ export function BrandLogo({
       style={
         fullWidth
           ? undefined
-          : {
-              height: displayHeight,
-              width: variant === "icon" ? displayHeight : "auto",
-              maxWidth:
-                variant === "full" ? displayHeight * FULL_LOGO_ASPECT : displayHeight,
-            }
+          : size === "sidebar"
+            ? {
+                height: displayHeight,
+                width: "auto",
+                maxWidth: 220,
+              }
+            : {
+                height: displayHeight,
+                width: variant === "icon" ? displayHeight : "auto",
+                maxWidth:
+                  variant === "full"
+                    ? displayHeight * FULL_LOGO_ASPECT
+                    : displayHeight,
+              }
       }
     />
   );

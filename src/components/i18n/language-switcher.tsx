@@ -98,13 +98,14 @@ export function LanguageSwitcher({
                   <li key={lang.code}>
                     <button
                       type="button"
+                      data-lang={lang.code}
                       onClick={() => {
                         setOpen(false);
                         setQuery("");
-                        if (lang.code !== language) setLanguage(lang.code);
+                        setLanguage(lang.code);
                       }}
                       className={cn(
-                        "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-hover",
+                        "notranslate flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-hover",
                         active ? "bg-gold/10 text-gold" : "text-foreground"
                       )}
                     >

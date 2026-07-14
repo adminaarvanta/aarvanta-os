@@ -9,11 +9,12 @@ import {
   useState,
 } from "react";
 import {
-  LANGUAGE_STORAGE_KEY,
   SOURCE_LANGUAGE,
   clearGoogTransCookies,
+  persistAndNavigateToLanguage,
   readStoredLanguage,
   setGoogTransCookie,
+  stripLanguageNavParams,
 } from "@/lib/i18n/languages";
 
 type LanguageContextValue = {
@@ -63,7 +64,6 @@ function nukeBannerEl(el: HTMLElement) {
   el.setAttribute("aria-hidden", "true");
 }
 
-/** Hide Google chrome without destroying the translate engine host. */
 function hideGoogleTranslateChrome() {
   document.querySelectorAll<HTMLElement>(BANNER_SELECTORS).forEach((el) => {
     if (el.closest("#google_translate_element")) return;
@@ -104,30 +104,29 @@ function loadGoogleTranslateScript() {
   document.body.appendChild(script);
 }
 
-function hardReloadOriginalPage() {
-  // Full navigation (not just reload) helps drop in-memory GT session state
-  const url = window.location.pathname + window.location.search;
-  window.location.replace(url);
-}
-
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState(SOURCE_LANGUAGE);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    stripLanguageNavParams();
+
     const stored = readStoredLanguage();
     setLanguageState(stored);
-    setGoogTransCookie(stored);
     document.documentElement.lang = stored.startsWith("zh")
       ? stored
       : stored.split("-")[0];
 
-    // English = original site — do NOT load Google Translate at all
+    // English = original site — never load Google Translate
     if (stored === SOURCE_LANGUAGE) {
       clearGoogTransCookies();
       setReady(true);
       return;
     }
+
+    // Cookie already set by the boot script; re-assert host-only value once
+    // without multi-domain variants (those caused sticky Hindi).
+    setGoogTransCookie(stored);
 
     window.googleTranslateElementInit = () => {
       if (!window.google?.translate?.TranslateElement) return;
@@ -168,34 +167,30 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       setReady(true);
     }, 3000);
 
+    // BFCache restore: re-sync from localStorage so a later language sticks
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      const latest = readStoredLanguage();
+      if (latest !== stored) {
+        persistAndNavigateToLanguage(latest);
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+
     return () => {
       observer.disconnect();
       window.clearInterval(offsetTimer);
       window.clearTimeout(readyTimer);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, []);
 
   const setLanguage = useCallback((code: string) => {
-    try {
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
-    } catch {
-      /* ignore */
-    }
-
     setLanguageState(code);
     document.documentElement.lang = code.startsWith("zh")
       ? code
       : code.split("-")[0];
-
-    if (code === SOURCE_LANGUAGE) {
-      // Fully wipe GT cookies/hash, then hard-navigate to fresh English page
-      clearGoogTransCookies();
-      hardReloadOriginalPage();
-      return;
-    }
-
-    setGoogTransCookie(code);
-    window.location.reload();
+    persistAndNavigateToLanguage(code);
   }, []);
 
   const value = useMemo(
