@@ -12,6 +12,9 @@ const inter = Inter({
 
 const themeInitScript = `(function(){try{var t=localStorage.getItem("aarvanta-theme");document.documentElement.classList.remove("dark","light");document.documentElement.classList.add(t==="light"?"light":"dark");}catch(e){document.documentElement.classList.add("dark");}})();`;
 
+/** Set googtrans before Google Translate script boots so the first paint is already localized */
+const languageInitScript = `(function(){try{var lang=localStorage.getItem("aarvanta-language")||"en";var expire="Thu, 01 Jan 1970 00:00:00 GMT";document.cookie="googtrans=;expires="+expire+";path=/";if(lang&&lang!=="en"){document.cookie="googtrans=/en/"+lang+";path=/";document.documentElement.lang=lang.indexOf("zh")===0?lang:lang.split("-")[0];}else{document.documentElement.lang="en";}}catch(e){}})();`;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -44,6 +47,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: languageInitScript }} />
       </head>
       <body className="h-full min-h-full overflow-x-hidden bg-background text-foreground antialiased">
         <ThemeProvider>

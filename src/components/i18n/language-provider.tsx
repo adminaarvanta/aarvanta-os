@@ -37,27 +37,27 @@ declare global {
   }
 }
 
-function scrubGoogleTranslateChrome() {
+/** Hide Google chrome without destroying the translate engine in the DOM. */
+function hideGoogleTranslateChrome() {
   document
-    .querySelectorAll(
-      [
-        ".goog-te-banner-frame",
-        "iframe.goog-te-banner-frame",
-        ".skiptranslate",
-        "#goog-gt-tt",
-        ".goog-te-balloon-frame",
-        ".VIpgJd-ZVi9od-ORHb",
-        ".VIpgJd-ZVi9od-ORHb-OEYmcd",
-        ".VIpgJd-ZVi9od-l4eHX-hSRGPd",
-      ].join(", ")
+    .querySelectorAll<HTMLElement>(
+      ".goog-te-banner-frame, iframe.goog-te-banner-frame, #goog-gt-tt, .goog-te-balloon-frame"
     )
     .forEach((el) => {
-      // Keep our hidden host; remove Google's injected chrome only
-      if (el.id === "google_translate_element") return;
-      if (el.classList?.contains("google-translate-host")) return;
-      if (el.closest?.("#google_translate_element")) return;
-      el.remove();
+      el.style.setProperty("display", "none", "important");
+      el.style.setProperty("visibility", "hidden", "important");
     });
+
+  document.querySelectorAll<HTMLElement>("body > .skiptranslate").forEach((el) => {
+    if (el.id === "google_translate_element") return;
+    if (el.querySelector("#google_translate_element")) return;
+    // Top bar Google injects after a language is active
+    if (el.querySelector("iframe.goog-te-banner-frame, .goog-te-banner-frame")) {
+      el.style.setProperty("display", "none", "important");
+      el.style.setProperty("height", "0", "important");
+      el.style.setProperty("visibility", "hidden", "important");
+    }
+  });
 
   document.body.style.setProperty("top", "0", "important");
   document.documentElement.style.setProperty("top", "0", "important");
@@ -71,16 +71,6 @@ function loadGoogleTranslateScript() {
     "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
   script.async = true;
   document.body.appendChild(script);
-}
-
-function applyLangToHiddenSelect(code: string) {
-  const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
-  if (!select) return false;
-  const value = code === SOURCE_LANGUAGE ? SOURCE_LANGUAGE : code;
-  if (select.value === value) return true;
-  select.value = value;
-  select.dispatchEvent(new Event("change"));
-  return true;
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -97,35 +87,27 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     window.googleTranslateElementInit = () => {
       if (!window.google?.translate?.TranslateElement) return;
-      // Hidden host only — never show Google's own UI
       // eslint-disable-next-line no-new
       new window.google.translate.TranslateElement(
         {
           pageLanguage: SOURCE_LANGUAGE,
           autoDisplay: false,
-          layout: 0,
         },
         "google_translate_element"
       );
-      scrubGoogleTranslateChrome();
-      if (stored !== SOURCE_LANGUAGE) {
-        window.setTimeout(() => applyLangToHiddenSelect(stored), 400);
-      }
+      hideGoogleTranslateChrome();
       setReady(true);
     };
 
     loadGoogleTranslateScript();
 
-    const observer = new MutationObserver(() => scrubGoogleTranslateChrome());
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-    });
+    const observer = new MutationObserver(() => hideGoogleTranslateChrome());
+    observer.observe(document.body, { childList: true, subtree: true });
 
     const timer = window.setTimeout(() => {
-      scrubGoogleTranslateChrome();
+      hideGoogleTranslateChrome();
       setReady(true);
-    }, 2500);
+    }, 3000);
 
     return () => {
       observer.disconnect();
@@ -134,28 +116,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setLanguage = useCallback((code: string) => {
-    setLanguageState(code);
     try {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
     } catch {
       /* ignore */
     }
     setGoogTransCookie(code);
+    setLanguageState(code);
     document.documentElement.lang = code.startsWith("zh")
       ? code
       : code.split("-")[0];
 
-    // Prefer in-place switch; fall back to reload if widget isn't ready
-    const applied = applyLangToHiddenSelect(code);
-    if (!applied) {
-      window.location.reload();
-      return;
-    }
-    scrubGoogleTranslateChrome();
-    // English → full page reload clears leftover translated DOM
-    if (code === SOURCE_LANGUAGE) {
-      window.location.reload();
-    }
+    // Full reload — googtrans cookie is the reliable activation path
+    window.location.reload();
   }, []);
 
   const value = useMemo(

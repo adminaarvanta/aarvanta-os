@@ -157,26 +157,28 @@ export function languageByCode(code: string) {
 
 export function setGoogTransCookie(lang: string) {
   const expire = "Thu, 01 Jan 1970 00:00:00 GMT";
-  const hosts = [
-    "",
-    window.location.hostname,
-    `.${window.location.hostname}`,
-  ];
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const hosts = ["", hostname].filter(Boolean);
+  if (hostname.includes(".")) hosts.push(`.${hostname}`);
 
-  for (const domain of hosts) {
+  // Clear prior googtrans cookies across host variants
+  for (const domain of ["", ...hosts]) {
     const domainPart = domain ? `;domain=${domain}` : "";
-    // Clear any previous value first
     document.cookie = `googtrans=;expires=${expire};path=/${domainPart}`;
-    document.cookie = `googtrans=/;expires=${expire};path=/${domainPart}`;
   }
 
-  if (lang === SOURCE_LANGUAGE) return;
+  if (!lang || lang === SOURCE_LANGUAGE) {
+    // Explicit empty so Google stays on source language after reload
+    document.cookie = "googtrans=;path=/";
+    return;
+  }
 
+  // Format Google Translate website widget expects
   const value = `/en/${lang}`;
-  for (const domain of hosts) {
-    const domainPart = domain ? `;domain=${domain}` : "";
-    document.cookie = `googtrans=${value};path=/${domainPart}`;
-    document.cookie = `googtrans=${value};path=/;Secure;SameSite=Lax${domainPart}`;
+  document.cookie = `googtrans=${value};path=/`;
+  if (hostname) {
+    document.cookie = `googtrans=${value};path=/;domain=${hostname}`;
+    document.cookie = `googtrans=${value};path=/;domain=.${hostname}`;
   }
 }
 
