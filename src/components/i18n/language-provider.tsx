@@ -11,6 +11,7 @@ import {
 import {
   LANGUAGE_STORAGE_KEY,
   SOURCE_LANGUAGE,
+  clearGoogTransCookies,
   readStoredLanguage,
   setGoogTransCookie,
 } from "@/lib/i18n/languages";
@@ -69,7 +70,6 @@ function hideGoogleTranslateChrome() {
     nukeBannerEl(el);
   });
 
-  // Banner wrappers: direct body children Google injects (not our host)
   Array.from(document.body.children).forEach((child) => {
     if (!(child instanceof HTMLElement)) return;
     if (child.id === "google_translate_element") return;
@@ -89,7 +89,6 @@ function hideGoogleTranslateChrome() {
     if (isBannerWrapper) nukeBannerEl(child);
   });
 
-  // Undo the layout offset Google applies for the banner
   document.body.style.setProperty("top", "0", "important");
   document.body.style.setProperty("position", "static", "important");
   document.documentElement.style.setProperty("top", "0", "important");
@@ -105,6 +104,12 @@ function loadGoogleTranslateScript() {
   document.body.appendChild(script);
 }
 
+function hardReloadOriginalPage() {
+  // Full navigation (not just reload) helps drop in-memory GT session state
+  const url = window.location.pathname + window.location.search;
+  window.location.replace(url);
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState(SOURCE_LANGUAGE);
   const [ready, setReady] = useState(false);
@@ -117,6 +122,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       ? stored
       : stored.split("-")[0];
 
+    // English = original site — do NOT load Google Translate at all
+    if (stored === SOURCE_LANGUAGE) {
+      clearGoogTransCookies();
+      setReady(true);
+      return;
+    }
+
     window.googleTranslateElementInit = () => {
       if (!window.google?.translate?.TranslateElement) return;
       // eslint-disable-next-line no-new
@@ -128,7 +140,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         "google_translate_element"
       );
       hideGoogleTranslateChrome();
-      // Banner often injects a beat after init
       window.setTimeout(hideGoogleTranslateChrome, 200);
       window.setTimeout(hideGoogleTranslateChrome, 800);
       window.setTimeout(hideGoogleTranslateChrome, 2000);
@@ -145,7 +156,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       attributeFilter: ["style", "class"],
     });
 
-    // Keep forcing body top:0 — Google re-applies it periodically
     const offsetTimer = window.setInterval(() => {
       if (document.body.style.top && document.body.style.top !== "0px") {
         document.body.style.setProperty("top", "0", "important");
@@ -171,12 +181,20 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore */
     }
-    setGoogTransCookie(code);
+
     setLanguageState(code);
     document.documentElement.lang = code.startsWith("zh")
       ? code
       : code.split("-")[0];
 
+    if (code === SOURCE_LANGUAGE) {
+      // Fully wipe GT cookies/hash, then hard-navigate to fresh English page
+      clearGoogTransCookies();
+      hardReloadOriginalPage();
+      return;
+    }
+
+    setGoogTransCookie(code);
     window.location.reload();
   }, []);
 

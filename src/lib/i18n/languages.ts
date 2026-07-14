@@ -155,30 +155,67 @@ export function languageByCode(code: string) {
   return APP_LANGUAGES.find((l) => l.code === code);
 }
 
-export function setGoogTransCookie(lang: string) {
-  const expire = "Thu, 01 Jan 1970 00:00:00 GMT";
-  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-  const hosts = ["", hostname].filter(Boolean);
-  if (hostname.includes(".")) hosts.push(`.${hostname}`);
+export function clearGoogTransCookies() {
+  if (typeof document === "undefined") return;
 
-  // Clear prior googtrans cookies across host variants
-  for (const domain of ["", ...hosts]) {
-    const domainPart = domain ? `;domain=${domain}` : "";
-    document.cookie = `googtrans=;expires=${expire};path=/${domainPart}`;
+  const expire = "Thu, 01 Jan 1970 00:00:00 GMT";
+  const hostname = window.location.hostname;
+  const domains = ["", hostname];
+  if (hostname.includes(".")) {
+    domains.push(`.${hostname}`);
+    // e.g. os.aarvanta.co → .aarvanta.co
+    const parts = hostname.split(".");
+    if (parts.length > 2) {
+      domains.push(`.${parts.slice(-2).join(".")}`);
+    }
   }
 
+  const paths = ["/", window.location.pathname];
+  const names = new Set<string>(["googtrans"]);
+
+  // Catch any googtrans* cookies currently present
+  for (const part of document.cookie.split(";")) {
+    const name = part.split("=")[0]?.trim();
+    if (name && /googtrans/i.test(name)) names.add(name);
+  }
+
+  for (const name of names) {
+    for (const path of paths) {
+      for (const domain of domains) {
+        const domainPart = domain ? `;domain=${domain}` : "";
+        document.cookie = `${name}=;expires=${expire};path=${path}${domainPart}`;
+        document.cookie = `${name}=;expires=${expire};path=${path};Secure;SameSite=None${domainPart}`;
+        document.cookie = `${name}=;expires=${expire};path=${path};SameSite=Lax${domainPart}`;
+      }
+    }
+  }
+
+  // Strip #googtrans(en|xx) hash Google sometimes uses
+  if (window.location.hash && /googtrans/i.test(window.location.hash)) {
+    history.replaceState(
+      null,
+      "",
+      window.location.pathname + window.location.search
+    );
+  }
+}
+
+export function setGoogTransCookie(lang: string) {
+  clearGoogTransCookies();
+
   if (!lang || lang === SOURCE_LANGUAGE) {
-    // Explicit empty so Google stays on source language after reload
-    document.cookie = "googtrans=;path=/";
+    // Do not leave any googtrans cookie for English — GT must stay off
     return;
   }
 
-  // Format Google Translate website widget expects
   const value = `/en/${lang}`;
+  const hostname = window.location.hostname;
   document.cookie = `googtrans=${value};path=/`;
   if (hostname) {
     document.cookie = `googtrans=${value};path=/;domain=${hostname}`;
-    document.cookie = `googtrans=${value};path=/;domain=.${hostname}`;
+    if (hostname.includes(".")) {
+      document.cookie = `googtrans=${value};path=/;domain=.${hostname}`;
+    }
   }
 }
 
