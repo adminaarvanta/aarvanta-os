@@ -1,7 +1,7 @@
 import { detectIndustryFromText } from "@/lib/ageb/industries";
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
-import { getThemePreset } from "@/lib/site-builder/theme-presets";
+import { resolveSiteTheme } from "@/lib/site-builder/resolve-theme";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import type { SitePlan, SitePreferences } from "@/types/site-builder";
 
@@ -203,9 +203,25 @@ function buildDeploymentPlan(preferences: SitePreferences, slug: string): SitePl
   };
 }
 
+function themeFromPreferences(preferences: SitePreferences): SitePlan["theme"] {
+  const theme = resolveSiteTheme(preferences);
+  return {
+    presetId: theme.presetId,
+    themeMode: theme.themeMode,
+    primaryColor: theme.primaryColor,
+    accentColor: theme.accentColor,
+    backgroundColor: theme.backgroundColor,
+    textColor: theme.textColor,
+    fontStyle: theme.fontStyle,
+    styleNotes: theme.styleNotes,
+    templateId: theme.templateId,
+    layout: theme.layout,
+  };
+}
+
 function heuristicPlan(preferences: SitePreferences): SitePlan {
   const { profile } = detectIndustryFromText(preferences.businessIdea);
-  const preset = getThemePreset(preferences.themePreset);
+  const theme = resolveSiteTheme(preferences);
   const slug = slugify(preferences.businessName) || "my-site";
 
   const orderedPages = ["home", ...preferences.pages.filter((p) => p !== "home")];
@@ -234,18 +250,14 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
     ? ` Custom brief: ${preferences.customPrompt.trim().slice(0, 160)}`
     : "";
 
+  const themeLabel =
+    theme.themeMode === "custom" ? "custom niche" : theme.presetId.replace(/_/g, " ");
+
   return {
     siteName: preferences.businessName,
     slug,
-    summary: `A ${preset.label} themed ${preferences.siteType} site for ${preferences.businessName} targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.${screenshotNote}${promptNote}`,
-    theme: {
-      presetId: preset.id,
-      primaryColor: preset.primaryColor,
-      accentColor: preset.accentColor,
-      backgroundColor: preset.backgroundColor,
-      fontStyle: preset.fontStyle,
-      styleNotes: `${preset.description} User style: ${preferences.designStyle}. Color mood: ${preferences.colorMood}.`,
-    },
+    summary: `A ${themeLabel} ${preferences.siteType} site (${preferences.niche.replace(/_/g, " ")}, template ${theme.templateId}) for ${preferences.businessName} targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.${screenshotNote}${promptNote}`,
+    theme: themeFromPreferences(preferences),
     navigation,
     pages,
     deployment: buildDeploymentPlan(preferences, slug),
@@ -254,19 +266,25 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
 
 function enrichAiPlan(plan: SitePlan, preferences: SitePreferences): SitePlan {
   const slug = plan.slug || slugify(preferences.businessName) || "my-site";
-  const preset = getThemePreset(preferences.themePreset);
+  const resolved = themeFromPreferences(preferences);
+  // Custom themes are user-authored — never let the model override colors.
+  const theme =
+    preferences.themeMode === "custom"
+      ? resolved
+      : {
+          ...resolved,
+          primaryColor: plan.theme?.primaryColor ?? resolved.primaryColor,
+          accentColor: plan.theme?.accentColor ?? resolved.accentColor,
+          backgroundColor: plan.theme?.backgroundColor ?? resolved.backgroundColor,
+          textColor: plan.theme?.textColor ?? resolved.textColor,
+          fontStyle: plan.theme?.fontStyle ?? resolved.fontStyle,
+          styleNotes: plan.theme?.styleNotes ?? resolved.styleNotes,
+        };
 
   return {
     ...plan,
     slug,
-    theme: {
-      presetId: preset.id,
-      primaryColor: plan.theme?.primaryColor ?? preset.primaryColor,
-      accentColor: plan.theme?.accentColor ?? preset.accentColor,
-      backgroundColor: plan.theme?.backgroundColor ?? preset.backgroundColor,
-      fontStyle: plan.theme?.fontStyle ?? preset.fontStyle,
-      styleNotes: plan.theme?.styleNotes ?? preset.description,
-    },
+    theme,
     deployment: buildDeploymentPlan(preferences, slug),
   };
 }
@@ -286,9 +304,13 @@ Given site creation preferences, return JSON matching this shape:
   "summary": string (2-3 sentences),
   "theme": {
     "presetId": one of gold_navy|minimal_light|bold_dark|ocean_cool|sunset_warm,
-    "primaryColor": hex, "accentColor": hex, "backgroundColor": hex,
-    "fontStyle": string, "styleNotes": string
+    "themeMode": "template" | "custom",
+    "primaryColor": hex, "accentColor": hex, "backgroundColor": hex, "textColor": hex optional,
+    "fontStyle": string, "styleNotes": string,
+    "templateId": string, "layout": hero_centered|hero_split|hero_image_bg|services_grid|store_shelf
   },
+Respect themeMode: if custom, keep the user's customTheme colors; if template, use the selected themePreset.
+Use the selected niche template (templateId/layout) for page section structure.
   "navigation": [{ "label": string, "slug": string }],
   "pages": [{
     "slug": string (empty string for home),

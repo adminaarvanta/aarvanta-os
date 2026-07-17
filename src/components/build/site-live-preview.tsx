@@ -1,6 +1,8 @@
 "use client";
 
-import { getThemePreset } from "@/lib/site-builder/theme-presets";
+import type { CSSProperties } from "react";
+import { getUiTemplate } from "@/lib/site-builder/templates";
+import { radiusClass, resolveSiteTheme } from "@/lib/site-builder/resolve-theme";
 import { cn } from "@/lib/utils";
 import type { SitePreferences } from "@/types/site-builder";
 
@@ -31,7 +33,8 @@ export function SiteLivePreview({
   preferences: SitePreferences;
   className?: string;
 }) {
-  const theme = getThemePreset(preferences.themePreset);
+  const theme = resolveSiteTheme(preferences);
+  const template = getUiTemplate(preferences.templateId);
   const name = preferences.businessName.trim() || "Your brand";
   const idea =
     preferences.businessIdea.trim() ||
@@ -43,20 +46,49 @@ export function SiteLivePreview({
     .filter((p) => p !== "home")
     .slice(0, 5)
     .map((p) => PAGE_LABEL[p] ?? p);
+  const radius = radiusClass(theme.radius);
+  const fontFamily =
+    theme.fontPairing === "classic_serif" || theme.fontPairing === "editorial"
+      ? "Georgia, 'Times New Roman', serif"
+      : theme.fontPairing === "friendly_rounded"
+        ? "system-ui, 'Segoe UI', sans-serif"
+        : "Inter, system-ui, sans-serif";
 
-  const isDarkBg =
-    theme.backgroundColor.toLowerCase() !== "#ffffff" &&
-    theme.backgroundColor.toLowerCase() !== "#fff";
+  function primaryButtonStyle(): CSSProperties {
+    if (theme.buttonStyle === "outline") {
+      return {
+        border: `1px solid ${theme.primaryColor}`,
+        color: theme.primaryColor,
+        backgroundColor: "transparent",
+        borderRadius: radius,
+      };
+    }
+    if (theme.buttonStyle === "soft") {
+      return {
+        backgroundColor: `${theme.accentColor}33`,
+        color: theme.isDark ? theme.textColor : theme.primaryColor,
+        borderRadius: radius,
+      };
+    }
+    return {
+      backgroundColor: theme.primaryColor,
+      color: theme.isDark ? "#0A0A0A" : "#FFFFFF",
+      borderRadius: radius,
+    };
+  }
 
   return (
     <div className={cn("flex h-full min-h-[420px] flex-col", className)}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
           <p className="text-xs font-medium text-foreground">Live preview</p>
-          <p className="text-[11px] text-dim">Updates as you customize — no deploy needed</p>
+          <p className="text-[11px] text-dim">
+            {template?.name ?? "Template"} ·{" "}
+            {theme.themeMode === "custom" ? "custom theme" : "template theme"}
+          </p>
         </div>
         <span className="rounded-full border border-border px-2 py-0.5 text-[10px] capitalize text-muted">
-          {preferences.siteType} · {preferences.tone}
+          {preferences.niche.replace(/_/g, " ")}
         </span>
       </div>
 
@@ -75,14 +107,18 @@ export function SiteLivePreview({
           className="h-full overflow-y-auto"
           style={{
             backgroundColor: theme.backgroundColor,
-            color: isDarkBg ? "#F4F7FB" : "#0E1522",
+            color: theme.textColor,
+            fontFamily,
           }}
         >
           <header
             className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5"
             style={{ borderBottom: `1px solid ${theme.primaryColor}33` }}
           >
-            <span className="truncate text-sm font-semibold tracking-wide" style={{ color: theme.primaryColor }}>
+            <span
+              className="truncate text-sm font-semibold tracking-wide"
+              style={{ color: theme.primaryColor }}
+            >
               {name}
             </span>
             <nav className="hidden items-center gap-3 text-[10px] opacity-80 sm:flex">
@@ -91,53 +127,165 @@ export function SiteLivePreview({
               ))}
             </nav>
             <span
-              className="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-semibold"
-              style={{ backgroundColor: theme.accentColor, color: isDarkBg ? "#0A0A0A" : "#FFFFFF" }}
+              className="shrink-0 px-2.5 py-1 text-[10px] font-semibold"
+              style={primaryButtonStyle()}
             >
               {cta}
             </span>
           </header>
 
-          <section className="px-4 py-8 sm:px-6 sm:py-10">
-            <p
-              className="text-[10px] font-medium uppercase tracking-[0.16em]"
-              style={{ color: theme.accentColor }}
-            >
-              {preferences.designStyle} · {preferences.colorMood}
-            </p>
-            <h1
-              className="mt-2 max-w-md text-2xl font-bold leading-tight sm:text-3xl"
-              style={{ color: isDarkBg ? "#FFFFFF" : theme.primaryColor }}
-            >
-              {name}
-            </h1>
-            <p className="mt-3 max-w-md text-sm leading-relaxed opacity-80">{idea}</p>
-            {audience ? (
-              <p className="mt-2 text-xs opacity-60">For {audience}</p>
-            ) : null}
-            {messages ? (
-              <p className="mt-3 text-xs font-medium" style={{ color: theme.accentColor }}>
-                {messages}
-              </p>
-            ) : null}
-            <div className="mt-6 flex flex-wrap gap-2">
-              <span
-                className="rounded-md px-4 py-2 text-xs font-semibold"
+          {theme.layout === "hero_split" ? (
+            <section className="grid gap-4 px-4 py-8 sm:grid-cols-2 sm:px-6 sm:py-10">
+              <div>
+                <p
+                  className="text-[10px] font-medium uppercase tracking-[0.16em]"
+                  style={{ color: theme.accentColor }}
+                >
+                  {template?.name ?? preferences.designStyle}
+                </p>
+                <h1
+                  className="mt-2 text-2xl font-bold leading-tight sm:text-3xl"
+                  style={{ color: theme.isDark ? "#FFFFFF" : theme.primaryColor }}
+                >
+                  {name}
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed opacity-80">{idea}</p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <span className="px-4 py-2 text-xs font-semibold" style={primaryButtonStyle()}>
+                    {cta}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="min-h-[120px] rounded-lg"
                 style={{
-                  backgroundColor: theme.primaryColor,
-                  color: isDarkBg ? "#0A0A0A" : "#FFFFFF",
+                  background: `linear-gradient(145deg, ${theme.accentColor}55, ${theme.primaryColor}33)`,
+                  borderRadius: radius,
                 }}
+              />
+            </section>
+          ) : theme.layout === "store_shelf" ? (
+            <section className="px-4 py-8 sm:px-6 sm:py-10">
+              <h1
+                className="text-2xl font-bold sm:text-3xl"
+                style={{ color: theme.isDark ? "#FFFFFF" : theme.primaryColor }}
+              >
+                {name}
+              </h1>
+              <p className="mt-2 max-w-md text-sm opacity-80">{idea}</p>
+              <div className="mt-6 grid grid-cols-3 gap-2">
+                {["Featured", "Popular", "New"].map((label) => (
+                  <div
+                    key={label}
+                    className="p-2"
+                    style={{
+                      backgroundColor: theme.isDark
+                        ? "rgba(255,255,255,0.06)"
+                        : "rgba(0,0,0,0.04)",
+                      borderRadius: radius,
+                      border: `1px solid ${theme.primaryColor}22`,
+                    }}
+                  >
+                    <div
+                      className="mb-2 h-12"
+                      style={{
+                        backgroundColor: `${theme.accentColor}44`,
+                        borderRadius: radius,
+                      }}
+                    />
+                    <p className="text-[10px] font-medium">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : theme.layout === "services_grid" ? (
+            <section className="px-4 py-8 sm:px-6 sm:py-10">
+              <h1
+                className="text-2xl font-bold sm:text-3xl"
+                style={{ color: theme.isDark ? "#FFFFFF" : theme.primaryColor }}
+              >
+                {name}
+              </h1>
+              <p className="mt-2 max-w-md text-sm opacity-80">{idea}</p>
+              <div className="mt-6 grid gap-2 sm:grid-cols-3">
+                {(template?.highlightSections.length
+                  ? template.highlightSections
+                  : ["Service A", "Service B", "Service C"]
+                ).map((label) => (
+                  <div
+                    key={label}
+                    className="p-3 text-xs"
+                    style={{
+                      backgroundColor: theme.isDark
+                        ? "rgba(255,255,255,0.06)"
+                        : "rgba(0,0,0,0.04)",
+                      borderRadius: radius,
+                      border: `1px solid ${theme.primaryColor}22`,
+                    }}
+                  >
+                    <p className="font-medium" style={{ color: theme.accentColor }}>
+                      {label}
+                    </p>
+                    <p className="mt-1 opacity-65">Built for your niche</p>
+                  </div>
+                ))}
+              </div>
+              <span
+                className="mt-6 inline-block px-4 py-2 text-xs font-semibold"
+                style={primaryButtonStyle()}
               >
                 {cta}
               </span>
-              <span
-                className="rounded-md border px-4 py-2 text-xs font-medium opacity-80"
-                style={{ borderColor: `${theme.primaryColor}66` }}
-              >
-                Learn more
-              </span>
-            </div>
-          </section>
+            </section>
+          ) : (
+            <section
+              className="px-4 py-10 sm:px-6 sm:py-12"
+              style={
+                theme.layout === "hero_image_bg"
+                  ? {
+                      background: `linear-gradient(180deg, ${theme.backgroundColor}99, ${theme.backgroundColor}), ${theme.primaryColor}22`,
+                    }
+                  : undefined
+              }
+            >
+              <div className={theme.layout === "hero_centered" ? "mx-auto max-w-md text-center" : ""}>
+                <p
+                  className="text-[10px] font-medium uppercase tracking-[0.16em]"
+                  style={{ color: theme.accentColor }}
+                >
+                  {preferences.niche.replace(/_/g, " ")} · {theme.themeMode}
+                </p>
+                <h1
+                  className="mt-2 text-2xl font-bold leading-tight sm:text-3xl"
+                  style={{ color: theme.isDark ? "#FFFFFF" : theme.primaryColor }}
+                >
+                  {name}
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed opacity-80">{idea}</p>
+                {audience ? <p className="mt-2 text-xs opacity-60">For {audience}</p> : null}
+                {messages ? (
+                  <p className="mt-3 text-xs font-medium" style={{ color: theme.accentColor }}>
+                    {messages}
+                  </p>
+                ) : null}
+                <div
+                  className={`mt-6 flex flex-wrap gap-2 ${
+                    theme.layout === "hero_centered" ? "justify-center" : ""
+                  }`}
+                >
+                  <span className="px-4 py-2 text-xs font-semibold" style={primaryButtonStyle()}>
+                    {cta}
+                  </span>
+                  <span
+                    className="border px-4 py-2 text-xs font-medium opacity-80"
+                    style={{ borderColor: `${theme.primaryColor}66`, borderRadius: radius }}
+                  >
+                    Learn more
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="grid gap-3 px-4 pb-8 sm:grid-cols-3 sm:px-6">
             {(preferences.features.length
@@ -146,10 +294,11 @@ export function SiteLivePreview({
             ).map((feature) => (
               <div
                 key={feature}
-                className="rounded-lg p-3 text-xs"
+                className="p-3 text-xs"
                 style={{
-                  backgroundColor: isDarkBg ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                  backgroundColor: theme.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
                   border: `1px solid ${theme.primaryColor}22`,
+                  borderRadius: radius,
                 }}
               >
                 <p className="font-medium capitalize" style={{ color: theme.accentColor }}>
@@ -159,21 +308,6 @@ export function SiteLivePreview({
               </div>
             ))}
           </section>
-
-          {preferences.pages.includes("testimonials") ||
-          preferences.features.includes("testimonials") ? (
-            <section
-              className="mx-4 mb-8 rounded-lg p-4 sm:mx-6"
-              style={{
-                backgroundColor: isDarkBg ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
-              }}
-            >
-              <p className="text-[10px] uppercase tracking-wide opacity-60">Social proof</p>
-              <p className="mt-2 text-sm italic opacity-80">
-                “{name} made everything clearer from day one.”
-              </p>
-            </section>
-          ) : null}
         </div>
       </div>
     </div>

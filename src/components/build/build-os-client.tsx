@@ -12,21 +12,31 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CustomThemeBuilder } from "@/components/build/custom-theme-builder";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
+import { NicheTemplateGallery } from "@/components/build/niche-template-gallery";
 import { SiteLivePreview } from "@/components/build/site-live-preview";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/os/status-pill";
-import { DEFAULT_DEPLOYMENT } from "@/lib/site-builder/normalize-preferences";
-import { SITE_THEME_PRESETS } from "@/lib/site-builder/theme-presets";
 import { formatDomainPrice } from "@/lib/site-builder/domain-catalog";
+import { defaultCustomThemeForNiche, SITE_NICHES } from "@/lib/site-builder/niches";
+import { DEFAULT_DEPLOYMENT } from "@/lib/site-builder/normalize-preferences";
+import {
+  defaultTemplateForNiche,
+  type SiteUiTemplate,
+} from "@/lib/site-builder/templates";
+import { SITE_THEME_PRESETS } from "@/lib/site-builder/theme-presets";
 import type {
   SiteBuildJob,
   SiteCtaGoal,
+  SiteCustomTheme,
   SiteDesignStyle,
   SiteFeatureOption,
+  SiteNiche,
   SitePageOption,
   SitePreferences,
   SiteReferenceScreenshot,
+  SiteThemeMode,
   SiteThemePreset,
   SiteTone,
   SiteType,
@@ -102,8 +112,11 @@ const QUICK_STARTS: QuickStart[] = [
     label: "Online shop",
     description: "Products, checkout, trust signals",
     patch: {
+      niche: "online_shop",
+      templateId: "shop_shelf",
       siteType: "store",
       tone: "friendly",
+      themeMode: "template",
       themePreset: "sunset_warm",
       designStyle: "modern",
       colorMood: "warm",
@@ -118,8 +131,11 @@ const QUICK_STARTS: QuickStart[] = [
     label: "Local service",
     description: "Bookings, reviews, contact",
     patch: {
+      niche: "local_service",
+      templateId: "service_book",
       siteType: "business",
       tone: "professional",
+      themeMode: "template",
       themePreset: "ocean_cool",
       designStyle: "modern",
       colorMood: "cool",
@@ -134,8 +150,11 @@ const QUICK_STARTS: QuickStart[] = [
     label: "Agency / studio",
     description: "Portfolio and case studies",
     patch: {
+      niche: "agency",
+      templateId: "agency_cases",
       siteType: "portfolio",
       tone: "bold",
+      themeMode: "template",
       themePreset: "bold_dark",
       designStyle: "bold",
       colorMood: "vibrant",
@@ -150,8 +169,11 @@ const QUICK_STARTS: QuickStart[] = [
     label: "Product launch",
     description: "Landing page that converts",
     patch: {
+      niche: "saas",
+      templateId: "saas_launch",
       siteType: "landing",
       tone: "professional",
+      themeMode: "template",
       themePreset: "gold_navy",
       designStyle: "minimal",
       colorMood: "neutral",
@@ -168,11 +190,15 @@ const EMPTY_PREFERENCES: SitePreferences = {
   businessIdea: "",
   targetAudience: "",
   countryBase: "UK",
+  niche: "local_service",
+  templateId: "service_book",
   tone: "professional",
   siteType: "business",
   designStyle: "modern",
   colorMood: "neutral",
-  themePreset: "gold_navy",
+  themeMode: "template",
+  themePreset: "ocean_cool",
+  customTheme: defaultCustomThemeForNiche("local_service"),
   pages: ["home", "about", "services", "contact"],
   features: ["contact_form", "seo_pack"],
   ctaGoal: "contact",
@@ -250,9 +276,11 @@ export function BuildOsClient() {
   }
 
   function applyQuickStart(start: QuickStart) {
+    const niche = (start.patch.niche ?? "local_service") as SiteNiche;
     setPreferences((prev) => ({
       ...prev,
       ...start.patch,
+      customTheme: prev.customTheme ?? defaultCustomThemeForNiche(niche),
       deployment: prev.deployment,
       businessName: prev.businessName,
       businessIdea: prev.businessIdea,
@@ -262,11 +290,58 @@ export function BuildOsClient() {
     }));
   }
 
+  function selectNiche(niche: SiteNiche) {
+    const template = defaultTemplateForNiche(niche);
+    setPreferences((prev) => ({
+      ...prev,
+      niche,
+      templateId: template.id,
+      siteType: template.siteType,
+      tone: template.tone,
+      ctaGoal: template.ctaGoal,
+      pages: template.pages,
+      features: template.features,
+      themePreset: template.defaultThemePreset,
+      customTheme: defaultCustomThemeForNiche(niche),
+    }));
+  }
+
+  function selectUiTemplate(template: SiteUiTemplate) {
+    setPreferences((prev) => ({
+      ...prev,
+      niche: template.niche,
+      templateId: template.id,
+      siteType: template.siteType,
+      tone: template.tone,
+      ctaGoal: template.ctaGoal,
+      pages: template.pages,
+      features: template.features,
+      themePreset: template.defaultThemePreset,
+    }));
+  }
+
+  function setThemeMode(mode: SiteThemeMode) {
+    setPreferences((prev) => ({
+      ...prev,
+      themeMode: mode,
+      customTheme: prev.customTheme ?? defaultCustomThemeForNiche(prev.niche),
+    }));
+  }
+
+  function updateCustomTheme(customTheme: SiteCustomTheme) {
+    setPreferences((prev) => ({
+      ...prev,
+      themeMode: "custom",
+      customTheme,
+    }));
+  }
+
   function selectThemePreset(presetId: SiteThemePreset) {
     const preset = SITE_THEME_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
     setPreferences((prev) => ({
       ...prev,
+      themeMode: "template",
       themePreset: presetId,
       designStyle: preset.designStyle,
       colorMood: preset.colorMood,
@@ -433,9 +508,28 @@ export function BuildOsClient() {
             {step === 0 && (
               <>
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">Start from a template</p>
+                  <p className="text-xs font-medium text-foreground">What&apos;s your niche?</p>
                   <p className="text-[11px] text-dim">
-                    Pick a starting point — you can change anything after.
+                    Templates and theme suggestions are filtered by niche.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SITE_NICHES.map((niche) => (
+                      <button
+                        key={niche.id}
+                        type="button"
+                        onClick={() => selectNiche(niche.id)}
+                        className={chipClassName(preferences.niche === niche.id)}
+                      >
+                        {niche.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-foreground">Quick start</p>
+                  <p className="text-[11px] text-dim">
+                    Optional shortcut — applies a niche + default template.
                   </p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {QUICK_STARTS.map((start) => (
@@ -528,44 +622,90 @@ export function BuildOsClient() {
 
             {step === 1 && (
               <>
+                <NicheTemplateGallery
+                  niche={preferences.niche}
+                  selectedTemplateId={preferences.templateId}
+                  onSelect={selectUiTemplate}
+                />
+
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">Pick a look</p>
-                  <p className="text-[11px] text-dim">Tap a theme — the preview updates instantly.</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {SITE_THEME_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => selectThemePreset(preset.id)}
-                        className={`overflow-hidden rounded-lg border text-left transition-colors ${
-                          preferences.themePreset === preset.id
-                            ? "border-gold ring-1 ring-gold/40"
-                            : "border-border hover:border-gold/40"
-                        }`}
-                      >
-                        <div
-                          className="flex h-14 items-end justify-between px-3 pb-2"
-                          style={{ backgroundColor: preset.backgroundColor }}
-                        >
-                          <span
-                            className="h-6 w-6 rounded-full border border-white/20"
-                            style={{ backgroundColor: preset.primaryColor }}
-                          />
-                          <span
-                            className="h-6 w-6 rounded-full border border-white/20"
-                            style={{ backgroundColor: preset.accentColor }}
-                          />
-                        </div>
-                        <div className="bg-surface-muted px-3 py-2">
-                          <p className="text-xs font-medium text-foreground">{preset.label}</p>
-                          <p className="mt-0.5 text-[10px] leading-relaxed text-dim">
-                            {preset.description}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
+                  <p className="text-xs font-medium text-foreground">Theme</p>
+                  <div className="flex rounded-lg border border-border bg-surface-muted p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setThemeMode("template")}
+                      className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
+                        preferences.themeMode === "template"
+                          ? "bg-surface-elevated text-foreground shadow-sm"
+                          : "text-muted hover:text-foreground"
+                      }`}
+                    >
+                      Use template theme
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setThemeMode("custom")}
+                      className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
+                        preferences.themeMode === "custom"
+                          ? "bg-surface-elevated text-foreground shadow-sm"
+                          : "text-muted hover:text-foreground"
+                      }`}
+                    >
+                      Create custom theme
+                    </button>
                   </div>
                 </div>
+
+                {preferences.themeMode === "template" ? (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-dim">
+                      Preset colors for this template — preview updates instantly.
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {SITE_THEME_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => selectThemePreset(preset.id)}
+                          className={`overflow-hidden rounded-lg border text-left transition-colors ${
+                            preferences.themePreset === preset.id
+                              ? "border-gold ring-1 ring-gold/40"
+                              : "border-border hover:border-gold/40"
+                          }`}
+                        >
+                          <div
+                            className="flex h-14 items-end justify-between px-3 pb-2"
+                            style={{ backgroundColor: preset.backgroundColor }}
+                          >
+                            <span
+                              className="h-6 w-6 rounded-full border border-white/20"
+                              style={{ backgroundColor: preset.primaryColor }}
+                            />
+                            <span
+                              className="h-6 w-6 rounded-full border border-white/20"
+                              style={{ backgroundColor: preset.accentColor }}
+                            />
+                          </div>
+                          <div className="bg-surface-muted px-3 py-2">
+                            <p className="text-xs font-medium text-foreground">{preset.label}</p>
+                            <p className="mt-0.5 text-[10px] leading-relaxed text-dim">
+                              {preset.description}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <CustomThemeBuilder
+                    niche={preferences.niche}
+                    theme={
+                      preferences.customTheme ??
+                      defaultCustomThemeForNiche(preferences.niche)
+                    }
+                    onChange={updateCustomTheme}
+                  />
+                )}
 
                 <div className="space-y-1.5">
                   <p className="text-xs font-medium text-foreground">Tone of voice</p>
@@ -908,7 +1048,13 @@ export function BuildOsClient() {
               <p className="mt-1 font-mono text-xs text-muted">/sites/{job.plan.slug}</p>
             </div>
             <div className="rounded-lg border border-border bg-surface-muted p-3">
-              <p className="text-xs font-medium text-gold">Theme — {job.plan.theme.presetId}</p>
+              <p className="text-xs font-medium text-gold">
+                Theme —{" "}
+                {job.plan.theme.themeMode === "custom"
+                  ? "custom"
+                  : job.plan.theme.presetId}
+                {job.plan.theme.templateId ? ` · ${job.plan.theme.templateId}` : ""}
+              </p>
               <div className="mt-2 flex items-center gap-2">
                 <span
                   className="h-6 w-6 rounded border border-border"

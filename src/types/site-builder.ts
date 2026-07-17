@@ -6,6 +6,45 @@ export type SiteDesignStyle = "minimal" | "modern" | "bold" | "classic";
 export type SiteColorMood = "warm" | "cool" | "neutral" | "vibrant";
 export type SiteCtaGoal = "book_call" | "buy" | "subscribe" | "contact";
 
+/** Business niche — drives which UI templates and practical theme suggestions appear. */
+export type SiteNiche =
+  | "online_shop"
+  | "local_service"
+  | "agency"
+  | "saas"
+  | "restaurant"
+  | "clinic"
+  | "portfolio";
+
+export type SiteTemplateLayout =
+  | "hero_centered"
+  | "hero_split"
+  | "hero_image_bg"
+  | "services_grid"
+  | "store_shelf";
+
+export type SiteThemeMode = "template" | "custom";
+
+export type SiteFontPairing =
+  | "modern_sans"
+  | "classic_serif"
+  | "friendly_rounded"
+  | "editorial";
+
+export type SiteButtonStyle = "solid" | "soft" | "outline";
+export type SiteRadiusStyle = "sharp" | "rounded" | "pill";
+
+/** User-authored theme tokens when not using a template preset. */
+export type SiteCustomTheme = {
+  primaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  textColor: string;
+  fontPairing: SiteFontPairing;
+  buttonStyle: SiteButtonStyle;
+  radius: SiteRadiusStyle;
+};
+
 export type SiteThemePreset =
   | "gold_navy"
   | "minimal_light"
@@ -92,11 +131,17 @@ export type SitePreferences = {
   businessIdea: string;
   targetAudience?: string;
   countryBase: string;
+  niche: SiteNiche;
+  /** Selected UI template id from the niche catalog. */
+  templateId: string;
   tone: SiteTone;
   siteType: SiteType;
   designStyle: SiteDesignStyle;
   colorMood: SiteColorMood;
+  /** How colors/fonts are chosen: template preset or custom niche theme. */
+  themeMode: SiteThemeMode;
   themePreset: SiteThemePreset;
+  customTheme?: SiteCustomTheme;
   pages: SitePageOption[];
   features: SiteFeatureOption[];
   ctaGoal: SiteCtaGoal;
@@ -127,11 +172,15 @@ export type SitePlanNavItem = {
 
 export type SitePlanTheme = {
   presetId: SiteThemePreset;
+  themeMode: SiteThemeMode;
   primaryColor: string;
   accentColor: string;
   backgroundColor: string;
+  textColor?: string;
   fontStyle: string;
   styleNotes: string;
+  templateId?: string;
+  layout?: SiteTemplateLayout;
 };
 
 export type SiteDeployNote = {

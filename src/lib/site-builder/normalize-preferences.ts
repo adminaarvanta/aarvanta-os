@@ -7,6 +7,10 @@ export function normalizeSitePreferences(
 ): SitePreferences {
   return {
     ...data,
+    niche: data.niche,
+    templateId: data.templateId,
+    themeMode: data.themeMode,
+    customTheme: data.customTheme,
     referenceUrl: data.referenceUrl || undefined,
     referenceScreenshots: data.referenceScreenshots ?? [],
     deployment: {

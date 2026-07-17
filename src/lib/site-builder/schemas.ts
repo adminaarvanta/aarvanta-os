@@ -5,6 +5,24 @@ export const siteTypeSchema = z.enum(["landing", "business", "store", "portfolio
 export const siteDesignStyleSchema = z.enum(["minimal", "modern", "bold", "classic"]);
 export const siteColorMoodSchema = z.enum(["warm", "cool", "neutral", "vibrant"]);
 export const siteCtaGoalSchema = z.enum(["book_call", "buy", "subscribe", "contact"]);
+export const siteNicheSchema = z.enum([
+  "online_shop",
+  "local_service",
+  "agency",
+  "saas",
+  "restaurant",
+  "clinic",
+  "portfolio",
+]);
+export const siteThemeModeSchema = z.enum(["template", "custom"]);
+export const siteFontPairingSchema = z.enum([
+  "modern_sans",
+  "classic_serif",
+  "friendly_rounded",
+  "editorial",
+]);
+export const siteButtonStyleSchema = z.enum(["solid", "soft", "outline"]);
+export const siteRadiusStyleSchema = z.enum(["sharp", "rounded", "pill"]);
 export const siteThemePresetSchema = z.enum([
   "gold_navy",
   "minimal_light",
@@ -12,6 +30,16 @@ export const siteThemePresetSchema = z.enum([
   "ocean_cool",
   "sunset_warm",
 ]);
+
+export const siteCustomThemeSchema = z.object({
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  accentColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+  fontPairing: siteFontPairingSchema,
+  buttonStyle: siteButtonStyleSchema,
+  radius: siteRadiusStyleSchema,
+});
 
 export const sitePageOptionSchema = z.enum([
   "home",
@@ -82,11 +110,15 @@ export const sitePreferencesSchema = z.object({
   businessIdea: z.string().min(10).max(1000),
   targetAudience: z.string().max(300).optional(),
   countryBase: z.string().min(2).max(8).default("UK"),
+  niche: siteNicheSchema.default("local_service"),
+  templateId: z.string().min(2).max(64).default("service_book"),
   tone: siteToneSchema.default("professional"),
   siteType: siteTypeSchema.default("business"),
   designStyle: siteDesignStyleSchema.default("modern"),
   colorMood: siteColorMoodSchema.default("neutral"),
+  themeMode: siteThemeModeSchema.default("template"),
   themePreset: siteThemePresetSchema.default("gold_navy"),
+  customTheme: siteCustomThemeSchema.optional(),
   pages: z.array(sitePageOptionSchema).min(1).default(["home", "about", "contact"]),
   features: z.array(siteFeatureOptionSchema).default(["contact_form"]),
   ctaGoal: siteCtaGoalSchema.default("contact"),
@@ -116,11 +148,17 @@ export const sitePlanSchema = z.object({
   summary: z.string(),
   theme: z.object({
     presetId: siteThemePresetSchema,
+    themeMode: siteThemeModeSchema.default("template"),
     primaryColor: z.string(),
     accentColor: z.string(),
     backgroundColor: z.string(),
+    textColor: z.string().optional(),
     fontStyle: z.string(),
     styleNotes: z.string(),
+    templateId: z.string().optional(),
+    layout: z
+      .enum(["hero_centered", "hero_split", "hero_image_bg", "services_grid", "store_shelf"])
+      .optional(),
   }),
   navigation: z.array(
     z.object({
