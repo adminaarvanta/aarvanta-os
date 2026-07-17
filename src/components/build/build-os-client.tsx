@@ -807,9 +807,9 @@ export function BuildOsClient() {
                 <div className="rounded-lg border border-gold/30 bg-primary-soft p-3">
                   <p className="text-xs font-medium text-foreground">Preview first, domain when ready</p>
                   <p className="mt-1 text-[11px] text-muted">
-                    You can generate a site plan with the details above. Buying a domain is only needed
-                    when you&apos;re ready to publish under your own URL. Hosting is managed by Aarvanta
-                    automatically.
+                    Generate a plan without a domain first. When you go live, buy a domain through
+                    Aarvanta or connect one you already own — we&apos;ll show the DNS changes for your
+                    provider. Hosting is managed by Aarvanta.
                   </p>
                 </div>
 
@@ -932,12 +932,14 @@ export function BuildOsClient() {
                 <span className="font-mono text-foreground">
                   {job.plan.deployment.domain.selectedDomain}
                 </span>
-                {job.plan.deployment.domain.priceAnnual
-                  ? ` · ${formatDomainPrice(
-                      job.plan.deployment.domain.priceAnnual,
-                      job.plan.deployment.domain.currency
-                    )}/yr`
-                  : null}
+                {job.plan.deployment.domain.status === "external"
+                  ? " · existing domain (update DNS at your provider)"
+                  : job.plan.deployment.domain.priceAnnual
+                    ? ` · ${formatDomainPrice(
+                        job.plan.deployment.domain.priceAnnual,
+                        job.plan.deployment.domain.currency
+                      )}/yr`
+                    : null}
               </p>
             ) : (
               <p className="mt-1 text-xs text-muted">

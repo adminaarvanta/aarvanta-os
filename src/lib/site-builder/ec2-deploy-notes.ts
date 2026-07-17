@@ -1,17 +1,36 @@
 import type { SiteDeploymentConfig, SiteDeployNote } from "@/types/site-builder";
 
+function domainReadyNote(deployment: SiteDeploymentConfig, domain: string): SiteDeployNote {
+  if (deployment.domain.status === "purchased") {
+    return {
+      title: "1. Domain ready",
+      body: `${domain} is registered through Aarvanta. DNS is configured automatically for your site.`,
+    };
+  }
+  if (deployment.domain.status === "external") {
+    return {
+      title: "1. Connect your domain",
+      body: `You already own ${domain}. Add the DNS records shown in Build OS at your domain provider (A for @, CNAME for www). SSL activates after DNS verifies.`,
+    };
+  }
+  if (deployment.domain.status === "selected" && deployment.domain.selectedDomain) {
+    return {
+      title: "1. Domain ready",
+      body: `${domain} is reserved in your plan. Complete purchase through Aarvanta when you go live, or switch to “use existing domain” if you already own it.`,
+    };
+  }
+  return {
+    title: "1. Domain ready",
+    body: "Optional: buy a domain through Aarvanta, or connect one you already own and update DNS at your provider. You can preview first.",
+  };
+}
+
 /** User-facing hosting steps — infrastructure details stay internal. */
 export function buildEc2DeployNotes(deployment: SiteDeploymentConfig): SiteDeployNote[] {
   const domain = deployment.domain.selectedDomain ?? "your-domain.com";
 
   return [
-    {
-      title: "1. Domain ready",
-      body:
-        deployment.domain.status === "purchased"
-          ? `${domain} is registered through Aarvanta. DNS is configured automatically for your site.`
-          : `Optional: purchase ${domain} through Aarvanta when you are ready to go live. You can preview first.`,
-    },
+    domainReadyNote(deployment, domain),
     {
       title: "2. Managed hosting",
       body: "Aarvanta Hosting provisions a secure, SSL-ready environment for your generated site — no server setup required.",

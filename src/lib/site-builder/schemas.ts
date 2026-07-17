@@ -47,7 +47,7 @@ export const siteReferenceScreenshotSchema = z.object({
 });
 
 export const siteDomainPurchaseSchema = z.object({
-  status: z.enum(["none", "selected", "purchased"]).default("none"),
+  status: z.enum(["none", "selected", "purchased", "external"]).default("none"),
   selectedDomain: z.string().max(120).optional(),
   tld: z.string().max(12).optional(),
   priceAnnual: z.number().positive().optional(),
@@ -56,6 +56,8 @@ export const siteDomainPurchaseSchema = z.object({
   registrarOrderId: z.string().optional(),
   purchasedAt: z.string().optional(),
   expiresAt: z.string().optional(),
+  dnsStatus: z.enum(["pending", "verified"]).optional(),
+  connectedAt: z.string().optional(),
 });
 
 export const siteEc2ConfigSchema = z.object({
