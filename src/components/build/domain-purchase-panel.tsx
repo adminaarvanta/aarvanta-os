@@ -196,7 +196,7 @@ export function DomainPurchasePanel({
                           {selected ? <Check className="h-3.5 w-3.5" /> : "Select"}
                         </Button>
                         <Button type="button" onClick={() => void purchaseDomain(listing)} disabled={busy}>
-                          Buy now
+                          Buy with Stripe
                         </Button>
                       </>
                     ) : (
