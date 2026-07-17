@@ -12,6 +12,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { ThemeStylePanel } from "@/components/build/theme-style-panel";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   readComposeDraftCache,
   writeComposeDraftCache,
 } from "@/lib/site-builder/compose-draft-cache";
+import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import {
   EXAMPLE_PROMPTS,
   inferPreferencesFromPrompt,
@@ -32,6 +34,7 @@ import {
 import type {
   SiteBuildJob,
   SiteCustomTheme,
+  SiteDomainPurchase,
   SitePreferences,
   SiteReferenceScreenshot,
   SiteThemePreset,
@@ -175,6 +178,8 @@ export function BuildOsClient() {
       customPrompt: mergedPrompt || undefined,
       referenceScreenshots: screenshots,
       businessName: mergedPrompt ? undefined : "Untitled draft",
+      // Keep buy / bring-your-own domain selection across regenerate & refine.
+      deployment: jobRef.current?.preferences.deployment,
     });
   }
 
@@ -200,6 +205,7 @@ export function BuildOsClient() {
       customTheme,
       customPrompt: trimmed,
       referenceScreenshots: [],
+      deployment: jobRef.current?.preferences.deployment,
     });
 
     setDraftSaving(true);
@@ -284,6 +290,59 @@ export function BuildOsClient() {
     const data = (await res.json()) as { job: SiteBuildJob };
     setDraftSavedAt(data.job.updatedAt);
     syncLocalCache(current.id);
+  }
+
+  async function persistDomainDraft(domain: SiteDomainPurchase) {
+    const current = jobRef.current;
+    if (!current) return;
+    const preferences = {
+      ...current.preferences,
+      deployment: { ...current.preferences.deployment, domain },
+      referenceScreenshots: [],
+    };
+    const res = await fetch(`/api/build/${current.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(preferences),
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as { job: SiteBuildJob };
+    setDraftSavedAt(data.job.updatedAt);
+    syncLocalCache(current.id);
+  }
+
+  /** Attach buy / bring-your-own domain without regenerating the site preview. */
+  function applyDomainChange(domain: SiteDomainPurchase) {
+    setJob((current) => {
+      if (!current) return current;
+      const deployment = { ...current.preferences.deployment, domain };
+      const preferences = { ...current.preferences, deployment };
+      const businessSlug = current.preferences.businessName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48);
+      const slug = current.generatedSite?.slug || businessSlug || "my-site";
+      const liveUrl = domain.selectedDomain ? `https://${domain.selectedDomain}` : undefined;
+      const previewUrl = liveUrl ?? `https://${slug}.sites.aarvanta.cloud`;
+      return {
+        ...current,
+        preferences,
+        plan: current.plan
+          ? {
+              ...current.plan,
+              deployment: {
+                ...current.plan.deployment,
+                domain,
+                liveUrl,
+                previewUrl,
+                deployNotes: buildEc2DeployNotes(deployment),
+              },
+            }
+          : current.plan,
+      };
+    });
+    void persistDomainDraft(domain);
   }
 
   /** Durable-style: change colors/fonts live without regenerating content. */
@@ -496,6 +555,23 @@ export function BuildOsClient() {
                   </>
                 )}
               </Button>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium text-foreground">Domain (optional)</p>
+              <p className="mb-3 text-[11px] text-dim">
+                Buy through Aarvanta, or connect a domain you already own — we&apos;ll show the
+                DNS records for your provider.
+              </p>
+              <DomainPurchasePanel
+                businessName={
+                  job.preferences.businessName || job.generatedSite.siteName || "yoursite"
+                }
+                countryBase={job.preferences.countryBase}
+                domain={job.preferences.deployment.domain}
+                buildJobId={job.id}
+                onDomainChange={applyDomainChange}
+              />
             </div>
 
             {error && <p className="text-xs text-red-400">{error}</p>}

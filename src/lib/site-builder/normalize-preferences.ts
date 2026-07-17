@@ -32,6 +32,8 @@ export function normalizeSitePreferences(
         registrarOrderId: data.deployment.domain.registrarOrderId,
         purchasedAt: data.deployment.domain.purchasedAt,
         expiresAt: data.deployment.domain.expiresAt,
+        dnsStatus: data.deployment.domain.dnsStatus,
+        connectedAt: data.deployment.domain.connectedAt,
       },
       ec2: {
         region: data.deployment.ec2.region,

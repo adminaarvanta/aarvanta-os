@@ -61,8 +61,26 @@ export type SiteReferenceScreenshot = {
   uploadedAt: string;
 };
 
-/** Domains are purchased exclusively through Aarvanta — no external registrar. */
-export type DomainPurchaseStatus = "none" | "selected" | "purchased";
+/**
+ * Domain attachment modes:
+ * - purchase via Aarvanta (`selected` / `purchased`)
+ * - bring-your-own domain (`external`) — user updates DNS at their registrar
+ */
+export type DomainPurchaseStatus = "none" | "selected" | "purchased" | "external";
+
+export type DomainDnsVerificationStatus = "pending" | "verified";
+
+export type SiteDnsRecordType = "A" | "AAAA" | "CNAME" | "TXT";
+
+/** One row to paste into the customer's domain provider DNS dashboard. */
+export type SiteDnsRecordInstruction = {
+  type: SiteDnsRecordType;
+  /** Host / name field — `@` for apex, `www`, or a subdomain label. */
+  host: string;
+  value: string;
+  ttl: string;
+  purpose: string;
+};
 
 export type SiteDomainListing = {
   domain: string;
@@ -83,6 +101,9 @@ export type SiteDomainPurchase = {
   registrarOrderId?: string;
   purchasedAt?: string;
   expiresAt?: string;
+  /** Set when status is `external` — DNS must be updated at the user's registrar. */
+  dnsStatus?: DomainDnsVerificationStatus;
+  connectedAt?: string;
 };
 
 export type AwsEc2InstanceType = "t3.micro" | "t3.small" | "t3.medium";

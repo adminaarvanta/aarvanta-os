@@ -325,7 +325,9 @@ Given site creation preferences, return JSON matching this shape:
     "deployNotes": [{ "title": string, "body": string }]
   }
 }
-Domains are purchased only through Aarvanta. Hosting is AWS EC2 only.
+Domains may be purchased through Aarvanta OR connected as an existing external domain (user updates DNS at their registrar). Hosting is managed by Aarvanta (do not mention cloud vendor names in deployNotes).
+If domain.status is "external", deployNotes must tell the user to add the DNS A/CNAME records shown in Build OS.
+deployNotes should be short customer-facing steps (domain, hosting, publish, monitoring) with no infrastructure jargon.
 Respect ALL user preferences including themePreset, customTheme (brand hex colors + fontPackId), customPrompt, referenceScreenshots, deployment config, pages, and features.
 When customTheme is provided, use those exact colors — do not invent a different palette.
 Honor the user's customPrompt as hard constraints when planning sections and copy direction.
