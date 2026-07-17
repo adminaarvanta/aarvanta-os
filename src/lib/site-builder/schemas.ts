@@ -113,7 +113,21 @@ export const sitePreferencesSchema = z.object({
   targetAudience: z.string().max(300).optional(),
   countryBase: z.string().min(2).max(8).default("UK"),
   niche: siteNicheSchema.default("local_service"),
-  templateId: z.string().min(2).max(64).default("service_book"),
+  templateId: z
+    .enum([
+      "shop_shelf",
+      "shop_editorial",
+      "service_book",
+      "service_local",
+      "agency_cases",
+      "agency_studio",
+      "saas_launch",
+      "saas_product",
+      "resto_menu",
+      "clinic_care",
+      "folio_work",
+    ])
+    .default("service_book"),
   tone: siteToneSchema.default("professional"),
   siteType: siteTypeSchema.default("business"),
   designStyle: siteDesignStyleSchema.default("modern"),

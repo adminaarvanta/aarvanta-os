@@ -1,15 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Briefcase,
-  ImagePlus,
-  LayoutTemplate,
-  ShoppingBag,
-  Sparkles,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { ImagePlus, LayoutTemplate, Trash2, Upload } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CustomThemeBuilder } from "@/components/build/custom-theme-builder";
@@ -23,14 +15,14 @@ import { defaultCustomThemeForNiche, SITE_NICHES } from "@/lib/site-builder/nich
 import { DEFAULT_DEPLOYMENT } from "@/lib/site-builder/normalize-preferences";
 import {
   defaultTemplateForNiche,
+  getUiTemplate,
   type SiteUiTemplate,
 } from "@/lib/site-builder/templates";
-import { SITE_THEME_PRESETS } from "@/lib/site-builder/theme-presets";
+import { getThemePreset, presetsForNiche } from "@/lib/site-builder/theme-presets";
 import type {
   SiteBuildJob,
   SiteCtaGoal,
   SiteCustomTheme,
-  SiteDesignStyle,
   SiteFeatureOption,
   SiteNiche,
   SitePageOption,
@@ -39,10 +31,9 @@ import type {
   SiteThemeMode,
   SiteThemePreset,
   SiteTone,
-  SiteType,
 } from "@/types/site-builder";
 
-const STEPS = ["Business", "Style", "Pages", "Go live"] as const;
+const STEPS = ["Business", "Template & theme", "Pages", "Go live"] as const;
 
 const TONES: { value: SiteTone; label: string; hint: string }[] = [
   { value: "professional", label: "Professional", hint: "Clear & credible" },
@@ -50,21 +41,6 @@ const TONES: { value: SiteTone; label: string; hint: string }[] = [
   { value: "bold", label: "Bold", hint: "Confident & punchy" },
   { value: "luxury", label: "Luxury", hint: "Premium & refined" },
 ];
-
-const SITE_TYPES: {
-  value: SiteType;
-  label: string;
-  hint: string;
-  icon: typeof Briefcase;
-}[] = [
-  { value: "landing", label: "Landing page", hint: "One page to convert visitors", icon: LayoutTemplate },
-  { value: "business", label: "Business site", hint: "Services, about, contact", icon: Briefcase },
-  { value: "store", label: "Online store", hint: "Sell products online", icon: ShoppingBag },
-  { value: "portfolio", label: "Portfolio", hint: "Showcase your work", icon: Sparkles },
-];
-
-const DESIGN_STYLES: SiteDesignStyle[] = ["minimal", "modern", "bold", "classic"];
-const COLOR_MOODS = ["warm", "cool", "neutral", "vibrant"] as const;
 
 const CTA_GOALS: { value: SiteCtaGoal; label: string }[] = [
   { value: "contact", label: "Get in touch" },
@@ -97,92 +73,6 @@ const FEATURE_OPTIONS: { value: SiteFeatureOption; label: string; group: string 
   { value: "testimonials", label: "Testimonials", group: "Social proof" },
   { value: "analytics", label: "Analytics", group: "Insights" },
   { value: "seo_pack", label: "SEO pack", group: "Insights" },
-];
-
-type QuickStart = {
-  id: string;
-  label: string;
-  description: string;
-  patch: Partial<SitePreferences>;
-};
-
-const QUICK_STARTS: QuickStart[] = [
-  {
-    id: "store",
-    label: "Online shop",
-    description: "Products, checkout, trust signals",
-    patch: {
-      niche: "online_shop",
-      templateId: "shop_shelf",
-      siteType: "store",
-      tone: "friendly",
-      themeMode: "template",
-      themePreset: "sunset_warm",
-      designStyle: "modern",
-      colorMood: "warm",
-      pages: ["home", "about", "products", "faq", "contact"],
-      features: ["ecommerce", "contact_form", "testimonials", "seo_pack"],
-      ctaGoal: "buy",
-      keyMessages: "Quality products, fast delivery, easy returns",
-    },
-  },
-  {
-    id: "service",
-    label: "Local service",
-    description: "Bookings, reviews, contact",
-    patch: {
-      niche: "local_service",
-      templateId: "service_book",
-      siteType: "business",
-      tone: "professional",
-      themeMode: "template",
-      themePreset: "ocean_cool",
-      designStyle: "modern",
-      colorMood: "cool",
-      pages: ["home", "about", "services", "pricing", "contact"],
-      features: ["contact_form", "booking", "testimonials", "seo_pack"],
-      ctaGoal: "book_call",
-      keyMessages: "Trusted locally · Free consultation",
-    },
-  },
-  {
-    id: "agency",
-    label: "Agency / studio",
-    description: "Portfolio and case studies",
-    patch: {
-      niche: "agency",
-      templateId: "agency_cases",
-      siteType: "portfolio",
-      tone: "bold",
-      themeMode: "template",
-      themePreset: "bold_dark",
-      designStyle: "bold",
-      colorMood: "vibrant",
-      pages: ["home", "about", "portfolio", "services", "contact"],
-      features: ["contact_form", "testimonials", "analytics"],
-      ctaGoal: "contact",
-      keyMessages: "Strategy, craft, results",
-    },
-  },
-  {
-    id: "saas",
-    label: "Product launch",
-    description: "Landing page that converts",
-    patch: {
-      niche: "saas",
-      templateId: "saas_launch",
-      siteType: "landing",
-      tone: "professional",
-      themeMode: "template",
-      themePreset: "gold_navy",
-      designStyle: "minimal",
-      colorMood: "neutral",
-      pages: ["home", "pricing", "faq", "contact"],
-      features: ["contact_form", "newsletter", "analytics", "seo_pack"],
-      ctaGoal: "subscribe",
-      keyMessages: "Simple setup · Clear results",
-    },
-  },
 ];
 
 const EMPTY_PREFERENCES: SitePreferences = {
@@ -275,21 +165,6 @@ export function BuildOsClient() {
     }));
   }
 
-  function applyQuickStart(start: QuickStart) {
-    const niche = (start.patch.niche ?? "local_service") as SiteNiche;
-    setPreferences((prev) => ({
-      ...prev,
-      ...start.patch,
-      customTheme: prev.customTheme ?? defaultCustomThemeForNiche(niche),
-      deployment: prev.deployment,
-      businessName: prev.businessName,
-      businessIdea: prev.businessIdea,
-      targetAudience: prev.targetAudience,
-      countryBase: prev.countryBase,
-      referenceScreenshots: prev.referenceScreenshots,
-    }));
-  }
-
   function selectNiche(niche: SiteNiche) {
     const template = defaultTemplateForNiche(niche);
     setPreferences((prev) => ({
@@ -337,8 +212,7 @@ export function BuildOsClient() {
   }
 
   function selectThemePreset(presetId: SiteThemePreset) {
-    const preset = SITE_THEME_PRESETS.find((p) => p.id === presetId);
-    if (!preset) return;
+    const preset = getThemePreset(presetId);
     setPreferences((prev) => ({
       ...prev,
       themeMode: "template",
@@ -486,7 +360,7 @@ export function BuildOsClient() {
             <div>
               <p className="text-sm font-medium text-foreground">Design your website</p>
               <p className="mt-1 text-xs text-muted">
-                Answer a few plain questions — watch the preview update on the right. Domain is optional until you go live.
+                Niche → UI template → theme (template or custom) → preview. Domain is optional until you go live.
               </p>
             </div>
           </div>
@@ -526,26 +400,6 @@ export function BuildOsClient() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">Quick start</p>
-                  <p className="text-[11px] text-dim">
-                    Optional shortcut — applies a niche + default template.
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {QUICK_STARTS.map((start) => (
-                      <button
-                        key={start.id}
-                        type="button"
-                        onClick={() => applyQuickStart(start)}
-                        className="rounded-lg border border-border bg-surface-muted p-3 text-left transition-colors hover:border-gold/50"
-                      >
-                        <p className="text-xs font-medium text-foreground">{start.label}</p>
-                        <p className="mt-0.5 text-[11px] text-dim">{start.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <label className="block space-y-1.5 text-xs text-muted">
                   What&apos;s your business called?
                   <input
@@ -577,36 +431,6 @@ export function BuildOsClient() {
                     placeholder="e.g. Busy professionals who care about quality coffee"
                   />
                 </label>
-
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">What kind of site?</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {SITE_TYPES.map((type) => {
-                      const Icon = type.icon;
-                      const active = preferences.siteType === type.value;
-                      return (
-                        <button
-                          key={type.value}
-                          type="button"
-                          onClick={() => updatePreferences("siteType", type.value)}
-                          className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
-                            active
-                              ? "border-gold bg-primary-soft"
-                              : "border-border bg-surface-muted hover:border-gold/40"
-                          }`}
-                        >
-                          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                          <span>
-                            <span className="block text-xs font-medium text-foreground">
-                              {type.label}
-                            </span>
-                            <span className="mt-0.5 block text-[11px] text-dim">{type.hint}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
                 <label className="block space-y-1.5 text-xs text-muted">
                   Primary market / country
@@ -659,41 +483,43 @@ export function BuildOsClient() {
                 {preferences.themeMode === "template" ? (
                   <div className="space-y-2">
                     <p className="text-[11px] text-dim">
-                      Preset colors for this template — preview updates instantly.
+                      Practical presets for this niche — or switch to a custom theme.
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
-                      {SITE_THEME_PRESETS.map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => selectThemePreset(preset.id)}
-                          className={`overflow-hidden rounded-lg border text-left transition-colors ${
-                            preferences.themePreset === preset.id
-                              ? "border-gold ring-1 ring-gold/40"
-                              : "border-border hover:border-gold/40"
-                          }`}
-                        >
-                          <div
-                            className="flex h-14 items-end justify-between px-3 pb-2"
-                            style={{ backgroundColor: preset.backgroundColor }}
+                      {presetsForNiche(preferences.niche, preferences.themePreset).map(
+                        (preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => selectThemePreset(preset.id)}
+                            className={`overflow-hidden rounded-lg border text-left transition-colors ${
+                              preferences.themePreset === preset.id
+                                ? "border-gold ring-1 ring-gold/40"
+                                : "border-border hover:border-gold/40"
+                            }`}
                           >
-                            <span
-                              className="h-6 w-6 rounded-full border border-white/20"
-                              style={{ backgroundColor: preset.primaryColor }}
-                            />
-                            <span
-                              className="h-6 w-6 rounded-full border border-white/20"
-                              style={{ backgroundColor: preset.accentColor }}
-                            />
-                          </div>
-                          <div className="bg-surface-muted px-3 py-2">
-                            <p className="text-xs font-medium text-foreground">{preset.label}</p>
-                            <p className="mt-0.5 text-[10px] leading-relaxed text-dim">
-                              {preset.description}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
+                            <div
+                              className="flex h-14 items-end justify-between px-3 pb-2"
+                              style={{ backgroundColor: preset.backgroundColor }}
+                            >
+                              <span
+                                className="h-6 w-6 rounded-full border border-white/20"
+                                style={{ backgroundColor: preset.primaryColor }}
+                              />
+                              <span
+                                className="h-6 w-6 rounded-full border border-white/20"
+                                style={{ backgroundColor: preset.accentColor }}
+                              />
+                            </div>
+                            <div className="bg-surface-muted px-3 py-2">
+                              <p className="text-xs font-medium text-foreground">{preset.label}</p>
+                              <p className="mt-0.5 text-[10px] leading-relaxed text-dim">
+                                {preset.description}
+                              </p>
+                            </div>
+                          </button>
+                        )
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -765,38 +591,6 @@ export function BuildOsClient() {
 
                 {showAdvanced && (
                   <div className="space-y-4 rounded-lg border border-border bg-surface-muted p-3">
-                    <div className="space-y-1 text-xs text-muted">
-                      Design style
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {DESIGN_STYLES.map((style) => (
-                          <button
-                            key={style}
-                            type="button"
-                            onClick={() => updatePreferences("designStyle", style)}
-                            className={chipClassName(preferences.designStyle === style)}
-                          >
-                            {style}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1 text-xs text-muted">
-                      Color mood
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {COLOR_MOODS.map((mood) => (
-                          <button
-                            key={mood}
-                            type="button"
-                            onClick={() => updatePreferences("colorMood", mood)}
-                            className={chipClassName(preferences.colorMood === mood)}
-                          >
-                            {mood}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
                     <label className="block space-y-1.5 text-xs text-muted">
                       Extra notes for the AI <span className="text-dim">(optional)</span>
                       <textarea
@@ -1049,11 +843,14 @@ export function BuildOsClient() {
             </div>
             <div className="rounded-lg border border-border bg-surface-muted p-3">
               <p className="text-xs font-medium text-gold">
-                Theme —{" "}
+                {getUiTemplate(job.plan.theme.templateId ?? "")?.name ??
+                  job.plan.theme.templateId ??
+                  "Template"}{" "}
+                ·{" "}
                 {job.plan.theme.themeMode === "custom"
-                  ? "custom"
-                  : job.plan.theme.presetId}
-                {job.plan.theme.templateId ? ` · ${job.plan.theme.templateId}` : ""}
+                  ? "custom theme"
+                  : job.plan.theme.presetId.replace(/_/g, " ")}
+                {job.plan.theme.layout ? ` · ${job.plan.theme.layout.replace(/_/g, " ")}` : ""}
               </p>
               <div className="mt-2 flex items-center gap-2">
                 <span

@@ -8,7 +8,7 @@ export default function BuildPage() {
     <ModulePageShell
       icon={Hammer}
       title="Build OS"
-      description="Describe your business, customize the look, preview live, then generate your site plan"
+      description="Pick a niche, choose a UI template, set a template or custom theme, preview live, then generate your site plan"
     >
       <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
         <BuildOsClient />

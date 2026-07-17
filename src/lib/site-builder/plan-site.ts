@@ -1,8 +1,10 @@
 import { detectIndustryFromText } from "@/lib/ageb/industries";
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
-import { resolveSiteTheme } from "@/lib/site-builder/resolve-theme";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
+import { resolveSiteTheme } from "@/lib/site-builder/resolve-theme";
+import { sectionsForPage } from "@/lib/site-builder/template-sections";
+import { getUiTemplate } from "@/lib/site-builder/templates";
 import type { SitePlan, SitePreferences } from "@/types/site-builder";
 
 const PAGE_LABELS: Record<string, string> = {
@@ -24,166 +26,6 @@ function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 48);
-}
-
-function defaultSectionsForPage(
-  page: string,
-  preferences: SitePreferences
-): SitePlan["pages"][number]["sections"] {
-  const cta =
-    preferences.ctaGoal === "buy"
-      ? "Shop now"
-      : preferences.ctaGoal === "subscribe"
-        ? "Subscribe"
-        : preferences.ctaGoal === "book_call"
-          ? "Book a call"
-          : "Get in touch";
-
-  switch (page) {
-    case "home":
-      return [
-        {
-          type: "hero",
-          label: "Hero",
-          description: `Headline introducing ${preferences.businessName} with primary CTA: ${cta}.`,
-        },
-        {
-          type: "features",
-          label: "Value proposition",
-          description: "Three key benefits aligned with the business idea.",
-        },
-        ...(preferences.features.includes("testimonials")
-          ? [
-              {
-                type: "testimonials",
-                label: "Social proof",
-                description: "Customer quotes and trust signals.",
-              },
-            ]
-          : []),
-        {
-          type: "cta",
-          label: "Call to action",
-          description: `Conversion section driving visitors to ${cta.toLowerCase()}.`,
-        },
-      ];
-    case "about":
-      return [
-        {
-          type: "story",
-          label: "Our story",
-          description: `Brand narrative for ${preferences.businessName}.`,
-        },
-        {
-          type: "team",
-          label: "Team / values",
-          description: "Mission, values, and why customers should trust you.",
-        },
-      ];
-    case "services":
-      return [
-        {
-          type: "services_grid",
-          label: "Services",
-          description: "Core offerings with short descriptions.",
-        },
-        {
-          type: "cta",
-          label: "Get started",
-          description: `Prompt visitors to ${cta.toLowerCase()}.`,
-        },
-      ];
-    case "pricing":
-      return [
-        {
-          type: "pricing",
-          label: "Pricing tiers",
-          description: "Clear packages with feature comparison.",
-        },
-        {
-          type: "faq",
-          label: "Pricing FAQ",
-          description: "Common questions about plans and billing.",
-        },
-      ];
-    case "products":
-      return [
-        {
-          type: "products",
-          label: "Product catalog",
-          description: "Featured products with prices and descriptions.",
-        },
-        ...(preferences.features.includes("ecommerce")
-          ? [
-              {
-                type: "cart_cta",
-                label: "Shop CTA",
-                description: "Add to cart and checkout prompts.",
-              },
-            ]
-          : []),
-      ];
-    case "portfolio":
-      return [
-        {
-          type: "gallery",
-          label: "Work gallery",
-          description: "Showcase of projects or case studies.",
-        },
-      ];
-    case "testimonials":
-      return [
-        {
-          type: "testimonials",
-          label: "Customer stories",
-          description: "Reviews and case study highlights.",
-        },
-      ];
-    case "faq":
-      return [
-        {
-          type: "faq",
-          label: "FAQ",
-          description: "Answers to common customer questions.",
-        },
-      ];
-    case "blog":
-      return [
-        {
-          type: "blog_list",
-          label: "Latest articles",
-          description: "Recent posts and thought leadership content.",
-        },
-      ];
-    case "contact":
-      return [
-        {
-          type: "contact",
-          label: "Contact form",
-          description: preferences.features.includes("contact_form")
-            ? "Lead capture form with email and message fields."
-            : "Contact details and location information.",
-        },
-        ...(preferences.features.includes("chat_widget") ||
-        preferences.features.includes("live_chat")
-          ? [
-              {
-                type: "chat",
-                label: "Live chat",
-                description: "Website chat widget connected to unified inbox.",
-              },
-            ]
-          : []),
-      ];
-    default:
-      return [
-        {
-          type: "content",
-          label: PAGE_LABELS[page] ?? page,
-          description: `Content section for ${PAGE_LABELS[page] ?? page}.`,
-        },
-      ];
-  }
 }
 
 function buildDeploymentPlan(preferences: SitePreferences, slug: string): SitePlan["deployment"] {
@@ -223,6 +65,7 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
   const { profile } = detectIndustryFromText(preferences.businessIdea);
   const theme = resolveSiteTheme(preferences);
   const slug = slugify(preferences.businessName) || "my-site";
+  const template = getUiTemplate(preferences.templateId);
 
   const orderedPages = ["home", ...preferences.pages.filter((p) => p !== "home")];
   const uniquePages = [...new Set(orderedPages)];
@@ -233,8 +76,8 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
     purpose:
       pageKey === "home"
         ? `Main landing page for ${preferences.businessName}`
-        : `${PAGE_LABELS[pageKey]} page supporting the ${preferences.siteType} site`,
-    sections: defaultSectionsForPage(pageKey, preferences),
+        : `${PAGE_LABELS[pageKey]} page for ${template?.name ?? preferences.niche}`,
+    sections: sectionsForPage(pageKey, preferences),
   }));
 
   const navigation = uniquePages.map((pageKey) => ({
@@ -256,7 +99,7 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
   return {
     siteName: preferences.businessName,
     slug,
-    summary: `A ${themeLabel} ${preferences.siteType} site (${preferences.niche.replace(/_/g, " ")}, template ${theme.templateId}) for ${preferences.businessName} targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.${screenshotNote}${promptNote}`,
+    summary: `A ${themeLabel} ${template?.name ?? preferences.templateId} site for ${preferences.niche.replace(/_/g, " ")} — ${preferences.businessName}, targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.${screenshotNote}${promptNote}`,
     theme: themeFromPreferences(preferences),
     navigation,
     pages,
@@ -267,24 +110,51 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
 function enrichAiPlan(plan: SitePlan, preferences: SitePreferences): SitePlan {
   const slug = plan.slug || slugify(preferences.businessName) || "my-site";
   const resolved = themeFromPreferences(preferences);
-  // Custom themes are user-authored — never let the model override colors.
-  const theme =
-    preferences.themeMode === "custom"
-      ? resolved
+  // Custom themes + selected template structure are user-authored — lock them.
+  const theme = {
+    ...resolved,
+    ...(preferences.themeMode === "custom"
+      ? {}
       : {
-          ...resolved,
           primaryColor: plan.theme?.primaryColor ?? resolved.primaryColor,
           accentColor: plan.theme?.accentColor ?? resolved.accentColor,
           backgroundColor: plan.theme?.backgroundColor ?? resolved.backgroundColor,
           textColor: plan.theme?.textColor ?? resolved.textColor,
           fontStyle: plan.theme?.fontStyle ?? resolved.fontStyle,
           styleNotes: plan.theme?.styleNotes ?? resolved.styleNotes,
-        };
+        }),
+    templateId: resolved.templateId,
+    layout: resolved.layout,
+    themeMode: resolved.themeMode,
+  };
+
+  const orderedPages = ["home", ...preferences.pages.filter((p) => p !== "home")];
+  const uniquePages = [...new Set(orderedPages)];
+  const pages = uniquePages.map((pageKey) => {
+    const fromAi = plan.pages?.find(
+      (p) => p.slug === (pageKey === "home" ? "" : pageKey)
+    );
+    return {
+      slug: pageKey === "home" ? "" : pageKey,
+      title: fromAi?.title ?? PAGE_LABELS[pageKey] ?? pageKey,
+      purpose:
+        fromAi?.purpose ??
+        (pageKey === "home"
+          ? `Main landing page for ${preferences.businessName}`
+          : `${PAGE_LABELS[pageKey]} page`),
+      sections: sectionsForPage(pageKey, preferences),
+    };
+  });
 
   return {
     ...plan,
     slug,
     theme,
+    pages,
+    navigation: uniquePages.map((pageKey) => ({
+      label: PAGE_LABELS[pageKey] ?? pageKey,
+      slug: pageKey === "home" ? "" : pageKey,
+    })),
     deployment: buildDeploymentPlan(preferences, slug),
   };
 }
@@ -297,11 +167,12 @@ export async function planSiteFromPreferences(preferences: SitePreferences): Pro
     try {
       const plan = await completeJson<SitePlan>({
         system: `You are Build OS — the Aarvanta OS website planning engine.
-Given site creation preferences, return JSON matching this shape:
+The user already chose a niche UI template and theme mode. You fill copy direction and page purposes — you do NOT invent a new layout.
+Return JSON matching this shape:
 {
   "siteName": string,
   "slug": string (lowercase, hyphenated, max 48 chars),
-  "summary": string (2-3 sentences),
+  "summary": string (2-3 sentences mentioning the template and niche),
   "theme": {
     "presetId": one of gold_navy|minimal_light|bold_dark|ocean_cool|sunset_warm,
     "themeMode": "template" | "custom",
@@ -309,8 +180,6 @@ Given site creation preferences, return JSON matching this shape:
     "fontStyle": string, "styleNotes": string,
     "templateId": string, "layout": hero_centered|hero_split|hero_image_bg|services_grid|store_shelf
   },
-Respect themeMode: if custom, keep the user's customTheme colors; if template, use the selected themePreset.
-Use the selected niche template (templateId/layout) for page section structure.
   "navigation": [{ "label": string, "slug": string }],
   "pages": [{
     "slug": string (empty string for home),
@@ -327,12 +196,11 @@ Use the selected niche template (templateId/layout) for page section structure.
     "deployNotes": [{ "title": string, "body": string }]
   }
 }
-Domains may be purchased through Aarvanta OR connected as an existing external domain (user updates DNS at their registrar). Hosting is managed by Aarvanta (do not mention cloud vendor names in deployNotes).
+Respect themeMode: if custom, keep the user's customTheme colors; if template, use the selected themePreset.
+Keep templateId and layout exactly as provided in preferences.
+Domains may be purchased through Aarvanta OR connected as an existing external domain (user updates DNS at their registrar).
 If domain.status is "external", deployNotes must tell the user to add the DNS A/CNAME records shown in Build OS.
-deployNotes should be short customer-facing steps (domain, hosting, publish, monitoring) with no infrastructure jargon.
-Respect ALL user preferences including themePreset, customPrompt, referenceScreenshots, deployment config, pages, and features.
-Honor the user's customPrompt as hard constraints when planning sections and copy direction.
-If referenceScreenshots are provided, note layout inspiration from them in styleNotes.
+deployNotes should be short customer-facing steps with no infrastructure jargon.
 Include only pages the user selected. Home page slug must be empty string.`,
         user: JSON.stringify(preferences),
         temperature: 0.3,
