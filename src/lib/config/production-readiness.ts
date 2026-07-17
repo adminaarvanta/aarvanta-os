@@ -2,6 +2,7 @@ import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getAllChannelStatuses } from "@/lib/channels/config";
 import { isFirebaseConfigured } from "@/lib/firebase/admin";
 import { isProductionMode } from "@/lib/config/app-mode";
+import { getStripeRuntimeStatus } from "@/lib/stripe/config";
 
 export type ReadinessItem = {
   id: string;
@@ -131,6 +132,32 @@ export function getProductionReadiness(): ProductionReadiness {
       status: "ok",
       detail: liveChannels.map(([name]) => name).join(", "),
     });
+  }
+
+  const stripe = getStripeRuntimeStatus();
+  if (stripe.status !== "live") {
+    warnings.push("STRIPE_SECRET_KEY not set — Billing and Build OS checkout use demo fallback");
+    items.push({
+      id: "stripe",
+      label: "Stripe",
+      status: "warning",
+      detail: stripe.reason,
+    });
+  } else {
+    items.push({
+      id: "stripe",
+      label: "Stripe",
+      status: "ok",
+      detail: stripe.mode,
+    });
+    if (!has(process.env.STRIPE_WEBHOOK_SECRET)) {
+      warnings.push("STRIPE_WEBHOOK_SECRET not set — Checkout completes but webhooks will fail");
+      items.push({
+        id: "stripe_webhook",
+        label: "STRIPE_WEBHOOK_SECRET",
+        status: "warning",
+      });
+    }
   }
 
   const ready = requiredMissing.length === 0;
