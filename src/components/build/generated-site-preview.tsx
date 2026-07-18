@@ -95,6 +95,8 @@ function BlockRenderer({
       const cta = String(block.props.cta ?? "Learn more");
       const secondary = String(block.props.secondaryCta ?? "");
 
+      const mediaFallback = `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor} 55%, ${theme.backgroundColor})`;
+
       if (layout === "split") {
         return (
           <section className="grid min-h-[420px] lg:grid-cols-2">
@@ -122,9 +124,10 @@ function BlockRenderer({
             <div
               className="min-h-[280px] bg-cover bg-center"
               style={{
+                backgroundColor: theme.primaryColor,
                 backgroundImage: imageUrl
-                  ? `linear-gradient(135deg, ${theme.primaryColor}33, transparent), url(${imageUrl})`
-                  : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+                  ? `${mediaFallback}, url(${imageUrl})`
+                  : mediaFallback,
               }}
             />
           </section>
@@ -135,9 +138,10 @@ function BlockRenderer({
         <section
           className="relative flex min-h-[520px] items-end overflow-hidden sm:min-h-[560px]"
           style={{
+            backgroundColor: theme.primaryColor,
             backgroundImage: imageUrl
-              ? `linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.72) 100%), url(${imageUrl})`
-              : `linear-gradient(145deg, ${theme.backgroundColor}, ${theme.primaryColor}55)`,
+              ? `linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.75) 100%), url(${imageUrl}), ${mediaFallback}`
+              : `linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55)), ${mediaFallback}`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -211,6 +215,23 @@ function BlockRenderer({
     case "features": {
       const items =
         (block.props.items as Array<{ title: string; description: string; icon?: string }>) ?? [];
+      const safeItems =
+        items.length > 0
+          ? items
+          : [
+              {
+                title: "Thoughtful by default",
+                description: "Sample benefit copy so this section never renders empty.",
+              },
+              {
+                title: "Ready to customize",
+                description: "Replace these with your real differentiators anytime.",
+              },
+              {
+                title: "Built for conversion",
+                description: "Clear structure that leads visitors to one next step.",
+              },
+            ];
       return (
         <SectionShell>
           <p
@@ -231,7 +252,7 @@ function BlockRenderer({
             </p>
           ) : null}
           <ul className="mt-10 grid gap-5 sm:grid-cols-3">
-            {items.map((item) => (
+            {safeItems.map((item) => (
               <li
                 key={item.title}
                 className="rounded-2xl p-5"
@@ -256,6 +277,63 @@ function BlockRenderer({
       );
     }
 
+    case "team": {
+      const members =
+        (block.props.members as Array<{
+          name: string;
+          role: string;
+          bio?: string;
+          imageUrl?: string;
+        }>) ?? [];
+      return (
+        <SectionShell>
+          <h2
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
+            {String(block.props.title ?? "Team")}
+          </h2>
+          {block.props.subtitle ? (
+            <p className="mt-3 text-base" style={{ color: ink.muted }}>
+              {String(block.props.subtitle)}
+            </p>
+          ) : null}
+          <ul className="mt-10 grid gap-5 sm:grid-cols-3">
+            {members.map((member) => (
+              <li
+                key={member.name}
+                className="overflow-hidden rounded-2xl"
+                style={{ border: `1px solid ${ink.border}`, backgroundColor: ink.surface }}
+              >
+                <div
+                  className="aspect-[4/3] bg-cover bg-center"
+                  style={{
+                    backgroundColor: theme.primaryColor,
+                    backgroundImage: member.imageUrl
+                      ? `linear-gradient(135deg, ${theme.primaryColor}66, transparent), url(${member.imageUrl})`
+                      : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+                  }}
+                />
+                <div className="p-4">
+                  <p className="font-semibold" style={{ color: ink.text }}>
+                    {member.name}
+                  </p>
+                  <p className="text-xs font-medium" style={{ color: theme.primaryColor }}>
+                    {member.role}
+                  </p>
+                  {member.bio ? (
+                    <p className="mt-2 text-sm leading-relaxed" style={{ color: ink.muted }}>
+                      {member.bio}
+                    </p>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </SectionShell>
+      );
+    }
+
     case "products": {
       const products =
         (block.props.products as Array<{
@@ -265,6 +343,27 @@ function BlockRenderer({
           imageUrl?: string;
           badge?: string;
         }>) ?? [];
+      const safeProducts =
+        products.length > 0
+          ? products
+          : [
+              {
+                name: "Signature offer",
+                description: "Sample product so your catalog never looks empty.",
+                price: "From £49",
+                badge: "Sample",
+              },
+              {
+                name: "Essentials bundle",
+                description: "A second sample SKU with room for your real copy.",
+                price: "£89",
+              },
+              {
+                name: "Membership",
+                description: "Recurring sample plan customers can imagine joining.",
+                price: "£19/mo",
+              },
+            ];
       return (
         <SectionShell>
           <h2
@@ -279,7 +378,7 @@ function BlockRenderer({
             </p>
           ) : null}
           <ul className="mt-10 grid gap-5 sm:grid-cols-3">
-            {products.map((p) => (
+            {safeProducts.map((p) => (
               <li
                 key={p.name}
                 className="overflow-hidden rounded-2xl"
@@ -288,8 +387,9 @@ function BlockRenderer({
                 <div
                   className="aspect-[4/3] bg-cover bg-center"
                   style={{
+                    backgroundColor: theme.primaryColor,
                     backgroundImage: p.imageUrl
-                      ? `url(${p.imageUrl})`
+                      ? `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor}), url(${p.imageUrl})`
                       : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
                   }}
                 />
@@ -593,6 +693,14 @@ function BlockRenderer({
                       Location
                     </dt>
                     <dd style={{ color: ink.muted }}>{String(block.props.address)}</dd>
+                  </div>
+                ) : null}
+                {block.props.hours ? (
+                  <div>
+                    <dt className="font-medium" style={{ color: ink.text }}>
+                      Hours
+                    </dt>
+                    <dd style={{ color: ink.muted }}>{String(block.props.hours)}</dd>
                   </div>
                 ) : null}
               </dl>

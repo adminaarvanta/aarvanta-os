@@ -234,6 +234,10 @@ export function BuildOsClient() {
                 Brief
               </p>
               <p className="mt-1 text-xs leading-relaxed text-muted">{prompt}</p>
+              <p className="mt-2 text-[11px] leading-relaxed text-dim">
+                Preview includes sample products, team, reviews, FAQ, and imagery so the
+                site never looks empty — regenerate after deploy to refresh old jobs.
+              </p>
             </div>
           </div>
 
