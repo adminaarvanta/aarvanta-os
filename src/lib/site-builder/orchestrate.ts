@@ -37,14 +37,17 @@ export async function generateSitePlan(job: SiteBuildJob): Promise<SiteBuildJob>
   };
 
   try {
-    const { plan, usedAi } = await planSiteFromPreferences(job.preferences);
-    const generatedSite = generateSiteFromPlan(plan, job.preferences);
+    const { plan, usedAi: planUsedAi } = await planSiteFromPreferences(job.preferences);
+    const { site: generatedSite, usedAi: contentUsedAi } = await generateSiteFromPlan(
+      plan,
+      job.preferences
+    );
     return {
       ...planning,
       status: "generated",
       plan,
       generatedSite,
-      usedAi,
+      usedAi: planUsedAi || contentUsedAi,
       updatedAt: crmNow(),
     };
   } catch (error) {

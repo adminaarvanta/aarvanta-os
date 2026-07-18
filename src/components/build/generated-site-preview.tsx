@@ -1,101 +1,258 @@
 "use client";
 
-import { useState } from "react";
-import type { GeneratedSite, SiteBlock } from "@/types/site-builder";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import type { GeneratedSite, SiteBlock, SitePlanTheme } from "@/types/site-builder";
+
+function isLight(bg: string): boolean {
+  return /^#(?:[fF]{3}|[eEfF][eEfF]|FFFFFF|ffffff)/.test(bg) || bg.toLowerCase() === "#ffffff";
+}
+
+function themeInk(theme: SitePlanTheme) {
+  const light = isLight(theme.backgroundColor);
+  return {
+    light,
+    text: light ? "#101828" : "#F8FAFC",
+    muted: light ? "#667085" : "#94A3B8",
+    surface: light ? "#F5F7FA" : "rgba(255,255,255,0.04)",
+    border: light ? "rgba(16,24,40,0.1)" : "rgba(255,255,255,0.12)",
+    onPrimary: light ? "#FFFFFF" : theme.backgroundColor,
+  };
+}
+
+function SectionShell({
+  children,
+  className = "",
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <section className={`px-5 py-12 sm:px-8 sm:py-16 ${className}`} style={style}>
+      <div className="mx-auto w-full max-w-5xl">{children}</div>
+    </section>
+  );
+}
+
+function PrimaryButton({
+  label,
+  theme,
+  ink,
+}: {
+  label: string;
+  theme: SitePlanTheme;
+  ink: ReturnType<typeof themeInk>;
+}) {
+  return (
+    <button
+      type="button"
+      className="rounded-full px-5 py-2.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
+      style={{ backgroundColor: theme.primaryColor, color: ink.onPrimary }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function GhostButton({
+  label,
+  theme,
+  ink,
+}: {
+  label: string;
+  theme: SitePlanTheme;
+  ink: ReturnType<typeof themeInk>;
+}) {
+  return (
+    <button
+      type="button"
+      className="rounded-full border px-5 py-2.5 text-sm font-semibold"
+      style={{ borderColor: ink.border, color: ink.text, background: "transparent" }}
+    >
+      {label}
+    </button>
+  );
+}
 
 function BlockRenderer({
   block,
   theme,
 }: {
   block: SiteBlock;
-  theme: GeneratedSite["theme"];
+  theme: SitePlanTheme;
 }) {
-  const { primaryColor, accentColor, backgroundColor } = theme;
-  const textMuted = "#9AABC4";
-  const surface = backgroundColor === "#FFFFFF" ? "#F0F3F8" : "#0D1524";
-  const border = backgroundColor === "#FFFFFF" ? "#D4DCE8" : "#243656";
-  const textColor = backgroundColor === "#FFFFFF" ? "#0D1524" : "#FFFFFF";
+  const ink = themeInk(theme);
+  const headingFont = theme.headingFont ?? "Georgia, serif";
 
   switch (block.type) {
-    case "hero":
+    case "hero": {
+      const layout = String(block.props.layout ?? "fullBleed");
+      const imageUrl = String(block.props.imageUrl ?? "");
+      const headline = String(block.props.headline ?? "");
+      const sub = String(block.props.subheadline ?? "");
+      const eyebrow = String(block.props.eyebrow ?? "");
+      const cta = String(block.props.cta ?? "Learn more");
+      const secondary = String(block.props.secondaryCta ?? "");
+
+      if (layout === "split") {
+        return (
+          <section className="grid min-h-[420px] lg:grid-cols-2">
+            <div className="flex flex-col justify-center px-5 py-12 sm:px-10 sm:py-16">
+              <p
+                className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: theme.primaryColor }}
+              >
+                {eyebrow}
+              </p>
+              <h1
+                className="mt-4 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl"
+                style={{ color: ink.text, fontFamily: headingFont }}
+              >
+                {headline}
+              </h1>
+              <p className="mt-4 max-w-md text-base leading-relaxed" style={{ color: ink.muted }}>
+                {sub}
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <PrimaryButton label={cta} theme={theme} ink={ink} />
+                {secondary ? <GhostButton label={secondary} theme={theme} ink={ink} /> : null}
+              </div>
+            </div>
+            <div
+              className="min-h-[280px] bg-cover bg-center"
+              style={{
+                backgroundImage: imageUrl
+                  ? `linear-gradient(135deg, ${theme.primaryColor}33, transparent), url(${imageUrl})`
+                  : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+              }}
+            />
+          </section>
+        );
+      }
+
       return (
         <section
-          className="rounded-2xl border p-6 sm:p-8"
-          style={{ borderColor: border, backgroundColor: surface }}
+          className="relative flex min-h-[520px] items-end overflow-hidden sm:min-h-[560px]"
+          style={{
+            backgroundImage: imageUrl
+              ? `linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.72) 100%), url(${imageUrl})`
+              : `linear-gradient(145deg, ${theme.backgroundColor}, ${theme.primaryColor}55)`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
         >
-          <p
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: primaryColor }}
-          >
-            {String(block.props.eyebrow ?? "")}
-          </p>
-          <h1 className="mt-2 text-2xl font-bold sm:text-3xl" style={{ color: textColor }}>
-            {String(block.props.headline ?? "")}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed" style={{ color: textMuted }}>
-            {String(block.props.subheadline ?? "")}
-          </p>
-          <button
-            type="button"
-            className="mt-6 rounded-lg px-5 py-2.5 text-sm font-semibold"
-            style={{ backgroundColor: primaryColor, color: backgroundColor }}
-          >
-            {String(block.props.cta ?? "Learn more")}
-          </button>
+          <div className="relative z-10 w-full px-5 pb-12 pt-28 sm:px-10 sm:pb-16">
+            <div className="mx-auto max-w-5xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
+                {eyebrow}
+              </p>
+              <h1
+                className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-6xl"
+                style={{ fontFamily: headingFont }}
+              >
+                {headline}
+              </h1>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">
+                {sub}
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="rounded-full px-6 py-3 text-sm font-semibold text-slate-950"
+                  style={{ backgroundColor: "#fff" }}
+                >
+                  {cta}
+                </button>
+                {secondary ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white"
+                  >
+                    {secondary}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
         </section>
       );
+    }
+
+    case "stats": {
+      const items = (block.props.items as Array<{ value: string; label: string }>) ?? [];
+      return (
+        <SectionShell
+          style={{
+            backgroundColor: ink.surface,
+            borderTop: `1px solid ${ink.border}`,
+            borderBottom: `1px solid ${ink.border}`,
+          }}
+        >
+          <ul className="grid gap-8 sm:grid-cols-3">
+            {items.map((item) => (
+              <li key={item.label} className="text-center sm:text-left">
+                <p
+                  className="text-3xl font-semibold tracking-tight sm:text-4xl"
+                  style={{ color: theme.primaryColor, fontFamily: headingFont }}
+                >
+                  {item.value}
+                </p>
+                <p className="mt-1 text-sm" style={{ color: ink.muted }}>
+                  {item.label}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </SectionShell>
+      );
+    }
 
     case "features": {
-      const items = (block.props.items as Array<{ title: string; description: string }>) ?? [];
+      const items =
+        (block.props.items as Array<{ title: string; description: string; icon?: string }>) ?? [];
       return (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold" style={{ color: textColor }}>
-            {String(block.props.title ?? "Features")}
+        <SectionShell>
+          <p
+            className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: theme.primaryColor }}
+          >
+            Benefits
+          </p>
+          <h2
+            className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
+            {String(block.props.title ?? "Why us")}
           </h2>
-          <ul className="grid gap-4 sm:grid-cols-3">
+          {block.props.subtitle ? (
+            <p className="mt-3 max-w-2xl text-base" style={{ color: ink.muted }}>
+              {String(block.props.subtitle)}
+            </p>
+          ) : null}
+          <ul className="mt-10 grid gap-5 sm:grid-cols-3">
             {items.map((item) => (
               <li
                 key={item.title}
-                className="rounded-xl border p-4"
-                style={{ borderColor: border, backgroundColor: surface }}
+                className="rounded-2xl p-5"
+                style={{ backgroundColor: ink.surface, border: `1px solid ${ink.border}` }}
               >
-                <p className="font-medium" style={{ color: accentColor }}>
+                <div
+                  className="mb-4 flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ backgroundColor: `${theme.primaryColor}22`, color: theme.primaryColor }}
+                >
+                  {(item.title[0] ?? "•").toUpperCase()}
+                </div>
+                <p className="text-base font-semibold" style={{ color: ink.text }}>
                   {item.title}
                 </p>
-                <p className="mt-2 text-xs leading-relaxed" style={{ color: textMuted }}>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: ink.muted }}>
                   {item.description}
                 </p>
               </li>
             ))}
           </ul>
-        </section>
-      );
-    }
-
-    case "testimonials": {
-      const quotes = (block.props.quotes as Array<{ text: string; author: string }>) ?? [];
-      return (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold" style={{ color: textColor }}>
-            {String(block.props.title ?? "Testimonials")}
-          </h2>
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {quotes.map((q) => (
-              <li
-                key={q.author}
-                className="rounded-xl border p-4"
-                style={{ borderColor: border, backgroundColor: surface }}
-              >
-                <p className="text-sm italic" style={{ color: textMuted }}>
-                  &ldquo;{q.text}&rdquo;
-                </p>
-                <p className="mt-2 text-xs font-medium" style={{ color: primaryColor }}>
-                  — {q.author}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
+        </SectionShell>
       );
     }
 
@@ -105,36 +262,65 @@ function BlockRenderer({
           name: string;
           description: string;
           price: string;
-          emoji: string;
+          imageUrl?: string;
+          badge?: string;
         }>) ?? [];
       return (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold" style={{ color: textColor }}>
-            {String(block.props.title ?? "Products")}
+        <SectionShell>
+          <h2
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
+            {String(block.props.title ?? "Offerings")}
           </h2>
-          <ul className="grid gap-4 sm:grid-cols-3">
+          {block.props.subtitle ? (
+            <p className="mt-3 text-base" style={{ color: ink.muted }}>
+              {String(block.props.subtitle)}
+            </p>
+          ) : null}
+          <ul className="mt-10 grid gap-5 sm:grid-cols-3">
             {products.map((p) => (
               <li
                 key={p.name}
-                className="flex flex-col rounded-xl border p-4"
-                style={{ borderColor: border, backgroundColor: surface }}
+                className="overflow-hidden rounded-2xl"
+                style={{ border: `1px solid ${ink.border}`, backgroundColor: ink.surface }}
               >
-                <span className="text-3xl" aria-hidden>
-                  {p.emoji}
-                </span>
-                <p className="mt-3 font-medium" style={{ color: textColor }}>
-                  {p.name}
-                </p>
-                <p className="mt-1 flex-1 text-xs" style={{ color: textMuted }}>
-                  {p.description}
-                </p>
-                <p className="mt-3 text-sm font-semibold" style={{ color: primaryColor }}>
-                  {p.price}
-                </p>
+                <div
+                  className="aspect-[4/3] bg-cover bg-center"
+                  style={{
+                    backgroundImage: p.imageUrl
+                      ? `url(${p.imageUrl})`
+                      : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+                  }}
+                />
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold" style={{ color: ink.text }}>
+                      {p.name}
+                    </p>
+                    {p.badge ? (
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                        style={{
+                          backgroundColor: `${theme.primaryColor}22`,
+                          color: theme.primaryColor,
+                        }}
+                      >
+                        {p.badge}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: ink.muted }}>
+                    {p.description}
+                  </p>
+                  <p className="mt-4 text-sm font-semibold" style={{ color: theme.primaryColor }}>
+                    {p.price}
+                  </p>
+                </div>
               </li>
             ))}
           </ul>
-        </section>
+        </SectionShell>
       );
     }
 
@@ -147,139 +333,411 @@ function BlockRenderer({
           highlighted?: boolean;
         }>) ?? [];
       return (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold" style={{ color: textColor }}>
+        <SectionShell>
+          <h2
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
             {String(block.props.title ?? "Pricing")}
           </h2>
-          <ul className="grid gap-4 sm:grid-cols-3">
+          {block.props.subtitle ? (
+            <p className="mt-3 text-base" style={{ color: ink.muted }}>
+              {String(block.props.subtitle)}
+            </p>
+          ) : null}
+          <ul className="mt-10 grid gap-4 sm:grid-cols-3">
             {tiers.map((tier) => (
               <li
                 key={tier.name}
-                className="rounded-xl border p-4"
+                className="rounded-2xl p-5"
                 style={{
-                  borderColor: tier.highlighted ? primaryColor : border,
-                  backgroundColor: surface,
+                  border: `1px solid ${tier.highlighted ? theme.primaryColor : ink.border}`,
+                  backgroundColor: tier.highlighted ? `${theme.primaryColor}14` : ink.surface,
                 }}
               >
-                <p className="font-semibold" style={{ color: textColor }}>
+                <p className="text-sm font-medium" style={{ color: ink.muted }}>
                   {tier.name}
                 </p>
-                <p className="mt-2 text-xl font-bold" style={{ color: primaryColor }}>
+                <p
+                  className="mt-2 text-3xl font-semibold"
+                  style={{ color: ink.text, fontFamily: headingFont }}
+                >
                   {tier.price}
                 </p>
-                <ul className="mt-3 space-y-1 text-xs" style={{ color: textMuted }}>
+                <ul className="mt-4 space-y-2 text-sm" style={{ color: ink.muted }}>
                   {tier.features.map((f) => (
-                    <li key={f}>· {f}</li>
+                    <li key={f} className="flex gap-2">
+                      <span style={{ color: theme.primaryColor }}>✓</span>
+                      {f}
+                    </li>
                   ))}
                 </ul>
               </li>
             ))}
           </ul>
-        </section>
+        </SectionShell>
+      );
+    }
+
+    case "testimonials": {
+      const quotes =
+        (block.props.quotes as Array<{ text: string; author: string; role?: string }>) ?? [];
+      return (
+        <SectionShell style={{ backgroundColor: ink.surface }}>
+          <h2
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
+            {String(block.props.title ?? "Testimonials")}
+          </h2>
+          {block.props.subtitle ? (
+            <p className="mt-3 text-base" style={{ color: ink.muted }}>
+              {String(block.props.subtitle)}
+            </p>
+          ) : null}
+          <ul className="mt-10 grid gap-5 sm:grid-cols-2">
+            {quotes.map((q) => (
+              <li
+                key={`${q.author}-${q.text.slice(0, 12)}`}
+                className="rounded-2xl p-6"
+                style={{ border: `1px solid ${ink.border}`, backgroundColor: theme.backgroundColor }}
+              >
+                <p
+                  className="text-lg leading-relaxed"
+                  style={{ color: ink.text, fontFamily: headingFont }}
+                >
+                  “{q.text}”
+                </p>
+                <p className="mt-4 text-sm font-semibold" style={{ color: theme.primaryColor }}>
+                  {q.author}
+                </p>
+                {q.role ? (
+                  <p className="text-xs" style={{ color: ink.muted }}>
+                    {q.role}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </SectionShell>
+      );
+    }
+
+    case "gallery": {
+      const items =
+        (block.props.items as Array<{ title: string; caption?: string; imageUrl?: string }>) ??
+        [];
+      return (
+        <SectionShell>
+          <h2
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
+            {String(block.props.title ?? "Gallery")}
+          </h2>
+          {block.props.subtitle ? (
+            <p className="mt-3 text-base" style={{ color: ink.muted }}>
+              {String(block.props.subtitle)}
+            </p>
+          ) : null}
+          <ul className="mt-10 grid gap-4 sm:grid-cols-3">
+            {items.map((item) => (
+              <li key={item.title} className="group overflow-hidden rounded-2xl">
+                <div
+                  className="aspect-[4/5] bg-cover bg-center transition-transform duration-500 group-hover:scale-[1.03]"
+                  style={{
+                    backgroundImage: item.imageUrl
+                      ? `url(${item.imageUrl})`
+                      : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+                  }}
+                />
+                <div className="pt-3">
+                  <p className="font-medium" style={{ color: ink.text }}>
+                    {item.title}
+                  </p>
+                  {item.caption ? (
+                    <p className="text-xs" style={{ color: ink.muted }}>
+                      {item.caption}
+                    </p>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </SectionShell>
+      );
+    }
+
+    case "split": {
+      return (
+        <SectionShell>
+          <div className="grid items-center gap-8 lg:grid-cols-2">
+            <div>
+              <p
+                className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: theme.primaryColor }}
+              >
+                {String(block.props.eyebrow ?? "About")}
+              </p>
+              <h2
+                className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl"
+                style={{ color: ink.text, fontFamily: headingFont }}
+              >
+                {String(block.props.title ?? "")}
+              </h2>
+              <p className="mt-4 text-base leading-relaxed" style={{ color: ink.muted }}>
+                {String(block.props.body ?? "")}
+              </p>
+              {Array.isArray(block.props.bullets) ? (
+                <ul className="mt-5 space-y-2 text-sm" style={{ color: ink.text }}>
+                  {(block.props.bullets as string[]).map((b) => (
+                    <li key={b} className="flex gap-2">
+                      <span style={{ color: theme.primaryColor }}>→</span>
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {block.props.cta ? (
+                <div className="mt-6">
+                  <GhostButton label={String(block.props.cta)} theme={theme} ink={ink} />
+                </div>
+              ) : null}
+            </div>
+            <div
+              className="min-h-[280px] rounded-3xl bg-cover bg-center"
+              style={{
+                backgroundImage: block.props.imageUrl
+                  ? `url(${String(block.props.imageUrl)})`
+                  : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+              }}
+            />
+          </div>
+        </SectionShell>
       );
     }
 
     case "cta":
       return (
-        <section
-          className="rounded-2xl border p-6 text-center"
-          style={{ borderColor: `${primaryColor}40`, backgroundColor: `${primaryColor}15` }}
-        >
-          <h2 className="text-lg font-semibold" style={{ color: textColor }}>
-            {String(block.props.title ?? "Ready to start?")}
-          </h2>
-          <p className="mt-2 text-sm" style={{ color: textMuted }}>
-            {String(block.props.description ?? "")}
-          </p>
-          <button
-            type="button"
-            className="mt-4 rounded-lg px-5 py-2.5 text-sm font-semibold"
-            style={{ backgroundColor: primaryColor, color: backgroundColor }}
+        <SectionShell>
+          <div
+            className="overflow-hidden rounded-[28px] px-6 py-12 text-center sm:px-10"
+            style={{
+              background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+              color: "#0B1220",
+            }}
           >
-            {String(block.props.cta ?? "Get started")}
-          </button>
-        </section>
+            <h2
+              className="text-3xl font-semibold tracking-tight sm:text-4xl"
+              style={{ fontFamily: headingFont }}
+            >
+              {String(block.props.title ?? "Ready to start?")}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm opacity-80 sm:text-base">
+              {String(block.props.description ?? "")}
+            </p>
+            <div className="mt-7 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950"
+              >
+                {String(block.props.cta ?? "Get started")}
+              </button>
+              {block.props.secondaryCta ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-black/20 px-6 py-3 text-sm font-semibold"
+                >
+                  {String(block.props.secondaryCta)}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </SectionShell>
       );
 
     case "contact":
       return (
-        <section
-          className="rounded-xl border p-6"
-          style={{ borderColor: border, backgroundColor: surface }}
-        >
-          <h2 className="text-lg font-semibold" style={{ color: textColor }}>
-            {String(block.props.title ?? "Contact")}
-          </h2>
-          <p className="mt-2 text-sm" style={{ color: textMuted }}>
-            {String(block.props.description ?? "")}
-          </p>
-          {block.props.showForm ? (
-            <div className="mt-4 space-y-2">
-              <input
-                readOnly
-                placeholder="Your email"
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: border, backgroundColor: backgroundColor, color: textColor }}
-              />
-              <textarea
-                readOnly
-                placeholder="Message"
-                rows={3}
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: border, backgroundColor: backgroundColor, color: textColor }}
-              />
-              <button
-                type="button"
-                className="rounded-lg px-4 py-2 text-sm font-medium"
-                style={{ backgroundColor: primaryColor, color: backgroundColor }}
+        <SectionShell>
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div>
+              <h2
+                className="text-3xl font-semibold tracking-tight sm:text-4xl"
+                style={{ color: ink.text, fontFamily: headingFont }}
               >
-                Send message
-              </button>
+                {String(block.props.title ?? "Contact")}
+              </h2>
+              <p className="mt-3 text-base leading-relaxed" style={{ color: ink.muted }}>
+                {String(block.props.description ?? "")}
+              </p>
+              <dl className="mt-6 space-y-3 text-sm">
+                {block.props.email ? (
+                  <div>
+                    <dt className="font-medium" style={{ color: ink.text }}>
+                      Email
+                    </dt>
+                    <dd style={{ color: ink.muted }}>{String(block.props.email)}</dd>
+                  </div>
+                ) : null}
+                {block.props.phone ? (
+                  <div>
+                    <dt className="font-medium" style={{ color: ink.text }}>
+                      Phone
+                    </dt>
+                    <dd style={{ color: ink.muted }}>{String(block.props.phone)}</dd>
+                  </div>
+                ) : null}
+                {block.props.address ? (
+                  <div>
+                    <dt className="font-medium" style={{ color: ink.text }}>
+                      Location
+                    </dt>
+                    <dd style={{ color: ink.muted }}>{String(block.props.address)}</dd>
+                  </div>
+                ) : null}
+              </dl>
             </div>
-          ) : null}
-        </section>
+            <div
+              className="rounded-2xl p-5"
+              style={{ border: `1px solid ${ink.border}`, backgroundColor: ink.surface }}
+            >
+              <div className="space-y-3">
+                <input
+                  readOnly
+                  placeholder="Your name"
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                  style={{
+                    borderColor: ink.border,
+                    backgroundColor: theme.backgroundColor,
+                    color: ink.text,
+                  }}
+                />
+                <input
+                  readOnly
+                  placeholder="Email"
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                  style={{
+                    borderColor: ink.border,
+                    backgroundColor: theme.backgroundColor,
+                    color: ink.text,
+                  }}
+                />
+                <textarea
+                  readOnly
+                  placeholder="How can we help?"
+                  rows={4}
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                  style={{
+                    borderColor: ink.border,
+                    backgroundColor: theme.backgroundColor,
+                    color: ink.text,
+                  }}
+                />
+                <PrimaryButton
+                  label={String(block.props.cta ?? "Send message")}
+                  theme={theme}
+                  ink={ink}
+                />
+              </div>
+            </div>
+          </div>
+        </SectionShell>
       );
 
     case "faq": {
       const items = (block.props.items as Array<{ q: string; a: string }>) ?? [];
       return (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold" style={{ color: textColor }}>
+        <SectionShell>
+          <h2
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
             {String(block.props.title ?? "FAQ")}
           </h2>
-          <ul className="space-y-3">
+          <ul className="mt-8 divide-y" style={{ borderColor: ink.border }}>
             {items.map((item) => (
               <li
                 key={item.q}
-                className="rounded-lg border p-3"
-                style={{ borderColor: border, backgroundColor: surface }}
+                className="py-5"
+                style={{ borderTop: `1px solid ${ink.border}` }}
               >
-                <p className="text-sm font-medium" style={{ color: textColor }}>
+                <p className="text-base font-semibold" style={{ color: ink.text }}>
                   {item.q}
                 </p>
-                <p className="mt-1 text-xs" style={{ color: textMuted }}>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: ink.muted }}>
                   {item.a}
                 </p>
               </li>
             ))}
           </ul>
-        </section>
+        </SectionShell>
+      );
+    }
+
+    case "blog": {
+      const posts =
+        (block.props.posts as Array<{
+          title: string;
+          excerpt?: string;
+          date?: string;
+          imageUrl?: string;
+        }>) ?? [];
+      return (
+        <SectionShell>
+          <h2
+            className="text-3xl font-semibold tracking-tight sm:text-4xl"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
+            {String(block.props.title ?? "Journal")}
+          </h2>
+          <ul className="mt-10 grid gap-5 sm:grid-cols-2">
+            {posts.map((post) => (
+              <li
+                key={post.title}
+                className="overflow-hidden rounded-2xl"
+                style={{ border: `1px solid ${ink.border}` }}
+              >
+                <div
+                  className="aspect-[16/9] bg-cover bg-center"
+                  style={{
+                    backgroundImage: post.imageUrl
+                      ? `url(${post.imageUrl})`
+                      : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`,
+                  }}
+                />
+                <div className="p-4">
+                  <p className="text-xs uppercase tracking-wide" style={{ color: ink.muted }}>
+                    {post.date ?? "Recent"}
+                  </p>
+                  <p className="mt-1 font-semibold" style={{ color: ink.text }}>
+                    {post.title}
+                  </p>
+                  {post.excerpt ? (
+                    <p className="mt-2 text-sm" style={{ color: ink.muted }}>
+                      {post.excerpt}
+                    </p>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </SectionShell>
       );
     }
 
     default:
       return (
-        <section
-          className="rounded-xl border p-4"
-          style={{ borderColor: border, backgroundColor: surface }}
-        >
-          <h2 className="font-medium" style={{ color: textColor }}>
+        <SectionShell>
+          <h2
+            className="text-2xl font-semibold"
+            style={{ color: ink.text, fontFamily: headingFont }}
+          >
             {String(block.props.title ?? block.type)}
           </h2>
-          <p className="mt-2 text-sm" style={{ color: textMuted }}>
-            {String(block.props.body ?? "")}
+          <p className="mt-3 max-w-2xl text-base leading-relaxed" style={{ color: ink.muted }}>
+            {String(block.props.body ?? block.props.description ?? "")}
           </p>
-        </section>
+        </SectionShell>
       );
   }
 }
@@ -292,62 +750,101 @@ export function GeneratedSitePreview({
   compact?: boolean;
 }) {
   const [activeSlug, setActiveSlug] = useState(site.pages[0]?.slug ?? "");
-  const activePage = site.pages.find((p) => p.slug === activeSlug) ?? site.pages[0];
+  const activePage = useMemo(
+    () => site.pages.find((p) => p.slug === activeSlug) ?? site.pages[0],
+    [site.pages, activeSlug]
+  );
   const { theme } = site;
+  const ink = themeInk(theme);
+
+  useEffect(() => {
+    if (!theme.googleFontsUrl) return;
+    const id = `build-os-font-${theme.presetId}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = theme.googleFontsUrl;
+    document.head.appendChild(link);
+  }, [theme.googleFontsUrl, theme.presetId]);
+
+  useEffect(() => {
+    setActiveSlug(site.pages[0]?.slug ?? "");
+  }, [site.generatedAt, site.pages]);
 
   if (!activePage) return null;
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-border ${compact ? "" : "shadow-lg"}`}
-      style={{ backgroundColor: theme.backgroundColor, color: theme.backgroundColor === "#FFFFFF" ? "#0D1524" : "#FFFFFF" }}
+      className={`overflow-hidden ${compact ? "rounded-2xl border border-border shadow-xl" : "rounded-none border-0"}`}
+      style={{
+        backgroundColor: theme.backgroundColor,
+        color: ink.text,
+        fontFamily: theme.fontFamily ?? "system-ui, sans-serif",
+      }}
     >
       <header
-        className="border-b px-4 py-3 sm:px-6"
-        style={{ borderColor: `${theme.primaryColor}40` }}
+        className="sticky top-0 z-20 border-b backdrop-blur-md"
+        style={{
+          borderColor: ink.border,
+          backgroundColor: ink.light ? "rgba(255,255,255,0.88)" : "rgba(4,6,8,0.82)",
+        }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-3.5 sm:px-8">
           <div>
-            <p className="font-semibold" style={{ color: theme.accentColor }}>
+            <p
+              className="text-sm font-semibold tracking-tight"
+              style={{ fontFamily: theme.headingFont, color: ink.text }}
+            >
               {site.siteName}
             </p>
-            <p className="text-[10px] opacity-70">Generated site preview</p>
+            {site.tagline ? (
+              <p className="text-[10px] uppercase tracking-[0.14em]" style={{ color: ink.muted }}>
+                {site.tagline}
+              </p>
+            ) : null}
           </div>
-          <nav className="flex flex-wrap gap-1">
-            {site.navigation.map((item) => (
-              <button
-                key={item.slug || "home"}
-                type="button"
-                onClick={() => setActiveSlug(item.slug)}
-                className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
-                style={{
-                  backgroundColor:
-                    activeSlug === item.slug ? theme.primaryColor : "transparent",
-                  color:
-                    activeSlug === item.slug
-                      ? theme.backgroundColor
-                      : theme.accentColor,
-                  border: `1px solid ${activeSlug === item.slug ? theme.primaryColor : `${theme.primaryColor}40`}`,
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
+          <nav className="flex flex-wrap items-center gap-1">
+            {site.navigation.map((item) => {
+              const active = activeSlug === item.slug;
+              return (
+                <button
+                  key={`${item.label}-${item.slug || "home"}`}
+                  type="button"
+                  onClick={() => setActiveSlug(item.slug)}
+                  className="rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: active ? theme.primaryColor : "transparent",
+                    color: active ? ink.onPrimary : ink.muted,
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </nav>
         </div>
       </header>
 
-      <main className={`space-y-8 ${compact ? "max-h-[520px] overflow-y-auto p-4 sm:p-6" : "p-6 sm:p-10"}`}>
+      <main
+        className={compact ? "max-h-[640px] overflow-y-auto" : ""}
+        key={activePage.slug || "home"}
+      >
         {activePage.blocks.map((block) => (
-          <BlockRenderer key={block.id} block={block} theme={theme} />
+          <div key={block.id} className="animate-fade-up">
+            <BlockRenderer block={block} theme={theme} />
+          </div>
         ))}
       </main>
 
       <footer
-        className="border-t px-4 py-3 text-center text-[10px] opacity-60"
-        style={{ borderColor: `${theme.primaryColor}30` }}
+        className="border-t px-5 py-8 text-center text-xs sm:px-8"
+        style={{ borderColor: ink.border, color: ink.muted }}
       >
-        Preview generated by Aarvanta Build OS — deploy step skipped
+        <p className="font-medium" style={{ color: ink.text }}>
+          {site.siteName}
+        </p>
+        <p className="mt-2">{site.footerNote ?? "Preview generated by Aarvanta Build OS"}</p>
       </footer>
     </div>
   );

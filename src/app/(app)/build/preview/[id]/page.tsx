@@ -31,7 +31,7 @@ export default async function BuildPreviewPage({ params }: PageProps) {
           Back to Build OS
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-6">
+      <div className="flex-1 overflow-y-auto bg-background">
         <Suspense fallback={null}>
           <GeneratedSitePreview site={job.generatedSite} />
         </Suspense>

@@ -252,8 +252,8 @@ export function BuildOsClient() {
           </div>
         </aside>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-background p-4 sm:p-6">
-          <GeneratedSitePreview site={job.generatedSite} />
+        <div className="min-h-0 flex-1 overflow-y-auto bg-background p-3 sm:p-5">
+          <GeneratedSitePreview site={job.generatedSite} compact />
         </div>
       </div>
     );
@@ -281,8 +281,8 @@ export function BuildOsClient() {
             <span className="block text-gold-bright">Get a full site preview.</span>
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
-            One prompt. No multi-step forms. Pick a vibe, optionally drop inspiration,
-            and generate — same flow as Durable, Framer AI, and Hostinger.
+            One prompt. Get a real multi-page site preview — hero imagery, offerings,
+            social proof, FAQ, and contact — not a thin outline.
           </p>
         </div>
 

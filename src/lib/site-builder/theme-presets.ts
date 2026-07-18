@@ -8,6 +8,9 @@ export type SiteThemePresetDefinition = {
   accentColor: string;
   backgroundColor: string;
   fontStyle: string;
+  fontFamily: string;
+  headingFont: string;
+  googleFontsUrl: string;
   colorMood: SiteColorMood;
   designStyle: "minimal" | "modern" | "bold" | "classic";
 };
@@ -21,6 +24,10 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     accentColor: "#C9AA72",
     backgroundColor: "#040608",
     fontStyle: "Modern sans-serif, generous spacing",
+    fontFamily: '"DM Sans", system-ui, sans-serif',
+    headingFont: '"Fraunces", Georgia, serif',
+    googleFontsUrl:
+      "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap",
     colorMood: "warm",
     designStyle: "modern",
   },
@@ -29,20 +36,28 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     label: "Minimal Light",
     description: "Clean white layout with subtle navy typography.",
     primaryColor: "#1A2B48",
-    accentColor: "#4DA6FF",
+    accentColor: "#3D6B9F",
     backgroundColor: "#FFFFFF",
     fontStyle: "Light sans-serif, airy whitespace",
+    fontFamily: '"Instrument Sans", system-ui, sans-serif',
+    headingFont: '"Newsreader", Georgia, serif',
+    googleFontsUrl:
+      "https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap",
     colorMood: "neutral",
     designStyle: "minimal",
   },
   {
     id: "bold_dark",
     label: "Bold Dark",
-    description: "High-contrast dark mode with vibrant purple highlights.",
-    primaryColor: "#8B5CF6",
-    accentColor: "#A78BFA",
-    backgroundColor: "#0A0A0F",
+    description: "High-contrast dark mode with electric accents.",
+    primaryColor: "#22D3EE",
+    accentColor: "#A5F3FC",
+    backgroundColor: "#07070C",
     fontStyle: "Bold sans-serif, large headlines",
+    fontFamily: '"Space Grotesk", system-ui, sans-serif',
+    headingFont: '"Space Grotesk", system-ui, sans-serif',
+    googleFontsUrl:
+      "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap",
     colorMood: "vibrant",
     designStyle: "bold",
   },
@@ -50,21 +65,29 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     id: "ocean_cool",
     label: "Ocean Cool",
     description: "Trust-building blues for services and SaaS brands.",
-    primaryColor: "#3B82F6",
+    primaryColor: "#2563EB",
     accentColor: "#60A5FA",
-    backgroundColor: "#0D1524",
+    backgroundColor: "#0B1220",
     fontStyle: "Professional sans-serif",
+    fontFamily: '"IBM Plex Sans", system-ui, sans-serif',
+    headingFont: '"IBM Plex Sans", system-ui, sans-serif',
+    googleFontsUrl:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap",
     colorMood: "cool",
     designStyle: "modern",
   },
   {
     id: "sunset_warm",
     label: "Sunset Warm",
-    description: "Warm oranges and creams for lifestyle and retail.",
+    description: "Warm oranges and deep cocoa for lifestyle and retail.",
     primaryColor: "#EA580C",
-    accentColor: "#FB923C",
-    backgroundColor: "#1C1410",
+    accentColor: "#FDBA74",
+    backgroundColor: "#140E0A",
     fontStyle: "Friendly rounded sans-serif",
+    fontFamily: '"Nunito Sans", system-ui, sans-serif',
+    headingFont: '"Fraunces", Georgia, serif',
+    googleFontsUrl:
+      "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap",
     colorMood: "warm",
     designStyle: "classic",
   },

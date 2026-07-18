@@ -122,6 +122,8 @@ export type GeneratedSitePage = {
 export type GeneratedSite = {
   siteName: string;
   slug: string;
+  tagline?: string;
+  footerNote?: string;
   theme: SitePlanTheme;
   navigation: SitePlanNavItem[];
   pages: GeneratedSitePage[];
@@ -153,6 +155,9 @@ export type SitePlanTheme = {
   backgroundColor: string;
   fontStyle: string;
   styleNotes: string;
+  fontFamily?: string;
+  headingFont?: string;
+  googleFontsUrl?: string;
 };
 
 export type SiteDeployNote = {

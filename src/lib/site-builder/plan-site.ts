@@ -45,22 +45,52 @@ function defaultSectionsForPage(
         {
           type: "hero",
           label: "Hero",
-          description: `Headline introducing ${preferences.businessName} with primary CTA: ${cta}.`,
+          description: `Full-bleed hero introducing ${preferences.businessName} with primary CTA: ${cta}.`,
+        },
+        {
+          type: "stats",
+          label: "Proof metrics",
+          description: "Three trust-building metrics for the brand.",
         },
         {
           type: "features",
           label: "Value proposition",
-          description: "Three key benefits aligned with the business idea.",
+          description: "Three concrete benefits aligned with the business idea — never generic filler.",
         },
-        ...(preferences.features.includes("testimonials")
+        ...(preferences.siteType === "store" || preferences.siteType === "landing"
           ? [
               {
-                type: "testimonials",
-                label: "Social proof",
-                description: "Customer quotes and trust signals.",
+                type: "products",
+                label: preferences.siteType === "landing" ? "Plans" : "Featured offerings",
+                description: "Specific products or plans with prices and imagery.",
               },
             ]
           : []),
+        ...(preferences.siteType === "portfolio"
+          ? [
+              {
+                type: "gallery",
+                label: "Selected work",
+                description: "Photography-led project showcase.",
+              },
+            ]
+          : [
+              {
+                type: "gallery",
+                label: "Inside the brand",
+                description: "Atmosphere and craft imagery.",
+              },
+            ]),
+        {
+          type: "testimonials",
+          label: "Social proof",
+          description: "Specific customer quotes with roles — not placeholder names only.",
+        },
+        {
+          type: "faq",
+          label: "FAQ",
+          description: "Four common questions answered in the brand voice.",
+        },
         {
           type: "cta",
           label: "Call to action",
@@ -245,6 +275,9 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
       backgroundColor: preset.backgroundColor,
       fontStyle: preset.fontStyle,
       styleNotes: `${preset.description} User style: ${preferences.designStyle}. Color mood: ${preferences.colorMood}.`,
+      fontFamily: preset.fontFamily,
+      headingFont: preset.headingFont,
+      googleFontsUrl: preset.googleFontsUrl,
     },
     navigation,
     pages,
@@ -266,6 +299,9 @@ function enrichAiPlan(plan: SitePlan, preferences: SitePreferences): SitePlan {
       backgroundColor: plan.theme?.backgroundColor ?? preset.backgroundColor,
       fontStyle: plan.theme?.fontStyle ?? preset.fontStyle,
       styleNotes: plan.theme?.styleNotes ?? preset.description,
+      fontFamily: preset.fontFamily,
+      headingFont: preset.headingFont,
+      googleFontsUrl: preset.googleFontsUrl,
     },
     deployment: buildDeploymentPlan(preferences, slug),
   };
