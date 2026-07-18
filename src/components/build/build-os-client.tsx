@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
+  Clock3,
   ImagePlus,
   Loader2,
   Sparkles,
@@ -14,6 +15,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { ThemeStylePanel } from "@/components/build/theme-style-panel";
 import { Button } from "@/components/ui/button";
+import {
+  clearComposeDraftCache,
+  readComposeDraftCache,
+  writeComposeDraftCache,
+} from "@/lib/site-builder/compose-draft-cache";
 import {
   EXAMPLE_PROMPTS,
   inferPreferencesFromPrompt,
@@ -34,14 +40,32 @@ import type {
 
 const MAX_SCREENSHOTS = 3;
 const MAX_SCREENSHOT_BYTES = 1_500_000;
+const DRAFT_AUTOSAVE_MS = 800;
 
 type StudioPhase = "compose" | "studio";
+
+function formatDraftTime(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return "Recently";
+  }
+}
 
 export function BuildOsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobParam = searchParams.get("job");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const themeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hydratedRef = useRef(false);
+  const jobRef = useRef<SiteBuildJob | null>(null);
 
   const [phase, setPhase] = useState<StudioPhase>("compose");
   const [prompt, setPrompt] = useState("");
@@ -53,44 +77,213 @@ export function BuildOsClient() {
   const [screenshots, setScreenshots] = useState<SiteReferenceScreenshot[]>([]);
   const [refineInput, setRefineInput] = useState("");
   const [job, setJob] = useState<SiteBuildJob | null>(null);
+  const [recentJobs, setRecentJobs] = useState<SiteBuildJob[]>([]);
   const [busy, setBusy] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usedAi, setUsedAi] = useState(false);
 
-  const loadJob = useCallback(async (id: string) => {
-    const res = await fetch(`/api/build/${id}`);
-    if (!res.ok) return;
-    const data = (await res.json()) as { job: SiteBuildJob };
-    setJob(data.job);
-    setUsedAi(data.job.usedAi ?? false);
-    setPrompt(data.job.preferences.customPrompt ?? data.job.preferences.businessIdea);
-    setSiteType(data.job.preferences.siteType);
-    setThemePreset(data.job.preferences.themePreset);
+  useEffect(() => {
+    jobRef.current = job;
+  }, [job]);
+
+  const hydrateFromJob = useCallback((next: SiteBuildJob) => {
+    setJob(next);
+    setUsedAi(next.usedAi ?? false);
+    setPrompt(next.preferences.customPrompt ?? next.preferences.businessIdea);
+    setSiteType(next.preferences.siteType);
+    setThemePreset(next.preferences.themePreset);
     setCustomTheme(
-      data.job.preferences.customTheme ??
+      next.preferences.customTheme ??
         defaultCustomThemeFromPreset(
-          data.job.preferences.themePreset === "custom"
+          next.preferences.themePreset === "custom"
             ? "gold_navy"
-            : data.job.preferences.themePreset
+            : next.preferences.themePreset
         )
     );
-    setScreenshots(data.job.preferences.referenceScreenshots ?? []);
-    if (data.job.generatedSite) setPhase("studio");
+    const cache = readComposeDraftCache();
+    if (cache?.jobId === next.id && cache.screenshots?.length) {
+      setScreenshots(cache.screenshots);
+    } else {
+      setScreenshots(next.preferences.referenceScreenshots ?? []);
+    }
+    setPhase(next.generatedSite ? "studio" : "compose");
+    setDraftSavedAt(next.updatedAt);
   }, []);
 
+  const loadJob = useCallback(
+    async (id: string) => {
+      const res = await fetch(`/api/build/${id}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as { job: SiteBuildJob };
+      hydrateFromJob(data.job);
+    },
+    [hydrateFromJob]
+  );
+
+  const refreshJobList = useCallback(async () => {
+    const res = await fetch("/api/build");
+    if (!res.ok) return;
+    const data = (await res.json()) as { jobs: SiteBuildJob[] };
+    setRecentJobs(data.jobs.slice(0, 8));
+  }, []);
+
+  // Initial hydrate: URL job, else local cache + recent drafts list.
   useEffect(() => {
-    if (jobParam) void loadJob(jobParam);
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+
+    void (async () => {
+      await refreshJobList();
+
+      if (jobParam) {
+        await loadJob(jobParam);
+        return;
+      }
+
+      const cache = readComposeDraftCache();
+      if (cache?.prompt) {
+        setPrompt(cache.prompt);
+        setSiteType(cache.siteType);
+        setThemePreset(cache.themePreset);
+        setCustomTheme(cache.customTheme);
+        setScreenshots(cache.screenshots ?? []);
+        if (cache.jobId) {
+          await loadJob(cache.jobId);
+          setPhase("compose");
+        }
+      }
+    })();
+  }, [jobParam, loadJob, refreshJobList]);
+
+  // Keep URL job in sync when navigating with ?job=
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    if (jobParam && jobParam !== jobRef.current?.id) {
+      void loadJob(jobParam);
+    }
   }, [jobParam, loadJob]);
 
   function buildPreferences(extraPrompt?: string): SitePreferences {
     const mergedPrompt = [prompt.trim(), extraPrompt?.trim()].filter(Boolean).join("\n\n");
-    return inferPreferencesFromPrompt(mergedPrompt, {
+    const safePrompt = mergedPrompt || "Untitled draft";
+    return inferPreferencesFromPrompt(safePrompt, {
       siteType: siteType ?? undefined,
       themePreset,
       customTheme,
-      customPrompt: mergedPrompt,
+      customPrompt: mergedPrompt || undefined,
       referenceScreenshots: screenshots,
+      businessName: mergedPrompt ? undefined : "Untitled draft",
     });
+  }
+
+  function syncLocalCache(jobId?: string) {
+    writeComposeDraftCache({
+      jobId: jobId ?? jobRef.current?.id,
+      prompt,
+      siteType,
+      themePreset,
+      customTheme,
+      screenshots,
+      savedAt: new Date().toISOString(),
+    });
+  }
+
+  const saveDraft = useCallback(async () => {
+    const trimmed = prompt.trim();
+    if (trimmed.length < 3) return;
+
+    const preferences = inferPreferencesFromPrompt(trimmed, {
+      siteType: siteType ?? undefined,
+      themePreset,
+      customTheme,
+      customPrompt: trimmed,
+      referenceScreenshots: [],
+    });
+
+    setDraftSaving(true);
+    try {
+      const current = jobRef.current;
+      if (current) {
+        const res = await fetch(`/api/build/${current.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(preferences),
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { job: SiteBuildJob };
+        setJob((prev) =>
+          prev
+            ? {
+                ...data.job,
+                // Keep in-memory generated preview if PATCH slimmed status awkwardly
+                generatedSite: prev.generatedSite ?? data.job.generatedSite,
+                plan: prev.plan ?? data.job.plan,
+              }
+            : data.job
+        );
+        setDraftSavedAt(data.job.updatedAt);
+        syncLocalCache(data.job.id);
+      } else {
+        const res = await fetch("/api/build", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...preferences, mode: "draft" }),
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { job: SiteBuildJob };
+        setJob(data.job);
+        setDraftSavedAt(data.job.updatedAt);
+        syncLocalCache(data.job.id);
+        router.replace(`/build?job=${data.job.id}`);
+      }
+      void refreshJobList();
+    } finally {
+      setDraftSaving(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- syncLocalCache uses latest state intentionally
+  }, [prompt, siteType, themePreset, customTheme, router, refreshJobList]);
+
+  // Debounced auto-save for compose edits.
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    if (phase !== "compose") return;
+
+    syncLocalCache(job?.id);
+
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = setTimeout(() => {
+      void saveDraft();
+    }, DRAFT_AUTOSAVE_MS);
+
+    return () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prompt, siteType, themePreset, customTheme, screenshots, phase, saveDraft]);
+
+  async function persistThemeDraft(
+    nextPreset: SiteThemePreset,
+    nextCustom: SiteCustomTheme
+  ) {
+    const current = jobRef.current;
+    if (!current) return;
+    const preferences = {
+      ...current.preferences,
+      themePreset: nextPreset,
+      customTheme: nextCustom,
+      referenceScreenshots: [],
+    };
+    const res = await fetch(`/api/build/${current.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(preferences),
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as { job: SiteBuildJob };
+    setDraftSavedAt(data.job.updatedAt);
+    syncLocalCache(current.id);
   }
 
   /** Durable-style: change colors/fonts live without regenerating content. */
@@ -116,6 +309,11 @@ export function BuildOsClient() {
           : current.plan,
       };
     });
+
+    if (themeTimerRef.current) clearTimeout(themeTimerRef.current);
+    themeTimerRef.current = setTimeout(() => {
+      void persistThemeDraft(nextPreset, nextCustom);
+    }, DRAFT_AUTOSAVE_MS);
   }
 
   async function generate(extraPrompt?: string) {
@@ -132,7 +330,9 @@ export function BuildOsClient() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify(
+          job ? preferences : { ...preferences, mode: "generate" }
+        ),
       });
 
       if (!res.ok) {
@@ -146,7 +346,10 @@ export function BuildOsClient() {
       setUsedAi(data.usedAi);
       setPhase("studio");
       setRefineInput("");
+      setDraftSavedAt(data.job.updatedAt);
+      syncLocalCache(data.job.id);
       router.replace(`/build?job=${data.job.id}`);
+      void refreshJobList();
     } finally {
       setBusy(false);
     }
@@ -184,13 +387,46 @@ export function BuildOsClient() {
     if (toAdd.length) setScreenshots((prev) => [...prev, ...toAdd]);
   }
 
+  async function discardJob(id: string) {
+    await fetch(`/api/build/${id}`, { method: "DELETE" });
+    if (job?.id === id) {
+      clearComposeDraftCache();
+      setJob(null);
+      setPrompt("");
+      setSiteType(null);
+      setThemePreset("gold_navy");
+      setCustomTheme(defaultCustomThemeFromPreset("gold_navy"));
+      setScreenshots([]);
+      setPhase("compose");
+      router.replace("/build");
+    }
+    void refreshJobList();
+  }
+
   function startOver() {
+    // Keep the previous draft on the server; start a fresh compose session.
+    clearComposeDraftCache();
     setPhase("compose");
     setJob(null);
+    setPrompt("");
+    setSiteType(null);
+    setThemePreset("gold_navy");
+    setCustomTheme(defaultCustomThemeFromPreset("gold_navy"));
+    setScreenshots([]);
     setRefineInput("");
     setError(null);
+    setDraftSavedAt(null);
     router.replace("/build");
+    void refreshJobList();
   }
+
+  function resumeJob(item: SiteBuildJob) {
+    router.replace(`/build?job=${item.id}`);
+    hydrateFromJob(item);
+  }
+
+  const draftJobs = recentJobs.filter((j) => j.status === "draft" || !j.generatedSite);
+  const generatedJobs = recentJobs.filter((j) => Boolean(j.generatedSite));
 
   if (phase === "studio" && job?.generatedSite) {
     return (
@@ -206,9 +442,15 @@ export function BuildOsClient() {
             <p className="mt-1 line-clamp-2 text-xs text-muted">
               {job.plan?.summary ?? "Your site preview is ready. Refine with natural language."}
             </p>
-            {usedAi && (
-              <p className="mt-2 text-[10px] text-dim">AI-enhanced generation</p>
-            )}
+            <p className="mt-2 text-[10px] text-dim">
+              {draftSaving
+                ? "Saving draft…"
+                : draftSavedAt
+                  ? `Draft saved · ${formatDraftTime(draftSavedAt)}`
+                  : usedAi
+                    ? "AI-enhanced generation"
+                    : "Autosave on"}
+            </p>
           </div>
 
           <div className="flex-1 space-y-5 overflow-y-auto p-5">
@@ -223,7 +465,7 @@ export function BuildOsClient() {
                 }
               />
               <p className="mt-2 text-[11px] text-dim">
-                Colors and fonts update the preview instantly — no full regenerate needed.
+                Colors and fonts update instantly and stay saved with this draft.
               </p>
             </div>
 
@@ -263,10 +505,6 @@ export function BuildOsClient() {
                 Brief
               </p>
               <p className="mt-1 text-xs leading-relaxed text-muted">{prompt}</p>
-              <p className="mt-2 text-[11px] leading-relaxed text-dim">
-                Preview includes sample products, team, reviews, FAQ, and imagery so the
-                site never looks empty — regenerate after deploy to refresh old jobs.
-              </p>
             </div>
           </div>
 
@@ -314,10 +552,62 @@ export function BuildOsClient() {
             <span className="block text-gold-bright">Get a full site preview.</span>
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
-            One prompt. Get a real multi-page site preview — hero imagery, offerings,
-            social proof, FAQ, and contact — not a thin outline.
+            Drafts autosave as you type — leave anytime and come back to finish.
           </p>
         </div>
+
+        {(draftJobs.length > 0 || generatedJobs.length > 0) && (
+          <div className="mt-8 animate-fade-up rounded-2xl border border-border bg-surface-elevated/70 p-4">
+            <div className="flex items-center gap-2">
+              <Clock3 className="h-3.5 w-3.5 text-gold" />
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-dim">
+                Continue where you left off
+              </p>
+            </div>
+            <ul className="mt-3 space-y-2">
+              {[...draftJobs, ...generatedJobs]
+                .filter(
+                  (item, idx, arr) => arr.findIndex((j) => j.id === item.id) === idx
+                )
+                .slice(0, 5)
+                .map((item) => {
+                  const label =
+                    item.preferences.businessName ||
+                    item.preferences.businessIdea.slice(0, 48) ||
+                    "Untitled draft";
+                  const isDraft = item.status === "draft" || !item.generatedSite;
+                  return (
+                    <li
+                      key={item.id}
+                      className="flex items-center gap-2 rounded-xl border border-border bg-surface-muted/60 px-3 py-2"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => resumeJob(item)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {label}
+                        </p>
+                        <p className="text-[10px] text-dim">
+                          {isDraft ? "Draft" : "Generated"} ·{" "}
+                          {formatDraftTime(item.updatedAt)}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Discard ${label}`}
+                        onClick={() => void discardJob(item.id)}
+                        className="rounded-lg p-1.5 text-dim hover:bg-surface hover:text-foreground"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        )}
 
         <div className="mt-8 animate-fade-up rounded-2xl border border-border bg-surface-elevated/90 p-3 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.55)] backdrop-blur sm:p-4">
           <textarea
@@ -384,6 +674,15 @@ export function BuildOsClient() {
                   </button>
                 </span>
               ))}
+              <span className="text-[10px] text-dim">
+                {draftSaving
+                  ? "Saving draft…"
+                  : draftSavedAt
+                    ? `Draft saved · ${formatDraftTime(draftSavedAt)}`
+                    : prompt.trim().length >= 3
+                      ? "Draft will autosave"
+                      : "Start typing to save a draft"}
+              </span>
             </div>
 
             <Button

@@ -119,6 +119,18 @@ export const sitePreferencesSchema = z.object({
   deployment: siteDeploymentConfigSchema,
 });
 
+/** Looser schema for auto-saved drafts (user may not have finished the brief yet). */
+export const siteDraftPreferencesSchema = sitePreferencesSchema.extend({
+  businessName: z.string().min(1).max(80),
+  businessIdea: z.string().min(1).max(1000),
+});
+
+export const siteBuildWriteSchema = z
+  .object({
+    mode: z.enum(["draft", "generate"]).default("generate"),
+  })
+  .passthrough();
+
 export const sitePlanSectionSchema = z.object({
   type: z.string(),
   label: z.string(),

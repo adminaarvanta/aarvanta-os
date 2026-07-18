@@ -1,6 +1,7 @@
 import { crmNow, crmNewId } from "@/lib/data/crm-helpers";
 import { planSiteFromPreferences } from "@/lib/site-builder/plan-site";
 import { generateSiteFromPlan } from "@/lib/site-builder/generate-site";
+import { resolveSiteTheme } from "@/lib/site-builder/theme-presets";
 import type { TenantScope } from "@/types/communication";
 import type {
   CreateSiteBuildJobInput,
@@ -75,6 +76,7 @@ export function approveSitePlan(job: SiteBuildJob): SiteBuildJob {
   };
 }
 
+/** Wipe plan/site — used before a full regenerate. */
 export function updateSitePreferences(
   job: SiteBuildJob,
   preferences: SitePreferences
@@ -83,10 +85,35 @@ export function updateSitePreferences(
     ...job,
     preferences,
     plan: undefined,
+    generatedSite: undefined,
     usedAi: undefined,
     approvedAt: undefined,
     status: "draft",
     error: undefined,
+    updatedAt: crmNow(),
+  };
+}
+
+/**
+ * Persist an in-progress draft without regenerating.
+ * Keeps an existing generated preview (and only refreshes its theme).
+ */
+export function persistDraftPreferences(
+  job: SiteBuildJob,
+  preferences: SitePreferences
+): SiteBuildJob {
+  const theme = resolveSiteTheme(preferences);
+  const keepGenerated = Boolean(job.generatedSite);
+
+  return {
+    ...job,
+    preferences,
+    status: keepGenerated ? "generated" : "draft",
+    plan: job.plan ? { ...job.plan, theme } : undefined,
+    generatedSite: job.generatedSite
+      ? { ...job.generatedSite, theme }
+      : undefined,
+    error: keepGenerated ? job.error : undefined,
     updatedAt: crmNow(),
   };
 }
