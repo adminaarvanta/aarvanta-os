@@ -199,15 +199,26 @@ function headlineFor(
 }
 
 export function unsplash(id: string, w = 1600): string {
+  // Direct image CDN URL — loads in the browser; preview also keeps a gradient underlay.
   return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
+}
+
+/** Deterministic stock photo that always resolves (used as secondary media source). */
+export function samplePhoto(seed: string, w = 1200, h = 900): string {
+  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
 }
 
 export function nicheImages(niche: NicheId) {
   const set = NICHE_IMAGES[niche];
+  // Mix curated Unsplash + deterministic picsum seeds so media never resolves blank.
   return {
     hero: unsplash(set.hero, 1800),
-    gallery: set.gallery.map((id) => unsplash(id, 1200)),
-    products: set.product.map((id) => unsplash(id, 900)),
+    gallery: set.gallery.map((id, i) =>
+      i % 2 === 0 ? unsplash(id, 1200) : samplePhoto(`${niche}-gallery-${i}`, 1200, 1500)
+    ),
+    products: set.product.map((id, i) =>
+      i === 0 ? unsplash(id, 900) : samplePhoto(`${niche}-product-${i}`, 900, 900)
+    ),
   };
 }
 

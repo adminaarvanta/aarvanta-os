@@ -6,6 +6,7 @@ import {
   nicheImages,
   type ContentBrief,
 } from "@/lib/site-builder/content-brief";
+import { preferSampleFilledSite } from "@/lib/site-builder/ensure-sample-data";
 import { getThemePreset } from "@/lib/site-builder/theme-presets";
 import type {
   GeneratedSite,
@@ -744,29 +745,73 @@ function storyFor(brief: ContentBrief): SiteBlock {
 }
 
 function teamFor(brief: ContentBrief): SiteBlock {
+  const images = nicheImages(brief.niche);
+  const rosters: Record<
+    ContentBrief["niche"],
+    Array<{ name: string; role: string; bio: string }>
+  > = {
+    candles: [
+      { name: "Maya Ellison", role: "Founder & scent lead", bio: "Former florist who obsesses over slow burns." },
+      { name: "Noah Patel", role: "Studio pourer", bio: "Keeps every batch colour-matched and gift-ready." },
+      { name: "Ivy Chen", role: "Customer care", bio: "Writes the handwritten notes in every box." },
+    ],
+    dental: [
+      { name: "Dr. Helen Park", role: "Principal dentist", bio: "Calm chairside manner, 12 years in practice." },
+      { name: "James Okonkwo", role: "Hygienist", bio: "Makes cleanings feel quick and painless." },
+      { name: "Sofia Alvarez", role: "Treatment coordinator", bio: "Explains plans in plain English before you commit." },
+    ],
+    saas: [
+      { name: "Aria Quinn", role: "CEO", bio: "Ex-accountant building tools freelancers actually finish setup for." },
+      { name: "Ben Torres", role: "Head of product", bio: "Turns tax headaches into three-click flows." },
+      { name: "Lina Berg", role: "Customer success", bio: "Onboards new workspaces in under a lunch break." },
+    ],
+    architecture: [
+      { name: "Maya Chen", role: "Principal architect", bio: "Light-first residential work across the UK." },
+      { name: "Owen Blake", role: "Project architect", bio: "Detail drawings contractors actually enjoy reading." },
+      { name: "Rae Singh", role: "Interiors lead", bio: "Material palettes that age instead of trend-chase." },
+    ],
+    restaurant: [
+      { name: "Chef Luca Moretti", role: "Executive chef", bio: "Seasonal menus written around the morning market." },
+      { name: "Priya Nair", role: "Front of house", bio: "Remembers regulars and anniversaries." },
+      { name: "Sam Reed", role: "Sommelier", bio: "Pairings that stay understated and generous." },
+    ],
+    fitness: [
+      { name: "Jordan Miles", role: "Head coach", bio: "Strength programming without the ego." },
+      { name: "Aisha Rahman", role: "Mobility coach", bio: "Fixes the desks that wreck people’s backs." },
+      { name: "Chris Nolan", role: "Community lead", bio: "Keeps classes welcoming for first-timers." },
+    ],
+    fashion: [
+      { name: "Elena Vogt", role: "Creative director", bio: "Edits every drop down to the essentials." },
+      { name: "Marcus Lee", role: "Fit specialist", bio: "Obsessed with sleeves that actually move." },
+      { name: "Noor Haddad", role: "Studio manager", bio: "Runs production with quiet precision." },
+    ],
+    agency: [
+      { name: "Leah North", role: "Strategy director", bio: "Kills vague taglines before design starts." },
+      { name: "Diego Ramos", role: "Creative director", bio: "Builds systems brands can run without us." },
+      { name: "Hannah Cho", role: "Producer", bio: "Launches on time — and on brand." },
+    ],
+    coaching: [
+      { name: "Anita Brooks", role: "Lead coach", bio: "Weekly systems for founders in busy seasons." },
+      { name: "Mark Trent", role: "Leadership coach", bio: "Direct feedback without motivational fluff." },
+      { name: "Zoe Hart", role: "Program manager", bio: "Keeps accountability kind and measurable." },
+    ],
+    general: [
+      { name: "Alex Morgan", role: "Founder", bio: `Built ${brief.brand} around clarity for ${brief.audience}.` },
+      { name: "Sam Rivera", role: "Operations", bio: "Keeps delivery sharp and communication human." },
+      { name: "Jordan Lee", role: "Customer lead", bio: "First reply within a business day — always." },
+    ],
+  };
+
   return {
-    id: blockId("team", "values"),
-    type: "features",
+    id: blockId("team", "people"),
+    type: "team",
     props: {
-      title: "How we work",
-      subtitle: "Values you can feel in every interaction.",
-      items: [
-        {
-          title: "Clarity over clutter",
-          description: "We say what we mean, price what we promise, and ship on time.",
-          icon: "compass",
-        },
-        {
-          title: "Craft you can trust",
-          description: `Every ${brief.siteType === "store" ? "product" : "engagement"} is reviewed like it’s going to our own family.`,
-          icon: "sparkles",
-        },
-        {
-          title: "Humans on the line",
-          description: "Real people answer questions — no maze of chatbots.",
-          icon: "users",
-        },
-      ],
+      title: "Meet the people",
+      subtitle: `The humans behind ${brief.brand}.`,
+      members: rosters[brief.niche].map((member, i) => ({
+        ...member,
+        imageUrl: images.gallery[i % images.gallery.length],
+      })),
     },
   };
 }
@@ -779,9 +824,12 @@ function contactFor(brief: ContentBrief, preferences: SitePreferences): SiteBloc
       title: "Let’s talk",
       description: `Tell us what you need — ${brief.brand} typically replies within one business day.`,
       showForm: preferences.features.includes("contact_form") || true,
-      email: `hello@${brief.brand.toLowerCase().replace(/[^a-z0-9]+/g, "")}.com`,
-      phone: brief.country === "UK" ? "+44 20 7946 0958" : "+1 (415) 555-0134",
+      email: `hello@${brief.brand.toLowerCase().replace(/[^a-z0-9]+/g, "") || "hello"}.com`,
+      phone: /uk|united kingdom|britain/i.test(brief.country)
+        ? "+44 20 7946 0958"
+        : "+1 (415) 555-0134",
       address: `${brief.country} · Studio & remote`,
+      hours: "Mon–Fri 9:00–18:00 · Sat by appointment",
       cta: brief.cta,
     },
   };
@@ -897,7 +945,14 @@ function pageBlocks(
     case "":
       return homeBlocks(brief, preferences);
     case "about":
-      return [heroFor(brief, "About"), storyFor(brief), teamFor(brief), ctaFor(brief)];
+      return [
+        heroFor(brief, "About"),
+        storyFor(brief),
+        teamFor(brief),
+        statsFor(brief),
+        testimonialsFor(brief),
+        ctaFor(brief),
+      ];
     case "services":
       return [heroFor(brief, "Services"), featuresFor(brief), productsFor(brief), ctaFor(brief)];
     case "products":
@@ -969,78 +1024,29 @@ function heuristicGenerate(plan: SitePlan, preferences: SitePreferences): Genera
   };
 }
 
-function normalizeAiSite(
-  raw: GeneratedSite,
-  plan: SitePlan,
-  preferences: SitePreferences
-): GeneratedSite {
-  const fallback = heuristicGenerate(plan, preferences);
-  if (!raw.pages?.length) return fallback;
-
-  return {
-    siteName: raw.siteName || fallback.siteName,
-    slug: raw.slug || fallback.slug,
-    tagline: raw.tagline || fallback.tagline,
-    footerNote: raw.footerNote || fallback.footerNote,
-    theme: {
-      ...fallback.theme,
-      ...raw.theme,
-      fontFamily: fallback.theme.fontFamily,
-      headingFont: fallback.theme.headingFont,
-      googleFontsUrl: fallback.theme.googleFontsUrl,
-    },
-    navigation: raw.navigation?.length ? raw.navigation : fallback.navigation,
-    pages: raw.pages.map((page, idx) => ({
-      slug: page.slug ?? fallback.pages[idx]?.slug ?? "",
-      title: page.title || fallback.pages[idx]?.title || "Page",
-      blocks:
-        page.blocks?.length && page.blocks.length >= 3
-          ? page.blocks
-          : fallback.pages[idx]?.blocks ?? pageBlocks(page.slug || "home", buildContentBrief(preferences), preferences),
-    })),
-    generatedAt: crmNow(),
-  };
-}
-
 export async function generateSiteFromPlan(
   plan: SitePlan,
   preferences: SitePreferences
 ): Promise<{ site: GeneratedSite; usedAi: boolean }> {
-  const fallback = heuristicGenerate(plan, preferences);
+  // Sample-filled heuristic site is the source of truth so previews never look empty.
+  const sampleSite = heuristicGenerate(plan, preferences);
 
   if (!isAiConfigured()) {
-    return { site: fallback, usedAi: false };
+    return { site: sampleSite, usedAi: false };
   }
 
   try {
     const brief = buildContentBrief(preferences);
     const aiSite = await completeJson<GeneratedSite>({
-      system: `You are Build OS, an expert website copywriter and information architect.
-Return JSON for a complete multi-page marketing website matching this shape:
-{
-  "siteName": string,
-  "slug": string,
-  "tagline": string,
-  "footerNote": string,
-  "theme": { "presetId": string, "primaryColor": hex, "accentColor": hex, "backgroundColor": hex, "fontStyle": string, "styleNotes": string },
-  "navigation": [{ "label": string, "slug": string }],
-  "pages": [{
-    "slug": string,
-    "title": string,
-    "blocks": [{
-      "id": string,
-      "type": "hero"|"features"|"stats"|"products"|"pricing"|"testimonials"|"gallery"|"faq"|"cta"|"contact"|"split"|"blog"|"content",
-      "props": object
-    }]
-  }]
-}
-Rules:
-- Write specific, premium copy grounded in the business brief — never generic filler like "Quality you can trust".
-- Home page must include at least: hero (with imageUrl), stats, features, social proof, and a strong CTA.
-- Include imageUrl fields using https://images.unsplash.com/ URLs appropriate to the niche.
-- Keep the user's selected pages. Home slug is "".
-- Match tone and site type. CTAs must match ctaGoal.
-- Props should be rich: headlines, subtitles, item arrays, prices, quotes with roles.`,
+      system: `You are Build OS, an expert website copywriter.
+Return JSON for a complete multi-page marketing website. Every list must be filled:
+- products: at least 3 items with name, description, price, imageUrl
+- features/stats/faq items: at least 3
+- testimonials quotes: at least 2 with author + role
+- gallery items: at least 3 with imageUrl
+- team members: at least 3 when present
+Never return empty arrays. Use https://images.unsplash.com/ photo URLs.
+Home slug is "". Match the user's tone, site type, and CTA.`,
       user: JSON.stringify({
         preferences,
         brief,
@@ -1048,13 +1054,16 @@ Rules:
         navigation: plan.navigation,
         pages: plan.pages.map((p) => ({ slug: p.slug, title: p.title, purpose: p.purpose })),
         theme: plan.theme,
-        fallbackHomeBlockTypes: fallback.pages[0]?.blocks.map((b) => b.type),
+        sampleHomeBlockTypes: sampleSite.pages[0]?.blocks.map((b) => b.type),
       }),
       temperature: 0.55,
     });
-    return { site: normalizeAiSite(aiSite, plan, preferences), usedAi: true };
+    return {
+      site: preferSampleFilledSite(sampleSite, aiSite),
+      usedAi: true,
+    };
   } catch {
-    return { site: fallback, usedAi: false };
+    return { site: sampleSite, usedAi: false };
   }
 }
 
