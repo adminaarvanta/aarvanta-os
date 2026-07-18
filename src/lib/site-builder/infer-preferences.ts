@@ -76,9 +76,11 @@ function inferTheme(prompt: string, siteType: SiteType): SiteThemePreset {
 
 function inferCta(siteType: SiteType, prompt: string): SiteCtaGoal {
   const p = prompt.toLowerCase();
-  if (/(subscribe|subscription)/.test(p)) return "subscribe";
+  if (siteType === "store" || /(shop|buy|purchase|retail)/.test(p)) return "buy";
   if (/(book|appoint|consult)/.test(p)) return "book_call";
-  if (siteType === "store" || /(shop|buy|purchase)/.test(p)) return "buy";
+  if (siteType === "landing" || /(subscribe|subscription|saas|signup|sign up)/.test(p)) {
+    return "subscribe";
+  }
   return "contact";
 }
 
