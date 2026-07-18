@@ -11,7 +11,28 @@ export const siteThemePresetSchema = z.enum([
   "bold_dark",
   "ocean_cool",
   "sunset_warm",
+  "custom",
 ]);
+
+export const siteFontPackIdSchema = z.enum([
+  "editorial",
+  "modern_sans",
+  "tech",
+  "friendly",
+  "luxury_serif",
+  "clean_mono",
+]);
+
+const hexColorSchema = z
+  .string()
+  .regex(/^#?[0-9A-Fa-f]{6}$/, "Expected a 6-digit hex color");
+
+export const siteCustomThemeSchema = z.object({
+  primaryColor: hexColorSchema,
+  accentColor: hexColorSchema,
+  backgroundColor: hexColorSchema,
+  fontPackId: siteFontPackIdSchema.default("modern_sans"),
+});
 
 export const sitePageOptionSchema = z.enum([
   "home",
@@ -87,6 +108,7 @@ export const sitePreferencesSchema = z.object({
   designStyle: siteDesignStyleSchema.default("modern"),
   colorMood: siteColorMoodSchema.default("neutral"),
   themePreset: siteThemePresetSchema.default("gold_navy"),
+  customTheme: siteCustomThemeSchema.optional(),
   pages: z.array(sitePageOptionSchema).min(1).default(["home", "about", "contact"]),
   features: z.array(siteFeatureOptionSchema).default(["contact_form"]),
   ctaGoal: siteCtaGoalSchema.default("contact"),

@@ -7,7 +7,7 @@ import {
   type ContentBrief,
 } from "@/lib/site-builder/content-brief";
 import { preferSampleFilledSite } from "@/lib/site-builder/ensure-sample-data";
-import { getThemePreset } from "@/lib/site-builder/theme-presets";
+import { resolveSiteTheme } from "@/lib/site-builder/theme-presets";
 import type {
   GeneratedSite,
   GeneratedSitePage,
@@ -974,19 +974,8 @@ function pageBlocks(
   }
 }
 
-function buildTheme(plan: SitePlan, preferences: SitePreferences): GeneratedSite["theme"] {
-  const preset = getThemePreset(preferences.themePreset);
-  return {
-    presetId: preset.id,
-    primaryColor: plan.theme?.primaryColor ?? preset.primaryColor,
-    accentColor: plan.theme?.accentColor ?? preset.accentColor,
-    backgroundColor: plan.theme?.backgroundColor ?? preset.backgroundColor,
-    fontStyle: plan.theme?.fontStyle ?? preset.fontStyle,
-    styleNotes: plan.theme?.styleNotes ?? preset.description,
-    fontFamily: preset.fontFamily,
-    headingFont: preset.headingFont,
-    googleFontsUrl: preset.googleFontsUrl,
-  };
+function buildTheme(_plan: SitePlan, preferences: SitePreferences): GeneratedSite["theme"] {
+  return resolveSiteTheme(preferences);
 }
 
 function heuristicGenerate(plan: SitePlan, preferences: SitePreferences): GeneratedSite {

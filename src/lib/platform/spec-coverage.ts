@@ -336,7 +336,7 @@ export const SPEC_PHASES: Array<{
         href: "/build",
         status: "partial",
         summary:
-          "Prompt-first AI studio with niche-aware multi-section sites (hero imagery, stats, catalog, gallery, FAQ), theme fonts, and refine chat. Deploy step bypassed.",
+          "Prompt-first AI studio with niche sample sites, Durable-style custom brand colors + font packs (live theme edits), and refine chat. Deploy step bypassed.",
       },
       {
         id: "launch-os",

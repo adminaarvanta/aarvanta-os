@@ -11,7 +11,24 @@ export type SiteThemePreset =
   | "minimal_light"
   | "bold_dark"
   | "ocean_cool"
-  | "sunset_warm";
+  | "sunset_warm"
+  | "custom";
+
+export type SiteFontPackId =
+  | "editorial"
+  | "modern_sans"
+  | "tech"
+  | "friendly"
+  | "luxury_serif"
+  | "clean_mono";
+
+/** Brand colors + font pack — Durable/Hostinger-style custom theme. */
+export type SiteCustomTheme = {
+  primaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  fontPackId: SiteFontPackId;
+};
 
 export type SitePageOption =
   | "home"
@@ -97,6 +114,8 @@ export type SitePreferences = {
   designStyle: SiteDesignStyle;
   colorMood: SiteColorMood;
   themePreset: SiteThemePreset;
+  /** When set (especially with themePreset=custom), overrides palette + fonts. */
+  customTheme?: SiteCustomTheme;
   pages: SitePageOption[];
   features: SiteFeatureOption[];
   ctaGoal: SiteCtaGoal;
