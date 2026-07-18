@@ -336,7 +336,7 @@ export const SPEC_PHASES: Array<{
         href: "/build",
         status: "partial",
         summary:
-          "Prompt-first AI studio (Durable/Framer-style): one brief, visual vibe + site-type cards, split preview with refine chat. Deploy step bypassed.",
+          "Prompt-first AI studio with niche-aware multi-section sites (hero imagery, stats, catalog, gallery, FAQ), theme fonts, and refine chat. Deploy step bypassed.",
       },
       {
         id: "launch-os",
