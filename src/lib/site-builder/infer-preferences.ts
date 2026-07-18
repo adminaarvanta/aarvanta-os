@@ -114,7 +114,8 @@ export function inferPreferencesFromPrompt(
   const trimmed = prompt.trim();
   const siteType = overrides?.siteType ?? inferSiteType(trimmed);
   const themePreset = overrides?.themePreset ?? inferTheme(trimmed, siteType);
-  const preset = getThemePreset(themePreset);
+  const presetBaseId = themePreset === "custom" ? "gold_navy" : themePreset;
+  const preset = getThemePreset(presetBaseId);
   const businessName = overrides?.businessName ?? extractBusinessName(trimmed);
 
   return {
@@ -127,6 +128,7 @@ export function inferPreferencesFromPrompt(
     designStyle: overrides?.designStyle ?? preset.designStyle,
     colorMood: overrides?.colorMood ?? preset.colorMood,
     themePreset,
+    customTheme: overrides?.customTheme,
     pages: overrides?.pages ?? inferPages(siteType),
     features: overrides?.features ?? inferFeatures(siteType, trimmed),
     ctaGoal: overrides?.ctaGoal ?? inferCta(siteType, trimmed),

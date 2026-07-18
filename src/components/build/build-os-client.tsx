@@ -12,15 +12,20 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
+import { ThemeStylePanel } from "@/components/build/theme-style-panel";
 import { Button } from "@/components/ui/button";
 import {
   EXAMPLE_PROMPTS,
   inferPreferencesFromPrompt,
   SITE_TYPE_CARDS,
 } from "@/lib/site-builder/infer-preferences";
-import { SITE_THEME_PRESETS } from "@/lib/site-builder/theme-presets";
+import {
+  defaultCustomThemeFromPreset,
+  resolveSiteTheme,
+} from "@/lib/site-builder/theme-presets";
 import type {
   SiteBuildJob,
+  SiteCustomTheme,
   SitePreferences,
   SiteReferenceScreenshot,
   SiteThemePreset,
@@ -42,6 +47,9 @@ export function BuildOsClient() {
   const [prompt, setPrompt] = useState("");
   const [siteType, setSiteType] = useState<SiteType | null>(null);
   const [themePreset, setThemePreset] = useState<SiteThemePreset>("gold_navy");
+  const [customTheme, setCustomTheme] = useState<SiteCustomTheme>(() =>
+    defaultCustomThemeFromPreset("gold_navy")
+  );
   const [screenshots, setScreenshots] = useState<SiteReferenceScreenshot[]>([]);
   const [refineInput, setRefineInput] = useState("");
   const [job, setJob] = useState<SiteBuildJob | null>(null);
@@ -58,6 +66,14 @@ export function BuildOsClient() {
     setPrompt(data.job.preferences.customPrompt ?? data.job.preferences.businessIdea);
     setSiteType(data.job.preferences.siteType);
     setThemePreset(data.job.preferences.themePreset);
+    setCustomTheme(
+      data.job.preferences.customTheme ??
+        defaultCustomThemeFromPreset(
+          data.job.preferences.themePreset === "custom"
+            ? "gold_navy"
+            : data.job.preferences.themePreset
+        )
+    );
     setScreenshots(data.job.preferences.referenceScreenshots ?? []);
     if (data.job.generatedSite) setPhase("studio");
   }, []);
@@ -71,8 +87,34 @@ export function BuildOsClient() {
     return inferPreferencesFromPrompt(mergedPrompt, {
       siteType: siteType ?? undefined,
       themePreset,
+      customTheme,
       customPrompt: mergedPrompt,
       referenceScreenshots: screenshots,
+    });
+  }
+
+  /** Durable-style: change colors/fonts live without regenerating content. */
+  function applyThemeLive(nextPreset: SiteThemePreset, nextCustom: SiteCustomTheme) {
+    setThemePreset(nextPreset);
+    setCustomTheme(nextCustom);
+    setJob((current) => {
+      if (!current?.generatedSite) return current;
+      const preferences = {
+        ...current.preferences,
+        themePreset: nextPreset,
+        customTheme: nextCustom,
+      };
+      return {
+        ...current,
+        preferences,
+        generatedSite: {
+          ...current.generatedSite,
+          theme: resolveSiteTheme(preferences),
+        },
+        plan: current.plan
+          ? { ...current.plan, theme: resolveSiteTheme(preferences) }
+          : current.plan,
+      };
     });
   }
 
@@ -171,31 +213,18 @@ export function BuildOsClient() {
 
           <div className="flex-1 space-y-5 overflow-y-auto p-5">
             <div>
-              <p className="mb-2 text-xs font-medium text-foreground">Vibe</p>
-              <div className="grid grid-cols-2 gap-2">
-                {SITE_THEME_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => setThemePreset(preset.id)}
-                    className={`overflow-hidden rounded-xl border text-left transition ${
-                      themePreset === preset.id
-                        ? "border-gold ring-1 ring-gold/40"
-                        : "border-border hover:border-gold/30"
-                    }`}
-                  >
-                    <div
-                      className="h-10 w-full"
-                      style={{
-                        background: `linear-gradient(135deg, ${preset.backgroundColor}, ${preset.primaryColor} 70%)`,
-                      }}
-                    />
-                    <div className="px-2.5 py-2">
-                      <p className="text-[11px] font-medium text-foreground">{preset.label}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <p className="mb-2 text-xs font-medium text-foreground">Customize theme</p>
+              <ThemeStylePanel
+                compact
+                themePreset={themePreset}
+                customTheme={customTheme}
+                onChange={({ themePreset: nextPreset, customTheme: nextCustom }) =>
+                  applyThemeLive(nextPreset, nextCustom)
+                }
+              />
+              <p className="mt-2 text-[11px] text-dim">
+                Colors and fonts update the preview instantly — no full regenerate needed.
+              </p>
             </div>
 
             <div>
@@ -274,7 +303,7 @@ export function BuildOsClient() {
         }}
       />
 
-      <div className="relative mx-auto flex max-w-3xl flex-col px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+      <div className="relative mx-auto flex max-w-4xl flex-col px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
         <div className="animate-fade-up text-center">
           <p className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-primary-soft px-3 py-1 text-[11px] font-medium text-gold-bright">
             <Sparkles className="h-3.5 w-3.5" />
@@ -411,50 +440,17 @@ export function BuildOsClient() {
         </div>
 
         <div className="mt-10 animate-fade-up">
-          <p className="text-center text-xs font-medium uppercase tracking-[0.12em] text-dim">
-            Visual vibe
+          <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.12em] text-dim">
+            Style — presets or your brand
           </p>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {SITE_THEME_PRESETS.map((preset) => {
-              const active = themePreset === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => setThemePreset(preset.id)}
-                  className={`group overflow-hidden rounded-2xl border text-left transition ${
-                    active
-                      ? "border-gold ring-1 ring-gold/50"
-                      : "border-border hover:border-gold/35"
-                  }`}
-                >
-                  <div
-                    className="relative h-20 w-full transition group-hover:scale-[1.02]"
-                    style={{
-                      background: `linear-gradient(160deg, ${preset.backgroundColor} 0%, ${preset.primaryColor} 55%, ${preset.accentColor} 100%)`,
-                    }}
-                  >
-                    <div className="absolute bottom-2 left-2 right-2 flex gap-1">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full border border-white/30"
-                        style={{ backgroundColor: preset.primaryColor }}
-                      />
-                      <span
-                        className="h-2.5 w-2.5 rounded-full border border-white/30"
-                        style={{ backgroundColor: preset.accentColor }}
-                      />
-                    </div>
-                  </div>
-                  <div className="bg-surface-elevated px-2.5 py-2">
-                    <p className="text-[11px] font-medium text-foreground">{preset.label}</p>
-                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-dim">
-                      {preset.description}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <ThemeStylePanel
+            themePreset={themePreset}
+            customTheme={customTheme}
+            onChange={({ themePreset: nextPreset, customTheme: nextCustom }) => {
+              setThemePreset(nextPreset);
+              setCustomTheme(nextCustom);
+            }}
+          />
         </div>
       </div>
     </div>

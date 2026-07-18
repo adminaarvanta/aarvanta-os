@@ -1,7 +1,7 @@
 import { detectIndustryFromText } from "@/lib/ageb/industries";
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
-import { getThemePreset } from "@/lib/site-builder/theme-presets";
+import { resolveSiteTheme } from "@/lib/site-builder/theme-presets";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import type { SitePlan, SitePreferences } from "@/types/site-builder";
 
@@ -235,7 +235,7 @@ function buildDeploymentPlan(preferences: SitePreferences, slug: string): SitePl
 
 function heuristicPlan(preferences: SitePreferences): SitePlan {
   const { profile } = detectIndustryFromText(preferences.businessIdea);
-  const preset = getThemePreset(preferences.themePreset);
+  const theme = resolveSiteTheme(preferences);
   const slug = slugify(preferences.businessName) || "my-site";
 
   const orderedPages = ["home", ...preferences.pages.filter((p) => p !== "home")];
@@ -264,21 +264,14 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
     ? ` Custom brief: ${preferences.customPrompt.trim().slice(0, 160)}`
     : "";
 
+  const themeLabel =
+    preferences.themePreset === "custom" ? "custom brand" : preferences.themePreset.replace(/_/g, " ");
+
   return {
     siteName: preferences.businessName,
     slug,
-    summary: `A ${preset.label} themed ${preferences.siteType} site for ${preferences.businessName} targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.${screenshotNote}${promptNote}`,
-    theme: {
-      presetId: preset.id,
-      primaryColor: preset.primaryColor,
-      accentColor: preset.accentColor,
-      backgroundColor: preset.backgroundColor,
-      fontStyle: preset.fontStyle,
-      styleNotes: `${preset.description} User style: ${preferences.designStyle}. Color mood: ${preferences.colorMood}.`,
-      fontFamily: preset.fontFamily,
-      headingFont: preset.headingFont,
-      googleFontsUrl: preset.googleFontsUrl,
-    },
+    summary: `A ${themeLabel} themed ${preferences.siteType} site for ${preferences.businessName} targeting ${preferences.targetAudience ?? "your ideal customers"} in ${preferences.countryBase}. Tone: ${preferences.tone}. Industry: ${profile.label}.${screenshotNote}${promptNote}`,
+    theme,
     navigation,
     pages,
     deployment: buildDeploymentPlan(preferences, slug),
@@ -287,22 +280,13 @@ function heuristicPlan(preferences: SitePreferences): SitePlan {
 
 function enrichAiPlan(plan: SitePlan, preferences: SitePreferences): SitePlan {
   const slug = plan.slug || slugify(preferences.businessName) || "my-site";
-  const preset = getThemePreset(preferences.themePreset);
+  // User custom/brand theme always wins over AI-suggested colors.
+  const theme = resolveSiteTheme(preferences);
 
   return {
     ...plan,
     slug,
-    theme: {
-      presetId: preset.id,
-      primaryColor: plan.theme?.primaryColor ?? preset.primaryColor,
-      accentColor: plan.theme?.accentColor ?? preset.accentColor,
-      backgroundColor: plan.theme?.backgroundColor ?? preset.backgroundColor,
-      fontStyle: plan.theme?.fontStyle ?? preset.fontStyle,
-      styleNotes: plan.theme?.styleNotes ?? preset.description,
-      fontFamily: preset.fontFamily,
-      headingFont: preset.headingFont,
-      googleFontsUrl: preset.googleFontsUrl,
-    },
+    theme,
     deployment: buildDeploymentPlan(preferences, slug),
   };
 }
@@ -342,7 +326,8 @@ Given site creation preferences, return JSON matching this shape:
   }
 }
 Domains are purchased only through Aarvanta. Hosting is AWS EC2 only.
-Respect ALL user preferences including themePreset, customPrompt, referenceScreenshots, deployment config, pages, and features.
+Respect ALL user preferences including themePreset, customTheme (brand hex colors + fontPackId), customPrompt, referenceScreenshots, deployment config, pages, and features.
+When customTheme is provided, use those exact colors — do not invent a different palette.
 Honor the user's customPrompt as hard constraints when planning sections and copy direction.
 If referenceScreenshots are provided, note layout inspiration from them in styleNotes.
 Include only pages the user selected. Home page slug must be empty string.`,

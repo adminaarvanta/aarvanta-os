@@ -1,7 +1,14 @@
-import type { SiteColorMood, SiteThemePreset } from "@/types/site-builder";
+import { getFontPack, type SiteFontPackId } from "@/lib/site-builder/font-packs";
+import type {
+  SiteColorMood,
+  SiteCustomTheme,
+  SitePreferences,
+  SitePlanTheme,
+  SiteThemePreset,
+} from "@/types/site-builder";
 
 export type SiteThemePresetDefinition = {
-  id: SiteThemePreset;
+  id: Exclude<SiteThemePreset, "custom">;
   label: string;
   description: string;
   primaryColor: string;
@@ -11,6 +18,7 @@ export type SiteThemePresetDefinition = {
   fontFamily: string;
   headingFont: string;
   googleFontsUrl: string;
+  fontPackId: SiteFontPackId;
   colorMood: SiteColorMood;
   designStyle: "minimal" | "modern" | "bold" | "classic";
 };
@@ -28,6 +36,7 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     headingFont: '"Fraunces", Georgia, serif',
     googleFontsUrl:
       "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap",
+    fontPackId: "luxury_serif",
     colorMood: "warm",
     designStyle: "modern",
   },
@@ -43,6 +52,7 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     headingFont: '"Newsreader", Georgia, serif',
     googleFontsUrl:
       "https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap",
+    fontPackId: "editorial",
     colorMood: "neutral",
     designStyle: "minimal",
   },
@@ -58,6 +68,7 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     headingFont: '"Space Grotesk", system-ui, sans-serif',
     googleFontsUrl:
       "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap",
+    fontPackId: "tech",
     colorMood: "vibrant",
     designStyle: "bold",
   },
@@ -73,6 +84,7 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     headingFont: '"IBM Plex Sans", system-ui, sans-serif',
     googleFontsUrl:
       "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap",
+    fontPackId: "clean_mono",
     colorMood: "cool",
     designStyle: "modern",
   },
@@ -88,11 +100,124 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     headingFont: '"Fraunces", Georgia, serif',
     googleFontsUrl:
       "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap",
+    fontPackId: "friendly",
     colorMood: "warm",
     designStyle: "classic",
   },
 ];
 
-export function getThemePreset(id: SiteThemePreset) {
+/** Extra quick palettes (applied as custom theme), like Durable’s recommended colors. */
+export const QUICK_BRAND_PALETTES: Array<{
+  id: string;
+  label: string;
+  primaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+}> = [
+  {
+    id: "forest",
+    label: "Forest",
+    primaryColor: "#2F6B4F",
+    accentColor: "#8FBC8F",
+    backgroundColor: "#0C1410",
+  },
+  {
+    id: "rose",
+    label: "Rose",
+    primaryColor: "#BE123C",
+    accentColor: "#FB7185",
+    backgroundColor: "#FFF1F2",
+  },
+  {
+    id: "ink",
+    label: "Ink",
+    primaryColor: "#111827",
+    accentColor: "#6B7280",
+    backgroundColor: "#FFFFFF",
+  },
+  {
+    id: "sand",
+    label: "Sand",
+    primaryColor: "#A16207",
+    accentColor: "#D6A15C",
+    backgroundColor: "#1C1917",
+  },
+  {
+    id: "violet",
+    label: "Violet",
+    primaryColor: "#7C3AED",
+    accentColor: "#C4B5FD",
+    backgroundColor: "#0F0A1A",
+  },
+];
+
+export function getThemePreset(id: SiteThemePreset): SiteThemePresetDefinition {
+  if (id === "custom") return SITE_THEME_PRESETS[0]!;
   return SITE_THEME_PRESETS.find((p) => p.id === id) ?? SITE_THEME_PRESETS[0]!;
+}
+
+export function defaultCustomThemeFromPreset(
+  presetId: Exclude<SiteThemePreset, "custom"> = "gold_navy"
+): SiteCustomTheme {
+  const preset = getThemePreset(presetId);
+  return {
+    primaryColor: preset.primaryColor,
+    accentColor: preset.accentColor,
+    backgroundColor: preset.backgroundColor,
+    fontPackId: preset.fontPackId,
+  };
+}
+
+export function normalizeHex(value: string, fallback: string): string {
+  const v = value.trim();
+  if (/^#[0-9A-Fa-f]{6}$/.test(v)) return v.toUpperCase();
+  if (/^[0-9A-Fa-f]{6}$/.test(v)) return `#${v.toUpperCase()}`;
+  return fallback;
+}
+
+/** Resolve final theme tokens from preferences (presets + custom overrides). */
+export function resolveSiteTheme(preferences: SitePreferences): SitePlanTheme {
+  const base =
+    preferences.themePreset === "custom"
+      ? getThemePreset("gold_navy")
+      : getThemePreset(preferences.themePreset);
+
+  const custom = preferences.customTheme;
+  const useCustomColors =
+    preferences.themePreset === "custom" ||
+    Boolean(
+      custom &&
+        (custom.primaryColor !== base.primaryColor ||
+          custom.accentColor !== base.accentColor ||
+          custom.backgroundColor !== base.backgroundColor)
+    );
+
+  const primaryColor = normalizeHex(
+    custom?.primaryColor ?? base.primaryColor,
+    base.primaryColor
+  );
+  const accentColor = normalizeHex(
+    custom?.accentColor ?? base.accentColor,
+    base.accentColor
+  );
+  const backgroundColor = normalizeHex(
+    custom?.backgroundColor ?? base.backgroundColor,
+    base.backgroundColor
+  );
+
+  const fontPack = getFontPack(custom?.fontPackId ?? base.fontPackId);
+
+  return {
+    presetId: useCustomColors || preferences.themePreset === "custom" ? "custom" : base.id,
+    primaryColor,
+    accentColor,
+    backgroundColor,
+    fontStyle: `${fontPack.label} — ${fontPack.description}`,
+    styleNotes: useCustomColors
+      ? `Custom brand palette with ${fontPack.label} typography.`
+      : base.description,
+    fontFamily: fontPack.fontFamily,
+    headingFont: fontPack.headingFont,
+    googleFontsUrl: fontPack.googleFontsUrl,
+  };
 }

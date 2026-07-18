@@ -1,12 +1,23 @@
 import type { z } from "zod";
 import type { SitePreferences } from "@/types/site-builder";
 import type { sitePreferencesSchema } from "@/lib/site-builder/schemas";
+import { normalizeHex } from "@/lib/site-builder/theme-presets";
 
 export function normalizeSitePreferences(
   data: z.infer<typeof sitePreferencesSchema>
 ): SitePreferences {
+  const customTheme = data.customTheme
+    ? {
+        primaryColor: normalizeHex(data.customTheme.primaryColor, "#B8965D"),
+        accentColor: normalizeHex(data.customTheme.accentColor, "#C9AA72"),
+        backgroundColor: normalizeHex(data.customTheme.backgroundColor, "#040608"),
+        fontPackId: data.customTheme.fontPackId,
+      }
+    : undefined;
+
   return {
     ...data,
+    customTheme,
     referenceUrl: data.referenceUrl || undefined,
     referenceScreenshots: data.referenceScreenshots ?? [],
     deployment: {
