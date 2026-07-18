@@ -1,5 +1,6 @@
 import { crmNow, crmNewId } from "@/lib/data/crm-helpers";
 import { planSiteFromPreferences } from "@/lib/site-builder/plan-site";
+import { generateSiteFromPlan } from "@/lib/site-builder/generate-site";
 import type { TenantScope } from "@/types/communication";
 import type {
   CreateSiteBuildJobInput,
@@ -37,10 +38,12 @@ export async function generateSitePlan(job: SiteBuildJob): Promise<SiteBuildJob>
 
   try {
     const { plan, usedAi } = await planSiteFromPreferences(job.preferences);
+    const generatedSite = generateSiteFromPlan(plan, job.preferences);
     return {
       ...planning,
-      status: "plan_ready",
+      status: "generated",
       plan,
+      generatedSite,
       usedAi,
       updatedAt: crmNow(),
     };

@@ -107,6 +107,27 @@ export type SitePreferences = {
   deployment: SiteDeploymentConfig;
 };
 
+export type SiteBlock = {
+  id: string;
+  type: string;
+  props: Record<string, unknown>;
+};
+
+export type GeneratedSitePage = {
+  slug: string;
+  title: string;
+  blocks: SiteBlock[];
+};
+
+export type GeneratedSite = {
+  siteName: string;
+  slug: string;
+  theme: SitePlanTheme;
+  navigation: SitePlanNavItem[];
+  pages: GeneratedSitePage[];
+  generatedAt: string;
+};
+
 export type SitePlanSection = {
   type: string;
   label: string;
@@ -172,6 +193,7 @@ export type SiteBuildJob = TenantScope & {
   status: SiteBuildJobStatus;
   preferences: SitePreferences;
   plan?: SitePlan;
+  generatedSite?: GeneratedSite;
   usedAi?: boolean;
   error?: string;
   approvedAt?: string;
