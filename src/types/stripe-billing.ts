@@ -1,6 +1,6 @@
 import type { TenantScope } from "@/types/communication";
 import type { BillingPlanId } from "@/types/platform-modules";
-import type { HostingPlanId } from "@/lib/stripe/catalog";
+import type { HostingPlanId } from "@/lib/stripe/hosting-plans";
 
 export type StripeCheckoutKind = "saas_plan" | "domain" | "hosting";
 

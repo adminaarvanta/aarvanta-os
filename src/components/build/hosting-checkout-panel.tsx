@@ -7,7 +7,7 @@ import {
   HOSTING_PLANS,
   hostingPlanForInstance,
   type HostingPlanId,
-} from "@/lib/stripe/catalog";
+} from "@/lib/stripe/hosting-plans";
 import type { AwsEc2InstanceType } from "@/types/site-builder";
 
 export function HostingCheckoutPanel({
