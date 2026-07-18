@@ -197,6 +197,21 @@ html.light ::-webkit-calendar-picker-indicator {
   }
 }
 
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.55s ease-out both;
+}
+
 /* ---------------------------------------------------------------------------
    Google Translate — hide the top bar / gadget chrome completely.
    Keep #google_translate_element in the DOM (off-screen) so the engine works.

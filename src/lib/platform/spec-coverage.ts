@@ -336,7 +336,7 @@ export const SPEC_PHASES: Array<{
         href: "/build",
         status: "partial",
         summary:
-          "Preferences wizard with live preview, theme presets, inspiration uploads, Aarvanta domain purchase, managed hosting, and AI plan approval.",
+          "Prompt-first AI studio (Durable/Framer-style): one brief, visual vibe + site-type cards, split preview with refine chat. Deploy step bypassed.",
       },
       {
         id: "launch-os",
