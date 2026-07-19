@@ -54,10 +54,12 @@ export function ConversationDetail({
   conversation,
   aiStatus,
   hrCases = [],
+  forcedChannel,
 }: {
   conversation: Conversation;
   aiStatus: AiRuntimeStatus;
   hrCases?: HrCase[];
+  forcedChannel?: import("@/types/communication").Channel;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
@@ -114,6 +116,7 @@ export function ConversationDetail({
           conversationId={conversation.id}
           contact={conversation.contact}
           channels={conversation.channels}
+          forcedChannel={forcedChannel}
         />
       </section>
 

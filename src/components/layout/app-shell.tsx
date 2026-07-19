@@ -13,7 +13,8 @@ export function AppShell({
   tenant,
   userName,
   userRole,
-  inboxUnread,
+  whatsappUnread,
+  voiceUnread,
   children,
 }: {
   production: boolean;
@@ -24,7 +25,8 @@ export function AppShell({
   } | null;
   userName?: string;
   userRole?: string;
-  inboxUnread?: number;
+  whatsappUnread?: number;
+  voiceUnread?: number;
   children: React.ReactNode;
 }) {
   return (
@@ -37,7 +39,8 @@ export function AppShell({
             tenant={tenant}
             userName={userName}
             userRole={userRole}
-            inboxUnread={inboxUnread}
+            whatsappUnread={whatsappUnread}
+            voiceUnread={voiceUnread}
           />
           <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             <AppHeader />

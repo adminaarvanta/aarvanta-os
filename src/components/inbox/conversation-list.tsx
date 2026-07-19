@@ -6,17 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import { CHANNEL_LABELS, TAG_LABELS } from "@/lib/constants";
 import { cn, formatRelative } from "@/lib/utils";
 import { SentimentBadge } from "@/components/inbox/sentiment-badge";
+import { conversationsForChannel } from "@/lib/channels/filter-conversations";
 import { conversationListPreview } from "@/lib/data/conversation-list-helpers";
-import type { Conversation } from "@/types/communication";
+import type { Channel, Conversation } from "@/types/communication";
 
 export function ConversationList({
   conversations: initialConversations,
   activeId,
   pollMs = 30000,
+  basePath = "/inbox",
+  channelFilter,
 }: {
   conversations: Conversation[];
   activeId?: string;
   pollMs?: number;
+  /** Detail route prefix, e.g. /whatsapp or /voice */
+  basePath?: string;
+  /** When set, poll results are filtered to this channel */
+  channelFilter?: Channel;
 }) {
   const [conversations, setConversations] = useState(initialConversations);
 
@@ -36,7 +43,12 @@ export function ConversationList({
         const response = await fetch("/api/conversations");
         if (!response.ok || cancelled) return;
         const data = (await response.json()) as { conversations?: Conversation[] };
-        if (data.conversations) setConversations(data.conversations);
+        if (!data.conversations) return;
+        setConversations(
+          channelFilter
+            ? conversationsForChannel(data.conversations, channelFilter)
+            : data.conversations
+        );
       } catch {
         // ignore polling errors
       }
@@ -72,7 +84,7 @@ export function ConversationList({
       stopPolling();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [pollMs, activeId]);
+  }, [pollMs, activeId, channelFilter]);
 
   return (
     <ul className="divide-y divide-border">
@@ -82,7 +94,7 @@ export function ConversationList({
         return (
           <li key={conv.id}>
             <PendingLink
-              href={`/inbox/${conv.id}`}
+              href={`${basePath}/${conv.id}`}
               pendingClassName="opacity-60 pointer-events-none"
               className={cn(
                 "block px-4 py-3.5 transition-colors hover:bg-surface-hover",

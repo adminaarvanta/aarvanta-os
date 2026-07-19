@@ -28,7 +28,7 @@ export function inScope(c: Conversation, scope: TenantScope) {
   );
 }
 
-function withChannel(channels: Channel[], channel: Channel): Channel[] {
+export function withChannel(channels: Channel[], channel: Channel): Channel[] {
   return channels.includes(channel) ? channels : [...channels, channel];
 }
 

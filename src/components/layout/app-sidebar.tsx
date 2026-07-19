@@ -27,12 +27,17 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(path);
 }
 
+function tourNavId(href: string) {
+  return href.replace(/^\//, "").replace(/\//g, "-") || "home";
+}
+
 export function AppSidebar({
   production,
   tenant,
   userName = "Founder",
   userRole = "Owner",
-  inboxUnread = 0,
+  whatsappUnread = 0,
+  voiceUnread = 0,
 }: {
   production: boolean;
   tenant?: {
@@ -42,7 +47,8 @@ export function AppSidebar({
   } | null;
   userName?: string;
   userRole?: string;
-  inboxUnread?: number;
+  whatsappUnread?: number;
+  voiceUnread?: number;
 }) {
   const pathname = usePathname();
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -64,7 +70,11 @@ export function AppSidebar({
               const Icon = item.icon;
               const active = isActive(pathname, item.href);
               const badge =
-                item.badgeKey === "inbox" && inboxUnread > 0 ? inboxUnread : null;
+                item.badgeKey === "whatsapp" && whatsappUnread > 0
+                  ? whatsappUnread
+                  : item.badgeKey === "voice" && voiceUnread > 0
+                    ? voiceUnread
+                    : null;
 
               if (item.href === "#all-tools") {
                 return (
@@ -85,6 +95,7 @@ export function AppSidebar({
                 <li key={item.href}>
                   <PendingLink
                     href={item.href}
+                    data-demo-tour={`nav-${tourNavId(item.href)}`}
                     pendingClassName="opacity-70"
                     className={cn(
                       "relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",

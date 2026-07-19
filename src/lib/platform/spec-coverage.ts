@@ -124,7 +124,25 @@ export const SPEC_PHASES: Array<{
         href: "/inbox",
         status: "partial",
         summary:
-          "WhatsApp, email, SMS, voice, website chat. Live when provider webhooks configured.",
+          "All channels in one place (deep links). Primary UX is WhatsApp OS and Voice OS.",
+      },
+      {
+        id: "whatsapp-os",
+        phase: "9b-wa",
+        name: "WhatsApp OS",
+        href: "/whatsapp",
+        status: "partial",
+        summary:
+          "WhatsApp business inbox, start thread, outbound Graph API, inbound webhooks.",
+      },
+      {
+        id: "voice-os-live",
+        phase: "9b-voice",
+        name: "Voice OS",
+        href: "/voice",
+        status: "partial",
+        summary:
+          "AI calling inbox, outbound Twilio TTS, call log, and status webhooks.",
       },
       {
         id: "analytics",
@@ -414,9 +432,11 @@ export const SPEC_PHASES: Array<{
       {
         id: "voice-os",
         phase: "L16",
-        name: "Voice Operating System",
-        status: "planned",
-        summary: "Voice-first business control and AI calling.",
+        name: "Voice Operating System (extended)",
+        status: "partial",
+        href: "/voice",
+        summary:
+          "Calling inbox and Twilio TTS live. Voice-first business control still planned.",
       },
       {
         id: "digital-twin",

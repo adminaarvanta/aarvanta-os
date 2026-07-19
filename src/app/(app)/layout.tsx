@@ -16,7 +16,8 @@ export default async function AppLayout({
   let tenant = null;
   let userName = "Founder";
   let userRole = "Owner";
-  let inboxUnread = 0;
+  let whatsappUnread = 0;
+  let voiceUnread = 0;
 
   try {
     const ctx = await getSessionContext();
@@ -36,7 +37,9 @@ export default async function AppLayout({
     userName = ctx.name || ctx.email.split("@")[0] || "Founder";
     userRole = ROLE_LABELS[ctx.role] ?? ctx.role;
     const conversations = await getRepository().listConversations(ctx.scope);
-    inboxUnread = conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
+    const { unreadForChannel } = await import("@/lib/channels/filter-conversations");
+    whatsappUnread = unreadForChannel(conversations, "whatsapp");
+    voiceUnread = unreadForChannel(conversations, "voice");
     const { hydrateWorkspaceSettingsCache } = await import("@/lib/hr/settings");
     await hydrateWorkspaceSettingsCache(bootstrapped.workspace.id);
   } catch {
@@ -49,7 +52,8 @@ export default async function AppLayout({
       tenant={tenant}
       userName={userName}
       userRole={userRole}
-      inboxUnread={inboxUnread}
+      whatsappUnread={whatsappUnread}
+      voiceUnread={voiceUnread}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">{children}</div>
     </AppShell>

@@ -13,6 +13,7 @@ import {
   newId,
   normalizeEmail,
   normalizePhone,
+  withChannel,
 } from "@/lib/data/conversation-helpers";
 import { toConversationListItem } from "@/lib/data/conversation-list-helpers";
 import type { ConversationRepository } from "@/lib/data/repository";
@@ -116,6 +117,45 @@ export const firestoreRepository: ConversationRepository = {
     const items = await listScoped(scope);
     return (
       items.find((c) => c.contact.chatSessionId === sessionId) ?? null
+    );
+  },
+
+  async ensurePhoneConversation(input, scope) {
+    const existing = await firestoreRepository.findConversationByPhone(
+      input.phone,
+      scope
+    );
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const name =
+        input.contactName?.trim() &&
+        existing.contact.name === existing.contact.phone
+          ? input.contactName.trim()
+          : existing.contact.name;
+      return save({
+        ...existing,
+        channels: withChannel(existing.channels, input.channel),
+        contact: {
+          ...existing.contact,
+          name,
+          phone: existing.contact.phone ?? input.phone,
+        },
+        updatedAt: now,
+      });
+    }
+
+    return save(
+      createConversation(
+        scope,
+        {
+          id: newId("contact"),
+          name: input.contactName?.trim() || input.phone,
+          phone: input.phone,
+        },
+        input.channel,
+        []
+      )
     );
   },
 

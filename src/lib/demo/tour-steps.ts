@@ -62,15 +62,26 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     tip: "Ask Copilot: “What's our pipeline forecast?”",
   },
   {
-    id: "inbox",
-    title: "Unified Inbox",
+    id: "whatsapp",
+    title: "WhatsApp OS",
     description:
-      "WhatsApp, email, SMS, voice, and website chat in one timeline — with AI summaries, sentiment, tags, and HR document automation.",
-    route: "/inbox",
-    target: '[data-demo-tour="nav-inbox"], [data-demo-tour="mobile-nav-inbox"]',
+      "WhatsApp business messaging with inbound webhooks, outbound replies, AI summaries, and start-thread by phone.",
+    route: "/whatsapp",
+    target: '[data-demo-tour="nav-whatsapp"], [data-demo-tour="mobile-nav-whatsapp"]',
     placement: "right",
     expandSidebar: true,
     tip: "Sarah Chen's Meridian thread is pre-loaded for demo",
+  },
+  {
+    id: "voice",
+    title: "Voice OS",
+    description:
+      "AI calling inbox — outbound Twilio TTS calls, call log, and status webhooks when Twilio is configured.",
+    route: "/voice",
+    target: '[data-demo-tour="nav-voice"], [data-demo-tour="mobile-nav-voice"]',
+    placement: "right",
+    expandSidebar: true,
+    tip: "James Okonkwo's call thread is pre-loaded for demo",
   },
   {
     id: "crm",

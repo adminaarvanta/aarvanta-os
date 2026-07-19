@@ -103,4 +103,47 @@ export const DEMO_CONVERSATIONS: Conversation[] = [
       },
     ],
   },
+  {
+    ...base,
+    id: "conv_voice_james",
+    contact: {
+      id: "contact_james",
+      name: "James Okonkwo",
+      email: "james@northline.studio",
+      phone: "+447700900456",
+    },
+    channels: ["voice"],
+    tags: ["follow_up"],
+    sentiment: "neutral",
+    aiSummary:
+      "Outbound intro call to Northline Studio. Left a brief product overview; callback requested after their design review.",
+    aiQualificationScore: 64,
+    aiSummaryUpdatedAt: "2026-06-15T11:05:00Z",
+    unreadCount: 0,
+    lastActivityAt: "2026-06-15T11:05:00Z",
+    assignedTo: "admin",
+    updatedAt: "2026-06-15T11:05:00Z",
+    timeline: [
+      {
+        id: "evt_voice_james_1",
+        type: "call",
+        direction: "outbound",
+        durationSeconds: 94,
+        summary:
+          "Hi James — this is Aarvanta. Sharing a quick overview of Voice OS for booking follow-ups automatically.",
+        occurredAt: "2026-06-15T10:40:00Z",
+        authorName: "Aarvanta",
+      },
+      {
+        id: "evt_voice_james_2",
+        type: "call",
+        direction: "inbound",
+        durationSeconds: 48,
+        summary:
+          "Thanks — can you call back Thursday after our design review? Interested in the AI calling flow.",
+        occurredAt: "2026-06-15T11:05:00Z",
+        authorName: "James Okonkwo",
+      },
+    ],
+  },
 ];
