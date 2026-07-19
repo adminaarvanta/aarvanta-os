@@ -29,24 +29,29 @@ export function ReplyForm({
   conversationId,
   contact,
   channels,
+  forcedChannel,
 }: {
   conversationId: string;
   contact: ContactRef;
   channels: Channel[];
+  /** Lock reply to one channel (WhatsApp OS / Voice OS). */
+  forcedChannel?: Channel;
 }) {
   const router = useRouter();
   const [content, setContent] = useState("");
   const [subject, setSubject] = useState("");
   const [channel, setChannel] = useState<Channel>(
-    channels.includes("email")
-      ? "email"
-      : channels[0] ?? ALL_CHANNELS[0]
+    forcedChannel ??
+      (channels.includes("email")
+        ? "email"
+        : channels[0] ?? ALL_CHANNELS[0])
   );
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const hint = channelHint(channel, contact);
+  const activeChannel = forcedChannel ?? channel;
+  const hint = channelHint(activeChannel, contact);
 
   function send(e: React.FormEvent) {
     e.preventDefault();
@@ -64,8 +69,11 @@ export function ReplyForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: content.trim(),
-          channel,
-          subject: channel === "email" ? subject.trim() || "Message from Aarvanta" : undefined,
+          channel: activeChannel,
+          subject:
+            activeChannel === "email"
+              ? subject.trim() || "Message from Aarvanta"
+              : undefined,
         }),
       });
 
@@ -89,23 +97,29 @@ export function ReplyForm({
       onSubmit={send}
       className="shrink-0 border-t border-border bg-background p-3 space-y-2 sm:p-4"
     >
-      <select
-        value={channel}
-        onChange={(e) => setChannel(e.target.value as Channel)}
-        className="w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground sm:w-auto sm:text-xs"
-      >
-        {ALL_CHANNELS.map((ch) => (
-          <option key={ch} value={ch}>
-            {CHANNEL_LABELS[ch]}
-          </option>
-        ))}
-      </select>
+      {forcedChannel ? (
+        <p className="text-xs font-medium text-gold">
+          Sending via {CHANNEL_LABELS[forcedChannel]}
+        </p>
+      ) : (
+        <select
+          value={activeChannel}
+          onChange={(e) => setChannel(e.target.value as Channel)}
+          className="w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground sm:w-auto sm:text-xs"
+        >
+          {ALL_CHANNELS.map((ch) => (
+            <option key={ch} value={ch}>
+              {CHANNEL_LABELS[ch]}
+            </option>
+          ))}
+        </select>
+      )}
       {hint && (
         <p className="text-xs text-gold-bright" role="status">
           {hint}
         </p>
       )}
-      {channel === "email" && (
+      {activeChannel === "email" && (
         <input
           type="text"
           value={subject}
@@ -114,7 +128,7 @@ export function ReplyForm({
           className="w-full rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm text-foreground"
         />
       )}
-      {channel === "voice" ? (
+      {activeChannel === "voice" ? (
         <p className="text-xs text-muted">
           Initiates a voice call and speaks your message to the contact.
         </p>
@@ -124,7 +138,7 @@ export function ReplyForm({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder={
-            channel === "voice"
+            activeChannel === "voice"
               ? "Message to speak on the call…"
               : "Reply via selected channel…"
           }
@@ -136,7 +150,7 @@ export function ReplyForm({
           disabled={pending || !content.trim()}
           className="w-full shrink-0 sm:w-auto"
         >
-          {pending ? "Sending…" : channel === "voice" ? "Call" : "Send"}
+          {pending ? "Sending…" : activeChannel === "voice" ? "Call" : "Send"}
         </Button>
       </div>
       {warning && (

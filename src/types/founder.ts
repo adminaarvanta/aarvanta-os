@@ -50,6 +50,8 @@ export interface FounderCopilotResult {
 export type FounderCommandId =
   | "open_dashboard"
   | "open_inbox"
+  | "open_whatsapp"
+  | "open_voice"
   | "open_crm"
   | "open_leads"
   | "open_pipelines"

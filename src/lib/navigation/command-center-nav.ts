@@ -3,11 +3,12 @@ import {
   Briefcase,
   Brain,
   Globe2,
-  Inbox,
   Kanban,
   Landmark,
   LayoutDashboard,
   LayoutGrid,
+  MessageCircle,
+  Phone,
   Sparkles,
   Wallet,
   Workflow,
@@ -18,7 +19,7 @@ export type CommandNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  badgeKey?: "inbox";
+  badgeKey?: "whatsapp" | "voice";
 };
 
 export type OperatingSystemItem = {
@@ -34,7 +35,8 @@ export type OperatingSystemItem = {
 /** Primary sidebar navigation — Command Center design */
 export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Command Center", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
+  { href: "/whatsapp", label: "WhatsApp OS", icon: MessageCircle, badgeKey: "whatsapp" },
+  { href: "/voice", label: "Voice OS", icon: Phone, badgeKey: "voice" },
   { href: "/crm", label: "CRM", icon: Briefcase },
   { href: "/workforce", label: "AI Workforce", icon: Sparkles },
   { href: "/projects", label: "Projects", icon: Kanban },
@@ -47,7 +49,6 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
 
 /**
  * Sidebar shortcuts — unique destinations not already in primary nav.
- * (CRM / Inbox / Finance / Analytics live only in primary nav.)
  */
 export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
   {
@@ -94,7 +95,6 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
 
 /**
  * Dashboard OS map — branded modules.
- * Paths that overlap primary nav are intentional for the visual map only.
  */
 export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
   {
@@ -114,10 +114,18 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
     iconClass: "text-accent-cyan bg-accent-cyan/10",
   },
   {
+    id: "whatsapp",
+    label: "WhatsApp OS",
+    href: "/whatsapp",
+    description: "WhatsApp business messaging",
+    dotClass: "bg-success",
+    iconClass: "text-success bg-success/10",
+  },
+  {
     id: "voice",
-    label: "Inbox OS",
-    href: "/inbox",
-    description: "Voice, WhatsApp, email & chat",
+    label: "Voice OS",
+    href: "/voice",
+    description: "AI calling & call log",
     dotClass: "bg-primary-bright",
     iconClass: "text-primary-bright bg-primary-soft",
   },
@@ -126,24 +134,24 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
     label: "Build OS",
     href: "/build",
     description: "Websites & landing pages",
-    dotClass: "bg-success",
-    iconClass: "text-success bg-success/10",
+    dotClass: "bg-gold-dark",
+    iconClass: "text-gold-dark bg-gold/10",
   },
   {
     id: "analytics",
     label: "AnalyticsOS",
     href: "/analytics",
     description: "Reports & performance",
-    dotClass: "bg-gold-dark",
-    iconClass: "text-gold-dark bg-gold/10",
+    dotClass: "bg-gold",
+    iconClass: "text-gold bg-gold/10",
   },
   {
     id: "content",
     label: "ContentOS",
     href: "/knowledge",
     description: "Knowledge & content",
-    dotClass: "bg-gold",
-    iconClass: "text-gold bg-primary-soft",
+    dotClass: "bg-accent-cyan",
+    iconClass: "text-accent-cyan bg-accent-cyan/10",
   },
   {
     id: "finance",
@@ -158,11 +166,11 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
 /** Mobile bottom bar — keep lean; deeper tools via sidebar shortcuts on desktop */
 export const MOBILE_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "inbox" },
+  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle, badgeKey: "whatsapp" },
+  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice" },
   { href: "/crm", label: "CRM", icon: Briefcase },
   { href: "/workforce", label: "AI", icon: Sparkles },
   { href: "/projects", label: "Projects", icon: Kanban },
-  { href: "/workflows", label: "Flows", icon: Workflow },
   { href: "/knowledge", label: "Knowledge", icon: Brain },
 ];
 

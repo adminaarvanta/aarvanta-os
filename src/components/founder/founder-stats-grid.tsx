@@ -30,11 +30,11 @@ export function FounderStatsGrid({ snapshot }: { snapshot: FounderSnapshot }) {
       href: "/crm/leads",
     },
     {
-      label: "Inbox",
+      label: "Messages",
       value: String(snapshot.inbox.totalConversations),
       sub: `${snapshot.inbox.urgentCount} urgent`,
       icon: Inbox,
-      href: "/inbox",
+      href: "/whatsapp",
     },
     {
       label: "Projects",

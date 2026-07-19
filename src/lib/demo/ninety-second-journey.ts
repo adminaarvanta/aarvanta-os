@@ -118,9 +118,9 @@ export async function runNinetySecondJourney(
       label: "Lead enters",
       status: "completed",
       summary: `${DEMO_LEAD.name} sent a WhatsApp inquiry about the Growth plan.`,
-      href: `/inbox/${conversation.id}`,
+      href: `/whatsapp/${conversation.id}`,
     });
-    links.inbox = `/inbox/${conversation.id}`;
+    links.inbox = `/whatsapp/${conversation.id}`;
 
     await refreshConversationAiInsights(conversation.id, scope);
 

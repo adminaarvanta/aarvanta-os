@@ -28,6 +28,15 @@ export interface ConversationRepository {
     sessionId: string,
     scope: TenantScope
   ): Promise<Conversation | null>;
+  /** Find or create a conversation for a phone number on a given channel. */
+  ensurePhoneConversation(
+    input: {
+      phone: string;
+      contactName?: string;
+      channel: Channel;
+    },
+    scope: TenantScope
+  ): Promise<Conversation>;
   addMessage(
     conversationId: string,
     input: CreateMessageInput,

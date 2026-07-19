@@ -16,6 +16,20 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
     group: "Navigate",
   },
   {
+    id: "open_whatsapp",
+    label: "Open WhatsApp OS",
+    keywords: ["whatsapp", "wa", "messaging", "chat"],
+    href: "/whatsapp",
+    group: "Navigate",
+  },
+  {
+    id: "open_voice",
+    label: "Open Voice OS",
+    keywords: ["voice", "call", "phone", "twilio"],
+    href: "/voice",
+    group: "Navigate",
+  },
+  {
     id: "open_crm",
     label: "Open CRM",
     keywords: ["crm", "contacts", "customers"],

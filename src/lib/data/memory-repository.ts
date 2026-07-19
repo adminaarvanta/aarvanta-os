@@ -14,6 +14,7 @@ import {
   newId,
   normalizeEmail,
   normalizePhone,
+  withChannel,
 } from "@/lib/data/conversation-helpers";
 import { toConversationListItem } from "@/lib/data/conversation-list-helpers";
 import type { ConversationRepository } from "@/lib/data/repository";
@@ -92,6 +93,49 @@ export const memoryRepository: ConversationRepository = {
       (c) => inScope(c, scope) && c.contact.chatSessionId === sessionId
     );
     return found ? structuredClone(found) : null;
+  },
+
+  async ensurePhoneConversation(input, scope) {
+    const existing = await memoryRepository.findConversationByPhone(
+      input.phone,
+      scope
+    );
+    const now = new Date().toISOString();
+
+    if (existing) {
+      const idx = findIndex(existing.id, scope);
+      if (idx === -1) return structuredClone(existing);
+      const nextChannels = withChannel(conversations[idx].channels, input.channel);
+      const name =
+        input.contactName?.trim() &&
+        conversations[idx].contact.name === conversations[idx].contact.phone
+          ? input.contactName.trim()
+          : conversations[idx].contact.name;
+      conversations[idx] = {
+        ...conversations[idx],
+        channels: nextChannels,
+        contact: {
+          ...conversations[idx].contact,
+          name,
+          phone: conversations[idx].contact.phone ?? input.phone,
+        },
+        updatedAt: now,
+      };
+      return structuredClone(conversations[idx]);
+    }
+
+    const conversation = createConversation(
+      scope,
+      {
+        id: newId("contact"),
+        name: input.contactName?.trim() || input.phone,
+        phone: input.phone,
+      },
+      input.channel,
+      []
+    );
+    conversations.push(conversation);
+    return structuredClone(conversation);
   },
 
   async addMessage(conversationId, input, scope, author) {
