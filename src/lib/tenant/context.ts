@@ -82,14 +82,18 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
   }
 
   const scope = sessionToScope(session);
+  const repo = getTenantRepository();
+  const member =
+    (await repo.getMemberByUser(session.userId, scope)) ?? null;
 
   return {
     userId: session.userId,
     email: session.email,
-    name: session.name,
-    role: session.role,
+    name: member?.name || session.name,
+    // Prefer live membership role so hierarchy changes apply immediately.
+    role: member?.role ?? session.role,
     scope,
-    member: null,
+    member,
   };
 });
 

@@ -23,6 +23,18 @@ export const DEMO_USER_ID = "user_pavan";
 
 const now = crmNow();
 
+function member(
+  partial: Omit<WorkspaceMember, "status" | "joinedAt" | "updatedAt"> &
+    Partial<Pick<WorkspaceMember, "status">>
+): WorkspaceMember {
+  return {
+    status: "active",
+    joinedAt: now,
+    updatedAt: now,
+    ...partial,
+  };
+}
+
 export function buildDemoOrganizationSeed(): Organization[] {
   return [
     {
@@ -93,9 +105,14 @@ export function buildDemoWorkspaceSeed(): Workspace[] {
   ];
 }
 
+/**
+ * PRD roles for every user: Owner, Admin, Manager, Member, Guest
+ * across Organization → Workspace hierarchy.
+ */
 export function buildDemoMemberSeed(): WorkspaceMember[] {
   return [
-    {
+    // —— Aarvanta Limited / Main — all five PRD roles ——
+    member({
       id: "member_pavan",
       tenantId: DEMO_ORG_AARVANTA,
       workspaceId: DEMO_WS_AARVANTA_MAIN,
@@ -104,11 +121,8 @@ export function buildDemoMemberSeed(): WorkspaceMember[] {
       email: "pavan@aarvanta.com",
       name: "Pavan",
       role: "owner",
-      status: "active",
-      joinedAt: now,
-      updatedAt: now,
-    },
-    {
+    }),
+    member({
       id: "member_sarah",
       tenantId: DEMO_ORG_AARVANTA,
       workspaceId: DEMO_WS_AARVANTA_MAIN,
@@ -117,24 +131,28 @@ export function buildDemoMemberSeed(): WorkspaceMember[] {
       email: "sarah.chen@meridian.io",
       name: "Sarah Chen",
       role: "admin",
-      status: "active",
-      joinedAt: now,
-      updatedAt: now,
-    },
-    {
+    }),
+    member({
       id: "member_john",
       tenantId: DEMO_ORG_AARVANTA,
       workspaceId: DEMO_WS_AARVANTA_MAIN,
       companyId: DEMO_COMPANY_AARVANTA,
       userId: "user_john",
       email: "john@aarvanta.com",
-      name: "John",
+      name: "John Reeves",
       role: "manager",
-      status: "active",
-      joinedAt: now,
-      updatedAt: now,
-    },
-    {
+    }),
+    member({
+      id: "member_priya",
+      tenantId: DEMO_ORG_AARVANTA,
+      workspaceId: DEMO_WS_AARVANTA_MAIN,
+      companyId: DEMO_COMPANY_AARVANTA,
+      userId: "user_priya",
+      email: "priya@aarvanta.com",
+      name: "Priya Shah",
+      role: "member",
+    }),
+    member({
       id: "member_guest",
       tenantId: DEMO_ORG_AARVANTA,
       workspaceId: DEMO_WS_AARVANTA_MAIN,
@@ -143,11 +161,10 @@ export function buildDemoMemberSeed(): WorkspaceMember[] {
       email: "guest@aarvanta.com",
       name: "Guest User",
       role: "guest",
-      status: "active",
-      joinedAt: now,
-      updatedAt: now,
-    },
-    {
+    }),
+
+    // —— Aarvanta Limited / Europe ——
+    member({
       id: "member_eu_lead",
       tenantId: DEMO_ORG_AARVANTA,
       workspaceId: DEMO_WS_AARVANTA_EU,
@@ -156,11 +173,30 @@ export function buildDemoMemberSeed(): WorkspaceMember[] {
       email: "pavan@aarvanta.com",
       name: "Pavan",
       role: "owner",
-      status: "active",
-      joinedAt: now,
-      updatedAt: now,
-    },
-    {
+    }),
+    member({
+      id: "member_eu_manager",
+      tenantId: DEMO_ORG_AARVANTA,
+      workspaceId: DEMO_WS_AARVANTA_EU,
+      companyId: DEMO_COMPANY_AARVANTA,
+      userId: "user_elena",
+      email: "elena@aarvanta.com",
+      name: "Elena Rossi",
+      role: "manager",
+    }),
+    member({
+      id: "member_eu_member",
+      tenantId: DEMO_ORG_AARVANTA,
+      workspaceId: DEMO_WS_AARVANTA_EU,
+      companyId: DEMO_COMPANY_AARVANTA,
+      userId: "user_tom",
+      email: "tom@aarvanta.com",
+      name: "Tom Hughes",
+      role: "member",
+    }),
+
+    // —— ABC Consulting ——
+    member({
       id: "member_abc_owner",
       tenantId: DEMO_ORG_ABC,
       workspaceId: DEMO_WS_ABC,
@@ -169,11 +205,30 @@ export function buildDemoMemberSeed(): WorkspaceMember[] {
       email: "owner@abcconsulting.com",
       name: "Alex Brooks",
       role: "owner",
-      status: "active",
-      joinedAt: now,
-      updatedAt: now,
-    },
-    {
+    }),
+    member({
+      id: "member_abc_admin",
+      tenantId: DEMO_ORG_ABC,
+      workspaceId: DEMO_WS_ABC,
+      companyId: DEMO_COMPANY_ABC,
+      userId: "user_abc_admin",
+      email: "ops@abcconsulting.com",
+      name: "Nina Okonkwo",
+      role: "admin",
+    }),
+    member({
+      id: "member_abc_member",
+      tenantId: DEMO_ORG_ABC,
+      workspaceId: DEMO_WS_ABC,
+      companyId: DEMO_COMPANY_ABC,
+      userId: "user_abc_member",
+      email: "consultant@abcconsulting.com",
+      name: "Chris Dalton",
+      role: "member",
+    }),
+
+    // —— XYZ Agency ——
+    member({
       id: "member_xyz_owner",
       tenantId: DEMO_ORG_XYZ,
       workspaceId: DEMO_WS_XYZ,
@@ -182,10 +237,27 @@ export function buildDemoMemberSeed(): WorkspaceMember[] {
       email: "founder@xyzagency.com",
       name: "Maya Patel",
       role: "owner",
-      status: "active",
-      joinedAt: now,
-      updatedAt: now,
-    },
+    }),
+    member({
+      id: "member_xyz_manager",
+      tenantId: DEMO_ORG_XYZ,
+      workspaceId: DEMO_WS_XYZ,
+      companyId: DEMO_COMPANY_XYZ,
+      userId: "user_xyz_manager",
+      email: "studio@xyzagency.com",
+      name: "Jonah Reed",
+      role: "manager",
+    }),
+    member({
+      id: "member_xyz_guest",
+      tenantId: DEMO_ORG_XYZ,
+      workspaceId: DEMO_WS_XYZ,
+      companyId: DEMO_COMPANY_XYZ,
+      userId: "user_xyz_guest",
+      email: "freelancer@example.com",
+      name: "Riley Cole",
+      role: "guest",
+    }),
   ];
 }
 
@@ -216,6 +288,20 @@ export function buildDemoInvitationSeed(): Invitation[] {
       invitedBy: DEMO_USER_ID,
       invitedByName: "Pavan",
       token: "demo_invite_contractor",
+      status: "pending",
+      expiresAt: expires,
+      createdAt: now,
+    },
+    {
+      id: "inv_abc_manager",
+      tenantId: DEMO_ORG_ABC,
+      workspaceId: DEMO_WS_ABC,
+      companyId: DEMO_COMPANY_ABC,
+      email: "manager@abcconsulting.com",
+      role: "manager",
+      invitedBy: "user_abc_owner",
+      invitedByName: "Alex Brooks",
+      token: "demo_invite_abc_manager",
       status: "pending",
       expiresAt: expires,
       createdAt: now,

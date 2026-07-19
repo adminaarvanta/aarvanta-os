@@ -88,9 +88,10 @@ export const SPEC_PHASES: Array<{
         id: "multi-tenant",
         phase: 5,
         name: "Multi-Tenant",
-        href: "/settings",
+        href: "/organization",
         status: "complete",
-        summary: "Organizations, workspaces, invitations, RBAC roles.",
+        summary:
+          "Org → Workspace hierarchy for all users; Owner/Admin/Manager/Member/Guest RBAC; invitations with accept links.",
       },
       {
         id: "team",

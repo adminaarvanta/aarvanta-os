@@ -36,6 +36,8 @@ export interface TenantRepository {
   ): Promise<Workspace | null>;
 
   listMembers(scope: TenantScope): Promise<WorkspaceMember[]>;
+  /** All members under an organization (every workspace). */
+  listMembersByTenant(tenantId: string): Promise<WorkspaceMember[]>;
   getMember(id: string, scope: TenantScope): Promise<WorkspaceMember | null>;
   getMemberByUser(
     userId: string,
@@ -49,6 +51,8 @@ export interface TenantRepository {
   removeMember(id: string, scope: TenantScope): Promise<boolean>;
 
   listInvitations(scope: TenantScope): Promise<Invitation[]>;
+  listInvitationsByTenant(tenantId: string): Promise<Invitation[]>;
+  getInvitationByToken(token: string): Promise<Invitation | null>;
   createInvitation(
     input: CreateInvitationInput,
     scope: TenantScope

@@ -64,3 +64,27 @@ export const ROLE_LABELS: Record<MemberRole, string> = {
   member: "Member",
   guest: "Guest",
 };
+
+/** PRD Multi-Tenant Architecture — human role descriptions. */
+export const ROLE_DESCRIPTIONS: Record<MemberRole, string> = {
+  owner: "Full control of the organization, billing, and every workspace.",
+  admin: "Manage workspaces, members, and all operating modules.",
+  manager: "Lead teams, invite people, and run day-to-day operations.",
+  member: "Contribute across CRM, finance views, and AI workforce tools.",
+  guest: "Limited read access — ideal for contractors and external partners.",
+};
+
+/** Hierarchy: Organization → Workspace → Members (by role) + Invitations. */
+export type OrgWorkspaceBranch = {
+  workspace: Workspace;
+  members: WorkspaceMember[];
+  membersByRole: Record<MemberRole, WorkspaceMember[]>;
+  invitations: Invitation[];
+};
+
+export type OrganizationHierarchy = {
+  organization: Organization;
+  workspaces: OrgWorkspaceBranch[];
+  totalMembers: number;
+  pendingInvitations: number;
+};

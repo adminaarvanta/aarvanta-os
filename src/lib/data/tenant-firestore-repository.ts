@@ -111,6 +111,16 @@ export const tenantFirestoreRepository: TenantRepository = {
     return items.sort((a, b) => a.name.localeCompare(b.name));
   },
 
+  async listMembersByTenant(tenantId) {
+    const snap = await getDb()
+      .collection(MEMBERS)
+      .where("tenantId", "==", tenantId)
+      .get();
+    return snap.docs
+      .map((doc) => doc.data() as WorkspaceMember)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+
   async getMember(id, scope) {
     const snap = await getDb().collection(MEMBERS).doc(id).get();
     if (!snap.exists) return null;
@@ -167,6 +177,30 @@ export const tenantFirestoreRepository: TenantRepository = {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
+  },
+
+  async listInvitationsByTenant(tenantId) {
+    const snap = await getDb()
+      .collection(INVITATIONS)
+      .where("tenantId", "==", tenantId)
+      .get();
+    return snap.docs
+      .map((doc) => doc.data() as Invitation)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  },
+
+  async getInvitationByToken(token) {
+    const snap = await getDb()
+      .collection(INVITATIONS)
+      .where("token", "==", token)
+      .limit(1)
+      .get();
+    const doc = snap.docs[0];
+    if (!doc) return null;
+    return doc.data() as Invitation;
   },
 
   async createInvitation(input: CreateInvitationInput, scope) {
