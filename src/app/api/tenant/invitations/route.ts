@@ -43,7 +43,13 @@ export async function POST(req: Request) {
       },
       ctx.scope
     );
-    return NextResponse.json(invitation, { status: 201 });
+    return NextResponse.json(
+      {
+        ...invitation,
+        acceptPath: `/invite/${invitation.token}`,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invite failed";
     const status = message === "Forbidden" ? 403 : message === "Unauthorized" ? 401 : 500;

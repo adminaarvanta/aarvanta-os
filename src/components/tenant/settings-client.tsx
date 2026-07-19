@@ -99,8 +99,13 @@ export function SettingsClient({
         body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
       });
       if (res.ok) {
+        const data = (await res.json()) as { acceptPath?: string };
         setInviteEmail("");
-        setMessage("Invitation sent.");
+        setMessage(
+          data.acceptPath
+            ? `Invitation created. Share link: ${data.acceptPath}`
+            : "Invitation sent."
+        );
         router.refresh();
       } else {
         const data = await res.json();
@@ -256,8 +261,14 @@ export function SettingsClient({
       <Panel>
         <SectionHeader
           title="Organization"
-          description={`${organization.name} workspace settings`}
+          description={`${organization.name} — manage plan here, or view the full user hierarchy`}
         />
+        <p className="mt-2 text-xs text-muted">
+          <a href="/organization" className="font-medium text-gold hover:text-gold-bright">
+            Open organization hierarchy
+          </a>{" "}
+          to see every workspace user by Owner / Admin / Manager / Member / Guest.
+        </p>
         {canManageOrg ? (
           <form onSubmit={saveOrganization} className="mt-4 space-y-3">
             <div>

@@ -93,6 +93,12 @@ export const tenantMemoryRepository: TenantRepository = {
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 
+  async listMembersByTenant(tenantId) {
+    return members
+      .filter((m) => m.tenantId === tenantId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+
   async getMember(id, scope) {
     const item = members.find((m) => m.id === id);
     return item && inCrmScope(item, scope) ? item : null;
@@ -135,6 +141,19 @@ export const tenantMemoryRepository: TenantRepository = {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
+  },
+
+  async listInvitationsByTenant(tenantId) {
+    return invitations
+      .filter((i) => i.tenantId === tenantId)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  },
+
+  async getInvitationByToken(token) {
+    return invitations.find((i) => i.token === token) ?? null;
   },
 
   async createInvitation(input: CreateInvitationInput, scope) {
