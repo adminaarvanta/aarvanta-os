@@ -10,10 +10,14 @@ export function createDomainPurchaseOrder(input: {
   currency: string;
   autoRenew: boolean;
   buildJobId?: string;
+  status?: DomainOrder["status"];
+  registrarOrderId?: string;
+  stripeCheckoutSessionId?: string;
 }): DomainOrder {
   const now = crmNow();
   const purchasedAt = now;
   const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const status = input.status ?? "completed";
 
   return {
     ...input.scope,
@@ -22,12 +26,17 @@ export function createDomainPurchaseOrder(input: {
     tld: input.tld,
     priceAnnual: input.priceAnnual,
     currency: input.currency,
-    status: "completed",
-    registrarOrderId: `AAR-DOM-${crmNewId("ord").replace("ord_", "").toUpperCase()}`,
+    status,
+    registrarOrderId:
+      input.registrarOrderId ??
+      (status === "completed"
+        ? `AAR-DOM-${crmNewId("ord").replace("ord_", "").toUpperCase()}`
+        : ""),
     buildJobId: input.buildJobId,
     purchasedAt,
     expiresAt,
     autoRenew: input.autoRenew,
+    stripeCheckoutSessionId: input.stripeCheckoutSessionId,
   };
 }
 

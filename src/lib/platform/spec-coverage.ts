@@ -165,7 +165,7 @@ export const SPEC_PHASES: Array<{
         name: "Billing Foundation",
         href: "/billing",
         status: "partial",
-        summary: "Plans, subscriptions, usage tracking. Stripe live integration planned.",
+        summary: "Plans, subscriptions, usage tracking. Stripe Checkout + portal + webhooks.",
       },
       {
         id: "writing",

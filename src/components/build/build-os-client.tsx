@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
+import { HostingCheckoutPanel } from "@/components/build/hosting-checkout-panel";
 import { ThemeStylePanel } from "@/components/build/theme-style-panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ import {
   resolveSiteTheme,
 } from "@/lib/site-builder/theme-presets";
 import type {
+  AwsEc2InstanceType,
   SiteBuildJob,
   SiteCustomTheme,
   SiteDomainPurchase,
@@ -484,6 +486,49 @@ export function BuildOsClient() {
     hydrateFromJob(item);
   }
 
+  async function patchDeployment(partial: {
+    domain?: SiteDomainPurchase;
+    instanceType?: AwsEc2InstanceType;
+  }) {
+    const current = jobRef.current;
+    if (!current) return;
+    const nextPreferences: SitePreferences = {
+      ...current.preferences,
+      deployment: {
+        ...current.preferences.deployment,
+        ...(partial.domain ? { domain: partial.domain } : {}),
+        ec2: {
+          ...current.preferences.deployment.ec2,
+          ...(partial.instanceType
+            ? { instanceType: partial.instanceType }
+            : {}),
+        },
+      },
+    };
+    const optimistic: SiteBuildJob = { ...current, preferences: nextPreferences };
+    setJob(optimistic);
+    jobRef.current = optimistic;
+    try {
+      const res = await fetch(`/api/build/${current.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextPreferences),
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { job: SiteBuildJob };
+      // Preserve generated preview if PATCH returns a draft without it.
+      const merged: SiteBuildJob = {
+        ...data.job,
+        generatedSite: data.job.generatedSite ?? current.generatedSite,
+        plan: data.job.plan ?? current.plan,
+      };
+      setJob(merged);
+      jobRef.current = merged;
+    } catch {
+      // Keep optimistic local state; draft autosave may retry later.
+    }
+  }
+
   const draftJobs = recentJobs.filter((j) => j.status === "draft" || !j.generatedSite);
   const generatedJobs = recentJobs.filter((j) => Boolean(j.generatedSite));
 
@@ -575,6 +620,34 @@ export function BuildOsClient() {
             </div>
 
             {error && <p className="text-xs text-red-400">{error}</p>}
+
+            <div className="space-y-3">
+              <div>
+                <p className="mb-2 text-xs font-medium text-foreground">Go live with Stripe</p>
+                <p className="mb-3 text-[11px] text-muted">
+                  Buy a domain, then subscribe to Aarvanta Hosting. Payments run through Stripe
+                  Checkout.
+                </p>
+                <DomainPurchasePanel
+                  businessName={job.preferences.businessName}
+                  countryBase={job.preferences.countryBase}
+                  domain={job.preferences.deployment.domain}
+                  buildJobId={job.id}
+                  onDomainChange={(domain) => void patchDeployment({ domain })}
+                />
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-medium text-foreground">Hosting</p>
+                <HostingCheckoutPanel
+                  instanceType={job.preferences.deployment.ec2.instanceType}
+                  buildJobId={job.id}
+                  domain={job.preferences.deployment.domain.selectedDomain}
+                  onInstanceTypeChange={(instanceType) =>
+                    void patchDeployment({ instanceType })
+                  }
+                />
+              </div>
+            </div>
 
             <div className="rounded-xl border border-border bg-surface-muted p-3">
               <p className="text-[10px] font-medium uppercase tracking-wide text-dim">

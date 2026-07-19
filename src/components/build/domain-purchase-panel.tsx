@@ -81,10 +81,12 @@ export function DomainPurchasePanel({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/build/domains/purchase", {
+      // Prefer Stripe Checkout when configured.
+      const stripeRes = await fetch("/api/build/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          kind: "domain",
           domain: listing.domain,
           tld: listing.tld,
           priceAnnual: listing.priceAnnual,
@@ -93,13 +95,42 @@ export function DomainPurchasePanel({
           buildJobId,
         }),
       });
-      if (!res.ok) {
-        const body = (await res.json()) as { error?: { message?: string } };
-        setError(body.error?.message ?? "Domain purchase failed.");
+      const stripeBody = (await stripeRes.json()) as {
+        url?: string;
+        demo?: boolean;
+        error?: { message?: string; code?: string };
+      };
+
+      if (stripeRes.ok && stripeBody.url) {
+        window.location.href = stripeBody.url;
         return;
       }
-      const data = (await res.json()) as { domain: SiteDomainPurchase };
-      onDomainChange(data.domain);
+
+      // Demo / unconfigured Stripe — fall back to instant demo purchase.
+      if ((stripeRes.ok && stripeBody.demo) || stripeRes.status === 503) {
+        const res = await fetch("/api/build/domains/purchase", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            domain: listing.domain,
+            tld: listing.tld,
+            priceAnnual: listing.priceAnnual,
+            currency: listing.currency,
+            autoRenew: domain.autoRenew,
+            buildJobId,
+          }),
+        });
+        if (!res.ok) {
+          const body = (await res.json()) as { error?: { message?: string } };
+          setError(body.error?.message ?? "Domain purchase failed.");
+          return;
+        }
+        const data = (await res.json()) as { domain: SiteDomainPurchase };
+        onDomainChange(data.domain);
+        return;
+      }
+
+      setError(stripeBody.error?.message ?? "Domain checkout failed.");
     } finally {
       setBusy(false);
     }
@@ -378,7 +409,7 @@ export function DomainPurchasePanel({
                           {selected ? <Check className="h-3.5 w-3.5" /> : "Select"}
                         </Button>
                         <Button type="button" onClick={() => void purchaseDomain(listing)} disabled={busy}>
-                          Buy now
+                          Buy with Stripe
                         </Button>
                       </>
                     ) : (

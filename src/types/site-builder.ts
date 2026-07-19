@@ -254,10 +254,11 @@ export type DomainOrder = TenantScope & {
   tld: string;
   priceAnnual: number;
   currency: string;
-  status: "completed" | "pending" | "failed";
+  status: "completed" | "pending" | "pending_payment" | "failed";
   registrarOrderId: string;
   buildJobId?: string;
   purchasedAt: string;
   expiresAt: string;
   autoRenew: boolean;
+  stripeCheckoutSessionId?: string;
 };

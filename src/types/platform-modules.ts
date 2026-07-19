@@ -16,6 +16,7 @@ export interface Subscription extends TenantScope {
   planId: BillingPlanId;
   status: "active" | "trialing" | "past_due" | "canceled";
   stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
   currentPeriodEnd: string;
   trialEndsAt?: string;
   createdAt: string;

@@ -6,7 +6,7 @@ Pending integrations and features deferred from the current sprint. Use this fil
 
 ## Milestone: Stripe billing (Module 11)
 
-**Status:** UI + demo data only — live Stripe not wired.
+**Status:** Live Checkout + Customer Portal + webhook wired (set env keys to activate). Demo mode falls back when keys are missing.
 
 ### Why we need it
 
