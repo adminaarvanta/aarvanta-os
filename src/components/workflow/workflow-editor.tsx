@@ -91,7 +91,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   }
 
   function addStep(type: WorkflowStepType) {
-    const id = `step_${Date.now()}`;
+    const id = `step_${crypto.randomUUID()}`;
     const meta = STEP_TYPES.find((s) => s.type === type)!;
     const step: WorkflowStep = {
       id,
