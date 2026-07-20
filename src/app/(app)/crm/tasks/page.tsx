@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { CreateTaskForm } from "@/components/crm/create-task-form";
+import { CrmImportForm } from "@/components/crm/crm-import-form";
 import { TaskFilters } from "@/components/crm/task-filters";
 import { TaskList } from "@/components/crm/task-list";
 import { getCrmRepository } from "@/lib/data/crm-store";
@@ -35,12 +36,17 @@ export default async function TasksPage({
       <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
         <h2 className="text-lg font-semibold text-foreground sm:text-xl">Tasks</h2>
         <p className="text-xs text-muted sm:text-sm">
-          Create, assign, and track tasks manually — or let AI create them from inbound leads.
+          Create, assign, edit, and import tasks — or let AI create them from inbound leads.
         </p>
       </header>
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
-        <CreateTaskForm members={memberOptions} />
+        <div className="flex flex-wrap items-start gap-2">
+          <div className="min-w-[min(100%,24rem)] flex-1">
+            <CreateTaskForm members={memberOptions} />
+          </div>
+          <CrmImportForm entity="tasks" />
+        </div>
         <Suspense fallback={null}>
           <TaskFilters members={memberOptions} />
         </Suspense>

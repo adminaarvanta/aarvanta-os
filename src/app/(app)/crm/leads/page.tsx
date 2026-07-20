@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { CrmNav } from "@/components/crm/crm-nav";
+import { CreateLeadForm } from "@/components/crm/create-lead-form";
+import { CrmImportForm } from "@/components/crm/crm-import-form";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { activeMemberOptions } from "@/lib/crm/members";
+import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +23,12 @@ function isLead(contact: {
 
 export default async function LeadsPage() {
   const scope = await getTenantScope();
-  const contacts = await getCrmRepository().listContacts(scope);
+  const [contacts, companies, members] = await Promise.all([
+    getCrmRepository().listContacts(scope),
+    getCrmRepository().listCompanies(scope),
+    getTenantRepository().listMembers(scope),
+  ]);
+  const memberOptions = activeMemberOptions(members);
   const leads = contacts
     .filter(isLead)
     .sort((a, b) => (b.leadScore ?? 0) - (a.leadScore ?? 0));
@@ -29,15 +38,22 @@ export default async function LeadsPage() {
       <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
         <h2 className="text-lg font-semibold text-foreground sm:text-xl">Leads</h2>
         <p className="text-xs text-muted sm:text-sm">
-          Prospects and hot leads with AI lead scoring
+          Add prospects manually, import in bulk, or capture them from inbound channels.
         </p>
       </header>
       <CrmNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-start gap-2">
+          <CreateLeadForm
+            members={memberOptions}
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          />
+          <CrmImportForm entity="leads" />
+        </div>
+
         {leads.length === 0 ? (
           <p className="text-sm text-muted">
-            No leads yet. Contacts qualify from inbound conversations or manual
-            entry.
+            No leads yet. Add one manually or import an Excel/CSV file.
           </p>
         ) : (
           <ul className="space-y-3">

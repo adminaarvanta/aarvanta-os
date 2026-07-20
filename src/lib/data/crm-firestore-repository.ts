@@ -60,6 +60,21 @@ async function save<T extends { id: string }>(collection: string, record: T) {
   return record;
 }
 
+async function removeScoped(
+  collection: string,
+  id: string,
+  scope: TenantScope
+): Promise<boolean> {
+  const existing = await getScoped<{ id: string } & TenantScope>(
+    collection,
+    id,
+    scope
+  );
+  if (!existing) return false;
+  await getDb().collection(collection).doc(id).delete();
+  return true;
+}
+
 export const crmFirestoreRepository: CrmRepository = {
   async listContacts(scope, filters) {
     let items = await listScoped<CrmContact>(COLLECTIONS.contacts, scope);
@@ -107,6 +122,10 @@ export const crmFirestoreRepository: CrmRepository = {
     return save(COLLECTIONS.contacts, updated);
   },
 
+  async deleteContact(id, scope) {
+    return removeScoped(COLLECTIONS.contacts, id, scope);
+  },
+
   async listCompanies(scope) {
     const items = await listScoped<CrmCompany>(COLLECTIONS.companies, scope);
     return items.sort((a, b) => a.name.localeCompare(b.name));
@@ -141,12 +160,58 @@ export const crmFirestoreRepository: CrmRepository = {
     });
   },
 
+  async deleteCompany(id, scope) {
+    return removeScoped(COLLECTIONS.companies, id, scope);
+  },
+
   async listPipelines(scope) {
     return listScoped<CrmPipeline>(COLLECTIONS.pipelines, scope);
   },
 
   async getPipeline(id, scope) {
     return getScoped<CrmPipeline>(COLLECTIONS.pipelines, id, scope);
+  },
+
+  async createPipeline(input, scope) {
+    const now = crmNow();
+    const stages =
+      input.stages && input.stages.length > 0
+        ? input.stages.map((s, i) => ({
+            id: s.id ?? crmNewId("stage"),
+            name: s.name,
+            order: s.order ?? i,
+            probability: s.probability ?? Math.min(100, (i + 1) * 20),
+          }))
+        : [
+            { id: crmNewId("stage"), name: "New", order: 0, probability: 10 },
+            { id: crmNewId("stage"), name: "Qualified", order: 1, probability: 30 },
+            { id: crmNewId("stage"), name: "Proposal", order: 2, probability: 60 },
+            { id: crmNewId("stage"), name: "Negotiation", order: 3, probability: 80 },
+            { id: crmNewId("stage"), name: "Won", order: 4, probability: 100 },
+          ];
+    const pipeline: CrmPipeline = {
+      ...scope,
+      id: crmNewId("pipe"),
+      name: input.name,
+      stages,
+      createdAt: now,
+      updatedAt: now,
+    };
+    return save(COLLECTIONS.pipelines, pipeline);
+  },
+
+  async updatePipeline(id, patch, scope) {
+    const existing = await getScoped<CrmPipeline>(COLLECTIONS.pipelines, id, scope);
+    if (!existing) return null;
+    return save(COLLECTIONS.pipelines, {
+      ...existing,
+      ...patch,
+      updatedAt: crmNow(),
+    });
+  },
+
+  async deletePipeline(id, scope) {
+    return removeScoped(COLLECTIONS.pipelines, id, scope);
   },
 
   async listDeals(scope, filters) {
@@ -192,6 +257,10 @@ export const crmFirestoreRepository: CrmRepository = {
       ...patch,
       updatedAt: crmNow(),
     });
+  },
+
+  async deleteDeal(id, scope) {
+    return removeScoped(COLLECTIONS.deals, id, scope);
   },
 
   async listTasks(scope, filters) {
@@ -242,6 +311,10 @@ export const crmFirestoreRepository: CrmRepository = {
       ...patch,
       updatedAt: crmNow(),
     });
+  },
+
+  async deleteTask(id, scope) {
+    return removeScoped(COLLECTIONS.tasks, id, scope);
   },
 
   async listActivities(scope, filters) {

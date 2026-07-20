@@ -85,6 +85,56 @@ export async function applyAgentAction(
         message: `Activity logged: ${activity.title}`,
       };
     }
+    case "update_deal": {
+      const p = action.payload as {
+        dealId?: string;
+        stageId?: string;
+        stageName?: string;
+        status?: "open" | "won" | "lost";
+        notes?: string;
+        value?: number;
+        title?: string;
+      };
+      if (!p.dealId) throw new Error("dealId is required.");
+      const deal = await crm.getDeal(p.dealId, scope);
+      if (!deal) throw new Error("Deal not found.");
+
+      let stageId = p.stageId;
+      if (!stageId && p.stageName) {
+        const pipeline = await crm.getPipeline(deal.pipelineId, scope);
+        const match = pipeline?.stages.find(
+          (s) => s.name.toLowerCase() === p.stageName!.toLowerCase()
+        );
+        stageId = match?.id;
+      }
+
+      const updated = await crm.updateDeal(
+        p.dealId,
+        {
+          ...(stageId ? { stageId } : {}),
+          ...(p.status ? { status: p.status } : {}),
+          ...(p.notes !== undefined ? { notes: p.notes } : {}),
+          ...(typeof p.value === "number" ? { value: p.value } : {}),
+          ...(p.title ? { title: p.title } : {}),
+          ...(stageId
+            ? {
+                probability:
+                  (
+                    await crm.getPipeline(deal.pipelineId, scope)
+                  )?.stages.find((s) => s.id === stageId)?.probability ??
+                  deal.probability,
+              }
+            : {}),
+        },
+        scope
+      );
+      if (!updated) throw new Error("Failed to update deal.");
+      return {
+        kind: "deal",
+        id: updated.id,
+        message: `Deal updated: ${updated.title}`,
+      };
+    }
     case "suggest_reply":
       return {
         kind: "suggest_reply",

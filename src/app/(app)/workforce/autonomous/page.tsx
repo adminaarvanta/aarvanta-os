@@ -1,5 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
+import { AutonomousQueueActions } from "@/components/workforce/autonomous-queue-actions";
 import { getAutonomousStore } from "@/lib/data/platform-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { getAgentDefinition, isAgentType } from "@/lib/workforce/agents";
@@ -16,6 +17,8 @@ function statusLabel(status: string) {
     completed: "Done",
     failed: "Needs attention",
     awaiting_approval: "Needs approval",
+    planning: "Planning",
+    review: "Review",
   };
   return map[status] ?? status.replace(/_/g, " ");
 }
@@ -28,9 +31,11 @@ export default async function AutonomousPage() {
     <ModulePageShell
       icon={Sparkles}
       title="Autonomous Task Queue"
-      description="Queued and running tasks across your AI workforce."
+      description="Assign goals to AI agents — they complete linked CRM tasks and can update pipeline deals."
     >
       <div className="space-y-8">
+        <AutonomousQueueActions />
+
         <StatGrid
           items={[
             { label: "Tasks", value: tasks.length, sub: "Total autonomous tasks" },

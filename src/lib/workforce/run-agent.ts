@@ -22,22 +22,25 @@ type AiAgentResponse = {
 const ACTION_TYPES: AgentActionType[] = [
   "create_task",
   "create_activity",
+  "update_deal",
   "suggest_reply",
   "alert",
   "generate_hr_document",
 ];
 
-function agentSystemPrompt(type: AgentType): string {
+export type AgentRunMode = "analyze" | "execute_task";
+
+function agentSystemPrompt(type: AgentType, mode: AgentRunMode): string {
   const agent = getAgentDefinition(type);
   const base = `You are ${agent.name} (${agent.title}) in Aarvanta OS — a multi-tenant business operating system.
 Primary function: ${agent.primaryFunction}.
 Respond ONLY with valid JSON:
 {
-  "summary": "2-4 sentence executive summary of your analysis",
+  "summary": "2-4 sentence executive summary",
   "recommendations": ["actionable bullet 1", "actionable bullet 2", ...],
   "actions": [
     {
-      "type": "create_task" | "create_activity" | "suggest_reply" | "alert" | "generate_hr_document",
+      "type": "create_task" | "create_activity" | "update_deal" | "suggest_reply" | "alert" | "generate_hr_document",
       "label": "short human label for the action button",
       "payload": { ... type-specific fields ... }
     }
@@ -45,18 +48,31 @@ Respond ONLY with valid JSON:
 }
 
 Action payload schemas:
-- create_task: { "title": string, "description"?: string, "priority"?: "low"|"medium"|"high", "dueDate"?: "YYYY-MM-DD", "contactId"?: string }
-- create_activity: { "type": "call"|"meeting"|"note", "title": string, "description"?: string, "contactId"?: string }
+- create_task: { "title": string, "description"?: string, "priority"?: "low"|"medium"|"high", "dueDate"?: "YYYY-MM-DD", "contactId"?: string, "dealId"?: string }
+- create_activity: { "type": "call"|"meeting"|"note", "title": string, "description"?: string, "contactId"?: string, "dealId"?: string }
+- update_deal: { "dealId": string, "stageName"?: string, "stageId"?: string, "status"?: "open"|"won"|"lost", "notes"?: string, "value"?: number, "title"?: string }
 - suggest_reply: { "channel": "email"|"sms"|"whatsapp"|"website_chat", "content": string, "subject"?: string }
 - alert: { "severity": "info"|"warning"|"critical", "message": string }
 - generate_hr_document: { "documentType": string, "subjectName": string, "contextFields"?: object, "conversationId"?: string, "instructions"?: string }
 
-Include 1-3 concrete actions when appropriate. Use contactId/conversationId from context when provided.`;
+Use contactId/dealId/conversationId from context when provided.`;
+
+  if (mode === "execute_task") {
+    return `${base}
+
+MODE: TASK EXECUTION
+You have been assigned a concrete CRM task (see context.assignedTask). Your job is to COMPLETE that work now.
+- Prefer create_activity (note) documenting what you did.
+- If context.deal exists, use update_deal to advance the pipeline (next stage) or update notes when appropriate.
+- Only create_task for genuine NEW follow-ups a human must do later — do not recreate the same assigned task.
+- Do not refuse the assignment; produce concrete completion work.
+- Summary should state what was completed.`;
+  }
 
   const roles: Record<AgentType, string> = {
     ceo: `${base}\n\nRole: AI CEO. Deliver a daily business briefing covering revenue, pipeline, risks, and strategic priorities. Use alert for critical business risks.`,
     coo: `${base}\n\nRole: AI COO. Review operations, task backlog, bottlenecks, and process efficiency. Prefer create_task for operational follow-ups.`,
-    sales_manager: `${base}\n\nRole: AI Sales Manager. Review pipeline, qualify leads, suggest follow-ups, and recommend deal actions.`,
+    sales_manager: `${base}\n\nRole: AI Sales Manager. Review pipeline, qualify leads, suggest follow-ups, and recommend deal actions. Use update_deal when stage changes are warranted.`,
     marketing_manager: `${base}\n\nRole: AI Marketing Manager. Suggest campaigns, content themes, channel priorities, and audience targeting from CRM data.`,
     hr_manager: `${base}\n\nRole: AI HR Manager. Support recruitment, onboarding, JD drafting, and hiring pipeline review. Use generate_hr_document when a formal HR letter is needed (offer, experience, relieving, etc.).`,
     cfo: `${base}\n\nRole: AI CFO. Review revenue forecast, expenses, invoices, budgets, and cashflow risks. Recommend margin and collections actions.`,
@@ -68,8 +84,69 @@ Include 1-3 concrete actions when appropriate. Use contactId/conversationId from
 
 function heuristicRun(
   type: AgentType,
-  context: WorkforceContext
+  context: WorkforceContext,
+  mode: AgentRunMode
 ): AiAgentResponse {
+  if (mode === "execute_task" && context.assignedTask) {
+    const task = context.assignedTask;
+    const actions: AiAgentResponse["actions"] = [
+      {
+        type: "create_activity",
+        label: "Log completion note",
+        payload: {
+          type: "note",
+          title: `Completed: ${task.title}`,
+          description:
+            context.assignedTask.description ??
+            `${getAgentDefinition(type).name} completed this CRM task.`,
+          contactId: task.contactId,
+          dealId: task.dealId,
+        },
+      },
+    ];
+
+    if (context.deal && context.deal.status === "open" && context.deal.stages.length > 0) {
+      const currentIdx = context.deal.stages.findIndex(
+        (s) => s.id === context.deal!.stageId
+      );
+      const next = context.deal.stages[currentIdx + 1];
+      if (next && type === "sales_manager") {
+        actions.push({
+          type: "update_deal",
+          label: `Move deal to ${next.name}`,
+          payload: {
+            dealId: context.deal.id,
+            stageId: next.id,
+            stageName: next.name,
+            notes: `Advanced by ${getAgentDefinition(type).name} while completing: ${task.title}`,
+          },
+        });
+      } else {
+        actions.push({
+          type: "update_deal",
+          label: "Update deal notes",
+          payload: {
+            dealId: context.deal.id,
+            notes: `Agent progress on "${task.title}": ${
+              task.description ?? "Task completed."
+            }`,
+          },
+        });
+      }
+    }
+
+    return {
+      summary: `${getAgentDefinition(type).name} completed CRM task "${task.title}".`,
+      recommendations: [
+        "Review the logged activity on the related contact or deal.",
+        ...(context.deal
+          ? ["Confirm the pipeline stage still reflects the latest customer conversation."]
+          : []),
+      ],
+      actions,
+    };
+  }
+
   const recs: string[] = [];
   const actions: AiAgentResponse["actions"] = [];
 
@@ -172,31 +249,37 @@ function normalizeActions(raw: AiAgentResponse["actions"]): AgentAction[] {
 export async function executeAgentRun(input: {
   agentType: AgentType;
   context: WorkforceContext;
+  mode?: AgentRunMode;
 }): Promise<{
   summary: string;
   recommendations: string[];
   actions: AgentAction[];
 }> {
-  const { agentType, context } = input;
+  const { agentType, context, mode = "analyze" } = input;
   const agent = getAgentDefinition(agentType);
 
   let result: AiAgentResponse;
 
   if (isAiConfigured()) {
     result = await completeJson<AiAgentResponse>({
-      system: agentSystemPrompt(agentType),
+      system: agentSystemPrompt(agentType, mode),
       user: JSON.stringify({
         agent: agent.name,
         primaryFunction: agent.primaryFunction,
+        mode,
         context,
       }),
     });
   } else {
-    result = heuristicRun(agentType, context);
+    result = heuristicRun(agentType, context, mode);
   }
 
   return {
-    summary: result.summary?.trim() || `${agent.name} completed analysis.`,
+    summary:
+      result.summary?.trim() ||
+      (mode === "execute_task"
+        ? `${agent.name} completed the assigned CRM task.`
+        : `${agent.name} completed analysis.`),
     recommendations: (result.recommendations ?? []).filter(Boolean).slice(0, 6),
     actions: normalizeActions(result.actions),
   };

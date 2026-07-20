@@ -46,6 +46,7 @@ export interface CrmRepository {
     >,
     scope: TenantScope
   ): Promise<CrmContact | null>;
+  deleteContact(id: string, scope: TenantScope): Promise<boolean>;
 
   listCompanies(scope: TenantScope): Promise<CrmCompany[]>;
   getCompany(id: string, scope: TenantScope): Promise<CrmCompany | null>;
@@ -69,9 +70,17 @@ export interface CrmRepository {
     >,
     scope: TenantScope
   ): Promise<CrmCompany | null>;
+  deleteCompany(id: string, scope: TenantScope): Promise<boolean>;
 
   listPipelines(scope: TenantScope): Promise<CrmPipeline[]>;
   getPipeline(id: string, scope: TenantScope): Promise<CrmPipeline | null>;
+  createPipeline(input: CreatePipelineInput, scope: TenantScope): Promise<CrmPipeline>;
+  updatePipeline(
+    id: string,
+    patch: Partial<Pick<CrmPipeline, "name" | "stages">>,
+    scope: TenantScope
+  ): Promise<CrmPipeline | null>;
+  deletePipeline(id: string, scope: TenantScope): Promise<boolean>;
 
   listDeals(
     scope: TenantScope,
@@ -98,6 +107,7 @@ export interface CrmRepository {
     >,
     scope: TenantScope
   ): Promise<CrmDeal | null>;
+  deleteDeal(id: string, scope: TenantScope): Promise<boolean>;
 
   listTasks(
     scope: TenantScope,
@@ -131,6 +141,7 @@ export interface CrmRepository {
     >,
     scope: TenantScope
   ): Promise<CrmTask | null>;
+  deleteTask(id: string, scope: TenantScope): Promise<boolean>;
 
   listActivities(
     scope: TenantScope,
@@ -163,6 +174,16 @@ export type CreateCompanyInput = {
   tags?: ContactTag[];
   notes?: string;
   ownerId?: string;
+};
+
+export type CreatePipelineInput = {
+  name: string;
+  stages?: Array<{
+    id?: string;
+    name: string;
+    order: number;
+    probability: number;
+  }>;
 };
 
 export type CreateDealInput = {

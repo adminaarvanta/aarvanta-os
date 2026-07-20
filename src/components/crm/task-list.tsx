@@ -1,9 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Clock } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Circle, Clock, Play } from "lucide-react";
+import { DeleteEntityButton } from "@/components/crm/delete-entity-button";
+import { EditTaskForm } from "@/components/crm/edit-task-form";
 import { MemberSelect } from "@/components/shared/member-select";
+import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
+import { getAgentDefinition, isAgentType } from "@/lib/workforce/agents";
 import type { CrmTask } from "@/types/crm";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +32,9 @@ export function TaskList({
   tasks: CrmTask[];
   members: MemberOption[];
 }) {
+  const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
+  const [executingId, setExecutingId] = useState<string | null>(null);
 
   useEffect(() => {
     setTasks(initialTasks);
@@ -73,6 +81,23 @@ export function TaskList({
     }
   }
 
+  async function executeWithAgent(task: CrmTask) {
+    if (!task.assignedAgentType) return;
+    setExecutingId(task.id);
+    try {
+      const res = await fetch(`/api/workforce/tasks/${task.id}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentType: task.assignedAgentType }),
+      });
+      if (res.ok) {
+        router.refresh();
+      }
+    } finally {
+      setExecutingId(null);
+    }
+  }
+
   if (tasks.length === 0) {
     return <p className="text-sm text-muted">No tasks yet.</p>;
   }
@@ -86,6 +111,10 @@ export function TaskList({
     <ul className="divide-y divide-border rounded-xl border border-border bg-surface-elevated">
       {tasks.map((task) => {
         const Icon = statusIcon[task.status];
+        const agentLabel =
+          task.assignedAgentType && isAgentType(task.assignedAgentType)
+            ? getAgentDefinition(task.assignedAgentType).name
+            : task.assignedAgentType;
         return (
           <li key={task.id} className="flex items-start gap-3 px-4 py-3">
             <button
@@ -114,23 +143,53 @@ export function TaskList({
                     {task.priority} priority
                   </span>
                   {task.dueDate && <span>Due {task.dueDate}</span>}
-                  {task.source === "ai" && (
+                  {agentLabel && (
+                    <span className="text-gold">AI: {agentLabel}</span>
+                  )}
+                  {task.source === "ai" && !agentLabel && (
                     <span className="text-gold">AI-created</span>
+                  )}
+                  {task.agentRunId && (
+                    <Link
+                      href={`/workforce/runs/${task.agentRunId}`}
+                      className="text-gold hover:underline"
+                    >
+                      View run
+                    </Link>
                   )}
                 </div>
               </div>
-              <div className="max-w-xs">
-                <MemberSelect
-                  members={members}
-                  value={task.assignedTo ?? ""}
-                  onChange={(userId) => assignTask(task.id, userId)}
-                  placeholder="Assign to…"
-                />
-                {task.assignedTo && (
-                  <p className="mt-1 text-[10px] text-muted">
-                    Assigned: {assigneeName(task.assignedTo)}
-                  </p>
+              {!task.assignedAgentType && (
+                <div className="max-w-xs">
+                  <MemberSelect
+                    members={members}
+                    value={task.assignedTo ?? ""}
+                    onChange={(userId) => assignTask(task.id, userId)}
+                    placeholder="Assign to…"
+                  />
+                  {task.assignedTo && (
+                    <p className="mt-1 text-[10px] text-muted">
+                      Assigned: {assigneeName(task.assignedTo)}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-1">
+                {task.assignedAgentType && task.status !== "done" && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 px-2 text-[10px]"
+                    disabled={executingId !== null}
+                    onClick={() => void executeWithAgent(task)}
+                  >
+                    <Play className="mr-1 h-3 w-3" />
+                    {executingId === task.id ? "Working…" : "Complete with agent"}
+                  </Button>
                 )}
+                <EditTaskForm task={task} members={members} />
+                <DeleteEntityButton entity="tasks" id={task.id} label="task" />
               </div>
             </div>
           </li>

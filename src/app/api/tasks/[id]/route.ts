@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { recordMutationEvent } from "@/lib/api/mutation-events";
 import { getCrmRepository } from "@/lib/data/crm-store";
-import { getSessionContext } from "@/lib/tenant/context";
+import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 
 const updateSchema = z.object({
@@ -12,6 +12,7 @@ const updateSchema = z.object({
   priority: z.enum(["low", "medium", "high"]).optional(),
   dueDate: z.string().optional(),
   assignedTo: z.string().optional(),
+  assignedAgentType: z.string().optional(),
   contactId: z.string().optional(),
   accountId: z.string().optional(),
   dealId: z.string().optional(),
@@ -56,4 +57,23 @@ export async function PATCH(
   });
 
   return NextResponse.json({ task });
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let scope;
+  try {
+    scope = await getTenantScope();
+  } catch {
+    return unauthorized();
+  }
+
+  const { id } = await params;
+  const ok = await getCrmRepository().deleteTask(id, scope);
+  if (!ok) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true });
 }

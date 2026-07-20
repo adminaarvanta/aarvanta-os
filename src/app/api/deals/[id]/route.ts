@@ -103,3 +103,22 @@ export async function PATCH(
 
   return NextResponse.json({ deal });
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let scope;
+  try {
+    scope = await getTenantScope();
+  } catch {
+    return unauthorized();
+  }
+
+  const { id } = await params;
+  const ok = await getCrmRepository().deleteDeal(id, scope);
+  if (!ok) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true });
+}

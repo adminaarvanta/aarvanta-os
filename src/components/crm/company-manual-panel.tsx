@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { AssignOwnerField, LogActivityForm } from "@/components/crm/crm-manual-forms";
 import { CreateTaskForm } from "@/components/crm/create-task-form";
+import { DeleteEntityButton } from "@/components/crm/delete-entity-button";
 import { EditCompanyForm } from "@/components/crm/edit-entity-forms";
 import type { MemberOption } from "@/lib/crm/members";
 import type { CrmCompany } from "@/types/crm";
@@ -23,7 +24,15 @@ export function CompanyManualPanel({
       <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">Manual CRM actions</h3>
-          <EditCompanyForm company={company} />
+          <div className="flex flex-wrap gap-2">
+            <EditCompanyForm company={company} />
+            <DeleteEntityButton
+              entity="companies"
+              id={company.id}
+              label="company"
+              redirectTo="/crm/companies"
+            />
+          </div>
         </div>
         <AssignOwnerField
           label="Owner"

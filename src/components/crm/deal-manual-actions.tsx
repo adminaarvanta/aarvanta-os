@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LogActivityForm } from "@/components/crm/crm-manual-forms";
+import { DeleteEntityButton } from "@/components/crm/delete-entity-button";
 import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
 import type { CrmDeal } from "@/types/crm";
@@ -111,6 +112,7 @@ export function DealManualActions({
         >
           {logging ? "Hide log" : "Log activity"}
         </Button>
+        <DeleteEntityButton entity="deals" id={deal.id} label="deal" />
       </div>
 
       {editing && (

@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import { CheckCircle2, Circle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { CheckCircle2, Circle, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { CrmTask } from "@/types/crm";
+import type { AgentType } from "@/types/workforce";
 import { formatRelative } from "@/lib/utils";
 
 const priorityColors: Record<CrmTask["priority"], string> = {
@@ -10,14 +16,93 @@ const priorityColors: Record<CrmTask["priority"], string> = {
   high: "bg-danger/15 text-danger ring-danger/45",
 };
 
-export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
+export function AgentTasksPanel({
+  tasks,
+  agentType,
+}: {
+  tasks: CrmTask[];
+  agentType: AgentType;
+}) {
+  const router = useRouter();
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const openTasks = tasks.filter((t) => t.status !== "done");
+
+  async function executeOne(taskId: string) {
+    setBusyId(taskId);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/workforce/tasks/${taskId}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentType }),
+      });
+      const data = (await res.json()) as {
+        error?: { message?: string };
+        run?: { id: string };
+        applied?: unknown[];
+      };
+      if (!res.ok) {
+        setMessage(
+          typeof data.error?.message === "string"
+            ? data.error.message
+            : "Could not complete task"
+        );
+        return;
+      }
+      setMessage(
+        `Task completed${data.run?.id ? ` · run saved` : ""}${
+          Array.isArray(data.applied) ? ` · ${data.applied.length} actions applied` : ""
+        }.`
+      );
+      router.refresh();
+    } catch {
+      setMessage("Network error while executing task");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function processOpen() {
+    setBatchBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/workforce/tasks/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentType, limit: 10 }),
+      });
+      const data = (await res.json()) as {
+        error?: unknown;
+        processedCount?: number;
+        failedCount?: number;
+      };
+      if (!res.ok) {
+        setMessage("Failed to process open tasks");
+        return;
+      }
+      setMessage(
+        `Processed ${data.processedCount ?? 0} task(s)${
+          data.failedCount ? `, ${data.failedCount} failed` : ""
+        }.`
+      );
+      router.refresh();
+    } catch {
+      setMessage("Network error while processing tasks");
+    } finally {
+      setBatchBusy(false);
+    }
+  }
+
   if (tasks.length === 0) {
     return (
       <section className="rounded-xl border border-border bg-surface-elevated p-5">
         <h3 className="text-sm font-semibold text-foreground">Agent tasks</h3>
         <p className="mt-2 text-sm text-muted">
-          No tasks assigned to this agent yet. Run the agent and apply actions to
-          create tasks automatically.
+          No CRM tasks assigned to this agent yet. Assign a task from CRM Tasks
+          (choose this agent), or run the agent and apply create-task actions.
         </p>
       </section>
     );
@@ -25,12 +110,26 @@ export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
 
   return (
     <section className="rounded-xl border border-border bg-surface-elevated p-5">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">Agent tasks</h3>
-        <Link href="/crm/tasks" className="text-xs text-gold hover:underline">
-          View all in CRM →
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {openTasks.length > 0 && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void processOpen()}
+              disabled={batchBusy || busyId !== null}
+            >
+              <Play className="mr-1.5 h-3.5 w-3.5" />
+              {batchBusy ? "Working…" : `Work on open (${openTasks.length})`}
+            </Button>
+          )}
+          <Link href="/crm/tasks" className="text-xs text-gold hover:underline">
+            View all in CRM →
+          </Link>
+        </div>
       </div>
+      {message && <p className="mb-3 text-xs text-muted">{message}</p>}
       <ul className="space-y-3">
         {tasks.map((task) => (
           <li
@@ -63,7 +162,29 @@ export function AgentTasksPanel({ tasks }: { tasks: CrmTask[] }) {
                   <span className="text-[10px] text-muted">
                     {formatRelative(task.updatedAt)}
                   </span>
+                  {task.agentRunId && (
+                    <Link
+                      href={`/workforce/runs/${task.agentRunId}`}
+                      className="text-[10px] text-gold hover:underline"
+                    >
+                      View run
+                    </Link>
+                  )}
                 </div>
+                {task.status !== "done" && (
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={busyId !== null || batchBusy}
+                      onClick={() => void executeOne(task.id)}
+                    >
+                      <Play className="mr-1.5 h-3.5 w-3.5" />
+                      {busyId === task.id ? "Working…" : "Complete with agent"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </li>

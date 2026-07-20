@@ -23,6 +23,7 @@ export type AgentRunStatus = "running" | "completed" | "failed";
 export type AgentActionType =
   | "create_task"
   | "create_activity"
+  | "update_deal"
   | "suggest_reply"
   | "alert"
   | "generate_hr_document";
@@ -47,9 +48,10 @@ export interface AgentRun extends TenantScope {
   id: string;
   agentType: AgentType;
   status: AgentRunStatus;
-  trigger: "manual";
+  trigger: "manual" | "task" | "autonomous";
   contactId?: string;
   conversationId?: string;
+  taskId?: string;
   inputSummary?: string;
   summary: string;
   recommendations: string[];

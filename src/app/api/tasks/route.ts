@@ -15,6 +15,7 @@ const createSchema = z.object({
   accountId: z.string().optional(),
   dealId: z.string().optional(),
   assignedTo: z.string().optional(),
+  assignedAgentType: z.string().optional(),
   source: z.enum(["manual", "ai"]).optional(),
 });
 
@@ -59,7 +60,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const task = await getCrmRepository().createTask(parsed.data, ctx.scope);
+  const task = await getCrmRepository().createTask(
+    {
+      ...parsed.data,
+      source: parsed.data.assignedAgentType
+        ? parsed.data.source ?? "ai"
+        : parsed.data.source ?? "manual",
+    },
+    ctx.scope
+  );
   await recordMutationEvent({
     ctx,
     type: "task.created",

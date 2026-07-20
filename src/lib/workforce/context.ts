@@ -31,7 +31,7 @@ function timelineSnippet(conversation: Conversation, limit = 8) {
 
 export async function buildWorkforceContext(
   scope: TenantScope,
-  input: { contactId?: string; conversationId?: string }
+  input: { contactId?: string; conversationId?: string; taskId?: string }
 ) {
   const crm = getCrmRepository();
   const inbox = getRepository();
@@ -58,11 +58,23 @@ export async function buildWorkforceContext(
     getHrStore().listCases(scope),
   ]);
 
-  const contact = input.contactId
-    ? await crm.getContact(input.contactId, scope)
+  const assignedTask = input.taskId
+    ? (await crm.getTask(input.taskId, scope)) ??
+      tasks.find((t) => t.id === input.taskId) ??
+      null
     : null;
+
+  const contactId = input.contactId ?? assignedTask?.contactId;
+  const contact = contactId ? await crm.getContact(contactId, scope) : null;
   const conversation = input.conversationId
     ? await inbox.getConversation(input.conversationId, scope)
+    : null;
+
+  const deal = assignedTask?.dealId
+    ? deals.find((d) => d.id === assignedTask.dealId) ?? null
+    : null;
+  const dealPipeline = deal
+    ? pipelines.find((p) => p.id === deal.pipelineId) ?? null
     : null;
 
   const company = contact?.accountId
@@ -136,6 +148,47 @@ export async function buildWorkforceContext(
           sentiment: conversation.sentiment,
           aiSummary: conversation.aiSummary,
           timeline: timelineSnippet(conversation),
+        }
+      : null,
+    assignedTask: assignedTask
+      ? {
+          id: assignedTask.id,
+          title: assignedTask.title,
+          description: assignedTask.description,
+          status: assignedTask.status,
+          priority: assignedTask.priority,
+          dueDate: assignedTask.dueDate,
+          contactId: assignedTask.contactId,
+          accountId: assignedTask.accountId,
+          dealId: assignedTask.dealId,
+          source: assignedTask.source,
+        }
+      : null,
+    deal: deal
+      ? {
+          id: deal.id,
+          title: deal.title,
+          value: deal.value,
+          currency: deal.currency,
+          status: deal.status,
+          stageId: deal.stageId,
+          stageName:
+            dealPipeline?.stages.find((s) => s.id === deal.stageId)?.name ??
+            null,
+          pipelineId: deal.pipelineId,
+          pipelineName: dealPipeline?.name ?? null,
+          stages:
+            dealPipeline?.stages
+              .slice()
+              .sort((a, b) => a.order - b.order)
+              .map((s) => ({
+                id: s.id,
+                name: s.name,
+                order: s.order,
+                probability: s.probability,
+              })) ?? [],
+          notes: deal.notes,
+          expectedCloseDate: deal.expectedCloseDate,
         }
       : null,
     hotLeads: hotLeads.slice(0, 5).map((c) => ({

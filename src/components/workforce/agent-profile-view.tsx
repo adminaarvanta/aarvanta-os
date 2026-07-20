@@ -55,7 +55,9 @@ export function AgentProfileView({
         {tab === "memory" && (
           <AgentMemoryPanel agentType={agent.type} initialMemory={memory} />
         )}
-        {tab === "tasks" && <AgentTasksPanel tasks={tasks} />}
+        {tab === "tasks" && (
+          <AgentTasksPanel tasks={tasks} agentType={agent.type} />
+        )}
       </div>
     </div>
   );

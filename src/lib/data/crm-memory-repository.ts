@@ -25,7 +25,7 @@ import type {
 
 let contacts = [...DEMO_CRM_CONTACTS];
 let companies = [...DEMO_CRM_COMPANIES];
-const pipelines = [...DEMO_CRM_PIPELINES];
+let pipelines = [...DEMO_CRM_PIPELINES];
 let deals = [...DEMO_CRM_DEALS];
 let tasks = [...DEMO_CRM_TASKS];
 let activities = [...DEMO_CRM_ACTIVITIES];
@@ -87,6 +87,12 @@ export const crmMemoryRepository: CrmRepository = {
     return updated;
   },
 
+  async deleteContact(id, scope) {
+    const before = contacts.length;
+    contacts = contacts.filter((c) => !(c.id === id && inCrmScope(c, scope)));
+    return contacts.length < before;
+  },
+
   async listCompanies(scope) {
     return scoped(companies, scope).sort((a, b) => a.name.localeCompare(b.name));
   },
@@ -120,6 +126,12 @@ export const crmMemoryRepository: CrmRepository = {
     return updated;
   },
 
+  async deleteCompany(id, scope) {
+    const before = companies.length;
+    companies = companies.filter((c) => !(c.id === id && inCrmScope(c, scope)));
+    return companies.length < before;
+  },
+
   async listPipelines(scope) {
     return scoped(pipelines, scope);
   },
@@ -127,6 +139,49 @@ export const crmMemoryRepository: CrmRepository = {
   async getPipeline(id, scope) {
     const item = pipelines.find((p) => p.id === id);
     return item && inCrmScope(item, scope) ? item : null;
+  },
+
+  async createPipeline(input, scope) {
+    const now = crmNow();
+    const stages =
+      input.stages && input.stages.length > 0
+        ? input.stages.map((s, i) => ({
+            id: s.id ?? crmNewId("stage"),
+            name: s.name,
+            order: s.order ?? i,
+            probability: s.probability ?? Math.min(100, (i + 1) * 20),
+          }))
+        : [
+            { id: crmNewId("stage"), name: "New", order: 0, probability: 10 },
+            { id: crmNewId("stage"), name: "Qualified", order: 1, probability: 30 },
+            { id: crmNewId("stage"), name: "Proposal", order: 2, probability: 60 },
+            { id: crmNewId("stage"), name: "Negotiation", order: 3, probability: 80 },
+            { id: crmNewId("stage"), name: "Won", order: 4, probability: 100 },
+          ];
+    const pipeline: CrmPipeline = {
+      ...scope,
+      id: crmNewId("pipe"),
+      name: input.name,
+      stages,
+      createdAt: now,
+      updatedAt: now,
+    };
+    pipelines = [pipeline, ...pipelines];
+    return pipeline;
+  },
+
+  async updatePipeline(id, patch, scope) {
+    const idx = pipelines.findIndex((p) => p.id === id && inCrmScope(p, scope));
+    if (idx < 0) return null;
+    const updated = { ...pipelines[idx], ...patch, updatedAt: crmNow() };
+    pipelines[idx] = updated;
+    return updated;
+  },
+
+  async deletePipeline(id, scope) {
+    const before = pipelines.length;
+    pipelines = pipelines.filter((p) => !(p.id === id && inCrmScope(p, scope)));
+    return pipelines.length < before;
   },
 
   async listDeals(scope, filters) {
@@ -172,6 +227,12 @@ export const crmMemoryRepository: CrmRepository = {
     const updated = { ...deals[idx], ...patch, updatedAt: crmNow() };
     deals[idx] = updated;
     return updated;
+  },
+
+  async deleteDeal(id, scope) {
+    const before = deals.length;
+    deals = deals.filter((d) => !(d.id === id && inCrmScope(d, scope)));
+    return deals.length < before;
   },
 
   async listTasks(scope, filters) {
@@ -222,6 +283,12 @@ export const crmMemoryRepository: CrmRepository = {
     const updated = { ...tasks[idx], ...patch, updatedAt: crmNow() };
     tasks[idx] = updated;
     return updated;
+  },
+
+  async deleteTask(id, scope) {
+    const before = tasks.length;
+    tasks = tasks.filter((t) => !(t.id === id && inCrmScope(t, scope)));
+    return tasks.length < before;
   },
 
   async listActivities(scope, filters) {

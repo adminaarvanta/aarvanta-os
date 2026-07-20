@@ -2,14 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Upload } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  CRM_IMPORT_COLUMNS,
+  type CrmImportEntity,
+} from "@/lib/crm/import-templates";
 
-export function CrmImportForm({
-  entity,
-}: {
-  entity: "contacts" | "companies";
-}) {
+const LABELS: Record<CrmImportEntity, string> = {
+  contacts: "contacts",
+  companies: "companies",
+  leads: "leads",
+  deals: "deals",
+  tasks: "tasks",
+  pipelines: "pipelines",
+};
+
+export function CrmImportForm({ entity }: { entity: CrmImportEntity }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -40,8 +49,12 @@ export function CrmImportForm({
         setError(typeof data.error === "string" ? data.error : "Import failed");
         return;
       }
+      const errHint =
+        data.errors && data.errors.length > 0
+          ? ` First issues: ${data.errors.slice(0, 2).join("; ")}`
+          : "";
       setResult(
-        `Created ${data.created ?? 0}, updated ${data.updated ?? 0}, skipped ${data.skipped ?? 0}.`
+        `Created ${data.created ?? 0}, updated ${data.updated ?? 0}, skipped ${data.skipped ?? 0}.${errHint}`
       );
       setFile(null);
       router.refresh();
@@ -61,10 +74,7 @@ export function CrmImportForm({
     );
   }
 
-  const sample =
-    entity === "contacts"
-      ? "Columns: First Name, Last Name (or Name), Email, Phone, Job Title, Company, Tags, Notes"
-      : "Columns: Name, Domain, Website, Industry, Size, Address, Tags, Notes";
+  const sample = CRM_IMPORT_COLUMNS[entity].description;
 
   return (
     <form
@@ -74,17 +84,30 @@ export function CrmImportForm({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-foreground">
-            Import {entity === "contacts" ? "contacts" : "companies"}
+            Import {LABELS[entity]}
           </p>
           <p className="mt-1 text-xs text-muted">{sample}</p>
           <p className="mt-1 text-xs text-muted">
-            Duplicates matched by email/phone (contacts) or name/domain (companies) are
-            updated.
+            Download the Excel template, fill your rows, then upload. Duplicates are
+            updated when a match is found.
           </p>
         </div>
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
           Close
         </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <a href={`/api/crm/import/template?entity=${entity}&format=xlsx`}>
+          <Button type="button" size="sm" variant="secondary">
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Excel template
+          </Button>
+        </a>
+        <a href={`/api/crm/import/template?entity=${entity}&format=csv`}>
+          <Button type="button" size="sm" variant="ghost">
+            CSV template
+          </Button>
+        </a>
       </div>
       <input
         type="file"
