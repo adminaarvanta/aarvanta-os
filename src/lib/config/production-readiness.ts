@@ -1,5 +1,9 @@
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getAllChannelStatuses } from "@/lib/channels/config";
+import {
+  getVoiceRelayWssUrl,
+  isVoiceRelayConfigured,
+} from "@/lib/channels/voice-relay";
 import { isFirebaseConfigured } from "@/lib/firebase/admin";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getStripeRuntimeStatus } from "@/lib/stripe/config";
@@ -171,12 +175,34 @@ export function getProductionReadiness(): ProductionReadiness {
 
   // Voice OS — Twilio + public URL for TwiML / signatures
   if (channels.voice === "live") {
+    const relay = isVoiceRelayConfigured();
     items.push({
       id: "voice_os",
       label: "Voice OS",
       status: "ok",
-      detail: "Twilio Voice + TwiML status callbacks ready",
+      detail: relay
+        ? `Twilio Voice + ConversationRelay (${getVoiceRelayWssUrl()})`
+        : "Twilio Voice + one-shot TTS (set VOICE_RELAY_WSS_URL for two-way AI)",
     });
+    if (!relay) {
+      warnings.push(
+        "VOICE_RELAY_WSS_URL not set — Voice OS uses one-shot TTS; deploy voice-relay on EC2 for two-way AI"
+      );
+      items.push({
+        id: "voice_relay",
+        label: "Voice Relay",
+        status: "warning",
+        detail:
+          "Deploy services/voice-relay on EC2 and set VOICE_RELAY_WSS_URL=wss://…/voice-relay/ws",
+      });
+    } else {
+      items.push({
+        id: "voice_relay",
+        label: "Voice Relay",
+        status: "ok",
+        detail: "ConversationRelay WebSocket configured",
+      });
+    }
   } else if (
     process.env.TWILIO_ACCOUNT_SID?.trim() &&
     process.env.TWILIO_AUTH_TOKEN?.trim() &&

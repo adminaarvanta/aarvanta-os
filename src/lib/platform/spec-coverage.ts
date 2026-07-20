@@ -143,7 +143,7 @@ export const SPEC_PHASES: Array<{
         href: "/voice",
         status: "partial",
         summary:
-          "Production AI calling inbox: outbound Twilio TTS with status callbacks, call log, Calling dialer → Voice OS deep links.",
+          "Production AI calling inbox: outbound Twilio with ConversationRelay two-way AI when VOICE_RELAY_WSS_URL points at the EC2 voice-relay sidecar; otherwise one-shot TTS. Call log + dialer.",
       },
       {
         id: "analytics",
