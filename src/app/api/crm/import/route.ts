@@ -309,7 +309,7 @@ export async function POST(req: Request) {
       }
 
       const pipelineName = getField(row, ["pipeline", "pipeline name"]);
-      let pipeline =
+      const pipeline =
         (pipelineName
           ? pipelines.find((p) => p.name.toLowerCase() === pipelineName.toLowerCase())
           : undefined) ?? pipelines[0];
