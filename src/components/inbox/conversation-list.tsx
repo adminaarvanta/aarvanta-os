@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { Badge } from "@/components/ui/badge";
+import { IdentityBadge } from "@/components/inbox/identity-badge";
 import { CHANNEL_LABELS, TAG_LABELS } from "@/lib/constants";
 import { cn, formatRelative } from "@/lib/utils";
 import { SentimentBadge } from "@/components/inbox/sentiment-badge";
@@ -86,9 +87,13 @@ export function ConversationList({
     };
   }, [pollMs, activeId, channelFilter]);
 
+  const visible = channelFilter
+    ? conversations.filter((c) => c.channels.includes(channelFilter))
+    : conversations;
+
   return (
     <ul className="divide-y divide-border">
-      {conversations.map((conv) => {
+      {visible.map((conv) => {
         const isActive = conv.id === activeId;
         const unreadCount = isActive ? 0 : conv.unreadCount;
         return (
@@ -117,6 +122,7 @@ export function ConversationList({
                   {CHANNEL_LABELS[conv.channels[0]]}
                   {conv.channels.length > 1 && ` +${conv.channels.length - 1}`}
                 </Badge>
+                <IdentityBadge identity={conv.identity} compact />
                 <SentimentBadge sentiment={conv.sentiment} />
                 {conv.tags.slice(0, 1).map((t) => (
                   <Badge
@@ -134,6 +140,11 @@ export function ConversationList({
           </li>
         );
       })}
+      {visible.length === 0 && (
+        <li className="px-4 py-8 text-center text-sm text-muted">
+          No conversations yet
+        </li>
+      )}
     </ul>
   );
 }

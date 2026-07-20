@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import {
-  Bell,
   ChevronDown,
   Plus,
   UserPlus,
@@ -38,6 +37,19 @@ const HelpMenu = dynamic(
   }
 );
 
+const NotificationsMenu = dynamic(
+  () =>
+    import("@/components/layout/notifications-menu").then(
+      (mod) => mod.NotificationsMenu
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-surface-muted" />
+    ),
+  }
+);
+
 const quickActions = [
   { label: "Add New Lead", href: "/crm/leads", icon: Target },
   { label: "Create Workflow", href: "/workflows", icon: Workflow },
@@ -62,16 +74,7 @@ export function AppHeader() {
       </div>
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        <button
-          type="button"
-          className="relative rounded-lg p-2.5 text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
-          aria-label="Notifications"
-        >
-          <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-black">
-            5
-          </span>
-        </button>
+        <NotificationsMenu />
 
         <ThemeToggle />
 

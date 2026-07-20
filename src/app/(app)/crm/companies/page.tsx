@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { CreateCompanyForm } from "@/components/crm/create-company-form";
+import { CrmImportForm } from "@/components/crm/crm-import-form";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { activeMemberOptions, memberNameByUserId } from "@/lib/crm/members";
 import { getTenantRepository } from "@/lib/data/tenant-store";
@@ -26,7 +27,10 @@ export default async function CompaniesPage() {
       </header>
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
-        <CreateCompanyForm members={memberOptions} />
+        <div className="flex flex-wrap items-start gap-2">
+          <CreateCompanyForm members={memberOptions} />
+          <CrmImportForm entity="companies" />
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {companies.map((company) => {
             const companyContacts = contacts.filter(

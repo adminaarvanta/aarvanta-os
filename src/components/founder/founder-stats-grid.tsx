@@ -3,8 +3,8 @@
 import Link from "next/link";
 import {
   Brain,
-  Inbox,
   Kanban,
+  MessageCircle,
   Sparkles,
   Target,
   TrendingUp,
@@ -30,10 +30,10 @@ export function FounderStatsGrid({ snapshot }: { snapshot: FounderSnapshot }) {
       href: "/crm/leads",
     },
     {
-      label: "Messages",
+      label: "WhatsApp",
       value: String(snapshot.inbox.totalConversations),
       sub: `${snapshot.inbox.urgentCount} urgent`,
-      icon: Inbox,
+      icon: MessageCircle,
       href: "/whatsapp",
     },
     {

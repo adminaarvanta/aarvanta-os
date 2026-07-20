@@ -2,11 +2,13 @@ import { Landmark } from "lucide-react";
 import { HrApprovalQueue } from "@/components/hr/hr-approval-queue";
 import { HrAutomationToggle } from "@/components/hr/hr-automation-toggle";
 import { HrDocumentAgent } from "@/components/hr/hr-document-agent";
+import { HrOnboardingManager } from "@/components/hr/hr-onboarding-manager";
 import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
 import { Panel } from "@/components/ui/os/panel";
 import { SectionHeader } from "@/components/ui/os/section-header";
 import { getHrStore } from "@/lib/data/platform-store";
 import { ensureHrPlatformSeed } from "@/lib/hr/ensure-platform-seed";
+import { getOnboardingDashboard } from "@/lib/hr/onboarding-service";
 import { getHrWorkspaceSettings } from "@/lib/hr/settings";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -14,7 +16,7 @@ export default async function HrPage() {
   const scope = await getTenantScope();
   await ensureHrPlatformSeed(scope);
   const hrStore = getHrStore();
-  const [candidates, employees, courses, documents, cases, settings] =
+  const [candidates, employees, courses, documents, cases, settings, onboarding] =
     await Promise.all([
       hrStore.list(scope),
       hrStore.listEmployees(scope),
@@ -22,6 +24,7 @@ export default async function HrPage() {
       hrStore.listDocuments(scope),
       hrStore.listCases(scope),
       getHrWorkspaceSettings(scope.workspaceId),
+      getOnboardingDashboard(),
     ]);
 
   const pending = cases.filter((item) => item.status === "pending_approval");
@@ -34,9 +37,11 @@ export default async function HrPage() {
     <ModulePageShell
       icon={Landmark}
       title="HR OS"
-      description="Inbox-driven document automation, ATS, and employee roster."
+      description="Onboarding packs, ATS, employee roster, and document automation."
     >
       <div className="space-y-6">
+        <HrOnboardingManager initial={onboarding} />
+
         <HrAutomationToggle initialEnabled={settings.inboxAutomationEnabled} />
         <HrApprovalQueue pending={pending} recentSent={recentSent} />
 

@@ -37,6 +37,7 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Command Center", icon: LayoutDashboard },
   { href: "/whatsapp", label: "WhatsApp OS", icon: MessageCircle, badgeKey: "whatsapp" },
   { href: "/voice", label: "Voice OS", icon: Phone, badgeKey: "voice" },
+  { href: "/calling", label: "Calling", icon: Phone },
   { href: "/crm", label: "CRM", icon: Briefcase },
   { href: "/workforce", label: "AI Workforce", icon: Sparkles },
   { href: "/projects", label: "Projects", icon: Kanban },
@@ -128,6 +129,14 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
     description: "AI calling & call log",
     dotClass: "bg-primary-bright",
     iconClass: "text-primary-bright bg-primary-soft",
+  },
+  {
+    id: "calling",
+    label: "Calling OS",
+    href: "/calling",
+    description: "Twilio voice & call history",
+    dotClass: "bg-success",
+    iconClass: "text-success bg-success/10",
   },
   {
     id: "site",

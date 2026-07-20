@@ -4,6 +4,7 @@ import { MessageCircle, Phone } from "lucide-react";
 import { ChannelStatusBanner } from "@/components/channels/channel-status-banner";
 import { StartChannelThread } from "@/components/channels/start-channel-thread";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
+import { IdentityBadge } from "@/components/inbox/identity-badge";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { OpenConversationLink } from "@/components/inbox/open-conversation-link";
 import { Badge } from "@/components/ui/badge";
@@ -159,9 +160,12 @@ export async function ChannelOsDetailPage({
           <ChevronLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-semibold text-foreground sm:text-lg">
-            {conversation.contact.name}
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="truncate text-base font-semibold text-foreground sm:text-lg">
+              {conversation.contact.name}
+            </h2>
+            <IdentityBadge identity={conversation.identity} compact />
+          </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-1 lg:hidden">
             {conversation.contact.phone && (
               <span className="truncate text-xs text-muted">
@@ -173,7 +177,7 @@ export async function ChannelOsDetailPage({
             </Badge>
           </div>
           <p className="hidden text-xs text-muted sm:block">
-            {config.title} · timeline · notes · tags · AI
+            {config.title} · timeline · notes · tags · identity · AI
           </p>
         </div>
       </header>

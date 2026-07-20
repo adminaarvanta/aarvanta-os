@@ -404,6 +404,16 @@ export const firestoreRepository: ConversationRepository = {
     });
   },
 
+  async updateIdentity(conversationId, identity, scope) {
+    const conv = await getScopedConversation(conversationId, scope);
+    if (!conv) return null;
+    return save({
+      ...conv,
+      identity,
+      updatedAt: new Date().toISOString(),
+    });
+  },
+
   async markAsRead(conversationId, scope) {
     const conv = await getScopedConversation(conversationId, scope);
     if (!conv) return null;

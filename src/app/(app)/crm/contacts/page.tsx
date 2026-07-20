@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { CreateContactForm } from "@/components/crm/create-contact-form";
+import { CrmImportForm } from "@/components/crm/crm-import-form";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { activeMemberOptions, memberNameByUserId } from "@/lib/crm/members";
@@ -88,10 +89,13 @@ export default async function ContactsPage() {
       </header>
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
-        <CreateContactForm
-          members={memberOptions}
-          companies={companies.map((c) => ({ id: c.id, name: c.name }))}
-        />
+        <div className="flex flex-wrap items-start gap-2">
+          <CreateContactForm
+            members={memberOptions}
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          />
+          <CrmImportForm entity="contacts" />
+        </div>
 
         <div className="space-y-3 md:hidden">
           {contacts.map((contact) => (
@@ -104,8 +108,8 @@ export default async function ContactsPage() {
           ))}
           {contacts.length === 0 && (
             <p className="py-8 text-center text-sm text-muted">
-              No contacts yet. Qualified inbound conversations create CRM contacts
-              automatically.
+              No contacts yet. Add one manually, import a CSV/Excel file, or qualify
+              inbound conversations to create CRM contacts automatically.
             </p>
           )}
         </div>
@@ -161,8 +165,8 @@ export default async function ContactsPage() {
           </div>
           {contacts.length === 0 && (
             <p className="p-8 text-center text-sm text-muted">
-              No contacts yet. Qualified inbound conversations in the inbox create
-              CRM contacts automatically.
+              No contacts yet. Add one manually, import CSV/Excel, or let qualified
+              inbound conversations create contacts automatically.
             </p>
           )}
         </div>

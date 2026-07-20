@@ -117,6 +117,11 @@ export interface ConversationRepository {
     },
     scope: TenantScope
   ): Promise<Conversation | null>;
+  updateIdentity(
+    conversationId: string,
+    identity: Conversation["identity"],
+    scope: TenantScope
+  ): Promise<Conversation | null>;
   markAsRead(
     conversationId: string,
     scope: TenantScope

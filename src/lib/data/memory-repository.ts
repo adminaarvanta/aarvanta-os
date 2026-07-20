@@ -382,6 +382,14 @@ export const memoryRepository: ConversationRepository = {
     return structuredClone(conversations[idx]);
   },
 
+  async updateIdentity(conversationId, identity, scope) {
+    const idx = findIndex(conversationId, scope);
+    if (idx === -1) return null;
+    conversations[idx].identity = identity;
+    conversations[idx].updatedAt = new Date().toISOString();
+    return structuredClone(conversations[idx]);
+  },
+
   async markAsRead(conversationId, scope) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;

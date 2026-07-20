@@ -6,8 +6,31 @@ import {
   syncInboundToExistingCrmContact,
 } from "@/lib/data/inbound-crm-bridge";
 import { scheduleHrCaseEvaluation } from "@/lib/hr/evaluate-conversation-case";
+import { detectConversationIdentity } from "@/lib/identity/detect-entity-type";
+import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
 import type { TenantScope } from "@/types/communication";
+
+async function refreshConversationIdentity(
+  conversationId: string,
+  scope: TenantScope
+): Promise<void> {
+  const repo = getRepository();
+  const conversation = await repo.getConversation(conversationId, scope);
+  if (!conversation) return;
+
+  const crm = getCrmRepository();
+  const [contacts, companies] = await Promise.all([
+    crm.listContacts(scope),
+    crm.listCompanies(scope),
+  ]);
+
+  const identity = detectConversationIdentity(conversation, {
+    contacts,
+    companies,
+  });
+  await repo.updateIdentity(conversationId, identity, scope);
+}
 
 export async function refreshConversationAiInsights(
   conversationId: string,
@@ -39,6 +62,7 @@ export async function refreshConversationAiInsights(
   });
 
   await syncInboundToExistingCrmContact(updated, scope);
+  await refreshConversationIdentity(conversationId, scope);
   scheduleHrCaseEvaluation(conversationId, scope);
 }
 
@@ -69,6 +93,7 @@ export function schedulePostInboundAutomation(
       const conversation = await getRepository().getConversation(conversationId, scope);
       if (!conversation) return;
       await syncInboundToExistingCrmContact(conversation, scope);
+      await refreshConversationIdentity(conversationId, scope);
       scheduleHrCaseEvaluation(conversationId, scope);
     } catch (error) {
       console.error(

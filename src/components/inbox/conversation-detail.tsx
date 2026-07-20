@@ -1,4 +1,6 @@
 import { AiInsightsPanel } from "@/components/inbox/ai-insights-panel";
+import { IdentityPanel } from "@/components/inbox/identity-panel";
+import { IdentityBadge } from "@/components/inbox/identity-badge";
 import { HrCasePanel } from "@/components/inbox/hr-case-panel";
 import { MarkReadOnView } from "@/components/inbox/mark-read-on-view";
 import { ConversationTimeline } from "@/components/inbox/timeline";
@@ -22,6 +24,8 @@ function ConversationSidebar({
 }) {
   return (
     <>
+      <IdentityPanel conversation={conversation} />
+
       <HrCasePanel conversationId={conversation.id} initialCases={hrCases} />
 
       <div>
@@ -66,9 +70,12 @@ export function ConversationDetail({
       <MarkReadOnView conversationId={conversation.id} />
       <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <header className="hidden shrink-0 border-b border-border px-4 py-3 sm:px-6 sm:py-4 lg:block">
-          <h2 className="text-base font-semibold text-foreground sm:text-lg">
-            {conversation.contact.name}
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-base font-semibold text-foreground sm:text-lg">
+              {conversation.contact.name}
+            </h2>
+            <IdentityBadge identity={conversation.identity} />
+          </div>
           <div className="mt-1 flex flex-col gap-0.5 text-xs text-muted sm:flex-row sm:flex-wrap sm:gap-2 sm:text-sm">
             {conversation.contact.email && (
               <span className="break-all">{conversation.contact.email}</span>

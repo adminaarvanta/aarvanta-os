@@ -23,6 +23,36 @@ export type Sentiment = "positive" | "neutral" | "frustrated" | "urgent";
 
 export type ConversationIntent = "sales" | "support" | "spam" | "other";
 
+/** Whether the conversation contact appears to be a company or an individual */
+export type EntityIdentityType = "company" | "individual" | "unknown";
+
+export type IdentitySignalLayer =
+  | "email_domain"
+  | "display_name"
+  | "message_language"
+  | "channel_profile"
+  | "crm_match"
+  | "ai_classifier"
+  | "manual_override";
+
+export interface IdentitySignal {
+  layer: IdentitySignalLayer;
+  vote: "company" | "individual";
+  weight: number;
+  reason: string;
+}
+
+export interface ConversationIdentity {
+  type: EntityIdentityType;
+  confidence: number;
+  signals: IdentitySignal[];
+  /** Manual override wins over automated layers */
+  override?: "company" | "individual";
+  suggestedCompanyName?: string;
+  suggestedDomain?: string;
+  updatedAt: string;
+}
+
 export type TimelineEventType =
   | "message"
   | "call"
@@ -103,6 +133,8 @@ export interface Conversation extends TenantScope {
   aiSummaryUpdatedAt?: string;
   aiIntent?: ConversationIntent;
   aiQualificationScore?: number;
+  /** Multi-layer company vs individual detection */
+  identity?: ConversationIdentity;
   unreadCount: number;
   lastActivityAt: string;
   assignedTo?: string;

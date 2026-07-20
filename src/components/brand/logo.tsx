@@ -22,14 +22,15 @@ const DISPLAY_HEIGHT = {
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
 export type BrandLogoVariant = "full" | "icon";
 
+/** *-clear assets have true alpha (no baked black plate). */
 const LOGO_PATHS = {
   dark: {
-    full: "/aarvanta-logo-dark.png",
-    icon: "/aarvanta-logo-icon-dark.png",
+    full: "/aarvanta-logo-dark-clear.png",
+    icon: "/aarvanta-logo-icon-dark-clear.png",
   },
   light: {
-    full: "/aarvanta-logo-light.png",
-    icon: "/aarvanta-logo-icon-light.png",
+    full: "/aarvanta-logo-light-clear.png",
+    icon: "/aarvanta-logo-icon-light-clear.png",
   },
 } as const;
 
@@ -68,18 +69,22 @@ export function BrandLogo({
       unoptimized
       priority
       className={cn(
-        "bg-transparent object-contain",
+        // Never paint a plate behind the mark — sidebar surface must show through
+        "!bg-transparent object-contain",
+        // On dark UI, treat pure black pixels as transparent against the surface
+        themeMode === "dark" && "mix-blend-lighten",
         fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : "h-auto w-auto",
         className
       )}
       style={
         fullWidth
-          ? undefined
+          ? { backgroundColor: "transparent" }
           : size === "sidebar"
             ? {
                 height: displayHeight,
                 width: "auto",
                 maxWidth: 236,
+                backgroundColor: "transparent",
               }
             : {
                 height: displayHeight,
@@ -88,22 +93,39 @@ export function BrandLogo({
                   variant === "full"
                     ? displayHeight * FULL_LOGO_ASPECT
                     : displayHeight,
+                backgroundColor: "transparent",
               }
       }
     />
+  );
+
+  const wrapped = (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center bg-transparent",
+        fullWidth && "block w-full"
+      )}
+      style={{ backgroundColor: "transparent" }}
+    >
+      {image}
+    </span>
   );
 
   if (href) {
     return (
       <Link
         href={href}
-        className={cn(fullWidth ? "block w-full" : "inline-flex shrink-0 items-center")}
+        className={cn(
+          "bg-transparent",
+          fullWidth ? "block w-full" : "inline-flex shrink-0 items-center"
+        )}
+        style={{ backgroundColor: "transparent" }}
         aria-label={brand.fullName}
       >
-        {image}
+        {wrapped}
       </Link>
     );
   }
 
-  return image;
+  return wrapped;
 }

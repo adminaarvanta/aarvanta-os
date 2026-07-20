@@ -65,12 +65,23 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     id: "whatsapp",
     title: "WhatsApp OS",
     description:
-      "WhatsApp business messaging with inbound webhooks, outbound replies, AI summaries, and start-thread by phone.",
+      "WhatsApp business messaging with inbound webhooks, outbound replies, AI summaries, identity detection, and start-thread by phone.",
     route: "/whatsapp",
     target: '[data-demo-tour="nav-whatsapp"], [data-demo-tour="mobile-nav-whatsapp"]',
     placement: "right",
     expandSidebar: true,
-    tip: "Sarah Chen's Meridian thread is pre-loaded for demo",
+    tip: "Open a WhatsApp thread to see identity and AI insights",
+  },
+  {
+    id: "calling",
+    title: "Calling",
+    description:
+      "Twilio voice — place outbound spoken-message calls and review call history.",
+    route: "/calling",
+    target: '[data-demo-tour="nav-calling"], [data-demo-tour="mobile-nav-calling"]',
+    placement: "right",
+    expandSidebar: true,
+    tip: "Try placing a simulated outbound call in demo mode",
   },
   {
     id: "voice",
