@@ -80,12 +80,14 @@ async function initiateTwilioVoiceCall(to: string, message: string) {
   }
 
   const base = appUrl.replace(/\/$/, "");
-  const twimlUrl = `${base}/api/webhooks/twilio/twiml?message=${encodeURIComponent(message)}`;
+  const twimlUrl = `${base}/api/webhooks/twilio/twiml?message=${encodeURIComponent(message.slice(0, 1200))}`;
   const statusCallback = `${base}/api/webhooks/twilio`;
   const body = new URLSearchParams({
     To: to,
     From: from,
     Url: twimlUrl,
+    // Twilio defaults to POST; we support both, but be explicit.
+    Method: "POST",
     StatusCallback: statusCallback,
     StatusCallbackMethod: "POST",
   });
