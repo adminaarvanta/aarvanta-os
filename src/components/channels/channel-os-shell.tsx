@@ -41,7 +41,8 @@ const CONFIGS: Record<"whatsapp" | "voice", ChannelOsConfig> = {
     channel: "voice",
     basePath: "/voice",
     title: "Voice OS",
-    description: "AI calling — outbound TTS calls, call log, and Twilio status webhooks.",
+    description:
+      "AI calling — outbound TTS calls, dialer, call log, and Twilio status webhooks.",
     liveHint: "Outbound calls use Twilio + TwiML with status callbacks when configured.",
     setupHint:
       "Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, and NEXT_PUBLIC_APP_URL to go live.",
@@ -75,10 +76,21 @@ export async function ChannelOsListPage({
               setupHint={config.setupHint}
             />
           </div>
-          <StartChannelThread
-            channel={config.channel}
-            basePath={config.basePath}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            {os === "voice" ? (
+              <Link
+                href="/calling"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-gold/40 hover:text-gold"
+              >
+                <Phone className="h-4 w-4" />
+                Dialer
+              </Link>
+            ) : null}
+            <StartChannelThread
+              channel={config.channel}
+              basePath={config.basePath}
+            />
+          </div>
         </div>
       </header>
       <div className="flex min-h-0 flex-1 overflow-hidden">

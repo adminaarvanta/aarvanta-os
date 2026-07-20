@@ -98,15 +98,6 @@ export const CORE_MODULES: PlatformModule[] = [
     phase: "9b-wa",
   },
   {
-    id: "calling",
-    label: "Calling",
-    description: "Twilio voice calls & history",
-    href: "/calling",
-    icon: Phone,
-    group: "Core",
-    phase: "9b",
-  },
-  {
     id: "inbox",
     label: "Unified Inbox",
     description: "Legacy multi-channel inbox (hidden from primary nav)",
@@ -118,7 +109,7 @@ export const CORE_MODULES: PlatformModule[] = [
   {
     id: "voice",
     label: "Voice OS",
-    description: "AI calling, call log, and Twilio voice",
+    description: "AI calling, dialer, call log, and Twilio voice",
     href: "/voice",
     icon: Phone,
     group: "Core",
