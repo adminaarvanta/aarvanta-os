@@ -169,8 +169,8 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
         </div>
         <p className="text-xs text-muted">
           {mode === "now"
-            ? "Uses Twilio Voice to call the number and speak your message (TTS). Opens in Voice OS after dialing."
-            : "Schedule a Twilio TTS call for later. Due calls are dialed by the scheduler cron."}
+            ? "Places a Twilio call. With Voice Relay configured, the AI agent talks two-way; otherwise it speaks your message (TTS)."
+            : "Schedule a call for later. Due calls are dialed by the scheduler cron."}
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <input

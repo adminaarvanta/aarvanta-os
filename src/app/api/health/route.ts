@@ -4,6 +4,7 @@ import {
   getAllChannelStatuses,
   getPublicWebhookUrls,
 } from "@/lib/channels/config";
+import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 import {
   checkGmailSyncAccess,
   getEmailInboundConfig,
@@ -12,6 +13,14 @@ import { getProductionReadiness } from "@/lib/config/production-readiness";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { getActiveDatastore, ensureDatastoreReady } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
+
+function voiceRelayPayload() {
+  const wssUrl = getVoiceRelayWssUrl();
+  return {
+    configured: Boolean(wssUrl),
+    wssUrl,
+  };
+}
 
 export async function GET() {
   const mode = isProductionMode() ? "production" : "demo";
@@ -29,6 +38,7 @@ export async function GET() {
       datastore: "memory",
       channels,
       webhooks,
+      voiceRelay: voiceRelayPayload(),
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -49,6 +59,7 @@ export async function GET() {
         message: `Missing required configuration: ${readiness.requiredMissing.join(", ")}`,
         channels,
         webhooks,
+        voiceRelay: voiceRelayPayload(),
         ai,
         emailSync: gmailSyncStatus,
         emailInbound,
@@ -68,6 +79,7 @@ export async function GET() {
         "Firestore unavailable (quota or connectivity). Serving demo data from memory until Firestore recovers.",
       channels,
       webhooks,
+      voiceRelay: voiceRelayPayload(),
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -86,6 +98,7 @@ export async function GET() {
           firestore: "not_configured",
           channels,
           webhooks,
+          voiceRelay: voiceRelayPayload(),
           ai,
           emailSync: gmailSyncStatus,
           emailInbound,
@@ -104,6 +117,7 @@ export async function GET() {
       firestore: "connected",
       channels,
       webhooks,
+      voiceRelay: voiceRelayPayload(),
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -118,6 +132,7 @@ export async function GET() {
         firestore: "error",
         channels,
         webhooks,
+        voiceRelay: voiceRelayPayload(),
         ai,
         emailSync: gmailSyncStatus,
         emailInbound,

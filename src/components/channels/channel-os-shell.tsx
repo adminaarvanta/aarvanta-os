@@ -43,9 +43,10 @@ const CONFIGS: Record<"whatsapp" | "voice", ChannelOsConfig> = {
     title: "Voice OS",
     description:
       "AI calling — outbound TTS calls, dialer, call log, and Twilio status webhooks.",
-    liveHint: "Outbound calls use Twilio + TwiML with status callbacks when configured.",
+    liveHint:
+      "Outbound uses Twilio. Two-way AI via ConversationRelay when VOICE_RELAY_WSS_URL is set.",
     setupHint:
-      "Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, and NEXT_PUBLIC_APP_URL to go live.",
+      "Set TWILIO_* + NEXT_PUBLIC_APP_URL. For two-way AI voice, deploy services/voice-relay on EC2 and set VOICE_RELAY_WSS_URL.",
   },
 };
 

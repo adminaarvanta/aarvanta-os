@@ -1,0 +1,15 @@
+[Unit]
+Description=Aarvanta Voice Relay (Twilio ConversationRelay)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/aarvanta/voice-relay
+EnvironmentFile=/opt/aarvanta/voice-relay/.env
+ExecStart=/opt/aarvanta/voice-relay/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8090
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
