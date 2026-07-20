@@ -73,26 +73,15 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     tip: "Open a WhatsApp thread to see identity and AI insights",
   },
   {
-    id: "calling",
-    title: "Calling",
-    description:
-      "Twilio voice — place outbound spoken-message calls and review call history.",
-    route: "/calling",
-    target: '[data-demo-tour="nav-calling"], [data-demo-tour="mobile-nav-calling"]',
-    placement: "right",
-    expandSidebar: true,
-    tip: "Try placing a simulated outbound call in demo mode",
-  },
-  {
     id: "voice",
     title: "Voice OS",
     description:
-      "AI calling inbox — outbound Twilio TTS calls, call log, and status webhooks when Twilio is configured.",
+      "AI calling inbox — outbound Twilio TTS, dialer, call log, and status webhooks when Twilio is configured.",
     route: "/voice",
     target: '[data-demo-tour="nav-voice"], [data-demo-tour="mobile-nav-voice"]',
     placement: "right",
     expandSidebar: true,
-    tip: "James Okonkwo's call thread is pre-loaded for demo",
+    tip: "Open Dialer from Voice OS to place a spoken-message call",
   },
   {
     id: "crm",

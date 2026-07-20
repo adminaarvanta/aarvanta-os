@@ -40,12 +40,13 @@ export default async function CallingPage() {
   return (
     <>
       <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-foreground sm:text-xl">Calling</h2>
+        <h2 className="text-lg font-semibold text-foreground sm:text-xl">
+          Voice OS · Dialer
+        </h2>
         <p className="text-xs text-muted sm:text-sm">
-          Twilio voice dialer for Voice OS — outbound spoken messages and call
-          history.{" "}
+          Place outbound spoken-message calls and review history.{" "}
           <Link href="/voice" className="text-gold hover:underline">
-            Open Voice OS
+            Back to Voice OS
           </Link>
         </p>
       </header>
@@ -54,4 +55,4 @@ export default async function CallingPage() {
   );
 }
 
-export const metadata = { title: "Calling" };
+export const metadata = { title: "Voice OS · Dialer" };
