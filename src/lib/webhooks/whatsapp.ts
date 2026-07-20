@@ -23,6 +23,85 @@ export function verifyWhatsAppSignature(
   }
 }
 
+type WaMessage = {
+  id?: string;
+  from?: string;
+  type?: string;
+  text?: { body?: string };
+  button?: { text?: string; payload?: string };
+  interactive?: {
+    type?: string;
+    button_reply?: { id?: string; title?: string };
+    list_reply?: { id?: string; title?: string; description?: string };
+  };
+  image?: { caption?: string; id?: string };
+  audio?: { id?: string };
+  video?: { caption?: string; id?: string };
+  document?: { caption?: string; filename?: string; id?: string };
+  sticker?: { id?: string };
+  location?: { latitude?: number; longitude?: number; name?: string; address?: string };
+  contacts?: unknown[];
+  reaction?: { emoji?: string };
+};
+
+function extractWhatsAppContent(msg: WaMessage): string | null {
+  switch (msg.type) {
+    case "text":
+      return msg.text?.body?.trim() || null;
+    case "button":
+      return (
+        msg.button?.text?.trim() ||
+        msg.button?.payload?.trim() ||
+        "[Button reply]"
+      );
+    case "interactive": {
+      const button = msg.interactive?.button_reply?.title?.trim();
+      if (button) return button;
+      const list = msg.interactive?.list_reply?.title?.trim();
+      if (list) {
+        const desc = msg.interactive?.list_reply?.description?.trim();
+        return desc ? `${list} — ${desc}` : list;
+      }
+      return "[Interactive reply]";
+    }
+    case "image":
+      return msg.image?.caption?.trim() || "[Image]";
+    case "video":
+      return msg.video?.caption?.trim() || "[Video]";
+    case "audio":
+      return "[Audio message]";
+    case "document":
+      return (
+        msg.document?.caption?.trim() ||
+        msg.document?.filename?.trim() ||
+        "[Document]"
+      );
+    case "sticker":
+      return "[Sticker]";
+    case "location": {
+      const name = msg.location?.name?.trim();
+      const address = msg.location?.address?.trim();
+      const lat = msg.location?.latitude;
+      const lng = msg.location?.longitude;
+      if (name || address) {
+        return [name, address].filter(Boolean).join(" — ");
+      }
+      if (typeof lat === "number" && typeof lng === "number") {
+        return `Location: ${lat}, ${lng}`;
+      }
+      return "[Location]";
+    }
+    case "contacts":
+      return "[Contact card]";
+    case "reaction":
+      return msg.reaction?.emoji
+        ? `Reacted ${msg.reaction.emoji}`
+        : "[Reaction]";
+    default:
+      return msg.type ? `[Unsupported WhatsApp message: ${msg.type}]` : null;
+  }
+}
+
 export function parseWhatsAppInbound(payload: unknown): Array<{
   messageId: string;
   phone: string;
@@ -60,25 +139,17 @@ export function parseWhatsAppInbound(payload: unknown): Array<{
 
       const waMessages = Array.isArray(value.messages) ? value.messages : [];
       for (const msg of waMessages) {
-        const record = msg as {
-          id?: string;
-          from?: string;
-          type?: string;
-          text?: { body?: string };
-        };
-        if (
-          record.type === "text" &&
-          record.id &&
-          record.from &&
-          record.text?.body
-        ) {
-          messages.push({
-            messageId: record.id,
-            phone: record.from,
-            contactName,
-            content: record.text.body,
-          });
-        }
+        const record = msg as WaMessage;
+        if (!record.id || !record.from) continue;
+        const content = extractWhatsAppContent(record);
+        if (!content) continue;
+
+        messages.push({
+          messageId: record.id,
+          phone: record.from,
+          contactName,
+          content,
+        });
       }
     }
   }

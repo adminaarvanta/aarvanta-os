@@ -1,4 +1,5 @@
 import type { Channel, Conversation } from "@/types/communication";
+import { conversationOsHref } from "@/lib/channels/conversation-href";
 
 export function conversationsForChannel(
   conversations: Conversation[],
@@ -27,3 +28,5 @@ export function unreadForChannel(
     0
   );
 }
+
+export { conversationOsHref };

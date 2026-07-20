@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { RunWorkflowButton } from "@/components/workflow/run-workflow-button";
+import { WorkflowEnableToggle } from "@/components/workflow/workflow-enable-toggle";
 import type { Workflow } from "@/types/workflow";
 import { formatRelative } from "@/lib/utils";
 
@@ -8,7 +11,7 @@ export function WorkflowList({ workflows }: { workflows: Workflow[] }) {
   if (!workflows.length) {
     return (
       <p className="text-sm text-muted">
-        No workflows yet. Use a template to get started.
+        No automations yet. Install a template or describe a workflow to create one.
       </p>
     );
   }
@@ -32,15 +35,7 @@ export function WorkflowList({ workflows }: { workflows: Workflow[] }) {
                 <p className="mt-1 text-xs text-muted">{workflow.description}</p>
               )}
             </div>
-            <Badge
-              className={
-                workflow.enabled
-                  ? "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30"
-                  : "bg-danger/15 text-danger ring-danger/45"
-              }
-            >
-              {workflow.enabled ? "Active" : "Off"}
-            </Badge>
+            <WorkflowEnableToggle workflow={workflow} />
           </div>
 
           <div className="mt-3 flex flex-wrap gap-1">
@@ -67,7 +62,7 @@ export function WorkflowList({ workflows }: { workflows: Workflow[] }) {
               href={`/workflows/${workflow.id}`}
               className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm text-muted hover:border-gold/40 hover:text-foreground"
             >
-              View builder
+              Edit
             </Link>
           </div>
         </li>

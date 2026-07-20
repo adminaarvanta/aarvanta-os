@@ -122,7 +122,7 @@ npm run seed:firestore
 2. Buy an SMS-capable number → `TWILIO_PHONE_NUMBER`
 3. **Phone Numbers → your number → Messaging**:
    - Webhook: `https://YOUR-DOMAIN/api/webhooks/twilio` (HTTP POST)
-4. **Voice**: same webhook URL for call status; outbound calls use `/api/webhooks/twilio/twiml`
+4. **Voice**: same webhook URL for call status callbacks. Outbound calls automatically set `StatusCallback` to `/api/webhooks/twilio` and use `/api/webhooks/twilio/twiml` for TTS.
 5. Trial accounts: verify recipient numbers first
 
 **Gmail setup guide:** See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for free alternatives and App Password steps.
@@ -199,6 +199,7 @@ Check channel status: `GET /api/health` → `channels` object (`live` | `simulat
 | `npm run build` | Production build |
 | `npm run seed:firestore` | Add a test conversation to Firestore |
 | `npm run simulate:channels` | Simulate inbound on all 5 channels |
+| `npm run push:channels-env` | Push WhatsApp + Twilio env vars to Vercel (`VERCEL_TOKEN` required) |
 | `firebase deploy --only firestore:indexes` | Deploy Firestore indexes |
 
 ## Module 1 features

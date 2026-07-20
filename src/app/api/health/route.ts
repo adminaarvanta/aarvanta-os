@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
-import { getAllChannelStatuses } from "@/lib/channels/config";
+import {
+  getAllChannelStatuses,
+  getPublicWebhookUrls,
+} from "@/lib/channels/config";
 import {
   checkGmailSyncAccess,
   getEmailInboundConfig,
@@ -13,6 +16,7 @@ import { isProductionMode } from "@/lib/config/app-mode";
 export async function GET() {
   const mode = isProductionMode() ? "production" : "demo";
   const channels = getAllChannelStatuses();
+  const webhooks = getPublicWebhookUrls();
   const ai = getAiRuntimeStatus();
   const gmailSyncStatus = await checkGmailSyncAccess();
   const emailInbound = { ...getEmailInboundConfig(), gmailSyncStatus };
@@ -24,6 +28,7 @@ export async function GET() {
       mode,
       datastore: "memory",
       channels,
+      webhooks,
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -43,6 +48,7 @@ export async function GET() {
         firestore: isFirebaseConfigured() ? "not_ready" : "not_configured",
         message: `Missing required configuration: ${readiness.requiredMissing.join(", ")}`,
         channels,
+        webhooks,
         ai,
         emailSync: gmailSyncStatus,
         emailInbound,
@@ -61,6 +67,7 @@ export async function GET() {
       message:
         "Firestore unavailable (quota or connectivity). Serving demo data from memory until Firestore recovers.",
       channels,
+      webhooks,
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -78,6 +85,7 @@ export async function GET() {
           datastore: "firestore",
           firestore: "not_configured",
           channels,
+          webhooks,
           ai,
           emailSync: gmailSyncStatus,
           emailInbound,
@@ -95,6 +103,7 @@ export async function GET() {
       datastore: "firestore",
       firestore: "connected",
       channels,
+      webhooks,
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -108,6 +117,7 @@ export async function GET() {
         datastore: "firestore",
         firestore: "error",
         channels,
+        webhooks,
         ai,
         emailSync: gmailSyncStatus,
         emailInbound,

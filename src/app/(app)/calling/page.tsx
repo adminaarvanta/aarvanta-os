@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CallingWorkspace, type CallLogItem } from "@/components/calling/calling-workspace";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -41,7 +42,11 @@ export default async function CallingPage() {
       <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
         <h2 className="text-lg font-semibold text-foreground sm:text-xl">Calling</h2>
         <p className="text-xs text-muted sm:text-sm">
-          Twilio voice — outbound spoken messages and full call history.
+          Twilio voice dialer for Voice OS — outbound spoken messages and call
+          history.{" "}
+          <Link href="/voice" className="text-gold hover:underline">
+            Open Voice OS
+          </Link>
         </p>
       </header>
       <CallingWorkspace calls={calls} />

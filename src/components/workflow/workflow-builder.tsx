@@ -43,7 +43,8 @@ export function WorkflowBuilder() {
         <h3 className="text-sm font-semibold text-foreground">AI Workflow Builder</h3>
       </div>
       <p className="mt-1 text-xs text-muted">
-        Describe what you want to automate — we map it to triggers, agents, and approvals.
+        Describe an automation in plain English — we generate a trigger + steps you can edit
+        (Zapier-style). Or install a template below.
       </p>
       <form onSubmit={handleGenerate} className="mt-4 flex flex-col gap-3 sm:flex-row">
         <input

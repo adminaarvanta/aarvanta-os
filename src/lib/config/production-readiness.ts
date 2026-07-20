@@ -134,6 +134,73 @@ export function getProductionReadiness(): ProductionReadiness {
     });
   }
 
+  // WhatsApp OS — outbound + webhook secrets
+  const waOutbound = Boolean(
+    process.env.WHATSAPP_ACCESS_TOKEN?.trim() &&
+      process.env.WHATSAPP_PHONE_NUMBER_ID?.trim()
+  );
+  const waWebhook = Boolean(
+    process.env.WHATSAPP_VERIFY_TOKEN?.trim() &&
+      process.env.WHATSAPP_APP_SECRET?.trim()
+  );
+  if (channels.whatsapp === "live") {
+    items.push({
+      id: "whatsapp_os",
+      label: "WhatsApp OS",
+      status: "ok",
+      detail: "Outbound Graph API + inbound webhooks ready",
+    });
+  } else if (waOutbound && !waWebhook) {
+    warnings.push(
+      "WhatsApp outbound token set but WHATSAPP_VERIFY_TOKEN / WHATSAPP_APP_SECRET missing — inbound webhooks will fail in production"
+    );
+    items.push({
+      id: "whatsapp_os",
+      label: "WhatsApp OS",
+      status: "warning",
+      detail: "Add verify token + app secret for production webhooks",
+    });
+  } else if (!waOutbound) {
+    items.push({
+      id: "whatsapp_os",
+      label: "WhatsApp OS",
+      status: "warning",
+      detail: "Set WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID",
+    });
+  }
+
+  // Voice OS — Twilio + public URL for TwiML / signatures
+  if (channels.voice === "live") {
+    items.push({
+      id: "voice_os",
+      label: "Voice OS",
+      status: "ok",
+      detail: "Twilio Voice + TwiML status callbacks ready",
+    });
+  } else if (
+    process.env.TWILIO_ACCOUNT_SID?.trim() &&
+    process.env.TWILIO_AUTH_TOKEN?.trim() &&
+    process.env.TWILIO_PHONE_NUMBER?.trim() &&
+    !process.env.NEXT_PUBLIC_APP_URL?.trim()
+  ) {
+    warnings.push(
+      "Twilio credentials set but NEXT_PUBLIC_APP_URL missing — Voice OS TwiML and signature checks will fail"
+    );
+    items.push({
+      id: "voice_os",
+      label: "Voice OS",
+      status: "warning",
+      detail: "Set NEXT_PUBLIC_APP_URL for TwiML and Twilio signatures",
+    });
+  } else {
+    items.push({
+      id: "voice_os",
+      label: "Voice OS",
+      status: "warning",
+      detail: "Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER",
+    });
+  }
+
   const stripe = getStripeRuntimeStatus();
   if (stripe.status !== "live") {
     warnings.push("STRIPE_SECRET_KEY not set — Billing and Build OS checkout use demo fallback");

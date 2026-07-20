@@ -1,4 +1,4 @@
-import { getChannelStatus } from "@/lib/channels/config";
+import { getChannelStatus, getPublicWebhookUrls } from "@/lib/channels/config";
 import type { Channel } from "@/types/communication";
 
 const STATUS_COPY: Record<
@@ -30,6 +30,13 @@ export function ChannelStatusBanner({
 }) {
   const status = getChannelStatus(channel);
   const meta = STATUS_COPY[status];
+  const webhooks = getPublicWebhookUrls();
+  const webhookUrl =
+    channel === "whatsapp"
+      ? webhooks.whatsapp
+      : channel === "voice" || channel === "sms"
+        ? webhooks.twilio
+        : null;
 
   return (
     <p
@@ -39,6 +46,12 @@ export function ChannelStatusBanner({
       <span className="font-semibold">{meta.label}</span>
       {" · "}
       {status === "not_configured" ? setupHint : liveHint}
+      {status === "live" && webhookUrl ? (
+        <>
+          <br />
+          <span className="opacity-80">Webhook: {webhookUrl}</span>
+        </>
+      ) : null}
     </p>
   );
 }

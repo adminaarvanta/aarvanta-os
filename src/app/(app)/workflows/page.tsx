@@ -1,7 +1,6 @@
 import { Workflow } from "lucide-react";
-import { WorkflowList } from "@/components/workflow/workflow-list";
-import { WorkflowRunList } from "@/components/workflow/workflow-run-list";
-import { WorkflowBuilder } from "@/components/workflow/workflow-builder";
+import { WorkflowHub } from "@/components/workflow/workflow-hub";
+import { WORKFLOW_TEMPLATES } from "@/lib/data/workflow-demo-seed";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -21,23 +20,15 @@ export default async function WorkflowsPage() {
           Workflows
         </h2>
         <p className="text-xs text-muted sm:text-sm">
-          Workflow OS — trigger → condition → agent → approval → action.
+          Zapier-style automations — templates, editable steps, CRM triggers, and test runs.
         </p>
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
-        <WorkflowBuilder />
-
-        <section>
-          <h3 className="mb-4 text-sm font-semibold text-foreground">
-            Active workflows ({workflows.length})
-          </h3>
-          <WorkflowList workflows={workflows} />
-        </section>
-
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Recent runs</h3>
-          <WorkflowRunList runs={runs.slice(0, 10)} />
-        </section>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+        <WorkflowHub
+          workflows={workflows}
+          runs={runs}
+          templates={WORKFLOW_TEMPLATES}
+        />
       </div>
     </>
   );

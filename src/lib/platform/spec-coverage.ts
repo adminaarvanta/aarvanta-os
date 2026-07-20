@@ -134,7 +134,7 @@ export const SPEC_PHASES: Array<{
         href: "/whatsapp",
         status: "partial",
         summary:
-          "WhatsApp business inbox, start thread, outbound Graph API, inbound webhooks.",
+          "Production WhatsApp business inbox: start thread, outbound Graph API, inbound webhooks (text + interactive + media placeholders), CRM bridge.",
       },
       {
         id: "voice-os-live",
@@ -143,7 +143,7 @@ export const SPEC_PHASES: Array<{
         href: "/voice",
         status: "partial",
         summary:
-          "AI calling inbox, outbound Twilio TTS, call log, and status webhooks.",
+          "Production AI calling inbox: outbound Twilio TTS with status callbacks, call log, Calling dialer → Voice OS deep links.",
       },
       {
         id: "analytics",

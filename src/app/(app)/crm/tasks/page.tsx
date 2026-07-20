@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { CreateTaskForm } from "@/components/crm/create-task-form";
 import { CrmImportForm } from "@/components/crm/crm-import-form";
+import { SeedCrmSampleButton } from "@/components/crm/seed-crm-sample-button";
 import { TaskFilters } from "@/components/crm/task-filters";
 import { TaskList } from "@/components/crm/task-list";
 import { getCrmRepository } from "@/lib/data/crm-store";
@@ -46,6 +47,7 @@ export default async function TasksPage({
             <CreateTaskForm members={memberOptions} />
           </div>
           <CrmImportForm entity="tasks" />
+          <SeedCrmSampleButton />
         </div>
         <Suspense fallback={null}>
           <TaskFilters members={memberOptions} />

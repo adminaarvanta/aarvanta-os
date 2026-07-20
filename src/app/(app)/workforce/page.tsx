@@ -2,6 +2,7 @@ import { Sparkles } from "lucide-react";
 import { AgentCard } from "@/components/workforce/agent-card";
 import { AgentDirectory } from "@/components/workforce/agent-directory";
 import { RunList } from "@/components/workforce/run-list";
+import { SeedCrmSampleButton } from "@/components/crm/seed-crm-sample-button";
 import { WorkforceNav } from "@/components/workforce/workforce-nav";
 import { WorkforceUpgradePanel } from "@/components/workforce/workforce-upgrade-panel";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
@@ -47,6 +48,17 @@ export default async function WorkforcePage() {
       </header>
       <WorkforceNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
+        <section className="rounded-xl border border-border bg-surface-elevated p-4 space-y-2">
+          <p className="text-sm font-medium text-foreground">
+            Test agents with sample CRM data
+          </p>
+          <p className="text-xs text-muted">
+            Loads companies, leads, pipeline deals, and open tasks assigned to each
+            AI agent. Then open an agent → Tasks → Complete with agent.
+          </p>
+          <SeedCrmSampleButton />
+        </section>
+
         <section>
           <h3 className="mb-4 text-sm font-semibold text-foreground">
             AI Employee Directory

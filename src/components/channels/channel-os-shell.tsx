@@ -35,14 +35,14 @@ const CONFIGS: Record<"whatsapp" | "voice", ChannelOsConfig> = {
     description: "Business messaging — inbound webhooks, outbound replies, and new threads.",
     liveHint: "Messages send via Meta Cloud API when configured.",
     setupHint:
-      "Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, and webhook verify tokens to go live.",
+      "Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_VERIFY_TOKEN, and WHATSAPP_APP_SECRET to go live.",
   },
   voice: {
     channel: "voice",
     basePath: "/voice",
     title: "Voice OS",
     description: "AI calling — outbound TTS calls, call log, and Twilio status webhooks.",
-    liveHint: "Outbound calls use Twilio + TwiML when configured.",
+    liveHint: "Outbound calls use Twilio + TwiML with status callbacks when configured.",
     setupHint:
       "Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, and NEXT_PUBLIC_APP_URL to go live.",
   },

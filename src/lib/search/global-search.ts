@@ -4,6 +4,7 @@ import { listProposalDocuments } from "@/lib/data/platform-store";
 import { getProjectRepository } from "@/lib/data/project-store";
 import { getRepository } from "@/lib/data/repository";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
+import { conversationOsHref } from "@/lib/channels/conversation-href";
 import { searchFeatures } from "@/lib/search/features";
 import { contactDisplayName } from "@/types/crm";
 import type { GlobalSearchResult } from "@/types/search";
@@ -177,7 +178,7 @@ export async function runGlobalSearch(
         group: "Inbox",
         title: conversation.contact.name,
         subtitle: conversation.aiSummary ?? conversation.channels.join(", "),
-        href: `/inbox/${conversation.id}`,
+        href: conversationOsHref(conversation),
       });
     }
   }

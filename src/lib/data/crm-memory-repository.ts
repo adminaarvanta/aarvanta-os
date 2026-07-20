@@ -320,3 +320,20 @@ export const crmMemoryRepository: CrmRepository = {
     return activity;
   },
 };
+
+/** Replace in-memory CRM collections with a prepared sample payload. */
+export function resetCrmMemoryWithSample(sample: {
+  pipelines: CrmPipeline[];
+  companies: CrmCompany[];
+  contacts: CrmContact[];
+  deals: CrmDeal[];
+  tasks: CrmTask[];
+  activities: CrmActivity[];
+}) {
+  pipelines = [...sample.pipelines];
+  companies = [...sample.companies];
+  contacts = [...sample.contacts];
+  deals = [...sample.deals];
+  tasks = [...sample.tasks];
+  activities = [...sample.activities];
+}

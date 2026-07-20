@@ -79,8 +79,21 @@ async function initiateTwilioVoiceCall(to: string, message: string) {
     throw new Error("Twilio Voice is not configured (needs TWILIO_* and NEXT_PUBLIC_APP_URL).");
   }
 
-  const twimlUrl = `${appUrl}/api/webhooks/twilio/twiml?message=${encodeURIComponent(message)}`;
-  const body = new URLSearchParams({ To: to, From: from, Url: twimlUrl });
+  const base = appUrl.replace(/\/$/, "");
+  const twimlUrl = `${base}/api/webhooks/twilio/twiml?message=${encodeURIComponent(message)}`;
+  const statusCallback = `${base}/api/webhooks/twilio`;
+  const body = new URLSearchParams({
+    To: to,
+    From: from,
+    Url: twimlUrl,
+    StatusCallback: statusCallback,
+    StatusCallbackMethod: "POST",
+  });
+  // Terminal + progress events so Voice OS can log completed / busy / no-answer.
+  for (const event of ["initiated", "ringing", "answered", "completed"]) {
+    body.append("StatusCallbackEvent", event);
+  }
+
   const response = await fetch(
     `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`,
     {

@@ -279,7 +279,8 @@ export async function executeWorkflowRun(
 export async function startWorkflowRun(
   scope: TenantScope,
   workflow: Workflow,
-  context: WorkflowRunContext = {}
+  context: WorkflowRunContext = {},
+  options?: { trigger?: "manual" | "automation" }
 ): Promise<WorkflowRun> {
   const repo = getWorkflowRepository();
   const enriched = await enrichRunContext(scope, context);
@@ -289,7 +290,7 @@ export async function startWorkflowRun(
       workflowId: workflow.id,
       workflowName: workflow.name,
       status: "running",
-      trigger: "manual",
+      trigger: options?.trigger ?? "manual",
       context: enriched,
       stepLogs: [],
     },

@@ -51,7 +51,7 @@ export interface ConversationRepository {
   ): Promise<Conversation | null>;
   addOutboundCall(
     conversationId: string,
-    input: { summary: string },
+    input: { summary: string; durationSeconds?: number },
     scope: TenantScope,
     author?: { name: string; id?: string }
   ): Promise<Conversation | null>;

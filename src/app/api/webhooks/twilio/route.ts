@@ -70,20 +70,47 @@ export async function POST(req: Request) {
 
   const call = parseTwilioVoiceStatus(data);
   if (call) {
-    if (await isWebhookProcessed("twilio_voice", call.callSid)) {
+    // Dedupe per call + terminal status (Twilio may retry; sid alone is not enough
+    // if we ever process intermediate events).
+    const eventKey = `${call.callSid}:${call.status}`;
+    if (await isWebhookProcessed("twilio_voice", eventKey)) {
       return NextResponse.json({ received: true, processed: 0, duplicate: true });
     }
 
-    await repo.addInboundCall(
-      {
-        phone: call.phone,
-        durationSeconds: call.durationSeconds,
-        summary: call.summary,
-      },
-      scope
-    );
-    await markWebhookProcessed("twilio_voice", call.callSid, scope);
-    return NextResponse.json({ received: true, processed: 1, type: "voice" });
+    if (call.direction === "outbound") {
+      let conversation = await repo.findConversationByPhone(call.phone, scope);
+      if (!conversation) {
+        conversation = await repo.ensurePhoneConversation(
+          { phone: call.phone, channel: "voice" },
+          scope
+        );
+      }
+      await repo.addOutboundCall(
+        conversation.id,
+        {
+          summary: call.summary,
+          durationSeconds: call.durationSeconds,
+        },
+        scope
+      );
+    } else {
+      await repo.addInboundCall(
+        {
+          phone: call.phone,
+          durationSeconds: call.durationSeconds,
+          summary: call.summary,
+        },
+        scope
+      );
+    }
+
+    await markWebhookProcessed("twilio_voice", eventKey, scope);
+    return NextResponse.json({
+      received: true,
+      processed: 1,
+      type: "voice",
+      direction: call.direction,
+    });
   }
 
   return NextResponse.json({ received: true, processed: 0 });
