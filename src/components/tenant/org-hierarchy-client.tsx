@@ -70,12 +70,41 @@ function MemberRow({
   );
 }
 
-function InvitationRow({ invitation }: { invitation: Invitation }) {
+function InvitationRow({
+  invitation,
+  canInvite,
+}: {
+  invitation: Invitation;
+  canInvite: boolean;
+}) {
   const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const acceptUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/invite/${invitation.token}`
       : `/invite/${invitation.token}`;
+
+  async function resend() {
+    setBusy(true);
+    setStatus(null);
+    try {
+      const res = await fetch(`/api/tenant/invitations/${invitation.id}`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as {
+        emailSent?: boolean;
+        emailError?: string;
+      };
+      if (!res.ok) {
+        setStatus("Resend failed");
+        return;
+      }
+      setStatus(data.emailSent ? "Email sent" : data.emailError ?? "Not emailed");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border px-3 py-2">
@@ -84,25 +113,39 @@ function InvitationRow({ invitation }: { invitation: Invitation }) {
         <p className="text-[11px] text-dim">
           Pending · {ROLE_LABELS[invitation.role]} · invited by{" "}
           {invitation.invitedByName}
+          {status ? ` · ${status}` : ""}
         </p>
       </div>
-      <Button
-        type="button"
-        variant="secondary"
-        className="h-8 px-2 text-[11px]"
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(acceptUrl);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          } catch {
-            /* ignore */
-          }
-        }}
-      >
-        <Copy className="mr-1 h-3 w-3" />
-        {copied ? "Copied" : "Copy invite link"}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-8 px-2 text-[11px]"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(acceptUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            } catch {
+              /* ignore */
+            }
+          }}
+        >
+          <Copy className="mr-1 h-3 w-3" />
+          {copied ? "Copied" : "Copy invite link"}
+        </Button>
+        {canInvite ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="h-8 px-2 text-[11px]"
+            disabled={busy}
+            onClick={() => void resend()}
+          >
+            {busy ? "Sending…" : "Resend email"}
+          </Button>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -262,7 +305,11 @@ export function OrgHierarchyClient({
                 </p>
                 <ul className="space-y-2">
                   {activeBranch.invitations.map((inv) => (
-                    <InvitationRow key={inv.id} invitation={inv} />
+                    <InvitationRow
+                      key={inv.id}
+                      invitation={inv}
+                      canInvite={canInvite}
+                    />
                   ))}
                 </ul>
               </div>

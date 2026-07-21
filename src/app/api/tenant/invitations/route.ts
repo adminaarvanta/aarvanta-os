@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody } from "@/lib/api/request";
 import { getTenantRepository } from "@/lib/data/tenant-store";
+import { sendInvitationEmail } from "@/lib/tenant/send-invitation-email";
 import { getSessionContext, requirePermission } from "@/lib/tenant/context";
 
 const inviteSchema = z.object({
@@ -43,10 +44,25 @@ export async function POST(req: Request) {
       },
       ctx.scope
     );
+
+    const [organization, workspace] = await Promise.all([
+      repo.getOrganization(invitation.tenantId),
+      repo.getWorkspace(invitation.workspaceId),
+    ]);
+
+    const emailResult = await sendInvitationEmail({
+      invitation,
+      organizationName: organization?.name ?? "Aarvanta OS",
+      workspaceName: workspace?.name ?? "Workspace",
+    });
+
     return NextResponse.json(
       {
         ...invitation,
         acceptPath: `/invite/${invitation.token}`,
+        acceptUrl: emailResult.acceptUrl,
+        emailSent: emailResult.sent,
+        emailError: emailResult.sent ? undefined : emailResult.reason,
       },
       { status: 201 }
     );
