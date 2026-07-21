@@ -4,6 +4,8 @@ import { getTenantRepository } from "@/lib/data/tenant-store";
 import { sendInvitationEmail } from "@/lib/tenant/send-invitation-email";
 import { requirePermission } from "@/lib/tenant/context";
 
+export const runtime = "nodejs";
+
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }

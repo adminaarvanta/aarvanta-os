@@ -93,17 +93,16 @@ export function SettingsClient({
       if (res.ok) {
         setInviteEmail("");
         if (data.emailSent) {
-          setMessage(`Invitation emailed to the user.`);
-        } else if (data.acceptUrl) {
           setMessage(
-            `Invite created, but email was not sent (${data.emailError ?? "unavailable"}). Share this link: ${data.acceptUrl}`
+            `Invitation emailed. They can also use: ${data.acceptUrl ?? data.acceptPath}`
           );
         } else {
           setMessage(
-            data.acceptPath
-              ? `Invitation created. Share link: ${data.acceptPath}`
-              : "Invitation created."
+            `Invite created, but email failed (${data.emailError ?? "unavailable"}). Copy and share: ${data.acceptUrl ?? data.acceptPath ?? ""}`
           );
+          if (data.acceptUrl && typeof navigator !== "undefined") {
+            void navigator.clipboard.writeText(data.acceptUrl).catch(() => undefined);
+          }
         }
         router.refresh();
       } else {
