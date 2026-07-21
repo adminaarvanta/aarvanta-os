@@ -2,14 +2,6 @@ import { Settings } from "lucide-react";
 import { SettingsClient } from "@/components/tenant/settings-client";
 import { PageFrame, PageScroll } from "@/components/layout/page-scroll";
 import { PageHeader } from "@/components/ui/os/page-header";
-import { getAiRuntimeStatus } from "@/lib/ai/config";
-import { getAllChannelStatuses } from "@/lib/channels/config";
-import {
-  checkGmailSyncAccess,
-  getEmailInboundConfig,
-} from "@/lib/channels/gmail-client";
-import { getActiveDatastore } from "@/lib/data/datastore";
-import { getProductionReadiness } from "@/lib/config/production-readiness";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
@@ -23,19 +15,15 @@ export default async function SettingsPage() {
   const { organization, workspace } = await ensureTenantRecords(ctx);
   const repo = getTenantRepository();
 
-  const [workspaces, members, invitations, workspaceSettings, gmailSyncStatus] =
+  const [workspaces, members, invitations, workspaceSettings] =
     await Promise.all([
       repo.listWorkspaces(ctx.scope.tenantId),
       repo.listMembers(ctx.scope),
       repo.listInvitations(ctx.scope),
       getWorkspaceSettings(ctx.scope.workspaceId),
-      checkGmailSyncAccess(),
     ]);
 
   await hydrateWorkspaceSettingsCache(ctx.scope.workspaceId);
-
-  const emailInbound = getEmailInboundConfig();
-  const readiness = getProductionReadiness();
 
   return (
     <PageFrame>
@@ -57,16 +45,6 @@ export default async function SettingsPage() {
           currentName={ctx.name}
           permissions={permissionsForRole(ctx.role)}
           workspaceSettings={workspaceSettings}
-          systemStatus={{
-            mode: isProductionMode() ? "production" : "demo",
-            datastore: getActiveDatastore(),
-            ai: getAiRuntimeStatus(),
-            channels: getAllChannelStatuses(),
-            emailSync: gmailSyncStatus,
-            emailFrom: emailInbound.from ?? null,
-            replyTo: emailInbound.replyTo ?? null,
-            readiness,
-          }}
           production={isProductionMode()}
         />
       </PageScroll>

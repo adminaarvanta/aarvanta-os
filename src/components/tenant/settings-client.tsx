@@ -10,9 +10,6 @@ import { Panel } from "@/components/ui/os/panel";
 import { SectionHeader } from "@/components/ui/os/section-header";
 import { PERMISSION_LABELS, permissionsForRole } from "@/lib/tenant/permissions";
 import type { Permission } from "@/lib/tenant/permissions";
-import type { AiRuntimeStatus } from "@/lib/ai/config";
-import type { ChannelStatus } from "@/lib/channels/config";
-import type { Channel } from "@/types/communication";
 import {
   MEMBER_ROLES,
   ROLE_LABELS,
@@ -22,7 +19,6 @@ import {
   type Workspace,
   type WorkspaceMember,
 } from "@/types/tenant";
-import type { ProductionReadiness } from "@/lib/config/production-readiness";
 import type { WorkspaceSettings } from "@/types/workspace-settings";
 
 type SettingsClientProps = {
@@ -37,16 +33,6 @@ type SettingsClientProps = {
   currentName: string;
   permissions: Permission[];
   workspaceSettings: WorkspaceSettings;
-  systemStatus: {
-    mode: string;
-    datastore: string;
-    ai: AiRuntimeStatus;
-    channels: Record<Channel, ChannelStatus>;
-    emailSync: string;
-    emailFrom: string | null;
-    replyTo: string | null;
-    readiness: ProductionReadiness;
-  };
   production: boolean;
 };
 
@@ -70,7 +56,6 @@ export function SettingsClient({
   currentName,
   permissions,
   workspaceSettings,
-  systemStatus,
   production,
 }: SettingsClientProps) {
   const router = useRouter();
@@ -222,14 +207,7 @@ export function SettingsClient({
         canManage={canManageWorkspace}
       />
 
-      <SystemStatusPanel
-        mode={systemStatus.mode}
-        datastore={systemStatus.datastore}
-        ai={systemStatus.ai}
-        channels={systemStatus.channels}
-        emailSync={systemStatus.emailSync}
-        readiness={systemStatus.readiness}
-      />
+      <SystemStatusPanel />
 
       <Panel>
         <SectionHeader title="Your account" description="Signed-in user for this workspace." />

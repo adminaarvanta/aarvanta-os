@@ -72,6 +72,10 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
         Sign in
       </button>
 
+      <p className="text-center text-xs text-muted">
+        Invited? Use the password you created when accepting your invite.
+      </p>
+
       <div className="relative my-2">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-border" />

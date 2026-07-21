@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
-import { validateCredentials } from "@/lib/auth/credentials";
+import { authenticateUser } from "@/lib/auth/credentials";
 import {
   createSessionToken,
   getSessionCookieOptions,
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     return loginErrorRedirect(req, "misconfigured", nextPath);
   }
 
-  const session = validateCredentials(input.email, input.password);
+  const session = await authenticateUser(input.email, input.password);
   if (!session) {
     if (jsonMode) {
       return apiError("INVALID_CREDENTIALS", "Invalid email or password", 401);

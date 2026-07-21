@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, type MemberRole } from "@/types/tenant";
@@ -15,11 +16,16 @@ type InvitePreview = {
   };
   organization: { id: string; name: string } | null;
   workspace: { id: string; name: string } | null;
+  needsPassword?: boolean;
+  canCompleteSignup?: boolean;
 };
 
 export function InviteAcceptClient({ token }: { token: string }) {
+  const router = useRouter();
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ role: MemberRole; org?: string } | null>(
     null
@@ -43,18 +49,31 @@ export function InviteAcceptClient({ token }: { token: string }) {
   }, [token]);
 
   async function accept() {
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
       const res = await fetch("/api/tenant/invitations/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, name: name.trim() || undefined }),
+        body: JSON.stringify({
+          token,
+          name: name.trim() || undefined,
+          password,
+        }),
       });
       const body = (await res.json()) as {
         error?: { message?: string };
         invitation?: { role: MemberRole };
-        message?: string;
+        next?: string;
       };
       if (!res.ok) {
         setError(body.error?.message ?? "Could not accept invitation.");
@@ -64,10 +83,17 @@ export function InviteAcceptClient({ token }: { token: string }) {
         role: body.invitation?.role ?? preview!.invitation.role,
         org: preview?.organization?.name,
       });
+      router.push(body.next ?? "/dashboard");
+      router.refresh();
     } finally {
       setBusy(false);
     }
   }
+
+  const canSignup =
+    preview &&
+    (preview.invitation.status === "pending" ||
+      preview.canCompleteSignup === true);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_rgba(184,150,93,0.16),_transparent_55%)] px-4 py-16">
@@ -90,9 +116,8 @@ export function InviteAcceptClient({ token }: { token: string }) {
               <span className="font-semibold text-foreground">
                 {ROLE_LABELS[done.role]}
               </span>
-              .
+              . Signing you in…
             </p>
-            <p className="text-xs text-dim">{ROLE_DESCRIPTIONS[done.role]}</p>
             <Link
               href="/dashboard"
               className="inline-flex rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-black"
@@ -123,10 +148,18 @@ export function InviteAcceptClient({ token }: { token: string }) {
               </p>
             </div>
 
-            {preview.invitation.status !== "pending" ? (
-              <p className="text-sm text-red-400">
-                This invitation is {preview.invitation.status}.
-              </p>
+            {!canSignup ? (
+              <div className="space-y-3">
+                <p className="text-sm text-red-400">
+                  This invitation is {preview.invitation.status}.
+                </p>
+                <Link
+                  href="/login"
+                  className="inline-flex text-sm font-medium text-gold hover:underline"
+                >
+                  Sign in instead
+                </Link>
+              </div>
             ) : (
               <>
                 <label className="block text-xs font-medium text-muted">
@@ -137,6 +170,38 @@ export function InviteAcceptClient({ token }: { token: string }) {
                     className="mt-1 w-full rounded-xl border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
                   />
                 </label>
+                <label className="block text-xs font-medium text-muted">
+                  Create password
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={8}
+                    required
+                    placeholder="At least 8 characters"
+                    className="mt-1 w-full rounded-xl border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+                  />
+                </label>
+                <label className="block text-xs font-medium text-muted">
+                  Confirm password
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={8}
+                    required
+                    className="mt-1 w-full rounded-xl border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+                  />
+                </label>
+                <p className="text-xs text-dim">
+                  Use this email and password to sign in at{" "}
+                  <Link href="/login" className="text-gold hover:underline">
+                    /login
+                  </Link>
+                  .
+                </p>
                 {error ? <p className="text-xs text-red-400">{error}</p> : null}
                 <Button
                   type="button"
@@ -144,7 +209,11 @@ export function InviteAcceptClient({ token }: { token: string }) {
                   disabled={busy}
                   onClick={() => void accept()}
                 >
-                  {busy ? "Joining…" : "Accept invitation"}
+                  {busy
+                    ? "Joining…"
+                    : preview.invitation.status === "accepted"
+                      ? "Set password & sign in"
+                      : "Accept & create account"}
                 </Button>
               </>
             )}
