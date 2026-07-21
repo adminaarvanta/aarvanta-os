@@ -83,17 +83,30 @@ export function SettingsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
       });
+      const data = (await res.json()) as {
+        error?: { message?: string };
+        emailSent?: boolean;
+        acceptUrl?: string;
+        acceptPath?: string;
+        emailError?: string;
+      };
       if (res.ok) {
-        const data = (await res.json()) as { acceptPath?: string };
         setInviteEmail("");
-        setMessage(
-          data.acceptPath
-            ? `Invitation created. Share link: ${data.acceptPath}`
-            : "Invitation sent."
-        );
+        if (data.emailSent) {
+          setMessage(`Invitation emailed to the user.`);
+        } else if (data.acceptUrl) {
+          setMessage(
+            `Invite created, but email was not sent (${data.emailError ?? "unavailable"}). Share this link: ${data.acceptUrl}`
+          );
+        } else {
+          setMessage(
+            data.acceptPath
+              ? `Invitation created. Share link: ${data.acceptPath}`
+              : "Invitation created."
+          );
+        }
         router.refresh();
       } else {
-        const data = await res.json();
         setMessage(data.error?.message ?? "Invite failed.");
       }
     } finally {
@@ -108,6 +121,48 @@ export function SettingsClient({
       router.refresh();
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function resendInvite(id: string) {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/tenant/invitations/${id}`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as {
+        error?: { message?: string };
+        emailSent?: boolean;
+        acceptUrl?: string;
+        emailError?: string;
+      };
+      if (!res.ok) {
+        setMessage(data.error?.message ?? "Could not resend invite.");
+        return;
+      }
+      if (data.emailSent) {
+        setMessage("Invitation email resent.");
+      } else {
+        setMessage(
+          `Email not sent (${data.emailError ?? "unavailable"}). Share: ${data.acceptUrl ?? "invite link"}`
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyInviteLink(token: string) {
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/invite/${token}`
+        : `/invite/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setMessage("Invite link copied.");
+    } catch {
+      setMessage(`Invite link: ${url}`);
     }
   }
 
@@ -391,7 +446,11 @@ export function SettingsClient({
 
       <Panel padding="none">
         <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
-          <SectionHeader title="Invitations" className="mb-0" />
+          <SectionHeader
+            title="Invitations"
+            description="We email the invite link when Gmail is configured. You can also copy or resend."
+            className="mb-0"
+          />
         </div>
         <div className="px-4 py-4 sm:px-5">
           {canInvite && (
@@ -445,14 +504,32 @@ export function SettingsClient({
                     {inv.status}
                   </Badge>
                   {canInvite && inv.status === "pending" && (
-                    <button
-                      type="button"
-                      onClick={() => revokeInvite(inv.id)}
-                      disabled={busy}
-                      className="text-xs text-red-400 hover:text-red-300"
-                    >
-                      Revoke
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void copyInviteLink(inv.token)}
+                        disabled={busy}
+                        className="text-xs text-gold hover:text-gold-bright"
+                      >
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void resendInvite(inv.id)}
+                        disabled={busy}
+                        className="text-xs text-gold hover:text-gold-bright"
+                      >
+                        Resend email
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => revokeInvite(inv.id)}
+                        disabled={busy}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Revoke
+                      </button>
+                    </>
                   )}
                 </div>
               </li>
