@@ -5,6 +5,8 @@ import { getTenantRepository } from "@/lib/data/tenant-store";
 import { sendInvitationEmail } from "@/lib/tenant/send-invitation-email";
 import { getSessionContext, requirePermission } from "@/lib/tenant/context";
 
+export const runtime = "nodejs";
+
 const inviteSchema = z.object({
   email: z.string().email(),
   role: z.enum(["admin", "manager", "member", "guest"]),
