@@ -251,9 +251,10 @@ export const tenantFirestoreRepository: TenantRepository = {
     const snap = await getDb()
       .collection(MEMBERS)
       .where("userId", "==", userId)
-      .where("status", "==", "active")
       .get();
-    return snap.docs.map((doc) => doc.data() as WorkspaceMember);
+    return snap.docs
+      .map((doc) => doc.data() as WorkspaceMember)
+      .filter((m) => m.status === "active");
   },
 
   async createMember(input, scope) {

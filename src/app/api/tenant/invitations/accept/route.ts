@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody } from "@/lib/api/request";
+import {
+  createSessionToken,
+  getSessionCookieOptions,
+  SESSION_COOKIE,
+} from "@/lib/auth/session";
+import {
+  hasUserPassword,
+  upsertUserPassword,
+} from "@/lib/auth/user-credentials";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { getOptionalSession } from "@/lib/tenant/context";
@@ -8,6 +17,7 @@ import { getOptionalSession } from "@/lib/tenant/context";
 const acceptSchema = z.object({
   token: z.string().min(4).max(120),
   name: z.string().min(1).max(80).optional(),
+  password: z.string().min(8).max(128),
 });
 
 function userIdFromEmail(email: string): string {
@@ -22,7 +32,11 @@ export async function POST(req: Request) {
 
     const parsed = acceptSchema.safeParse(body);
     if (!parsed.success) {
-      return apiError("VALIDATION_ERROR", "Invalid accept payload", 400);
+      return apiError(
+        "VALIDATION_ERROR",
+        "Password must be at least 8 characters.",
+        400
+      );
     }
 
     const repo = getTenantRepository();
@@ -30,7 +44,19 @@ export async function POST(req: Request) {
     if (!preview) {
       return apiError("NOT_FOUND", "Invitation not found.", 404);
     }
-    if (preview.status !== "pending") {
+
+    const email = preview.email.toLowerCase();
+    const alreadyHasPassword = await hasUserPassword(email);
+
+    // Allow completing signup on an already-accepted invite if no password yet.
+    if (preview.status === "accepted" && alreadyHasPassword) {
+      return apiError(
+        "INVITE_USED",
+        "Invitation already accepted. Sign in with your email and password.",
+        409
+      );
+    }
+    if (preview.status !== "pending" && preview.status !== "accepted") {
       return apiError(
         "INVITE_USED",
         `Invitation is already ${preview.status}.`,
@@ -41,13 +67,16 @@ export async function POST(req: Request) {
       return apiError("INVITE_EXPIRED", "Invitation has expired.", 410);
     }
 
-    const invitation = await repo.acceptInvitation(parsed.data.token);
-    if (!invitation) {
-      return apiError("NOT_FOUND", "Invitation could not be accepted.", 404);
+    let invitation = preview;
+    if (preview.status === "pending") {
+      const accepted = await repo.acceptInvitation(parsed.data.token);
+      if (!accepted) {
+        return apiError("NOT_FOUND", "Invitation could not be accepted.", 404);
+      }
+      invitation = accepted;
     }
 
     const session = await getOptionalSession();
-    const email = invitation.email.toLowerCase();
     const userId =
       session && session.email.toLowerCase() === email
         ? session.userId
@@ -75,12 +104,39 @@ export async function POST(req: Request) {
       scope
     );
 
-    return NextResponse.json({
+    await upsertUserPassword({
+      email,
+      userId: member.userId,
+      password: parsed.data.password,
+    });
+
+    const response = NextResponse.json({
       invitation,
       member,
       demo: isDemoMode(),
-      message: `Joined as ${invitation.role}.`,
+      message: `Joined as ${invitation.role}. You are signed in.`,
+      next: "/dashboard",
     });
+
+    if (!isDemoMode()) {
+      const sessionPayload = {
+        email,
+        name: member.name,
+        userId: member.userId,
+        role: member.role,
+        tenantId: member.tenantId,
+        workspaceId: member.workspaceId,
+        companyId: scope.companyId,
+      };
+      const token = await createSessionToken(sessionPayload);
+      response.cookies.set(
+        SESSION_COOKIE,
+        token,
+        getSessionCookieOptions(undefined, req.url)
+      );
+    }
+
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Accept failed";
     return apiError("TENANT_ERROR", message, 500);
@@ -100,9 +156,16 @@ export async function GET(req: Request) {
       return apiError("NOT_FOUND", "Invitation not found.", 404);
     }
 
-    const [organization, workspace] = await Promise.all([
+    const [organization, workspace, needsPassword] = await Promise.all([
       repo.getOrganization(invitation.tenantId),
       repo.getWorkspace(invitation.workspaceId),
+      (async () => {
+        if (invitation.status === "pending") return true;
+        if (invitation.status === "accepted") {
+          return !(await hasUserPassword(invitation.email));
+        }
+        return false;
+      })(),
     ]);
 
     return NextResponse.json({
@@ -119,6 +182,8 @@ export async function GET(req: Request) {
       workspace: workspace
         ? { id: workspace.id, name: workspace.name }
         : null,
+      needsPassword,
+      canCompleteSignup: needsPassword,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Lookup failed";
