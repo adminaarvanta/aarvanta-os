@@ -1,10 +1,11 @@
 /**
  * ConversationRelay TTS provider selection.
  *
- * Defaults to Amazon Polly Neural — Twilio's standard/low-cost voice path
- * (no premium ElevenLabs voice). Conversation Relay itself is still ~$0.07/min.
+ * Defaults to ElevenLabs — Twilio's own default for ConversationRelay, billed
+ * within the same ~$0.07/min Relay fee (no separate ElevenLabs account).
+ * Human-sounding telephony voice.
  *
- * Set VOICE_RELAY_TTS_PROVIDER=ElevenLabs for more human-like speech (same Relay fee).
+ * Set VOICE_RELAY_TTS_PROVIDER=Amazon for the basic Polly voice.
  * Set VOICE_RELAY_BUDGET_MODE=true to skip ConversationRelay entirely (one-shot <Say> only —
  * no two-way AI, avoids the $0.07/min Relay charge).
  */
@@ -17,7 +18,7 @@ export function isVoiceRelayBudgetMode(): boolean {
 
 export function getConversationRelayTts() {
   const provider = (
-    process.env.VOICE_RELAY_TTS_PROVIDER?.trim() || "Amazon"
+    process.env.VOICE_RELAY_TTS_PROVIDER?.trim() || "ElevenLabs"
   ) as ConversationRelayTtsProvider;
 
   const voice =
