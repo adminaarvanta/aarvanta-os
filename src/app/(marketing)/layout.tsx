@@ -9,7 +9,7 @@ export default function MarketingLayout({
   const production = isProductionMode();
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-black">
+    <div className="flex min-h-[100dvh] flex-col bg-background">
       <MarketingNav production={production} />
       <main className="flex-1">{children}</main>
       <MarketingFooter />

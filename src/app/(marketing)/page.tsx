@@ -52,7 +52,7 @@ export default function LandingPage() {
   return (
     <>
       <section className="relative overflow-hidden border-b border-border">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#B3965D_0%,_transparent_50%)] opacity-[0.08]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--gold)_0%,_transparent_50%)] opacity-[0.08]" />
         <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:py-32">
           <p className="text-sm font-medium uppercase tracking-wider text-gold">
             {COMPANY.name}

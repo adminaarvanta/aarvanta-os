@@ -83,7 +83,7 @@ export default function ContactPage() {
             />
           </div>
           {status === "error" && (
-            <p className="text-sm text-red-300">Something went wrong. Please email us directly.</p>
+            <p className="text-sm text-danger">Something went wrong. Please email us directly.</p>
           )}
           <Button type="submit" disabled={status === "loading"}>
             {status === "loading" ? "Sending…" : "Send message"}
