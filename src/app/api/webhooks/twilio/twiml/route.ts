@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 
 /**
- * Twilio fetches this URL when a Voice OS call connects.
- * Default Twilio method is POST — supporting GET + POST avoids the
- * classic "An application error has occurred" 405 failure.
+ * Twilio fetches this URL when a Voice OS call connects (inbound or outbound).
+ * Supports GET + POST (Twilio defaults to POST).
  *
- * When VOICE_RELAY_WSS_URL (or ONBOARDING_SIDECAR_URL host) is set,
- * returns ConversationRelay TwiML for two-way AI voice on EC2.
- * Otherwise falls back to one-shot <Say> TTS.
+ * When VOICE_RELAY_WSS_URL is set → ConversationRelay two-way AI on EC2.
+ * Otherwise → one-shot <Say> TTS.
+ *
+ * Query params:
+ * - message / goal — spoken welcome + LLM context
+ * - mode=say — force one-shot TTS
+ * - direction=inbound|outbound
+ * - conversationId — for transcript callback correlation
  */
 export async function GET(req: Request) {
   return twimlResponse(req);
@@ -20,17 +24,30 @@ export async function POST(req: Request) {
 
 async function twimlResponse(req: Request) {
   const url = new URL(req.url);
-  let message = url.searchParams.get("message");
-  const mode = url.searchParams.get("mode"); // "say" forces one-shot TTS
+  let message = url.searchParams.get("message") ?? url.searchParams.get("goal");
+  const mode = url.searchParams.get("mode");
+  let direction = url.searchParams.get("direction") ?? "";
+  let conversationId = url.searchParams.get("conversationId") ?? "";
 
-  if (!message && req.method === "POST") {
+  if (req.method === "POST") {
     try {
       const contentType = req.headers.get("content-type") ?? "";
       if (contentType.includes("application/x-www-form-urlencoded")) {
         const form = await req.formData();
         const fromBody = form.get("message");
-        if (typeof fromBody === "string" && fromBody.trim()) {
+        if (!message && typeof fromBody === "string" && fromBody.trim()) {
           message = fromBody;
+        }
+        // Inbound calls: Twilio posts CallSid, From, To, Direction, etc.
+        const twilioDirection = form.get("Direction");
+        if (!direction && typeof twilioDirection === "string") {
+          direction = twilioDirection.toLowerCase().startsWith("outbound")
+            ? "outbound"
+            : "inbound";
+        }
+        if (!direction) {
+          // No Direction on our outbound Url fetch sometimes — default by presence of To/From
+          direction = "inbound";
         }
       }
     } catch {
@@ -38,15 +55,22 @@ async function twimlResponse(req: Request) {
     }
   }
 
-  const spoken = (message?.trim() || "Hello from Aarvanta Voice OS.").slice(
-    0,
-    3500
-  );
+  if (!direction) direction = "outbound";
 
+  const defaultWelcome =
+    direction === "inbound"
+      ? "Thanks for calling Aarvanta. How can I help you today?"
+      : "Hello, this is Aarvanta calling. Do you have a moment to talk?";
+
+  const spoken = (message?.trim() || defaultWelcome).slice(0, 3500);
   const relayUrl = mode === "say" ? null : getVoiceRelayWssUrl();
 
   const twiml = relayUrl
-    ? buildConversationRelayTwiml(relayUrl, spoken)
+    ? buildConversationRelayTwiml(relayUrl, spoken, {
+        direction,
+        conversationId,
+        goal: spoken,
+      })
     : buildSayTwiml(spoken);
 
   return new NextResponse(twiml, {
@@ -65,13 +89,18 @@ function buildSayTwiml(spoken: string) {
 </Response>`;
 }
 
-function buildConversationRelayTwiml(wssUrl: string, welcome: string) {
-  // welcomeGreeting is spoken by Twilio; context param seeds the EC2 LLM.
+function buildConversationRelayTwiml(
+  wssUrl: string,
+  welcome: string,
+  params: { direction: string; conversationId: string; goal: string }
+) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
     <ConversationRelay url="${escapeXml(wssUrl)}" welcomeGreeting="${escapeXml(welcome)}" language="en-US" ttsProvider="Amazon" voice="Joanna-Neural" transcriptionProvider="Deepgram" interruptible="any">
-      <Parameter name="context" value="${escapeXml(welcome.slice(0, 500))}" />
+      <Parameter name="goal" value="${escapeXml(params.goal.slice(0, 500))}" />
+      <Parameter name="direction" value="${escapeXml(params.direction)}" />
+      <Parameter name="conversationId" value="${escapeXml(params.conversationId)}" />
       <Parameter name="source" value="aarvanta-voice-os" />
     </ConversationRelay>
   </Connect>

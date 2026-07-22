@@ -53,6 +53,8 @@ export async function GET(req: Request) {
           phone: conversation.contact.phone ?? item.phone,
         },
         content: item.message,
+        conversationId: conversation.id,
+        voiceDirection: "outbound",
       });
 
       await repo.addOutboundCall(

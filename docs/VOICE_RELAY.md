@@ -6,43 +6,78 @@ this FastAPI service on EC2 runs the LLM turn loop over `wss://`.
 ## Architecture
 
 ```
-Caller ↔ Twilio ConversationRelay ↔ wss://EC2/voice-relay/ws (OpenAI)
+Caller ↔ Twilio ConversationRelay ↔ wss://EC2/…/ws (OpenAI gpt-4o-mini)
                 ↕
-         os.aarvanta.co (TwiML + status webhooks + Voice OS UI)
+         os.aarvanta.co (TwiML + status webhooks + Voice OS UI + transcript callback)
 ```
 
-Co-locate with `aarvanta_onboarding_automation` on the existing EC2 (same nginx TLS).
+**Telephony number (v1):** `+1 716 703 2574`  
+**App:** `https://os.aarvanta.co`
 
-## Deploy on EC2
+## Your checklist (manual)
 
-1. Copy `services/voice-relay` to the box (git clone of aarvanta-os or scp).
-2. Run:
-   ```bash
-   sudo bash services/voice-relay/deploy/install-on-ec2.sh
-   ```
-3. Edit `/opt/aarvanta/voice-relay/.env`:
-   - `OPENAI_API_KEY`
-   - `TWILIO_AUTH_TOKEN`
-   - `VOICE_RELAY_WSS_URL=wss://onboarding.aarvanta.co/voice-relay/ws`  
-     (must match nginx path + TwiML / Vercel env **exactly**)
-4. Add the nginx snippet from `deploy/nginx-voice-relay.conf` to the existing host, then `nginx -t && systemctl reload nginx`.
-5. Check: `curl https://onboarding.aarvanta.co/voice-relay/health`
-
-## Vercel (Aarvanta OS)
-
-```
-VOICE_RELAY_WSS_URL=wss://onboarding.aarvanta.co/voice-relay/ws
+### 1. Deploy relay on EC2
+```bash
+# On the EC2 host (after git pull of aarvanta-os):
+sudo bash services/voice-relay/deploy/install-on-ec2.sh
+sudo nano /opt/aarvanta/voice-relay/.env
 ```
 
-Optional: if unset, OS derives `wss://<host>/voice-relay/ws` from `ONBOARDING_SIDECAR_URL`.
+Required `.env` on EC2:
+```bash
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+TWILIO_AUTH_TOKEN=...          # same as Vercel
+VOICE_RELAY_WSS_URL=wss://YOUR-HOST/voice-relay/ws   # must match nginx + Vercel exactly
+AARVANTA_VOICE_CALLBACK_URL=https://os.aarvanta.co/api/webhooks/voice-relay
+VOICE_RELAY_CALLBACK_SECRET=generate-a-long-random-string
+```
 
-When set, outbound/inbound TwiML uses `<Connect><ConversationRelay/></Connect>` instead of one-shot `<Say>`.
+Add nginx (path proxy or `voice.aarvanta.co`) from `deploy/nginx-voice-relay.conf`, then:
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+curl https://YOUR-HOST/voice-relay/health
+```
 
-## Twilio Console
+### 2. Vercel env (Production) + redeploy
+```bash
+VOICE_RELAY_WSS_URL=wss://YOUR-HOST/voice-relay/ws
+VOICE_RELAY_CALLBACK_SECRET=same-as-ec2
+TWILIO_ACCOUNT_SID=...
+TWILIO_AUTH_TOKEN=...
+TWILIO_PHONE_NUMBER=+17167032574
+NEXT_PUBLIC_APP_URL=https://os.aarvanta.co
+OPENAI_API_KEY=...
+```
 
-Keep Voice **Call status changes** → `https://os.aarvanta.co/api/webhooks/twilio`.  
-**A call comes in** can stay on `/api/webhooks/twilio/twiml` (OS returns ConversationRelay TwiML when relay is configured).
+### 3. Twilio Console → Active number `+1 716 703 2574`
+| Field | Value |
+|-------|--------|
+| **A call comes in** | `https://os.aarvanta.co/api/webhooks/twilio/twiml` · HTTP POST |
+| **Call status changes** | `https://os.aarvanta.co/api/webhooks/twilio` · HTTP POST |
+| Messaging (optional) | `https://os.aarvanta.co/api/webhooks/twilio` · HTTP POST |
+
+Save. Enable **ConversationRelay** in Twilio if the Console asks you to onboard.
+
+### 4. Test
+**Outbound**
+1. Sign in → `/calling` or `/voice`
+2. Call a **verified** trial number (or leave trial)
+3. Answer — AI should greet and converse two-way
+
+**Inbound**
+1. From your phone, dial `+1 716 703 2574`
+2. AI receptionist should answer
+3. Check `/voice` for call log + transcript note after hangup
+
+### 5. Health
+- `https://os.aarvanta.co/api/health` → Voice Relay item **ok**
+- `https://YOUR-HOST/voice-relay/health` → `"openai": true`
+
+## Fallback
+
+If `VOICE_RELAY_WSS_URL` is unset, Voice OS still works with **one-shot `<Say>` TTS** (no two-way AI).
 
 ## Desktop note
 
-EC2 host/SSH details live in the local **onboarding automation** project. This cloud agent cannot read your Desktop — use that project's host/IP when installing, then set the public `wss://` URL above.
+EC2 SSH/host details live in your local onboarding automation project. This cloud agent cannot access your Desktop — use that host when installing.

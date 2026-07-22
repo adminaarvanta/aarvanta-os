@@ -13,6 +13,9 @@ export interface DeliveryContext {
   html?: string;
   emailInReplyTo?: string;
   emailMessageId?: string;
+  /** Correlate Twilio ConversationRelay session with Voice OS thread */
+  conversationId?: string;
+  voiceDirection?: "inbound" | "outbound";
 }
 
 async function sendWhatsAppMessage(to: string, text: string) {
@@ -70,7 +73,11 @@ async function sendTwilioSms(to: string, text: string) {
   }
 }
 
-async function initiateTwilioVoiceCall(to: string, message: string) {
+async function initiateTwilioVoiceCall(
+  to: string,
+  message: string,
+  opts?: { conversationId?: string; direction?: "inbound" | "outbound" }
+) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_PHONE_NUMBER;
@@ -80,18 +87,23 @@ async function initiateTwilioVoiceCall(to: string, message: string) {
   }
 
   const base = appUrl.replace(/\/$/, "");
-  const twimlUrl = `${base}/api/webhooks/twilio/twiml?message=${encodeURIComponent(message.slice(0, 1200))}`;
+  const params = new URLSearchParams({
+    message: message.slice(0, 1200),
+    direction: opts?.direction ?? "outbound",
+  });
+  if (opts?.conversationId) {
+    params.set("conversationId", opts.conversationId);
+  }
+  const twimlUrl = `${base}/api/webhooks/twilio/twiml?${params.toString()}`;
   const statusCallback = `${base}/api/webhooks/twilio`;
   const body = new URLSearchParams({
     To: to,
     From: from,
     Url: twimlUrl,
-    // Twilio defaults to POST; we support both, but be explicit.
     Method: "POST",
     StatusCallback: statusCallback,
     StatusCallbackMethod: "POST",
   });
-  // Terminal + progress events so Voice OS can log completed / busy / no-answer.
   for (const event of ["initiated", "ringing", "answered", "completed"]) {
     body.append("StatusCallbackEvent", event);
   }
@@ -154,7 +166,10 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
     }
     case "voice": {
       if (!ctx.contact.phone) throw new Error("Contact has no phone for voice.");
-      await initiateTwilioVoiceCall(ctx.contact.phone, ctx.content);
+      await initiateTwilioVoiceCall(ctx.contact.phone, ctx.content, {
+        conversationId: ctx.conversationId,
+        direction: ctx.voiceDirection ?? "outbound",
+      });
       return;
     }
     case "website_chat":

@@ -130,7 +130,9 @@ export function ReplyForm({
       )}
       {activeChannel === "voice" ? (
         <p className="text-xs text-muted">
-          Initiates a voice call and speaks your message to the contact.
+          Starts a Twilio call. With Voice Relay (EC2) configured, the AI holds a
+          two-way conversation using your message as the call goal / greeting.
+          Otherwise it speaks the message once (TTS).
         </p>
       ) : null}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -139,7 +141,7 @@ export function ReplyForm({
           onChange={(e) => setContent(e.target.value)}
           placeholder={
             activeChannel === "voice"
-              ? "Message to speak on the call…"
+              ? "Call goal / opening line for the AI agent…"
               : "Reply via selected channel…"
           }
           rows={3}
