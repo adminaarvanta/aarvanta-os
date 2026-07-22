@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
+import { getConversationRelayTts } from "@/lib/channels/voice-relay-tts";
 
 /**
  * Twilio fetches this URL when a Voice OS call connects (inbound or outbound).
@@ -38,7 +39,6 @@ async function twimlResponse(req: Request) {
         if (!message && typeof fromBody === "string" && fromBody.trim()) {
           message = fromBody;
         }
-        // Inbound calls: Twilio posts CallSid, From, To, Direction, etc.
         const twilioDirection = form.get("Direction");
         if (!direction && typeof twilioDirection === "string") {
           direction = twilioDirection.toLowerCase().startsWith("outbound")
@@ -46,7 +46,6 @@ async function twimlResponse(req: Request) {
             : "inbound";
         }
         if (!direction) {
-          // No Direction on our outbound Url fetch sometimes — default by presence of To/From
           direction = "inbound";
         }
       }
@@ -59,17 +58,19 @@ async function twimlResponse(req: Request) {
 
   const defaultWelcome =
     direction === "inbound"
-      ? "Thanks for calling Aarvanta. How can I help you today?"
-      : "Hello, this is Aarvanta calling. Do you have a moment to talk?";
+      ? "Hi, thanks for calling Aarvanta. How can I help?"
+      : "Hi, this is Aarvanta. Do you have a moment?";
 
-  const spoken = (message?.trim() || defaultWelcome).slice(0, 3500);
+  // Keep welcome short — long goals make the agent over-talk
+  const spoken = (message?.trim() || defaultWelcome).slice(0, 280);
+  const goal = (message?.trim() || defaultWelcome).slice(0, 400);
   const relayUrl = mode === "say" ? null : getVoiceRelayWssUrl();
 
   const twiml = relayUrl
     ? buildConversationRelayTwiml(relayUrl, spoken, {
         direction,
         conversationId,
-        goal: spoken,
+        goal,
       })
     : buildSayTwiml(spoken);
 
@@ -94,11 +95,17 @@ function buildConversationRelayTwiml(
   welcome: string,
   params: { direction: string; conversationId: string; goal: string }
 ) {
+  const tts = getConversationRelayTts();
+  const elevenNorm =
+    tts.provider === "ElevenLabs"
+      ? ` elevenlabsTextNormalization="${escapeXml(tts.elevenlabsTextNormalization)}"`
+      : "";
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <ConversationRelay url="${escapeXml(wssUrl)}" welcomeGreeting="${escapeXml(welcome)}" language="en-US" ttsProvider="Amazon" voice="Joanna-Neural" transcriptionProvider="Deepgram" interruptible="any">
-      <Parameter name="goal" value="${escapeXml(params.goal.slice(0, 500))}" />
+    <ConversationRelay url="${escapeXml(wssUrl)}" welcomeGreeting="${escapeXml(welcome)}" language="en-US" ttsProvider="${escapeXml(tts.provider)}" voice="${escapeXml(tts.voice)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any">
+      <Parameter name="goal" value="${escapeXml(params.goal)}" />
       <Parameter name="direction" value="${escapeXml(params.direction)}" />
       <Parameter name="conversationId" value="${escapeXml(params.conversationId)}" />
       <Parameter name="source" value="aarvanta-voice-os" />

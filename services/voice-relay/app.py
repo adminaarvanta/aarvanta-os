@@ -3,7 +3,7 @@ Aarvanta Voice Relay — Twilio ConversationRelay WebSocket sidecar.
 
 Deploy on EC2 (co-locate with onboarding or dedicated). Twilio connects with
 wss:// and streams caller speech as text prompts; we stream OpenAI chat tokens
-that ConversationRelay speaks aloud.
+that ConversationRelay speaks aloud (ElevenLabs / Amazon / Google TTS via TwiML).
 
 Protocol (Twilio → us): setup | prompt | interrupt | dtmf | error
 Protocol (us → Twilio): text {token, last} | end
@@ -11,12 +11,14 @@ Protocol (us → Twilio): text {token, last} | end
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import base64
 import json
 import logging
 import os
+import re
 from typing import Any
 from urllib import request as urlrequest
 from urllib.error import URLError
@@ -36,21 +38,56 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
 VOICE_RELAY_WSS_URL = os.getenv("VOICE_RELAY_WSS_URL", "").strip()
-# Optional: POST transcripts back to Aarvanta OS
 AARVANTA_CALLBACK_URL = os.getenv("AARVANTA_VOICE_CALLBACK_URL", "").strip()
 AARVANTA_CALLBACK_SECRET = os.getenv("VOICE_RELAY_CALLBACK_SECRET", "").strip()
 
 DEFAULT_SYSTEM = (
-    "You are Aarvanta Voice OS, a concise phone assistant for a business OS. "
-    "Keep replies short (1–3 spoken sentences). Be helpful, professional, and clear. "
-    "If the caller wants to end the call, say goodbye politely. "
-    "Do not invent pricing or legal commitments. Never mention you are an AI unless asked."
+    "You are Aarvanta's phone receptionist. Speak like a real person on a short call.\n"
+    "Rules:\n"
+    "- Reply in ONE short sentence (max two if asked a direct question).\n"
+    "- Do not list features, pitch products, or give long explanations unless asked.\n"
+    "- Do not invent pricing, contracts, or legal promises.\n"
+    "- Never say you are an AI unless asked.\n"
+    "- If the caller says they are done, the test is complete, goodbye, or thanks that's all: "
+    "reply with a brief goodbye only (e.g. 'Got it — goodbye.')."
 )
 SYSTEM_PROMPT = os.getenv("VOICE_AGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM).strip()
 VERIFY_SIGNATURES = os.getenv("VOICE_RELAY_VERIFY_SIGNATURES", "true").lower() != "false"
+MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "70"))
 
-app = FastAPI(title="Aarvanta Voice Relay", version="1.1.0")
+app = FastAPI(title="Aarvanta Voice Relay", version="1.2.0")
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
+# Phrases that mean: hang up after a short goodbye
+_END_PHRASE_RE = re.compile(
+    r"\b("
+    r"goodbye|good bye|bye bye|bye|"
+    r"hang ?up|end (the )?call|disconnect|"
+    r"test (is )?complete(d)?|testing (is )?complete(d)?|"
+    r"we('?re| are) done|i('?m| am) done|all done|"
+    r"that('?s| is) (all|it)|"
+    r"nothing else|no more questions|you can hang|"
+    r"thank(s| you)(,)? that('?s| is) all|"
+    r"finished|wrap( it)? up"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_AFFIRM_AFTER_DONE_RE = re.compile(
+    r"^\s*(yes|yeah|yep|ok|okay|sure|correct|thanks|thank you|perfect|great)\.?\!?\s*$",
+    re.IGNORECASE,
+)
+
+
+def is_end_intent(text: str, *, awaiting_confirm: bool = False) -> bool:
+    t = (text or "").strip()
+    if not t:
+        return False
+    if _END_PHRASE_RE.search(t):
+        return True
+    if awaiting_confirm and _AFFIRM_AFTER_DONE_RE.match(t):
+        return True
+    return False
 
 
 def verify_twilio_signature(url: str, signature: str | None) -> bool:
@@ -92,28 +129,19 @@ def build_system_prompt(params: dict[str, Any]) -> str:
     parts = [SYSTEM_PROMPT]
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
-        parts.append(
-            "This is an inbound call — the customer dialed Aarvanta. "
-            "Greet briefly if needed, learn why they called, and help."
-        )
+        parts.append("Inbound call: answer briefly, ask what they need, stay short.")
     elif direction == "outbound":
-        parts.append(
-            "This is an outbound call you placed. Introduce yourself briefly, "
-            "state the reason for calling, then listen and respond."
-        )
+        parts.append("Outbound call: state why you called in one short line, then listen.")
     goal = (params.get("goal") or params.get("context") or "").strip()
     if goal:
-        parts.append(f"Call goal / context from Voice OS: {goal}")
+        parts.append(f"Context (do not read this aloud word-for-word): {goal[:240]}")
     return "\n\n".join(parts)
 
 
 async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str, user_text: str) -> str:
     history.append({"role": "user", "content": user_text})
     if not openai_client:
-        reply = (
-            "Thanks for calling Aarvanta. AI is not configured on the voice relay yet. "
-            "Please try again later."
-        )
+        reply = "Thanks for calling Aarvanta. Please try again later."
         history.append({"role": "assistant", "content": reply})
         await send_text(ws, reply, last=True)
         return reply
@@ -122,8 +150,8 @@ async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str
     stream = openai_client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=messages,  # type: ignore[arg-type]
-        max_tokens=220,
-        temperature=0.55,
+        max_tokens=MAX_REPLY_TOKENS,
+        temperature=0.35,
         stream=True,
     )
 
@@ -135,18 +163,30 @@ async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str
             continue
         full.append(delta)
         buffer += delta
-        # Flush on word boundaries to keep TTS natural and low-latency
-        if any(buffer.endswith(ch) for ch in (" ", ".", "!", "?", ",", ";", ":")) or len(buffer) >= 28:
+        if any(buffer.endswith(ch) for ch in (" ", ".", "!", "?", ",", ";", ":")) or len(buffer) >= 24:
             await send_text(ws, buffer, last=False)
             buffer = ""
 
-    reply = "".join(full).strip() or "Sorry, I did not catch that. Could you say it again?"
-    # Final token must set last=true so ConversationRelay finishes TTS turn
+    reply = "".join(full).strip() or "Sorry — could you repeat that?"
+    # Hard-cap spoken length if model still overshoots
+    if len(reply) > 220:
+        cut = reply[:220]
+        end = max(cut.rfind("."), cut.rfind("!"), cut.rfind("?"))
+        reply = (cut[: end + 1] if end > 40 else cut.rsplit(" ", 1)[0]) + ""
     await send_text(ws, buffer if buffer else " ", last=True)
     history.append({"role": "assistant", "content": reply})
-    if len(history) > 20:
-        del history[:-20]
+    if len(history) > 16:
+        del history[:-16]
     return reply
+
+
+async def say_goodbye_and_hangup(ws: WebSocket, transcript: list[dict[str, str]]) -> None:
+    goodbye = "Got it. Goodbye."
+    await send_text(ws, goodbye, last=True)
+    transcript.append({"role": "assistant", "content": goodbye})
+    # Brief pause so ElevenLabs can start speaking before Twilio tears down
+    await asyncio.sleep(1.2)
+    await end_session(ws, json.dumps({"reason": "caller_ended"}))
 
 
 def post_transcript(session: dict[str, Any], turns: list[dict[str, str]], summary: str) -> None:
@@ -184,11 +224,12 @@ async def health() -> JSONResponse:
         {
             "status": "ok",
             "service": "aarvanta-voice-relay",
-            "version": "1.1.0",
+            "version": "1.2.0",
             "openai": bool(OPENAI_API_KEY),
             "signatureVerification": VERIFY_SIGNATURES and bool(TWILIO_AUTH_TOKEN),
             "wssUrlConfigured": bool(VOICE_RELAY_WSS_URL),
             "callbackConfigured": bool(AARVANTA_CALLBACK_URL and AARVANTA_CALLBACK_SECRET),
+            "maxReplyTokens": MAX_REPLY_TOKENS,
         }
     )
 
@@ -217,6 +258,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
     transcript: list[dict[str, str]] = []
     session: dict[str, Any] = {}
     system = SYSTEM_PROMPT
+    offered_hangup = False
 
     try:
         while True:
@@ -256,28 +298,29 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     continue
                 log.info("prompt: %s", prompt[:160])
                 transcript.append({"role": "user", "content": prompt})
+
+                if is_end_intent(prompt, awaiting_confirm=offered_hangup):
+                    log.info("end intent detected — goodbye + hangup")
+                    await say_goodbye_and_hangup(websocket, transcript)
+                    break
+
                 try:
                     reply = await stream_reply(websocket, history, system, prompt)
                 except Exception as exc:  # noqa: BLE001
                     log.exception("OpenAI failed: %s", exc)
-                    reply = "Sorry, I am having trouble right now. Please try again in a moment."
+                    reply = "Sorry, I am having trouble right now."
                     await send_text(websocket, reply, last=True)
                 transcript.append({"role": "assistant", "content": reply})
 
-                lower = prompt.lower()
-                if any(
-                    p in lower
-                    for p in (
-                        "goodbye",
-                        "bye bye",
-                        "end the call",
-                        "hang up",
-                        "that's all",
-                        "that is all",
-                    )
-                ):
-                    await end_session(websocket, json.dumps({"reason": "caller_ended"}))
+                # If the model said goodbye, hang up after TTS starts
+                if re.search(r"\b(goodbye|bye for now|have a (good|great) day)\b", reply, re.I):
+                    await asyncio.sleep(1.2)
+                    await end_session(websocket, json.dumps({"reason": "assistant_ended"}))
                     break
+
+                # Soft offer: if caller sounds finished but phrasing was ambiguous
+                if re.search(r"\b(that'?s all|nothing else|i think we('?re| are) good)\b", prompt, re.I):
+                    offered_hangup = True
                 continue
 
             if msg_type == "interrupt":

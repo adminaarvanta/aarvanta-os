@@ -74,6 +74,17 @@ Save. Enable **ConversationRelay** in Twilio if the Console asks you to onboard.
 - `https://os.aarvanta.co/api/health` → Voice Relay item **ok**
 - `https://YOUR-HOST/voice-relay/health` → `"openai": true`
 
+## Voiceover (TTS)
+
+ConversationRelay speaks with **ElevenLabs** by default (human-like telephony voice via Twilio — no separate ElevenLabs key). Alternatives on the same TwiML path: `Amazon` / `Google`.
+
+Optional Vercel env:
+```bash
+VOICE_RELAY_TTS_PROVIDER=ElevenLabs
+VOICE_RELAY_TTS_VOICE=UgBBYS2sOqTuMpoF3BR0-flash_v2_5-0.95_0.65_0.8
+VOICE_RELAY_ELEVENLABS_TEXT_NORM=on
+```
+
 ## Fallback
 
 If `VOICE_RELAY_WSS_URL` is unset, Voice OS still works with **one-shot `<Say>` TTS** (no two-way AI).
