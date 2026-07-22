@@ -1,7 +1,7 @@
-import { getDomainRegistrar, isLiveDomainRegistrar } from "@/lib/registrars";
-import { wholesaleToRetail } from "@/lib/registrars/retail-pricing";
 import { slugifyBrand } from "@/lib/launch/brand";
 import type { SiteDomainListing } from "@/types/site-builder";
+
+/** Client-safe domain helpers. OpenSRS live search lives in domain-search.ts (server-only). */
 
 const TLD_PRICING_GBP: Record<string, number> = {
   ".co.uk": 9.99,
@@ -103,64 +103,6 @@ export function searchDomainListings(input: {
         : "Unavailable — try a variation",
     };
   });
-}
-
-/**
- * Search domains via OpenSRS when live; otherwise the demo catalog.
- * Retail price = wholesale USD × markup × FX (for GBP).
- */
-export async function searchDomainListingsAsync(input: {
-  businessName: string;
-  countryBase: string;
-  query?: string;
-}): Promise<SiteDomainListing[]> {
-  if (!isLiveDomainRegistrar()) {
-    return searchDomainListings(input);
-  }
-
-  const currency = currencyForCountry(input.countryBase);
-  const candidates = candidateDomains(input);
-  const registrar = getDomainRegistrar();
-
-  try {
-    const results = await registrar.checkAvailability(candidates.map((c) => c.domain));
-    const byDomain = new Map(results.map((r) => [r.domain.toLowerCase(), r]));
-
-    return candidates.map(({ domain, tld }, index) => {
-      const hit = byDomain.get(domain.toLowerCase());
-      const available = hit?.available ?? false;
-      const wholesale = hit?.wholesalePriceUsd;
-      const priceAnnual =
-        wholesale != null
-          ? wholesaleToRetail({ wholesaleUsd: wholesale, currency })
-          : priceForTld(tld, currency);
-
-      let note: string;
-      if (!available) {
-        note = hit?.reason?.includes("Premium")
-          ? "Unavailable (premium / restricted) — try another name"
-          : "Unavailable — try another name or TLD";
-      } else if (hit?.isPremium) {
-        note = "Premium domain — priced at registry rate + markup";
-      } else if (index < 2) {
-        note = "Recommended — available via Aarvanta Domain Store";
-      } else {
-        note = "Available via Aarvanta Domain Store";
-      }
-
-      return {
-        domain,
-        tld,
-        available,
-        priceAnnual,
-        currency,
-        note,
-      };
-    });
-  } catch (err) {
-    console.error("[domains] OpenSRS search failed, falling back to demo catalog", err);
-    return searchDomainListings(input);
-  }
 }
 
 export function formatDomainPrice(amount: number, currency: string): string {

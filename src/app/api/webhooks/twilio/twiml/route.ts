@@ -32,7 +32,7 @@ async function twimlResponse(req: Request) {
   let message = url.searchParams.get("message") ?? url.searchParams.get("goal");
   const mode = url.searchParams.get("mode");
   let direction = url.searchParams.get("direction") ?? "";
-  let conversationId = url.searchParams.get("conversationId") ?? "";
+  const conversationId = url.searchParams.get("conversationId") ?? "";
 
   if (req.method === "POST") {
     try {

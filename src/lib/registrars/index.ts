@@ -1,4 +1,3 @@
-import { isDemoMode } from "@/lib/config/app-mode";
 import {
   getOpenSrsConfig,
   isOpenSrsConfigured,
@@ -11,6 +10,12 @@ import type {
   RegisterDomainInput,
   RegisterDomainResult,
 } from "@/lib/registrars/types";
+
+function isDemoAppMode(): boolean {
+  // Avoid importing app-mode (pulls firebase-admin) — keep this package server-safe
+  // and never transitively importable by client components.
+  return process.env.APP_MODE !== "production";
+}
 
 function demoAvailable(domain: string): boolean {
   const hash = domain.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
@@ -58,7 +63,7 @@ class DemoDomainRegistrar implements DomainRegistrar {
  * OpenSRS when credentials are set (and not demo-only); otherwise offline demo.
  */
 export function getDomainRegistrar(): DomainRegistrar {
-  if (isDemoMode() && process.env.OPENSRS_FORCE_LIVE !== "true") {
+  if (isDemoAppMode() && process.env.OPENSRS_FORCE_LIVE !== "true") {
     return new DemoDomainRegistrar();
   }
   if (!isOpenSrsConfigured()) {
