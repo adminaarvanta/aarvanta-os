@@ -96,6 +96,10 @@ export function isMemoryDatastore(): boolean {
   if (process.env.DATASTORE === "memory") return true;
   if (process.env.DATASTORE === "firestore") return false;
   if (!isFirebaseConfigured()) return true;
+  // Before probe completes, prefer Firestore — treating `backend === null` as
+  // memory caused invite accept/login to write/read ephemeral memberships on
+  // cold serverless starts while passwords still went to Firestore.
+  if (backend === null) return false;
   return backend !== "firestore";
 }
 

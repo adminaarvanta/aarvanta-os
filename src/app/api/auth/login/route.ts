@@ -8,7 +8,10 @@ import {
   SESSION_COOKIE,
 } from "@/lib/auth/session";
 import { assertProductionConfig } from "@/lib/config/app-mode";
+import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { apiError, parseJsonBody } from "@/lib/api/request";
+
+export const runtime = "nodejs";
 
 const schema = z.object({
   email: z.string().email(),
@@ -68,6 +71,7 @@ export async function POST(req: Request) {
 
   try {
     assertProductionConfig();
+    await ensureDatastoreReady();
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Invalid production config";
