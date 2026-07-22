@@ -6,6 +6,10 @@ import {
 } from "@/lib/channels/config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 import {
+  getConversationRelayTts,
+  isVoiceRelayBudgetMode,
+} from "@/lib/channels/voice-relay-tts";
+import {
   checkGmailSyncAccess,
   getEmailInboundConfig,
 } from "@/lib/channels/gmail-client";
@@ -16,9 +20,12 @@ import { isProductionMode } from "@/lib/config/app-mode";
 
 function voiceRelayPayload() {
   const wssUrl = getVoiceRelayWssUrl();
+  const tts = getConversationRelayTts();
   return {
     configured: Boolean(wssUrl),
     wssUrl,
+    budgetMode: isVoiceRelayBudgetMode(),
+    tts: { provider: tts.provider, voice: tts.voice },
   };
 }
 
