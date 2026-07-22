@@ -6,6 +6,7 @@ import {
 } from "@/lib/channels/voice-relay";
 import { isFirebaseConfigured } from "@/lib/firebase/admin";
 import { isProductionMode } from "@/lib/config/app-mode";
+import { getOpenSrsRuntimeStatus } from "@/lib/registrars/opensrs-config";
 import { getStripeRuntimeStatus } from "@/lib/stripe/config";
 
 export type ReadinessItem = {
@@ -251,6 +252,26 @@ export function getProductionReadiness(): ProductionReadiness {
         status: "warning",
       });
     }
+  }
+
+  const opensrs = getOpenSrsRuntimeStatus();
+  if (opensrs.status !== "live") {
+    warnings.push(
+      "OpenSRS not configured — Build OS domain search/purchase uses the demo catalog (no real registrations)"
+    );
+    items.push({
+      id: "opensrs",
+      label: "OpenSRS domain reseller",
+      status: "warning",
+      detail: opensrs.reason,
+    });
+  } else {
+    items.push({
+      id: "opensrs",
+      label: "OpenSRS domain reseller",
+      status: "ok",
+      detail: opensrs.env,
+    });
   }
 
   const ready = requiredMissing.length === 0;

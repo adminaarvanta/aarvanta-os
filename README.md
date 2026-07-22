@@ -176,6 +176,40 @@ Set `AI_AUTO_SUMMARIZE=false` to disable automatic updates. In demo mode without
 
 > **Note:** Cursor’s API is for coding agents (repo tasks), not inbox summarization. Use OpenAI for Communication Hub AI.
 
+### 12. Domain reseller (OpenSRS)
+
+Build OS can sell domains inside the app via the **OpenSRS** wholesale reseller program. Customers pay with Stripe; registrations run against your prepaid OpenSRS balance.
+
+Full partner signup, API allowlisting, and env checklist: **[docs/OPENSRS_SETUP.md](docs/OPENSRS_SETUP.md)**.
+
+```bash
+OPENSRS_USERNAME=...
+OPENSRS_API_KEY=...
+OPENSRS_ENV=test   # use live after Horizon testing + IP allowlist
+DOMAIN_RETAIL_MARKUP_PCT=25
+DOMAIN_USD_TO_GBP_RATE=0.79
+```
+
+In demo mode, domain search uses an offline catalog. With credentials in production, search hits OpenSRS `LOOKUP` / `GET_PRICE`, and paid checkouts fulfill via `SW_REGISTER` on the Stripe webhook.
+
+### 13. Build OS (category → template → site)
+
+Build OS generates multi-page marketing sites from a structured brief:
+
+1. Choose an **application category** (store, SaaS, clinic, restaurant, …)
+2. Pick a **template** (layout + section recipe for that category)
+3. Write a prompt and preferences, then generate
+
+Sites are dense React block trees (hero, pricing, FAQ, galleries, booking CTAs, etc.), filled by heuristics and optionally OpenAI. Imagery uses Unsplash when `UNSPLASH_ACCESS_KEY` is set; otherwise curated Unsplash CDN + picsum + DiceBear avatars.
+
+```bash
+# Optional — richer stock photography for generated sites
+UNSPLASH_ACCESS_KEY=
+OPENAI_API_KEY=sk-...   # optional but recommended for on-brief copy
+```
+
+Open `/build` to run the wizard. Full preview: `/build/preview/[jobId]`.
+
 ## All channels (dev)
 
 With `CHANNELS_SIMULATE=true` or `APP_MODE=demo`, external delivery is simulated (logged, not sent).

@@ -1,16 +1,22 @@
 import type {
+  SiteCategoryId,
   SiteCustomTheme,
   SiteReferenceScreenshot,
   SiteThemePreset,
   SiteType,
 } from "@/types/site-builder";
 
-const STORAGE_KEY = "aarvanta.build.composeDraft.v1";
+const STORAGE_KEY = "aarvanta.build.composeDraft.v2";
+
+export type ComposeStep = "category" | "template" | "brief";
 
 export type ComposeDraftCache = {
   jobId?: string;
   prompt: string;
   siteType: SiteType | null;
+  categoryId: SiteCategoryId | null;
+  templateId: string | null;
+  step: ComposeStep;
   themePreset: SiteThemePreset;
   customTheme: SiteCustomTheme;
   screenshots: SiteReferenceScreenshot[];

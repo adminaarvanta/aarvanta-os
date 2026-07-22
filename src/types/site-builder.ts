@@ -6,6 +6,72 @@ export type SiteDesignStyle = "minimal" | "modern" | "bold" | "classic";
 export type SiteColorMood = "warm" | "cool" | "neutral" | "vibrant";
 export type SiteCtaGoal = "book_call" | "buy" | "subscribe" | "contact";
 
+/** Application category — chosen before template selection. */
+export type SiteCategoryId =
+  | "ecommerce"
+  | "saas"
+  | "local_service"
+  | "professional"
+  | "restaurant"
+  | "healthcare"
+  | "agency"
+  | "portfolio"
+  | "nonprofit"
+  | "blog"
+  | "event"
+  | "internal_tool_landing";
+
+/** Known block types the preview renderer understands. */
+export type SiteBlockType =
+  | "hero"
+  | "features"
+  | "services_grid"
+  | "products"
+  | "portfolio_grid"
+  | "testimonials"
+  | "stats"
+  | "pricing_table"
+  | "faq_accordion"
+  | "logo_cloud"
+  | "timeline"
+  | "team_grid"
+  | "comparison"
+  | "cta_banner"
+  | "gallery"
+  | "menu_list"
+  | "booking_cta"
+  | "feature_tabs"
+  | "rich_text"
+  | "contact"
+  | "newsletter"
+  | "blog_list"
+  | "about_split"
+  | "content";
+
+export type SiteTemplateSectionRecipe = {
+  type: SiteBlockType;
+  label: string;
+  description: string;
+};
+
+export type SiteTemplateDefinition = {
+  id: string;
+  categoryId: SiteCategoryId;
+  name: string;
+  description: string;
+  bestFor: string[];
+  siteType: SiteType;
+  defaultTone: SiteTone;
+  defaultTheme: SiteThemePreset;
+  defaultPages: SitePageOption[];
+  defaultFeatures: SiteFeatureOption[];
+  defaultCta: SiteCtaGoal;
+  /** Ordered section recipes keyed by page slug. */
+  sectionsByPage: Record<string, SiteTemplateSectionRecipe[]>;
+  imageKeywords: string[];
+  previewAccent: string;
+};
+
 export type SiteThemePreset =
   | "gold_navy"
   | "minimal_light"
@@ -130,6 +196,10 @@ export type SitePreferences = {
   businessIdea: string;
   targetAudience?: string;
   countryBase: string;
+  /** Required before generate — application category. */
+  categoryId: SiteCategoryId;
+  /** Required before generate — template within the category. */
+  templateId: string;
   tone: SiteTone;
   siteType: SiteType;
   designStyle: SiteDesignStyle;
@@ -149,7 +219,7 @@ export type SitePreferences = {
 
 export type SiteBlock = {
   id: string;
-  type: string;
+  type: SiteBlockType | string;
   props: Record<string, unknown>;
 };
 
@@ -167,6 +237,8 @@ export type GeneratedSite = {
   theme: SitePlanTheme;
   navigation: SitePlanNavItem[];
   pages: GeneratedSitePage[];
+  categoryId?: SiteCategoryId;
+  templateId?: string;
   generatedAt: string;
 };
 

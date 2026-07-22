@@ -14,26 +14,45 @@ export function blockHasSamplePayload(block: SiteBlock): boolean {
     case "hero":
       return nonEmptyString(p.headline) && nonEmptyString(p.subheadline);
     case "features":
+    case "services_grid":
     case "stats":
+    case "faq_accordion":
     case "faq":
     case "gallery":
+    case "logo_cloud":
+    case "timeline":
       return asArray(p.items).length >= 2;
     case "products":
       return asArray(p.products).length >= 2;
+    case "pricing_table":
     case "pricing":
       return asArray(p.tiers).length >= 2;
     case "testimonials":
       return asArray(p.quotes).length >= 1;
+    case "blog_list":
     case "blog":
       return asArray(p.posts).length >= 1;
+    case "portfolio_grid":
+      return asArray(p.items).length >= 2;
+    case "team_grid":
+    case "team":
+      return asArray(p.members).length >= 2;
+    case "comparison":
+      return asArray(p.columns).length >= 2;
+    case "feature_tabs":
+      return asArray(p.tabs).length >= 2;
+    case "menu_list":
+      return asArray(p.sections).length >= 1;
+    case "about_split":
     case "split":
       return nonEmptyString(p.body) || nonEmptyString(p.title);
     case "contact":
       return nonEmptyString(p.title) || nonEmptyString(p.description);
+    case "cta_banner":
     case "cta":
-      return nonEmptyString(p.title) && nonEmptyString(p.cta);
-    case "team":
-      return asArray(p.members).length >= 2;
+    case "booking_cta":
+    case "newsletter":
+      return nonEmptyString(p.title);
     default:
       return nonEmptyString(p.title) || nonEmptyString(p.body);
   }
@@ -62,6 +81,7 @@ export function preferSampleFilledSite(
 
     const mergedBlocks = samplePage.blocks.map((sampleBlock, blockIdx) => {
       const aiBlock =
+        aiPage.blocks.find((b) => b.id === sampleBlock.id) ??
         aiPage.blocks.find((b) => b.type === sampleBlock.type) ??
         aiPage.blocks[blockIdx];
       if (!aiBlock || !blockHasSamplePayload(aiBlock)) return sampleBlock;
@@ -80,44 +100,39 @@ export function preferSampleFilledSite(
           products: asArray(aiBlock.props.products).length
             ? aiBlock.props.products
             : sampleBlock.props.products,
-          tiers: asArray(aiBlock.props.tiers).length
-            ? aiBlock.props.tiers
-            : sampleBlock.props.tiers,
           quotes: asArray(aiBlock.props.quotes).length
             ? aiBlock.props.quotes
             : sampleBlock.props.quotes,
-          posts: asArray(aiBlock.props.posts).length
-            ? aiBlock.props.posts
-            : sampleBlock.props.posts,
-          bullets: asArray(aiBlock.props.bullets).length
-            ? aiBlock.props.bullets
-            : sampleBlock.props.bullets,
+          tiers: asArray(aiBlock.props.tiers).length
+            ? aiBlock.props.tiers
+            : sampleBlock.props.tiers,
           members: asArray(aiBlock.props.members).length
             ? aiBlock.props.members
             : sampleBlock.props.members,
+          posts: asArray(aiBlock.props.posts).length
+            ? aiBlock.props.posts
+            : sampleBlock.props.posts,
+          tabs: asArray(aiBlock.props.tabs).length
+            ? aiBlock.props.tabs
+            : sampleBlock.props.tabs,
+          columns: asArray(aiBlock.props.columns).length
+            ? aiBlock.props.columns
+            : sampleBlock.props.columns,
+          sections: asArray(aiBlock.props.sections).length
+            ? aiBlock.props.sections
+            : sampleBlock.props.sections,
         },
       };
     });
 
-    const sampleTypes = new Set(samplePage.blocks.map((b) => b.type));
-    const extras = aiPage.blocks.filter(
-      (b) => !sampleTypes.has(b.type) && blockHasSamplePayload(b)
-    );
-
-    return {
-      ...samplePage,
-      title: nonEmptyString(aiPage.title) ? aiPage.title : samplePage.title,
-      blocks: [...mergedBlocks, ...extras],
-    };
+    return { ...samplePage, blocks: mergedBlocks, title: aiPage.title || samplePage.title };
   });
 
   return {
     ...sampleSite,
-    siteName: nonEmptyString(aiSite.siteName) ? aiSite.siteName : sampleSite.siteName,
-    tagline: nonEmptyString(aiSite.tagline) ? aiSite.tagline : sampleSite.tagline,
-    footerNote: nonEmptyString(aiSite.footerNote)
-      ? aiSite.footerNote
-      : sampleSite.footerNote,
+    siteName: aiSite.siteName || sampleSite.siteName,
+    tagline: aiSite.tagline || sampleSite.tagline,
+    footerNote: aiSite.footerNote || sampleSite.footerNote,
     pages,
   };
 }

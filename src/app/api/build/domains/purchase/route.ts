@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import { isDemoMode } from "@/lib/config/app-mode";
 import { getDomainOrderRepository } from "@/lib/data/domain-order-store";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
+import { isLiveDomainRegistrar } from "@/lib/registrars";
 import {
   createDomainPurchaseOrder,
   toPurchasedDomainPreference,
@@ -24,6 +26,20 @@ export async function POST(req: Request) {
     scope = await getTenantScope();
   } catch {
     return unauthorized();
+  }
+
+  // Live OpenSRS registrations must go through Stripe checkout → webhook fulfillment.
+  if (!isDemoMode() && isLiveDomainRegistrar()) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "USE_CHECKOUT",
+          message:
+            "Domain registration requires Stripe checkout. Use POST /api/build/checkout with kind=domain.",
+        },
+      },
+      { status: 400 }
+    );
   }
 
   const body = await parseJsonBody<unknown>(req);

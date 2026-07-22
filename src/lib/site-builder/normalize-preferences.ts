@@ -17,6 +17,8 @@ export function normalizeSitePreferences(
 
   return {
     ...data,
+    categoryId: data.categoryId,
+    templateId: data.templateId,
     customTheme,
     referenceUrl: data.referenceUrl || undefined,
     referenceScreenshots: data.referenceScreenshots ?? [],

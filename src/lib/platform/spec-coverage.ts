@@ -355,7 +355,7 @@ export const SPEC_PHASES: Array<{
         href: "/build",
         status: "partial",
         summary:
-          "Prompt-first AI studio with autosaved drafts, resume list, niche sample sites, custom brand theme/font packs, and refine chat. Deploy step bypassed.",
+          "Category → template → brief wizard; dense multi-page sites from template recipes; OpenAI fill + Unsplash/picsum media; theme refine; domain/hosting checkout. Deploy of static HTML still bypassed.",
       },
       {
         id: "launch-os",

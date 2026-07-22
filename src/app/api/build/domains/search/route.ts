@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
-import { searchDomainListings } from "@/lib/site-builder/domain-catalog";
+import { searchDomainListingsAsync } from "@/lib/site-builder/domain-catalog";
 import { getTenantScope } from "@/lib/tenant/context";
 
 const searchSchema = z.object({
@@ -28,6 +28,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const listings = searchDomainListings(parsed.data);
+  const listings = await searchDomainListingsAsync(parsed.data);
   return NextResponse.json({ listings });
 }

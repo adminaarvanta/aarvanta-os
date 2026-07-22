@@ -60,6 +60,8 @@ export async function PATCH(req: Request, context: RouteContext) {
 
   const preferences = normalizeSitePreferences({
     ...parsed.data,
+    categoryId: parsed.data.categoryId ?? job.preferences.categoryId ?? "saas",
+    templateId: parsed.data.templateId ?? job.preferences.templateId ?? "saas_launch",
     // Preserve previously stored screenshots if client omits them (size/local cache).
     referenceScreenshots:
       parsed.data.referenceScreenshots?.length

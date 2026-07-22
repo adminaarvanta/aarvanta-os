@@ -5,6 +5,20 @@ export const siteTypeSchema = z.enum(["landing", "business", "store", "portfolio
 export const siteDesignStyleSchema = z.enum(["minimal", "modern", "bold", "classic"]);
 export const siteColorMoodSchema = z.enum(["warm", "cool", "neutral", "vibrant"]);
 export const siteCtaGoalSchema = z.enum(["book_call", "buy", "subscribe", "contact"]);
+export const siteCategoryIdSchema = z.enum([
+  "ecommerce",
+  "saas",
+  "local_service",
+  "professional",
+  "restaurant",
+  "healthcare",
+  "agency",
+  "portfolio",
+  "nonprofit",
+  "blog",
+  "event",
+  "internal_tool_landing",
+]);
 export const siteThemePresetSchema = z.enum([
   "gold_navy",
   "minimal_light",
@@ -105,6 +119,8 @@ export const sitePreferencesSchema = z.object({
   businessIdea: z.string().min(10).max(1000),
   targetAudience: z.string().max(300).optional(),
   countryBase: z.string().min(2).max(8).default("UK"),
+  categoryId: siteCategoryIdSchema,
+  templateId: z.string().min(2).max(80),
   tone: siteToneSchema.default("professional"),
   siteType: siteTypeSchema.default("business"),
   designStyle: siteDesignStyleSchema.default("modern"),
@@ -125,6 +141,8 @@ export const sitePreferencesSchema = z.object({
 export const siteDraftPreferencesSchema = sitePreferencesSchema.extend({
   businessName: z.string().min(1).max(80),
   businessIdea: z.string().min(1).max(1000),
+  categoryId: siteCategoryIdSchema.optional(),
+  templateId: z.string().max(80).optional(),
 });
 
 export const siteBuildWriteSchema = z

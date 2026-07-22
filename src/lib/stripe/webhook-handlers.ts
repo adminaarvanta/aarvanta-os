@@ -4,6 +4,14 @@ import { getDomainOrderRepository } from "@/lib/data/domain-order-store";
 import { getBillingStore } from "@/lib/data/platform-store";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
 import { getStripePaymentStore } from "@/lib/data/stripe-payment-store";
+import {
+  getDomainRegistrar,
+  isLiveDomainRegistrar,
+} from "@/lib/registrars";
+import {
+  generateRegistrantCredentials,
+} from "@/lib/registrars/opensrs-client";
+import { getDefaultRegistrantContact } from "@/lib/registrars/opensrs-config";
 import { toPurchasedDomainPreference } from "@/lib/site-builder/domain-purchase";
 import type { TenantScope } from "@/types/communication";
 import type { BillingPlanId } from "@/types/platform-modules";
@@ -67,6 +75,32 @@ async function markPaymentPaid(session: Stripe.Checkout.Session, scope: TenantSc
   });
 }
 
+async function fulfillDomainAtRegistrar(order: {
+  domain: string;
+  autoRenew: boolean;
+  registrarOrderId: string;
+}): Promise<string> {
+  if (order.registrarOrderId) {
+    return order.registrarOrderId;
+  }
+
+  if (!isLiveDomainRegistrar()) {
+    return `AAR-DOM-${order.domain.replace(/\./g, "").toUpperCase().slice(0, 16)}`;
+  }
+
+  const registrar = getDomainRegistrar();
+  const { regUsername, regPassword } = generateRegistrantCredentials(order.domain);
+  const result = await registrar.registerDomain({
+    domain: order.domain,
+    years: 1,
+    autoRenew: order.autoRenew,
+    contact: getDefaultRegistrantContact(),
+    regUsername,
+    regPassword,
+  });
+  return result.orderId;
+}
+
 async function completeDomainOrder(session: Stripe.Checkout.Session, scope: TenantScope) {
   const orderId = session.metadata?.orderId;
   if (!orderId) return;
@@ -74,12 +108,38 @@ async function completeDomainOrder(session: Stripe.Checkout.Session, scope: Tena
   const order = await repo.get(orderId, scope);
   if (!order) return;
 
+  // Already fulfilled (webhook retry)
+  if (order.status === "completed" && order.registrarOrderId) {
+    return;
+  }
+
+  const autoRenew = session.metadata?.autoRenew === "true" || order.autoRenew;
+
+  let registrarOrderId: string;
+  try {
+    registrarOrderId = await fulfillDomainAtRegistrar({
+      domain: order.domain,
+      autoRenew,
+      registrarOrderId: order.registrarOrderId,
+    });
+  } catch (err) {
+    console.error("[stripe] OpenSRS domain registration failed after payment", {
+      orderId: order.id,
+      domain: order.domain,
+      err,
+    });
+    await repo.save({
+      ...order,
+      status: "failed",
+      purchasedAt: crmNow(),
+    });
+    return;
+  }
+
   const completed = {
     ...order,
     status: "completed" as const,
-    registrarOrderId:
-      order.registrarOrderId ||
-      `AAR-DOM-${session.id.replace("cs_", "").slice(0, 12).toUpperCase()}`,
+    registrarOrderId,
     purchasedAt: crmNow(),
   };
   await repo.save(completed);
@@ -91,10 +151,7 @@ async function completeDomainOrder(session: Stripe.Checkout.Session, scope: Tena
   const job = await jobRepo.get(buildJobId, scope);
   if (!job) return;
 
-  const domainPreference = toPurchasedDomainPreference(
-    completed,
-    session.metadata?.autoRenew === "true"
-  );
+  const domainPreference = toPurchasedDomainPreference(completed, autoRenew);
   await jobRepo.save({
     ...job,
     preferences: {

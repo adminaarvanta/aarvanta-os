@@ -3,15 +3,28 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  Activity,
+  ArrowLeft,
   ArrowUpRight,
+  BookOpen,
+  Briefcase,
+  Calendar,
+  Check,
   Clock3,
+  Heart,
   ImagePlus,
+  Image as ImageIcon,
+  Layers,
+  LayoutDashboard,
   Loader2,
+  MapPin,
+  ShoppingBag,
   Sparkles,
   Trash2,
+  Utensils,
   Wand2,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { HostingCheckoutPanel } from "@/components/build/hosting-checkout-panel";
@@ -21,26 +34,30 @@ import {
   clearComposeDraftCache,
   readComposeDraftCache,
   writeComposeDraftCache,
+  type ComposeStep,
 } from "@/lib/site-builder/compose-draft-cache";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
+import { EXAMPLE_PROMPTS, inferPreferencesFromPrompt } from "@/lib/site-builder/infer-preferences";
+import { SITE_CATEGORIES } from "@/lib/site-builder/templates/categories";
 import {
-  EXAMPLE_PROMPTS,
-  inferPreferencesFromPrompt,
-  SITE_TYPE_CARDS,
-} from "@/lib/site-builder/infer-preferences";
+  getTemplateById,
+  getTemplatesForCategory,
+} from "@/lib/site-builder/templates/catalog";
 import {
   defaultCustomThemeFromPreset,
   resolveSiteTheme,
 } from "@/lib/site-builder/theme-presets";
 import type {
   AwsEc2InstanceType,
-  SiteBuildJob,
+  SiteCategoryId,
   SiteCustomTheme,
   SiteDomainPurchase,
+  SiteFeatureOption,
+  SitePageOption,
   SitePreferences,
   SiteReferenceScreenshot,
   SiteThemePreset,
-  SiteType,
+  SiteTone,
 } from "@/types/site-builder";
 
 const MAX_SCREENSHOTS = 3;
@@ -48,6 +65,53 @@ const MAX_SCREENSHOT_BYTES = 1_500_000;
 const DRAFT_AUTOSAVE_MS = 800;
 
 type StudioPhase = "compose" | "studio";
+
+const CATEGORY_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  "shopping-bag": ShoppingBag,
+  layers: Layers,
+  "map-pin": MapPin,
+  briefcase: Briefcase,
+  utensils: Utensils,
+  "heart-pulse": Activity,
+  sparkles: Sparkles,
+  image: ImageIcon,
+  "hand-heart": Heart,
+  "book-open": BookOpen,
+  calendar: Calendar,
+  "layout-dashboard": LayoutDashboard,
+};
+
+const TONE_OPTIONS: Array<{ id: SiteTone; label: string }> = [
+  { id: "professional", label: "Professional" },
+  { id: "friendly", label: "Friendly" },
+  { id: "bold", label: "Bold" },
+  { id: "luxury", label: "Luxury" },
+];
+
+const PAGE_OPTIONS: Array<{ id: SitePageOption; label: string }> = [
+  { id: "home", label: "Home" },
+  { id: "about", label: "About" },
+  { id: "services", label: "Services" },
+  { id: "pricing", label: "Pricing" },
+  { id: "products", label: "Products" },
+  { id: "portfolio", label: "Portfolio" },
+  { id: "testimonials", label: "Testimonials" },
+  { id: "faq", label: "FAQ" },
+  { id: "blog", label: "Blog" },
+  { id: "contact", label: "Contact" },
+];
+
+const FEATURE_OPTIONS: Array<{ id: SiteFeatureOption; label: string }> = [
+  { id: "contact_form", label: "Contact form" },
+  { id: "booking", label: "Booking" },
+  { id: "ecommerce", label: "Ecommerce" },
+  { id: "newsletter", label: "Newsletter" },
+  { id: "testimonials", label: "Testimonials" },
+  { id: "blog", label: "Blog" },
+  { id: "live_chat", label: "Live chat" },
+  { id: "analytics", label: "Analytics" },
+  { id: "seo_pack", label: "SEO pack" },
+];
 
 function formatDraftTime(iso: string): string {
   try {
@@ -62,6 +126,10 @@ function formatDraftTime(iso: string): string {
   }
 }
 
+function toggle<T>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+}
+
 export function BuildOsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,19 +138,30 @@ export function BuildOsClient() {
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const themeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydratedRef = useRef(false);
-  const jobRef = useRef<SiteBuildJob | null>(null);
+  const jobRef = useRef<import("@/types/site-builder").SiteBuildJob | null>(null);
 
   const [phase, setPhase] = useState<StudioPhase>("compose");
+  const [step, setStep] = useState<ComposeStep>("category");
+
+  const [categoryId, setCategoryId] = useState<SiteCategoryId | null>(null);
+  const [templateId, setTemplateId] = useState<string | null>(null);
+
   const [prompt, setPrompt] = useState("");
-  const [siteType, setSiteType] = useState<SiteType | null>(null);
+  const [businessName, setBusinessName] = useState("");
+  const [audience, setAudience] = useState("");
+  const [tone, setTone] = useState<SiteTone>("professional");
+  const [pages, setPages] = useState<SitePageOption[]>(["home", "about", "contact"]);
+  const [features, setFeatures] = useState<SiteFeatureOption[]>(["contact_form"]);
+
   const [themePreset, setThemePreset] = useState<SiteThemePreset>("gold_navy");
   const [customTheme, setCustomTheme] = useState<SiteCustomTheme>(() =>
     defaultCustomThemeFromPreset("gold_navy")
   );
   const [screenshots, setScreenshots] = useState<SiteReferenceScreenshot[]>([]);
+
   const [refineInput, setRefineInput] = useState("");
-  const [job, setJob] = useState<SiteBuildJob | null>(null);
-  const [recentJobs, setRecentJobs] = useState<SiteBuildJob[]>([]);
+  const [job, setJob] = useState<import("@/types/site-builder").SiteBuildJob | null>(null);
+  const [recentJobs, setRecentJobs] = useState<import("@/types/site-builder").SiteBuildJob[]>([]);
   const [busy, setBusy] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
@@ -93,18 +172,22 @@ export function BuildOsClient() {
     jobRef.current = job;
   }, [job]);
 
-  const hydrateFromJob = useCallback((next: SiteBuildJob) => {
+  const hydrateFromJob = useCallback((next: import("@/types/site-builder").SiteBuildJob) => {
     setJob(next);
     setUsedAi(next.usedAi ?? false);
     setPrompt(next.preferences.customPrompt ?? next.preferences.businessIdea);
-    setSiteType(next.preferences.siteType);
+    setBusinessName(next.preferences.businessName ?? "");
+    setAudience(next.preferences.targetAudience ?? "");
+    setTone(next.preferences.tone);
+    setPages(next.preferences.pages ?? ["home", "about", "contact"]);
+    setFeatures(next.preferences.features ?? ["contact_form"]);
+    setCategoryId(next.preferences.categoryId ?? null);
+    setTemplateId(next.preferences.templateId ?? null);
     setThemePreset(next.preferences.themePreset);
     setCustomTheme(
       next.preferences.customTheme ??
         defaultCustomThemeFromPreset(
-          next.preferences.themePreset === "custom"
-            ? "gold_navy"
-            : next.preferences.themePreset
+          next.preferences.themePreset === "custom" ? "gold_navy" : next.preferences.themePreset
         )
     );
     const cache = readComposeDraftCache();
@@ -113,7 +196,12 @@ export function BuildOsClient() {
     } else {
       setScreenshots(next.preferences.referenceScreenshots ?? []);
     }
-    setPhase(next.generatedSite ? "studio" : "compose");
+    if (next.generatedSite) {
+      setPhase("studio");
+    } else {
+      setPhase("compose");
+      setStep(next.preferences.categoryId && next.preferences.templateId ? "brief" : "category");
+    }
     setDraftSavedAt(next.updatedAt);
   }, []);
 
@@ -121,7 +209,7 @@ export function BuildOsClient() {
     async (id: string) => {
       const res = await fetch(`/api/build/${id}`);
       if (!res.ok) return;
-      const data = (await res.json()) as { job: SiteBuildJob };
+      const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
       hydrateFromJob(data.job);
     },
     [hydrateFromJob]
@@ -130,7 +218,7 @@ export function BuildOsClient() {
   const refreshJobList = useCallback(async () => {
     const res = await fetch("/api/build");
     if (!res.ok) return;
-    const data = (await res.json()) as { jobs: SiteBuildJob[] };
+    const data = (await res.json()) as { jobs: import("@/types/site-builder").SiteBuildJob[] };
     setRecentJobs(data.jobs.slice(0, 8));
   }, []);
 
@@ -148,15 +236,18 @@ export function BuildOsClient() {
       }
 
       const cache = readComposeDraftCache();
-      if (cache?.prompt) {
+      if (cache?.prompt || cache?.categoryId) {
         setPrompt(cache.prompt);
-        setSiteType(cache.siteType);
+        setCategoryId(cache.categoryId);
+        setTemplateId(cache.templateId);
+        setStep(cache.step ?? "category");
         setThemePreset(cache.themePreset);
         setCustomTheme(cache.customTheme);
         setScreenshots(cache.screenshots ?? []);
         if (cache.jobId) {
           await loadJob(cache.jobId);
           setPhase("compose");
+          setStep(cache.step ?? "brief");
         }
       }
     })();
@@ -170,45 +261,66 @@ export function BuildOsClient() {
     }
   }, [jobParam, loadJob]);
 
-  function buildPreferences(extraPrompt?: string): SitePreferences {
-    const mergedPrompt = [prompt.trim(), extraPrompt?.trim()].filter(Boolean).join("\n\n");
-    const safePrompt = mergedPrompt || "Untitled draft";
-    return inferPreferencesFromPrompt(safePrompt, {
-      siteType: siteType ?? undefined,
-      themePreset,
-      customTheme,
-      customPrompt: mergedPrompt || undefined,
-      referenceScreenshots: screenshots,
-      businessName: mergedPrompt ? undefined : "Untitled draft",
-      // Keep buy / bring-your-own domain selection across regenerate & refine.
-      deployment: jobRef.current?.preferences.deployment,
-    });
-  }
-
-  function syncLocalCache(jobId?: string) {
-    writeComposeDraftCache({
-      jobId: jobId ?? jobRef.current?.id,
+  /** Build full preferences — requires category + template to be chosen. */
+  const buildPreferences = useCallback(
+    (extraPrompt?: string): SitePreferences | null => {
+      if (!categoryId || !templateId) return null;
+      const mergedPrompt = [prompt.trim(), extraPrompt?.trim()].filter(Boolean).join("\n\n");
+      const safePrompt = mergedPrompt || "Untitled draft";
+      return inferPreferencesFromPrompt(safePrompt, {
+        categoryId,
+        templateId,
+        businessName: businessName.trim() || undefined,
+        targetAudience: audience.trim() || undefined,
+        tone,
+        pages: pages.length ? pages : undefined,
+        features,
+        themePreset,
+        customTheme,
+        customPrompt: mergedPrompt || undefined,
+        referenceScreenshots: screenshots,
+        deployment: jobRef.current?.preferences.deployment,
+      });
+    },
+    [
+      categoryId,
+      templateId,
       prompt,
-      siteType,
+      businessName,
+      audience,
+      tone,
+      pages,
+      features,
       themePreset,
       customTheme,
       screenshots,
-      savedAt: new Date().toISOString(),
-    });
-  }
+    ]
+  );
+
+  const syncLocalCache = useCallback(
+    (jobId?: string, nextStep?: ComposeStep) => {
+      writeComposeDraftCache({
+        jobId: jobId ?? jobRef.current?.id,
+        prompt,
+        siteType: null,
+        categoryId,
+        templateId,
+        step: nextStep ?? step,
+        themePreset,
+        customTheme,
+        screenshots,
+        savedAt: new Date().toISOString(),
+      });
+    },
+    [prompt, categoryId, templateId, step, themePreset, customTheme, screenshots]
+  );
 
   const saveDraft = useCallback(async () => {
-    const trimmed = prompt.trim();
-    if (trimmed.length < 3) return;
+    if (!categoryId || !templateId) return;
+    if (prompt.trim().length < 3) return;
 
-    const preferences = inferPreferencesFromPrompt(trimmed, {
-      siteType: siteType ?? undefined,
-      themePreset,
-      customTheme,
-      customPrompt: trimmed,
-      referenceScreenshots: [],
-      deployment: jobRef.current?.preferences.deployment,
-    });
+    const preferences = buildPreferences();
+    if (!preferences) return;
 
     setDraftSaving(true);
     try {
@@ -217,15 +329,14 @@ export function BuildOsClient() {
         const res = await fetch(`/api/build/${current.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(preferences),
+          body: JSON.stringify({ ...preferences, referenceScreenshots: [] }),
         });
         if (!res.ok) return;
-        const data = (await res.json()) as { job: SiteBuildJob };
+        const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
         setJob((prev) =>
           prev
             ? {
                 ...data.job,
-                // Keep in-memory generated preview if PATCH slimmed status awkwardly
                 generatedSite: prev.generatedSite ?? data.job.generatedSite,
                 plan: prev.plan ?? data.job.plan,
               }
@@ -237,10 +348,10 @@ export function BuildOsClient() {
         const res = await fetch("/api/build", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...preferences, mode: "draft" }),
+          body: JSON.stringify({ ...preferences, referenceScreenshots: [], mode: "draft" }),
         });
         if (!res.ok) return;
-        const data = (await res.json()) as { job: SiteBuildJob };
+        const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
         setJob(data.job);
         setDraftSavedAt(data.job.updatedAt);
         syncLocalCache(data.job.id);
@@ -250,13 +361,12 @@ export function BuildOsClient() {
     } finally {
       setDraftSaving(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- syncLocalCache uses latest state intentionally
-  }, [prompt, siteType, themePreset, customTheme, router, refreshJobList]);
+  }, [categoryId, templateId, prompt, buildPreferences, syncLocalCache, router, refreshJobList]);
 
-  // Debounced auto-save for compose edits.
+  // Debounced auto-save for the brief step.
   useEffect(() => {
     if (!hydratedRef.current) return;
-    if (phase !== "compose") return;
+    if (phase !== "compose" || step !== "brief") return;
 
     syncLocalCache(job?.id);
 
@@ -269,12 +379,9 @@ export function BuildOsClient() {
       if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prompt, siteType, themePreset, customTheme, screenshots, phase, saveDraft]);
+  }, [prompt, businessName, audience, tone, pages, features, themePreset, customTheme, screenshots, phase, step]);
 
-  async function persistThemeDraft(
-    nextPreset: SiteThemePreset,
-    nextCustom: SiteCustomTheme
-  ) {
+  async function persistThemeDraft(nextPreset: SiteThemePreset, nextCustom: SiteCustomTheme) {
     const current = jobRef.current;
     if (!current) return;
     const preferences = {
@@ -289,7 +396,7 @@ export function BuildOsClient() {
       body: JSON.stringify(preferences),
     });
     if (!res.ok) return;
-    const data = (await res.json()) as { job: SiteBuildJob };
+    const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
     setDraftSavedAt(data.job.updatedAt);
     syncLocalCache(current.id);
   }
@@ -308,7 +415,7 @@ export function BuildOsClient() {
       body: JSON.stringify(preferences),
     });
     if (!res.ok) return;
-    const data = (await res.json()) as { job: SiteBuildJob };
+    const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
     setDraftSavedAt(data.job.updatedAt);
     syncLocalCache(current.id);
   }
@@ -347,27 +454,18 @@ export function BuildOsClient() {
     void persistDomainDraft(domain);
   }
 
-  /** Durable-style: change colors/fonts live without regenerating content. */
+  /** Change colors/fonts live without regenerating content. */
   function applyThemeLive(nextPreset: SiteThemePreset, nextCustom: SiteCustomTheme) {
     setThemePreset(nextPreset);
     setCustomTheme(nextCustom);
     setJob((current) => {
       if (!current?.generatedSite) return current;
-      const preferences = {
-        ...current.preferences,
-        themePreset: nextPreset,
-        customTheme: nextCustom,
-      };
+      const preferences = { ...current.preferences, themePreset: nextPreset, customTheme: nextCustom };
       return {
         ...current,
         preferences,
-        generatedSite: {
-          ...current.generatedSite,
-          theme: resolveSiteTheme(preferences),
-        },
-        plan: current.plan
-          ? { ...current.plan, theme: resolveSiteTheme(preferences) }
-          : current.plan,
+        generatedSite: { ...current.generatedSite, theme: resolveSiteTheme(preferences) },
+        plan: current.plan ? { ...current.plan, theme: resolveSiteTheme(preferences) } : current.plan,
       };
     });
 
@@ -378,22 +476,29 @@ export function BuildOsClient() {
   }
 
   async function generate(extraPrompt?: string) {
+    if (!categoryId || !templateId) {
+      setError("Pick a category and a template first.");
+      return;
+    }
     if (!prompt.trim() || prompt.trim().length < 12) {
       setError("Describe your business in a sentence or two — at least a dozen characters.");
+      return;
+    }
+
+    const preferences = buildPreferences(extraPrompt);
+    if (!preferences) {
+      setError("Pick a category and a template first.");
       return;
     }
 
     setBusy(true);
     setError(null);
     try {
-      const preferences = buildPreferences(extraPrompt);
       const endpoint = job ? `/api/build/${job.id}/plan` : "/api/build";
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          job ? preferences : { ...preferences, mode: "generate" }
-        ),
+        body: JSON.stringify(job ? preferences : { ...preferences, mode: "generate" }),
       });
 
       if (!res.ok) {
@@ -402,7 +507,10 @@ export function BuildOsClient() {
         return;
       }
 
-      const data = (await res.json()) as { job: SiteBuildJob; usedAi: boolean };
+      const data = (await res.json()) as {
+        job: import("@/types/site-builder").SiteBuildJob;
+        usedAi: boolean;
+      };
       setJob(data.job);
       setUsedAi(data.usedAi);
       setPhase("studio");
@@ -448,40 +556,44 @@ export function BuildOsClient() {
     if (toAdd.length) setScreenshots((prev) => [...prev, ...toAdd]);
   }
 
-  async function discardJob(id: string) {
-    await fetch(`/api/build/${id}`, { method: "DELETE" });
-    if (job?.id === id) {
-      clearComposeDraftCache();
-      setJob(null);
-      setPrompt("");
-      setSiteType(null);
-      setThemePreset("gold_navy");
-      setCustomTheme(defaultCustomThemeFromPreset("gold_navy"));
-      setScreenshots([]);
-      setPhase("compose");
-      router.replace("/build");
-    }
-    void refreshJobList();
-  }
-
-  function startOver() {
-    // Keep the previous draft on the server; start a fresh compose session.
-    clearComposeDraftCache();
-    setPhase("compose");
+  function resetComposeState() {
     setJob(null);
+    setCategoryId(null);
+    setTemplateId(null);
     setPrompt("");
-    setSiteType(null);
+    setBusinessName("");
+    setAudience("");
+    setTone("professional");
+    setPages(["home", "about", "contact"]);
+    setFeatures(["contact_form"]);
     setThemePreset("gold_navy");
     setCustomTheme(defaultCustomThemeFromPreset("gold_navy"));
     setScreenshots([]);
     setRefineInput("");
     setError(null);
     setDraftSavedAt(null);
+    setStep("category");
+    setPhase("compose");
+  }
+
+  async function discardJob(id: string) {
+    await fetch(`/api/build/${id}`, { method: "DELETE" });
+    if (job?.id === id) {
+      clearComposeDraftCache();
+      resetComposeState();
+      router.replace("/build");
+    }
+    void refreshJobList();
+  }
+
+  function startOver() {
+    clearComposeDraftCache();
+    resetComposeState();
     router.replace("/build");
     void refreshJobList();
   }
 
-  function resumeJob(item: SiteBuildJob) {
+  function resumeJob(item: import("@/types/site-builder").SiteBuildJob) {
     router.replace(`/build?job=${item.id}`);
     hydrateFromJob(item);
   }
@@ -499,13 +611,11 @@ export function BuildOsClient() {
         ...(partial.domain ? { domain: partial.domain } : {}),
         ec2: {
           ...current.preferences.deployment.ec2,
-          ...(partial.instanceType
-            ? { instanceType: partial.instanceType }
-            : {}),
+          ...(partial.instanceType ? { instanceType: partial.instanceType } : {}),
         },
       },
     };
-    const optimistic: SiteBuildJob = { ...current, preferences: nextPreferences };
+    const optimistic = { ...current, preferences: nextPreferences };
     setJob(optimistic);
     jobRef.current = optimistic;
     try {
@@ -515,9 +625,8 @@ export function BuildOsClient() {
         body: JSON.stringify(nextPreferences),
       });
       if (!res.ok) return;
-      const data = (await res.json()) as { job: SiteBuildJob };
-      // Preserve generated preview if PATCH returns a draft without it.
-      const merged: SiteBuildJob = {
+      const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
+      const merged = {
         ...data.job,
         generatedSite: data.job.generatedSite ?? current.generatedSite,
         plan: data.job.plan ?? current.plan,
@@ -529,8 +638,54 @@ export function BuildOsClient() {
     }
   }
 
+  /* ---- Step transitions ---- */
+
+  function selectCategory(id: SiteCategoryId) {
+    setCategoryId(id);
+    setTemplateId(null);
+    setStep("template");
+    syncLocalCache(job?.id, "template");
+  }
+
+  function selectTemplate(id: string) {
+    const tpl = getTemplateById(id);
+    setTemplateId(id);
+    if (tpl) {
+      setTone(tpl.defaultTone);
+      setPages(tpl.defaultPages);
+      setFeatures(tpl.defaultFeatures);
+      const preset = tpl.defaultTheme;
+      setThemePreset(preset);
+      setCustomTheme(defaultCustomThemeFromPreset(preset === "custom" ? "gold_navy" : preset));
+    }
+    setStep("brief");
+    syncLocalCache(job?.id, "brief");
+  }
+
+  function applyExample(example: (typeof EXAMPLE_PROMPTS)[number]) {
+    const tpl = getTemplateById(example.templateId);
+    setCategoryId(example.categoryId);
+    setTemplateId(example.templateId);
+    setPrompt(example.prompt);
+    if (tpl) {
+      setTone(tpl.defaultTone);
+      setPages(tpl.defaultPages);
+      setFeatures(tpl.defaultFeatures);
+      const preset = tpl.defaultTheme;
+      setThemePreset(preset);
+      setCustomTheme(defaultCustomThemeFromPreset(preset === "custom" ? "gold_navy" : preset));
+    }
+    setStep("brief");
+    syncLocalCache(job?.id, "brief");
+  }
+
   const draftJobs = recentJobs.filter((j) => j.status === "draft" || !j.generatedSite);
   const generatedJobs = recentJobs.filter((j) => Boolean(j.generatedSite));
+  const canGenerate = Boolean(categoryId && templateId && prompt.trim().length >= 12);
+
+  /* ================================================================ */
+  /* Studio                                                            */
+  /* ================================================================ */
 
   if (phase === "studio" && job?.generatedSite) {
     return (
@@ -540,9 +695,7 @@ export function BuildOsClient() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
               Build OS Studio
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">
-              {job.generatedSite.siteName}
-            </h2>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">{job.generatedSite.siteName}</h2>
             <p className="mt-1 line-clamp-2 text-xs text-muted">
               {job.plan?.summary ?? "Your site preview is ready. Refine with natural language."}
             </p>
@@ -603,15 +756,13 @@ export function BuildOsClient() {
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-medium text-foreground">Domain (optional)</p>
+              <p className="mb-2 text-xs font-medium text-foreground">Domain</p>
               <p className="mb-3 text-[11px] text-dim">
-                Buy through Aarvanta, or connect a domain you already own — we&apos;ll show the
-                DNS records for your provider.
+                Buy through Aarvanta, or connect a domain you already own — we&apos;ll show the DNS
+                records for your provider.
               </p>
               <DomainPurchasePanel
-                businessName={
-                  job.preferences.businessName || job.generatedSite.siteName || "yoursite"
-                }
+                businessName={job.preferences.businessName || job.generatedSite.siteName || "yoursite"}
                 countryBase={job.preferences.countryBase}
                 domain={job.preferences.deployment.domain}
                 buildJobId={job.id}
@@ -621,38 +772,21 @@ export function BuildOsClient() {
 
             {error && <p className="text-xs text-red-400">{error}</p>}
 
-            <div className="space-y-3">
-              <div>
-                <p className="mb-2 text-xs font-medium text-foreground">Go live with Stripe</p>
-                <p className="mb-3 text-[11px] text-muted">
-                  Buy a domain, then subscribe to Aarvanta Hosting. Payments run through Stripe
-                  Checkout.
-                </p>
-                <DomainPurchasePanel
-                  businessName={job.preferences.businessName}
-                  countryBase={job.preferences.countryBase}
-                  domain={job.preferences.deployment.domain}
-                  buildJobId={job.id}
-                  onDomainChange={(domain) => void patchDeployment({ domain })}
-                />
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-medium text-foreground">Hosting</p>
-                <HostingCheckoutPanel
-                  instanceType={job.preferences.deployment.ec2.instanceType}
-                  buildJobId={job.id}
-                  domain={job.preferences.deployment.domain.selectedDomain}
-                  onInstanceTypeChange={(instanceType) =>
-                    void patchDeployment({ instanceType })
-                  }
-                />
-              </div>
+            <div>
+              <p className="mb-2 text-xs font-medium text-foreground">Hosting</p>
+              <p className="mb-3 text-[11px] text-muted">
+                Subscribe to Aarvanta Hosting. Payments run through Stripe Checkout.
+              </p>
+              <HostingCheckoutPanel
+                instanceType={job.preferences.deployment.ec2.instanceType}
+                buildJobId={job.id}
+                domain={job.preferences.deployment.domain.selectedDomain}
+                onInstanceTypeChange={(instanceType) => void patchDeployment({ instanceType })}
+              />
             </div>
 
             <div className="rounded-xl border border-border bg-surface-muted p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-dim">
-                Brief
-              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-dim">Brief</p>
               <p className="mt-1 text-xs leading-relaxed text-muted">{prompt}</p>
             </div>
           </div>
@@ -673,11 +807,18 @@ export function BuildOsClient() {
         </aside>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-background p-3 sm:p-5">
-          <GeneratedSitePreview site={job.generatedSite} compact />
+          <GeneratedSitePreview site={job.generatedSite} />
         </div>
       </div>
     );
   }
+
+  /* ================================================================ */
+  /* Compose wizard                                                    */
+  /* ================================================================ */
+
+  const templatesForCategory = categoryId ? getTemplatesForCategory(categoryId) : [];
+  const activeCategory = categoryId ? SITE_CATEGORIES.find((c) => c.id === categoryId) : null;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -690,22 +831,56 @@ export function BuildOsClient() {
         }}
       />
 
-      <div className="relative mx-auto flex max-w-4xl flex-col px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
         <div className="animate-fade-up text-center">
           <p className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-primary-soft px-3 py-1 text-[11px] font-medium text-gold-bright">
             <Sparkles className="h-3.5 w-3.5" />
             Build OS — AI website studio
           </p>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-[2.75rem] md:leading-[1.1]">
-            Describe your business.
-            <span className="block text-gold-bright">Get a full site preview.</span>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            {step === "category"
+              ? "What kind of site are you building?"
+              : step === "template"
+                ? "Pick a starting template"
+                : "Describe your business"}
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
-            Drafts autosave as you type — leave anytime and come back to finish.
+            {step === "category"
+              ? "Choose a category — templates and defaults adapt to it."
+              : step === "template"
+                ? `Templates tuned for ${activeCategory?.label ?? "your category"}.`
+                : "Drafts autosave as you type — leave anytime and come back to finish."}
           </p>
         </div>
 
-        {(draftJobs.length > 0 || generatedJobs.length > 0) && (
+        {/* Stepper */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-[11px] font-medium">
+          {(["category", "template", "brief"] as ComposeStep[]).map((s, i) => {
+            const idx = ["category", "template", "brief"].indexOf(step);
+            const done = i < idx;
+            const on = s === step;
+            return (
+              <div key={s} className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${
+                    on
+                      ? "bg-gold text-black"
+                      : done
+                        ? "bg-primary-soft text-gold-bright"
+                        : "border border-border text-dim"
+                  }`}
+                >
+                  {done ? <Check className="h-3 w-3" /> : <span>{i + 1}</span>}
+                  {s === "category" ? "Category" : s === "template" ? "Template" : "Brief"}
+                </span>
+                {i < 2 ? <span className="text-dim">·</span> : null}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Resume list — only on first step */}
+        {step === "category" && (draftJobs.length > 0 || generatedJobs.length > 0) && (
           <div className="mt-8 animate-fade-up rounded-2xl border border-border bg-surface-elevated/70 p-4">
             <div className="flex items-center gap-2">
               <Clock3 className="h-3.5 w-3.5 text-gold" />
@@ -715,9 +890,7 @@ export function BuildOsClient() {
             </div>
             <ul className="mt-3 space-y-2">
               {[...draftJobs, ...generatedJobs]
-                .filter(
-                  (item, idx, arr) => arr.findIndex((j) => j.id === item.id) === idx
-                )
+                .filter((item, idx, a) => a.findIndex((j) => j.id === item.id) === idx)
                 .slice(0, 5)
                 .map((item) => {
                   const label =
@@ -735,12 +908,9 @@ export function BuildOsClient() {
                         onClick={() => resumeJob(item)}
                         className="min-w-0 flex-1 text-left"
                       >
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {label}
-                        </p>
+                        <p className="truncate text-sm font-medium text-foreground">{label}</p>
                         <p className="text-[10px] text-dim">
-                          {isDraft ? "Draft" : "Generated"} ·{" "}
-                          {formatDraftTime(item.updatedAt)}
+                          {isDraft ? "Draft" : "Generated"} · {formatDraftTime(item.updatedAt)}
                         </p>
                       </button>
                       <button
@@ -758,148 +928,310 @@ export function BuildOsClient() {
           </div>
         )}
 
-        <div className="mt-8 animate-fade-up rounded-2xl border border-border bg-surface-elevated/90 p-3 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.55)] backdrop-blur sm:p-4">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={4}
-            placeholder="e.g. Artisan Candles Co — handmade soy candles for UK homes. Warm, gift-ready shop with subscriptions and fast delivery."
-            className="w-full resize-none rounded-xl border-0 bg-transparent px-2 py-2 text-base leading-relaxed text-foreground outline-none placeholder:text-dim sm:text-[15px]"
-          />
-
-          <div className="mt-2 flex flex-wrap gap-2 px-1">
-            <span className="self-center text-[10px] font-medium uppercase tracking-wide text-dim">
-              Example briefs
-            </span>
-            {EXAMPLE_PROMPTS.map((ex) => (
-              <button
-                key={ex.id}
-                type="button"
-                onClick={() => setPrompt(ex.prompt)}
-                className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-[11px] text-muted transition hover:border-gold/40 hover:text-foreground"
-              >
-                {ex.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  void onScreenshotFiles(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:border-gold/40 hover:text-foreground"
-              >
-                <ImagePlus className="h-3.5 w-3.5" />
-                Inspiration
-                {screenshots.length > 0 ? ` (${screenshots.length})` : ""}
-              </button>
-              {screenshots.map((shot) => (
-                <span
-                  key={shot.id}
-                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-muted pl-1 pr-1.5 py-0.5 text-[10px] text-muted"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={shot.dataUrl} alt="" className="h-5 w-5 rounded object-cover" />
-                  <button
-                    type="button"
-                    aria-label={`Remove ${shot.name}`}
-                    onClick={() =>
-                      setScreenshots((prev) => prev.filter((s) => s.id !== shot.id))
-                    }
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-              <span className="text-[10px] text-dim">
-                {draftSaving
-                  ? "Saving draft…"
-                  : draftSavedAt
-                    ? `Draft saved · ${formatDraftTime(draftSavedAt)}`
-                    : prompt.trim().length >= 3
-                      ? "Draft will autosave"
-                      : "Start typing to save a draft"}
-              </span>
-            </div>
-
-            <Button
-              type="button"
-              onClick={() => void generate()}
-              disabled={busy || prompt.trim().length < 12}
-              className="min-w-[140px]"
-            >
-              {busy ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate site
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {error && (
-          <p className="mt-3 text-center text-xs text-red-400">{error}</p>
-        )}
-
-        <div className="mt-10 animate-fade-up">
-          <p className="text-center text-xs font-medium uppercase tracking-[0.12em] text-dim">
-            What kind of site?{" "}
-            <span className="font-normal normal-case tracking-normal">(optional)</span>
-          </p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {SITE_TYPE_CARDS.map((card) => {
-              const active = siteType === card.id;
+        {/* STEP: Category */}
+        {step === "category" && (
+          <div className="mt-8 grid animate-fade-up gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {SITE_CATEGORIES.map((card) => {
+              const Icon = CATEGORY_ICONS[card.icon] ?? Sparkles;
+              const active = categoryId === card.id;
               return (
                 <button
                   key={card.id}
                   type="button"
-                  onClick={() => setSiteType(active ? null : card.id)}
+                  onClick={() => selectCategory(card.id)}
                   className={`rounded-2xl border p-4 text-left transition ${
-                    active
-                      ? "border-gold bg-primary-soft"
-                      : "border-border bg-surface-elevated/60 hover:border-gold/35"
+                    active ? "border-gold bg-primary-soft" : "border-border bg-surface-elevated/60 hover:border-gold/35"
                   }`}
                 >
-                  <p className="text-sm font-semibold text-foreground">{card.label}</p>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-gold-bright">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-foreground">{card.label}</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted">{card.description}</p>
                   <p className="mt-2 text-[10px] text-dim">{card.examples}</p>
                 </button>
               );
             })}
           </div>
-        </div>
+        )}
 
-        <div className="mt-10 animate-fade-up">
-          <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.12em] text-dim">
-            Style — presets or your brand
-          </p>
-          <ThemeStylePanel
-            themePreset={themePreset}
-            customTheme={customTheme}
-            onChange={({ themePreset: nextPreset, customTheme: nextCustom }) => {
-              setThemePreset(nextPreset);
-              setCustomTheme(nextCustom);
-            }}
-          />
-        </div>
+        {/* STEP: Template */}
+        {step === "template" && (
+          <div className="mt-8 animate-fade-up">
+            <button
+              type="button"
+              onClick={() => setStep("category")}
+              className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to categories
+            </button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {templatesForCategory.map((tpl) => {
+                const active = templateId === tpl.id;
+                const sections = tpl.sectionsByPage.home ?? [];
+                return (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => selectTemplate(tpl.id)}
+                    className={`overflow-hidden rounded-2xl border text-left transition ${
+                      active ? "border-gold ring-1 ring-gold/50" : "border-border hover:border-gold/35"
+                    }`}
+                  >
+                    {/* CSS mock of section layout */}
+                    <div className="space-y-1.5 p-3" style={{ backgroundColor: `${tpl.previewAccent}12` }}>
+                      <div className="h-3 w-2/3 rounded" style={{ backgroundColor: tpl.previewAccent }} />
+                      {sections.slice(0, 4).map((s, i) => (
+                        <div
+                          key={`${s.label}-${i}`}
+                          className="h-2 rounded"
+                          style={{
+                            width: `${90 - i * 12}%`,
+                            backgroundColor: tpl.previewAccent,
+                            opacity: 0.35 - i * 0.05,
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="bg-surface-elevated p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-foreground">{tpl.name}</p>
+                        {active ? <Check className="h-4 w-4 text-gold" /> : null}
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-muted">{tpl.description}</p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {tpl.bestFor.map((b) => (
+                          <span
+                            key={b}
+                            className="rounded-full border border-border px-2 py-0.5 text-[10px] text-dim"
+                          >
+                            {b}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* STEP: Brief */}
+        {step === "brief" && (
+          <div className="mt-8 animate-fade-up space-y-6">
+            <button
+              type="button"
+              onClick={() => setStep("template")}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to templates
+            </button>
+
+            {activeCategory && templateId ? (
+              <p className="text-xs text-dim">
+                <span className="text-muted">{activeCategory.label}</span> ·{" "}
+                <span className="text-muted">{getTemplateById(templateId)?.name}</span>
+              </p>
+            ) : null}
+
+            <div className="rounded-2xl border border-border bg-surface-elevated/90 p-3 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.55)] backdrop-blur sm:p-4">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={4}
+                placeholder="e.g. Artisan Candles Co — handmade soy candles for UK homes. Warm, gift-ready shop with subscriptions and fast delivery."
+                className="w-full resize-none rounded-xl border-0 bg-transparent px-2 py-2 text-base leading-relaxed text-foreground outline-none placeholder:text-dim sm:text-[15px]"
+              />
+
+              <div className="mt-2 flex flex-wrap gap-2 px-1">
+                <span className="self-center text-[10px] font-medium uppercase tracking-wide text-dim">
+                  Example briefs
+                </span>
+                {EXAMPLE_PROMPTS.map((ex) => (
+                  <button
+                    key={ex.id}
+                    type="button"
+                    onClick={() => applyExample(ex)}
+                    className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-[11px] text-muted transition hover:border-gold/40 hover:text-foreground"
+                  >
+                    {ex.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void onScreenshotFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:border-gold/40 hover:text-foreground"
+                  >
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    Inspiration
+                    {screenshots.length > 0 ? ` (${screenshots.length})` : ""}
+                  </button>
+                  {screenshots.map((shot) => (
+                    <span
+                      key={shot.id}
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-muted py-0.5 pl-1 pr-1.5 text-[10px] text-muted"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={shot.dataUrl} alt="" className="h-5 w-5 rounded object-cover" />
+                      <button
+                        type="button"
+                        aria-label={`Remove ${shot.name}`}
+                        onClick={() => setScreenshots((prev) => prev.filter((s) => s.id !== shot.id))}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <span className="text-[10px] text-dim">
+                    {draftSaving
+                      ? "Saving draft…"
+                      : draftSavedAt
+                        ? `Draft saved · ${formatDraftTime(draftSavedAt)}`
+                        : prompt.trim().length >= 3
+                          ? "Draft will autosave"
+                          : "Start typing to save a draft"}
+                  </span>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => void generate()}
+                  disabled={busy || !canGenerate}
+                  className="min-w-[140px]"
+                >
+                  {busy ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate site
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {error && <p className="text-center text-xs text-red-400">{error}</p>}
+
+            {/* Business details */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-foreground">Business name (optional)</span>
+                <input
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="Auto-detected from your brief"
+                  className="rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-foreground">Audience (optional)</span>
+                <input
+                  value={audience}
+                  onChange={(e) => setAudience(e.target.value)}
+                  placeholder="e.g. UK homeowners, early-stage founders"
+                  className="rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-foreground">Tone</span>
+                <select
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value as SiteTone)}
+                  className="rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground"
+                >
+                  {TONE_OPTIONS.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {/* Pages */}
+            <div>
+              <p className="mb-2 text-xs font-medium text-foreground">Pages</p>
+              <div className="flex flex-wrap gap-2">
+                {PAGE_OPTIONS.map((opt) => {
+                  const on = pages.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setPages((prev) => toggle(prev, opt.id))}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
+                        on ? "border-gold bg-primary-soft text-gold-bright" : "border-border text-muted hover:border-gold/40"
+                      }`}
+                    >
+                      {on ? <Check className="h-3 w-3" /> : null}
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Features */}
+            <div>
+              <p className="mb-2 text-xs font-medium text-foreground">Features</p>
+              <div className="flex flex-wrap gap-2">
+                {FEATURE_OPTIONS.map((opt) => {
+                  const on = features.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setFeatures((prev) => toggle(prev, opt.id))}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
+                        on ? "border-gold bg-primary-soft text-gold-bright" : "border-border text-muted hover:border-gold/40"
+                      }`}
+                    >
+                      {on ? <Check className="h-3 w-3" /> : null}
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Theme */}
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-dim">
+                Style — presets or your brand
+              </p>
+              <ThemeStylePanel
+                themePreset={themePreset}
+                customTheme={customTheme}
+                onChange={({ themePreset: nextPreset, customTheme: nextCustom }) => {
+                  setThemePreset(nextPreset);
+                  setCustomTheme(nextCustom);
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
