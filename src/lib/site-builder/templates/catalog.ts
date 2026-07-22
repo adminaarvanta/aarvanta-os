@@ -24,14 +24,20 @@ const homeDense = (
 ];
 
 function tpl(
-  partial: Omit<SiteTemplateDefinition, "sectionsByPage"> & {
+  partial: Omit<SiteTemplateDefinition, "sectionsByPage" | "inspiredBy" | "heroLayout" | "previewLayout"> & {
     homeExtras: SiteTemplateSectionRecipe[];
     pages: SiteTemplateDefinition["sectionsByPage"];
+    inspiredBy?: string;
+    heroLayout?: SiteTemplateDefinition["heroLayout"];
+    previewLayout?: SiteTemplateDefinition["previewLayout"];
   }
 ): SiteTemplateDefinition {
-  const { homeExtras, pages, ...rest } = partial;
+  const { homeExtras, pages, inspiredBy, heroLayout, previewLayout, ...rest } = partial;
   return {
     ...rest,
+    inspiredBy: inspiredBy ?? "Open-source landing patterns",
+    heroLayout: heroLayout ?? "fullBleed",
+    previewLayout: previewLayout ?? "landing_centered",
     sectionsByPage: {
       home: homeDense(homeExtras),
       ...pages,
@@ -39,7 +45,7 @@ function tpl(
   };
 }
 
-export const SITE_TEMPLATES: SiteTemplateDefinition[] = [
+const RAW_SITE_TEMPLATES: SiteTemplateDefinition[] = [
   // —— Ecommerce ——
   tpl({
     id: "ecom_boutique",
@@ -747,7 +753,188 @@ export const SITE_TEMPLATES: SiteTemplateDefinition[] = [
       contact: [r("contact", "Pilot request", "Form")],
     },
   }),
+
+  // —— Custom (any niche) ——
+  tpl({
+    id: "custom_adaptive",
+    categoryId: "custom",
+    name: "Adaptive multi-section",
+    description: "Flexible layout that reshapes around whatever niche you describe",
+    bestFor: ["Unique businesses", "Hybrids", "New ideas"],
+    siteType: "business",
+    defaultTone: "professional",
+    defaultTheme: "ocean_cool",
+    defaultPages: ["home", "about", "services", "contact"],
+    defaultFeatures: ["contact_form", "seo_pack", "testimonials"],
+    defaultCta: "contact",
+    imageKeywords: ["workspace", "team collaboration", "modern office"],
+    previewAccent: "#0EA5E9",
+    inspiredBy: "Inspired by adaptable open landing kits",
+    heroLayout: "split",
+    previewLayout: "landing_centered",
+    homeExtras: [
+      r("feature_tabs", "How it works", "Journey"),
+      r("services_grid", "Offerings", "What you sell or deliver"),
+      r("stats", "Proof", "Credibility metrics"),
+      r("faq_accordion", "FAQ", "Objections"),
+    ],
+    pages: {
+      about: [r("about_split", "About", "Story"), r("team_grid", "Team", "People")],
+      services: [r("services_grid", "Services", "Detailed"), r("pricing_table", "Pricing", "Packages")],
+      contact: [r("contact", "Contact", "Form"), r("cta_banner", "Next step", "CTA")],
+    },
+  }),
+  tpl({
+    id: "custom_story",
+    categoryId: "custom",
+    name: "Story-led brand",
+    description: "Narrative homepage for brands that sell with story and proof",
+    bestFor: ["Brands", "Creators", "Missions"],
+    siteType: "landing",
+    defaultTone: "friendly",
+    defaultTheme: "sunset_warm",
+    defaultPages: ["home", "about", "portfolio", "contact"],
+    defaultFeatures: ["newsletter", "contact_form", "seo_pack"],
+    defaultCta: "subscribe",
+    imageKeywords: ["storytelling", "lifestyle brand", "creative studio"],
+    previewAccent: "#F97316",
+    inspiredBy: "Inspired by long-form storytelling templates",
+    heroLayout: "fullBleed",
+    previewLayout: "editorial_folio",
+    homeExtras: [
+      r("about_split", "Origin", "Brand story"),
+      r("timeline", "Journey", "Milestones"),
+      r("gallery", "Moments", "Visual story"),
+      r("newsletter", "Follow along", "Email"),
+    ],
+    pages: {
+      about: [r("about_split", "About", "Deep story"), r("team_grid", "People", "Cast")],
+      portfolio: [r("portfolio_grid", "Work", "Selected"), r("gallery", "More", "Gallery")],
+      contact: [r("contact", "Say hello", "Form")],
+    },
+  }),
+  tpl({
+    id: "custom_conversion",
+    categoryId: "custom",
+    name: "Conversion landing",
+    description: "High-intent single narrative with pricing, FAQ, and hard CTA",
+    bestFor: ["Offers", "Waitlists", "Launches"],
+    siteType: "landing",
+    defaultTone: "bold",
+    defaultTheme: "bold_dark",
+    defaultPages: ["home", "pricing", "faq", "contact"],
+    defaultFeatures: ["contact_form", "analytics", "seo_pack"],
+    defaultCta: "subscribe",
+    imageKeywords: ["product launch", "startup", "conversion"],
+    previewAccent: "#A855F7",
+    inspiredBy: "Inspired by conversion-focused open landings",
+    heroLayout: "centered",
+    previewLayout: "saas_split",
+    homeExtras: [
+      r("logo_cloud", "Social proof", "Logos"),
+      r("comparison", "Why this", "Vs alternatives"),
+      r("pricing_table", "Offer", "Pricing"),
+      r("faq_accordion", "Objections", "FAQ"),
+    ],
+    pages: {
+      pricing: [r("pricing_table", "Pricing", "Tiers"), r("cta_banner", "Buy", "CTA")],
+      faq: [r("faq_accordion", "FAQ", "Answers")],
+      contact: [r("contact", "Contact", "Form"), r("booking_cta", "Book", "Call")],
+    },
+  }),
 ];
+
+
+const LAYOUT_BY_CATEGORY: Partial<Record<SiteTemplateDefinition["categoryId"], SiteTemplateDefinition["previewLayout"]>> = {
+  ecommerce: "store_grid",
+  saas: "saas_split",
+  portfolio: "editorial_folio",
+  restaurant: "dining_dark",
+  healthcare: "clinic_calm",
+  agency: "agency_bold",
+  blog: "magazine",
+  event: "event_stage",
+  internal_tool_landing: "ops_dashboard",
+  local_service: "landing_centered",
+  professional: "landing_centered",
+  nonprofit: "landing_centered",
+  custom: "landing_centered",
+};
+
+const INSPIRED: Record<string, string> = {
+  ecom_boutique: "Inspired by Next.js Commerce merchandising layouts",
+  ecom_modern_grid: "Inspired by Tailwind UI product grids",
+  ecom_subscription: "Inspired by Lemon Squeezy / open checkout landings",
+  saas_launch: "Inspired by Tailwind UI SaaS marketing pages",
+  saas_enterprise: "Inspired by open-source B2B docs landings",
+  saas_plg: "Inspired by Astro Wind / ShipFast-style PLG pages",
+  local_trust: "Inspired by Tailwind UI service business pages",
+  local_premium: "Inspired by Framer open template patterns",
+  pro_authority: "Inspired by law-firm open HTML templates",
+  pro_modern_firm: "Inspired by Notion-style professional sites",
+  resto_ambiance: "Inspired by restaurant open HTML5 templates",
+  resto_casual: "Inspired by café Tailwind starter kits",
+  health_clinic: "Inspired by healthcare Tailwind UI kits",
+  health_wellness: "Inspired by wellness Framer/open templates",
+  agency_casework: "Inspired by agency portfolio open templates",
+  agency_growth: "Inspired by growth-agency landing kits",
+  folio_editorial: "Inspired by Astro Paper / editorial portfolios",
+  folio_freelancer: "Inspired by freeCodeCamp portfolio starters",
+  nonprofit_mission: "Inspired by nonprofit open fundraising themes",
+  nonprofit_campaign: "Inspired by campaign landing starters",
+  blog_magazine: "Inspired by Ghost / open magazine themes",
+  blog_newsletter: "Inspired by Substack-style open newsletters",
+  event_conference: "Inspired by conference open HTML templates",
+  event_workshop: "Inspired by Meetup-style event pages",
+  tool_ops: "Inspired by admin/dashboard marketing pages",
+  tool_hr: "Inspired by HR SaaS open landing kits",
+  custom_adaptive: "Inspired by adaptable open landing kits",
+  custom_story: "Inspired by long-form storytelling templates",
+  custom_conversion: "Inspired by conversion-focused open landings",
+};
+
+const HERO: Record<string, SiteTemplateDefinition["heroLayout"]> = {
+  ecom_boutique: "split",
+  ecom_modern_grid: "fullBleed",
+  ecom_subscription: "centered",
+  saas_launch: "split",
+  saas_enterprise: "fullBleed",
+  saas_plg: "centered",
+  local_trust: "fullBleed",
+  local_premium: "split",
+  pro_authority: "minimal",
+  pro_modern_firm: "split",
+  resto_ambiance: "fullBleed",
+  resto_casual: "split",
+  health_clinic: "split",
+  health_wellness: "centered",
+  agency_casework: "fullBleed",
+  agency_growth: "split",
+  folio_editorial: "minimal",
+  folio_freelancer: "split",
+  nonprofit_mission: "fullBleed",
+  nonprofit_campaign: "centered",
+  blog_magazine: "minimal",
+  blog_newsletter: "centered",
+  event_conference: "fullBleed",
+  event_workshop: "split",
+  tool_ops: "split",
+  tool_hr: "centered",
+  custom_adaptive: "split",
+  custom_story: "fullBleed",
+  custom_conversion: "centered",
+};
+
+function enrich(t: SiteTemplateDefinition): SiteTemplateDefinition {
+  return {
+    ...t,
+    inspiredBy: INSPIRED[t.id] ?? t.inspiredBy,
+    heroLayout: HERO[t.id] ?? t.heroLayout,
+    previewLayout: LAYOUT_BY_CATEGORY[t.categoryId] ?? t.previewLayout,
+  };
+}
+
+export const SITE_TEMPLATES: SiteTemplateDefinition[] = RAW_SITE_TEMPLATES.map(enrich);
 
 export function listTemplates(): SiteTemplateDefinition[] {
   return SITE_TEMPLATES;

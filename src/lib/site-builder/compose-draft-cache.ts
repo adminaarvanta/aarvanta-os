@@ -15,6 +15,7 @@ export type ComposeDraftCache = {
   prompt: string;
   siteType: SiteType | null;
   categoryId: SiteCategoryId | null;
+  customCategoryLabel?: string;
   templateId: string | null;
   step: ComposeStep;
   themePreset: SiteThemePreset;

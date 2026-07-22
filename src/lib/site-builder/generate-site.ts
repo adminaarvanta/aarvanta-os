@@ -17,6 +17,7 @@ import type {
   SiteBlockType,
   SitePlan,
   SitePreferences,
+  SiteTemplateDefinition,
   SiteTemplateSectionRecipe,
 } from "@/types/site-builder";
 
@@ -30,15 +31,26 @@ function titleCase(slug: string): string {
   return slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
+function partnerNames(seed: number, nouns: string[]): string[] {
+  const base = ["Northstar", "Field & Co", "Lumen", "Harbor", "Orbit", "Kindred", "Parcel", "Summit"];
+  const fromPrompt = nouns.slice(0, 3).map((n) => titleCase(n));
+  const mixed = [...fromPrompt, ...base];
+  return Array.from({ length: 6 }, (_, i) => mixed[(seed + i * 3) % mixed.length]!);
+}
+
 function fillBlock(
   recipe: SiteTemplateSectionRecipe,
   brief: ContentBrief,
   prefs: SitePreferences,
+  template: SiteTemplateDefinition,
   images: string[],
   index: number
 ): SiteBlock {
   const name = brief.businessName;
-  const img = (i: number) => imageAt(images, index + i, `${brief.templateId}-${i}`);
+  const e = brief.entities;
+  const img = (i: number) =>
+    imageAt(images, index + i, `${brief.templateId}-${e.seed}-${i}`);
+  const ctaTarget = prefs.ctaGoal === "book_call" ? "booking" : "contact";
 
   switch (recipe.type as SiteBlockType) {
     case "hero":
@@ -46,13 +58,13 @@ function fillBlock(
         id: blockId("hero", recipe.label),
         type: "hero",
         props: {
-          layout: index % 2 === 0 ? "fullBleed" : "split",
+          layout: template.heroLayout === "minimal" ? "split" : template.heroLayout,
           eyebrow: brief.categoryLabel,
           headline: brief.headline,
           subheadline: brief.subheadline,
           cta: brief.ctaLabel,
           secondaryCta: brief.ctaSecondary,
-          ctaTarget: prefs.ctaGoal === "book_call" ? "booking" : "contact",
+          ctaTarget,
           imageUrl: img(0),
         },
       };
@@ -61,10 +73,8 @@ function fillBlock(
         id: blockId("logo_cloud", recipe.label),
         type: "logo_cloud",
         props: {
-          title: "Trusted by teams who care about craft",
-          items: ["Northstar", "Field & Co", "Lumen", "Harbor", "Orbit", "Kindred"].map(
-            (label) => ({ label })
-          ),
+          title: `Trusted around ${e.audienceHint}`,
+          items: partnerNames(e.seed, e.nouns).map((label) => ({ label })),
         },
       };
     case "features":
@@ -72,30 +82,15 @@ function fillBlock(
         id: blockId("features", recipe.label),
         type: "features",
         props: {
-          title: "Why people choose us",
-          subtitle: `Built around ${brief.audience}`,
-          items: [
-            {
-              title: "Clarity first",
-              description: `Every touchpoint for ${name} is designed to answer the next question.`,
-              icon: "sparkles",
-            },
-            {
-              title: "Proven process",
-              description: "A repeatable journey from first visit to confident decision.",
-              icon: "compass",
-            },
-            {
-              title: "Human support",
-              description: "Real people, clear timelines, no black-box handoffs.",
-              icon: "users",
-            },
-            {
-              title: "Measurable outcomes",
-              description: "We track the moments that matter — not vanity metrics.",
-              icon: "chart",
-            },
-          ],
+          title: `Why ${name}`,
+          subtitle: `Specific to ${brief.idea.slice(0, 100)}`,
+          items: e.featureTitles.map((title, i) => ({
+            title: title.slice(0, 48),
+            description:
+              e.phrases[i] ||
+              `${titleCase(e.nouns[i] ?? "Focus")} for ${e.audienceHint} — not generic filler.`,
+            icon: ["sparkles", "compass", "users", "chart"][i % 4],
+          })),
         },
       };
     case "services_grid":
@@ -103,13 +98,14 @@ function fillBlock(
         id: blockId("services_grid", recipe.label),
         type: "services_grid",
         props: {
-          title: "What we offer",
-          items: [
-            { title: "Core engagement", description: `Flagship work for ${name} clients.`, icon: "star" },
-            { title: "Advisory", description: "Strategic guidance tailored to your stage.", icon: "message" },
-            { title: "Retainer", description: "Ongoing partnership with predictable cadence.", icon: "refresh" },
-            { title: "Workshops", description: "Focused sessions to unblock teams quickly.", icon: "zap" },
-          ],
+          title: `${name} offerings`,
+          items: e.serviceNames.map((title, i) => ({
+            title,
+            description:
+              e.phrases[i] ||
+              `Hands-on ${title.toLowerCase()} shaped for ${e.audienceHint}.`,
+            icon: ["star", "message", "refresh", "zap"][i % 4],
+          })),
         },
       };
     case "products":
@@ -117,12 +113,14 @@ function fillBlock(
         id: blockId("products", recipe.label),
         type: "products",
         props: {
-          title: "Featured products",
-          products: [1, 2, 3, 4].map((n) => ({
-            name: `${name} Collection ${n}`,
-            price: `£${(n * 18 + 9).toFixed(2)}`,
-            description: `A standout pick from the ${brief.templateName} lineup.`,
-            imageUrl: img(n),
+          title: `From ${name}`,
+          products: e.productNames.map((productName, n) => ({
+            name: productName,
+            price: `£${(18 + ((e.seed + n * 7) % 40)).toFixed(2)}`,
+            description:
+              e.phrases[n] ||
+              `${productName} — built for ${e.audienceHint}.`,
+            imageUrl: img(n + 1),
           })),
         },
       };
@@ -131,13 +129,22 @@ function fillBlock(
         id: blockId("portfolio_grid", recipe.label),
         type: "portfolio_grid",
         props: {
-          title: "Selected work",
-          items: [1, 2, 3, 4, 5, 6].map((n) => ({
-            title: `Project ${String.fromCharCode(64 + n)}`,
+          title: `Selected ${brief.categoryLabel.toLowerCase()} work`,
+          items: e.nouns.slice(0, 6).map((noun, n) => ({
+            title: `${titleCase(noun)} study`,
             category: brief.categoryLabel,
-            imageUrl: img(n),
-            summary: `A ${prefs.tone} case study for ${brief.audience}.`,
-          })),
+            imageUrl: img(n + 1),
+            summary: e.phrases[n % Math.max(e.phrases.length, 1)] || `A ${prefs.tone} piece for ${e.audienceHint}.`,
+          })).concat(
+            e.nouns.length < 6
+              ? Array.from({ length: 6 - e.nouns.length }, (_, i) => ({
+                  title: `${name} project ${i + 1}`,
+                  category: brief.categoryLabel,
+                  imageUrl: img(i + 4),
+                  summary: `Work grounded in ${brief.idea.slice(0, 80)}.`,
+                }))
+              : []
+          ),
         },
       };
     case "testimonials":
@@ -145,27 +152,13 @@ function fillBlock(
         id: blockId("testimonials", recipe.label),
         type: "testimonials",
         props: {
-          title: "What clients say",
-          quotes: [
-            {
-              quote: `${name} changed how we show up — clearer, faster, more confident.`,
-              name: "Amelia Hart",
-              role: "Founder",
-              avatarUrl: dicebearAvatar("amelia-hart"),
-            },
-            {
-              quote: "The experience feels premium without being precious. Exactly what we needed.",
-              name: "Jordan Lee",
-              role: "Operations lead",
-              avatarUrl: dicebearAvatar("jordan-lee"),
-            },
-            {
-              quote: "From first click to follow-up, everything felt intentional.",
-              name: "Priya Shah",
-              role: "Marketing director",
-              avatarUrl: dicebearAvatar("priya-shah"),
-            },
-          ],
+          title: `What ${e.audienceHint} say`,
+          quotes: e.testimonialHooks.map((quote, i) => ({
+            quote,
+            name: ["Amelia Hart", "Jordan Lee", "Priya Shah"][i]!,
+            role: ["Founder", "Ops lead", "Director"][i]!,
+            avatarUrl: dicebearAvatar(`${name}-${i}-${e.seed}`),
+          })),
         },
       };
     case "stats":
@@ -173,76 +166,57 @@ function fillBlock(
         id: blockId("stats", recipe.label),
         type: "stats",
         props: {
-          title: "By the numbers",
-          items: [
-            { value: "120+", label: "Projects delivered" },
-            { value: "4.9★", label: "Average rating" },
-            { value: "48h", label: "Typical response" },
-            { value: "12", label: "Markets served" },
-          ],
+          title: `${name} by the numbers`,
+          items: e.proofStats,
         },
       };
-    case "pricing_table":
+    case "pricing_table": {
+      const [a, b, c] = e.pricingNames;
+      const prices = [29 + (e.seed % 20), 79 + (e.seed % 40), 199 + (e.seed % 80)];
       return {
         id: blockId("pricing_table", recipe.label),
         type: "pricing_table",
         props: {
-          title: "Simple pricing",
+          title: `${name} pricing`,
           tiers: [
             {
-              name: "Starter",
-              price: "£29",
+              name: a,
+              price: `£${prices[0]}`,
               period: "/mo",
-              description: "For getting started",
-              features: ["Core features", "Email support", "1 workspace"],
+              description: `Start with ${e.nouns[0] ?? "the basics"}`,
+              features: [e.featureTitles[0], "Email support", "1 workspace"].map(String),
               cta: brief.ctaLabel,
               highlighted: false,
             },
             {
-              name: "Growth",
-              price: "£79",
+              name: b,
+              price: `£${prices[1]}`,
               period: "/mo",
-              description: "For scaling teams",
-              features: ["Everything in Starter", "Priority support", "Automations"],
+              description: `For ${e.audienceHint}`,
+              features: [e.featureTitles[1], e.featureTitles[2], "Priority support"].map(String),
               cta: brief.ctaLabel,
               highlighted: true,
             },
             {
-              name: "Scale",
-              price: "£199",
+              name: c,
+              price: `£${prices[2]}`,
               period: "/mo",
-              description: "For complex orgs",
-              features: ["Everything in Growth", "SSO", "Dedicated success"],
+              description: `Serious ${brief.categoryLabel.toLowerCase()} scale`,
+              features: [e.featureTitles[3] || e.featureTitles[0], "SSO", "Dedicated success"].map(String),
               cta: "Talk to sales",
               highlighted: false,
             },
           ],
         },
       };
+    }
     case "faq_accordion":
       return {
         id: blockId("faq_accordion", recipe.label),
         type: "faq_accordion",
         props: {
-          title: "Frequently asked questions",
-          items: [
-            {
-              question: `How does ${name} get started with new clients?`,
-              answer: "A short discovery call, a clear proposal, then a kickoff with milestones.",
-            },
-            {
-              question: "What does pricing include?",
-              answer: "Scope is transparent up front — no surprise change orders for agreed deliverables.",
-            },
-            {
-              question: "Can you work remotely / on-site?",
-              answer: `We support ${prefs.countryBase}-based clients with flexible engagement models.`,
-            },
-            {
-              question: "How quickly can we begin?",
-              answer: "Most engagements start within 1–2 weeks depending on capacity.",
-            },
-          ],
+          title: `Questions about ${name}`,
+          items: e.faqPairs,
         },
       };
     case "timeline":
@@ -250,12 +224,12 @@ function fillBlock(
         id: blockId("timeline", recipe.label),
         type: "timeline",
         props: {
-          title: "How it works",
+          title: `How ${name} works`,
           items: [
-            { title: "Discover", description: "Align on goals, constraints, and success metrics." },
-            { title: "Design", description: "Shape the experience and validate with stakeholders." },
-            { title: "Deliver", description: "Ship in stages with visible progress every week." },
-            { title: "Grow", description: "Measure outcomes and iterate with confidence." },
+            { title: "Discover", description: e.phrases[0] || `Align on ${e.nouns[0] ?? "goals"} and success metrics.` },
+            { title: "Shape", description: e.phrases[1] || `Design the ${e.nouns[1] ?? "experience"} with your team.` },
+            { title: "Deliver", description: `Ship ${e.nouns[2] ?? "milestones"} with visible weekly progress.` },
+            { title: "Grow", description: `Measure outcomes for ${e.audienceHint} and iterate.` },
           ],
         },
       };
@@ -264,13 +238,13 @@ function fillBlock(
         id: blockId("team_grid", recipe.label),
         type: "team_grid",
         props: {
-          title: "People behind the work",
+          title: `People behind ${name}`,
           members: ["Alex Morgan", "Sam Rivera", "Casey Nguyen", "Riley Brooks"].map(
             (memberName, i) => ({
               name: memberName,
-              role: i === 0 ? "Founder" : i === 1 ? "Lead" : "Specialist",
-              bio: `Helping ${brief.audience} get better outcomes.`,
-              avatarUrl: dicebearAvatar(memberName),
+              role: i === 0 ? "Founder" : i === 1 ? `Lead ${titleCase(e.nouns[0] ?? "delivery")}` : "Specialist",
+              bio: `Focused on ${e.nouns[i] ?? e.audienceHint}.`,
+              avatarUrl: dicebearAvatar(`${memberName}-${e.seed}`),
             })
           ),
         },
@@ -280,16 +254,24 @@ function fillBlock(
         id: blockId("comparison", recipe.label),
         type: "comparison",
         props: {
-          title: "A clearer way forward",
+          title: `${name} vs the usual path`,
           columns: [
             {
               name: "Status quo",
-              items: ["Scattered tools", "Slow handoffs", "Unclear ownership"],
+              items: [
+                `Generic ${brief.categoryLabel.toLowerCase()} noise`,
+                `Vague ${e.nouns[0] ?? "offers"}`,
+                "Slow, unclear ownership",
+              ],
             },
             {
-              name: name,
+              name,
               highlighted: true,
-              items: ["One coherent journey", "Faster decisions", "Accountable delivery"],
+              items: [
+                e.featureTitles[0],
+                e.featureTitles[1],
+                `Built for ${e.audienceHint}`,
+              ],
             },
           ],
         },
@@ -299,10 +281,10 @@ function fillBlock(
         id: blockId("cta_banner", recipe.label),
         type: "cta_banner",
         props: {
-          title: `Ready to work with ${name}?`,
+          title: `Ready for ${e.nouns[0] ? titleCase(e.nouns[0]) : name}?`,
           body: brief.subheadline,
           cta: brief.ctaLabel,
-          ctaTarget: prefs.ctaGoal === "book_call" ? "booking" : "contact",
+          ctaTarget,
         },
       };
     case "gallery":
@@ -310,10 +292,10 @@ function fillBlock(
         id: blockId("gallery", recipe.label),
         type: "gallery",
         props: {
-          title: "Inside the experience",
+          title: `${name} in the wild`,
           items: [0, 1, 2, 3, 4, 5].map((i) => ({
             imageUrl: img(i + 2),
-            caption: `${name} moment ${i + 1}`,
+            caption: `${titleCase(e.nouns[i % Math.max(e.nouns.length, 1)] ?? name)} ${i + 1}`,
           })),
         },
       };
@@ -322,21 +304,17 @@ function fillBlock(
         id: blockId("menu_list", recipe.label),
         type: "menu_list",
         props: {
-          title: "Menu highlights",
+          title: `${name} menu`,
           sections: [
+            { name: "Signatures", items: e.menuItems },
             {
-              name: "Signatures",
+              name: "Also on",
               items: [
-                { name: "House favourite", description: "Seasonal ingredients, careful technique.", price: "£14" },
-                { name: "Chef’s pick", description: "A plate built for sharing.", price: "£18" },
-                { name: "Weekend special", description: "Limited run — ask your host.", price: "£22" },
-              ],
-            },
-            {
-              name: "Drinks",
-              items: [
-                { name: "House pour", description: "Local producers, thoughtful pairings.", price: "£8" },
-                { name: "Zero-proof", description: "Complex, botanical, celebratory.", price: "£7" },
+                {
+                  name: `${titleCase(e.nouns[0] ?? "House")} pour`,
+                  description: `Paired for ${e.audienceHint}.`,
+                  price: `£${8 + (e.seed % 5)}`,
+                },
               ],
             },
           ],
@@ -348,8 +326,8 @@ function fillBlock(
         type: "booking_cta",
         props: {
           id: "booking",
-          title: "Book your next step",
-          description: `Pick a time that works — the ${name} team will confirm shortly.`,
+          title: `Book ${name}`,
+          description: `Tell us about ${e.nouns[0] ?? "your goals"} — we’ll confirm a slot.`,
           cta: brief.ctaLabel,
           slots: ["Tue 10:00", "Tue 14:30", "Wed 11:00", "Thu 16:00"],
         },
@@ -359,27 +337,13 @@ function fillBlock(
         id: blockId("feature_tabs", recipe.label),
         type: "feature_tabs",
         props: {
-          title: "Explore the platform",
-          tabs: [
-            {
-              label: "Overview",
-              title: "See the whole journey",
-              body: `${name} connects discovery to delivery without losing the plot.`,
-              imageUrl: img(1),
-            },
-            {
-              label: "Workflows",
-              title: "Automate the busywork",
-              body: "Reusable playbooks keep quality high as you scale.",
-              imageUrl: img(2),
-            },
-            {
-              label: "Insights",
-              title: "Know what moved the needle",
-              body: "Dashboards that explain outcomes in plain language.",
-              imageUrl: img(3),
-            },
-          ],
+          title: `Inside ${name}`,
+          tabs: [0, 1, 2].map((i) => ({
+            label: titleCase(e.nouns[i] ?? ["Overview", "Workflow", "Insights"][i]!),
+            title: e.featureTitles[i] || `Path ${i + 1}`,
+            body: e.phrases[i] || `${name} helps ${e.audienceHint} with ${e.nouns[i] ?? "clarity"}.`,
+            imageUrl: img(i + 1),
+          })),
         },
       };
     case "about_split":
@@ -391,9 +355,9 @@ function fillBlock(
           body: prefs.businessIdea,
           imageUrl: img(1),
           bullets: [
-            "Customer-obsessed delivery",
-            "Transparent communication",
-            `Rooted in ${prefs.countryBase}`,
+            e.featureTitles[0],
+            `For ${e.audienceHint}`,
+            prefs.customCategoryLabel || brief.categoryLabel,
           ],
         },
       };
@@ -402,8 +366,8 @@ function fillBlock(
         id: blockId("newsletter", recipe.label),
         type: "newsletter",
         props: {
-          title: "Stay in the loop",
-          description: "Practical updates — no spam, unsubscribe anytime.",
+          title: `Updates from ${name}`,
+          description: `Notes on ${e.nouns[0] ?? brief.categoryLabel.toLowerCase()} — no spam.`,
           cta: "Subscribe",
           placeholder: "you@company.com",
         },
@@ -413,12 +377,12 @@ function fillBlock(
         id: blockId("blog_list", recipe.label),
         type: "blog_list",
         props: {
-          title: "Latest insights",
-          posts: [1, 2, 3].map((n) => ({
-            title: `${name} notes #${n}`,
-            excerpt: `Perspectives for ${brief.audience}.`,
-            date: `2026-0${n}-12`,
-            imageUrl: img(n),
+          title: `${name} insights`,
+          posts: e.blogTitles.map((title, n) => ({
+            title,
+            excerpt: e.phrases[n] || `Perspectives for ${e.audienceHint}.`,
+            date: `2026-0${(n % 9) + 1}-12`,
+            imageUrl: img(n + 1),
           })),
         },
       };
@@ -428,10 +392,10 @@ function fillBlock(
         type: "contact",
         props: {
           id: "contact",
-          title: "Let’s talk",
-          description: `Tell us about your goals — ${name} will respond within two business days.`,
+          title: `Talk to ${name}`,
+          description: `Tell us about ${e.nouns[0] ?? "your project"} — we reply within two business days.`,
           showForm: prefs.features.includes("contact_form"),
-          email: `hello@${name.toLowerCase().replace(/[^a-z0-9]+/g, "")}.co`,
+          email: `hello@${name.toLowerCase().replace(/[^a-z0-9]+/g, "") || "studio"}.co`,
           phone: "+44 20 0000 0000",
         },
       };
@@ -443,7 +407,7 @@ function fillBlock(
         type: recipe.type,
         props: {
           title: recipe.label,
-          body: recipe.description || brief.subheadline,
+          body: e.phrases[0] || recipe.description || brief.subheadline,
         },
       };
   }
@@ -454,12 +418,15 @@ function buildPageFromRecipes(
   recipes: SiteTemplateSectionRecipe[],
   brief: ContentBrief,
   prefs: SitePreferences,
+  template: SiteTemplateDefinition,
   images: string[]
 ): GeneratedSitePage {
   return {
     slug,
     title: titleCase(slug),
-    blocks: recipes.map((recipe, index) => fillBlock(recipe, brief, prefs, images, index)),
+    blocks: recipes.map((recipe, index) =>
+      fillBlock(recipe, brief, prefs, template, images, index)
+    ),
   };
 }
 
@@ -471,11 +438,7 @@ async function heuristicGenerate(
   const template = requireTemplate(preferences.templateId);
   const brief = buildContentBrief(preferences);
   const theme = resolveSiteTheme(preferences);
-  const images = await fetchCategoryImages(
-    template.categoryId,
-    brief.imageKeywords,
-    12
-  );
+  const images = await fetchCategoryImages(template.categoryId, brief.imageKeywords, 12);
 
   const pageSlugs = preferences.pages.length
     ? preferences.pages
@@ -491,14 +454,14 @@ async function heuristicGenerate(
       })) ??
       [{ type: "rich_text" as const, label: titleCase(slug), description: brief.subheadline }];
 
-    return buildPageFromRecipes(slug, recipes, brief, preferences, images);
+    return buildPageFromRecipes(slug, recipes, brief, preferences, template, images);
   });
 
   return {
     siteName: preferences.businessName,
     slug: plan.slug,
     tagline: brief.tagline,
-    footerNote: `© ${new Date().getFullYear()} ${preferences.businessName}. Built with Aarvanta Build OS.`,
+    footerNote: `© ${new Date().getFullYear()} ${preferences.businessName}. Built with Aarvanta Build OS · ${template.inspiredBy}`,
     theme: {
       ...plan.theme,
       primaryColor: theme.primaryColor,
@@ -530,25 +493,29 @@ export async function generateSiteFromPlan(
     const brief = buildContentBrief(preferences);
     const template = requireTemplate(preferences.templateId);
     const aiSite = await completeJson<GeneratedSite>({
-      system: `You are Build OS, an expert website copywriter and IA designer.
+      system: `You are Build OS, an expert website copywriter.
 Return JSON for a complete multi-page marketing website.
-CRITICAL: Preserve every page slug and every block type/id/order from the skeleton.
-Only rewrite props copy (headlines, descriptions, quotes, product names) to match the brief.
-Keep imageUrl values from the skeleton. Tone: ${preferences.tone}. Category: ${template.categoryId}. Template: ${template.name}.`,
+CRITICAL RULES:
+1. Preserve every page slug and every block id/type/order from the skeleton exactly.
+2. Rewrite ALL text props so they are SPECIFIC to the user's businessIdea — never reuse generic SaaS filler like "Clarity first" or "Proven process".
+3. Product names, services, FAQs, testimonials, and headlines must mention concrete details from the brief.
+4. Keep imageUrl values from the skeleton.
+5. Tone: ${preferences.tone}. Category: ${brief.categoryLabel}. Template: ${template.name} (${template.inspiredBy}).`,
       user: JSON.stringify({
-        preferences: {
+        brief: {
           businessName: preferences.businessName,
           businessIdea: preferences.businessIdea,
           targetAudience: preferences.targetAudience,
+          customCategoryLabel: preferences.customCategoryLabel,
           keyMessages: preferences.keyMessages,
           customPrompt: preferences.customPrompt,
           categoryId: preferences.categoryId,
           templateId: preferences.templateId,
+          entities: brief.entities,
         },
-        brief,
         skeleton: sampleSite,
       }),
-      temperature: 0.55,
+      temperature: 0.7,
     });
 
     const merged = preferSampleFilledSite(sampleSite, {
@@ -561,7 +528,7 @@ Keep imageUrl values from the skeleton. Tone: ${preferences.tone}. Category: ${t
 
     return { site: merged, usedAi: true };
   } catch (err) {
-    console.warn("[generate-site] AI fill failed, using template heuristic", err);
+    console.warn("[generate-site] AI fill failed, using prompt-derived heuristic", err);
     return { site: sampleSite, usedAi: false };
   }
 }

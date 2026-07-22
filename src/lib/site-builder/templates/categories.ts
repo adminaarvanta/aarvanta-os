@@ -93,6 +93,13 @@ export const SITE_CATEGORIES: SiteCategoryCard[] = [
     examples: "HR portals · Ops · Intranet apps",
     icon: "layout-dashboard",
   },
+  {
+    id: "custom",
+    label: "Custom category",
+    description: "Describe your own niche — templates adapt to your brief",
+    examples: "Hybrids · New categories · Anything else",
+    icon: "sparkles",
+  },
 ];
 
 export function getCategoryById(id: SiteCategoryId): SiteCategoryCard | undefined {

@@ -1,6 +1,10 @@
 import type { SiteCategoryId, SitePreferences, SiteTemplateDefinition } from "@/types/site-builder";
 import { getCategoryById } from "@/lib/site-builder/templates/categories";
 import { getTemplateById } from "@/lib/site-builder/templates/catalog";
+import {
+  extractPromptEntities,
+  promptHeadline,
+} from "@/lib/site-builder/prompt-copy";
 
 export type ContentBrief = {
   categoryId: SiteCategoryId;
@@ -17,6 +21,8 @@ export type ContentBrief = {
   subheadline: string;
   tagline: string;
   imageKeywords: string[];
+  /** Prompt-derived entities — drives unique heuristic copy. */
+  entities: ReturnType<typeof extractPromptEntities>;
 };
 
 function ctaLabels(prefs: SitePreferences): { primary: string; secondary: string } {
@@ -28,32 +34,7 @@ function ctaLabels(prefs: SitePreferences): { primary: string; secondary: string
     case "book_call":
       return { primary: "Book a call", secondary: "Learn more" };
     default:
-      return { primary: "Get in touch", secondary: "View work" };
-  }
-}
-
-function headlineFor(prefs: SitePreferences, template: SiteTemplateDefinition): string {
-  const name = prefs.businessName;
-  const idea = prefs.businessIdea.slice(0, 80);
-  switch (template.categoryId) {
-    case "ecommerce":
-      return `${name} — crafted for everyday rituals`;
-    case "saas":
-      return `${name} makes complex work feel simple`;
-    case "healthcare":
-      return `Care you can trust at ${name}`;
-    case "restaurant":
-      return `${name} — a table worth remembering`;
-    case "portfolio":
-      return `${name} — selected works`;
-    case "nonprofit":
-      return `${name} — impact that compounds`;
-    case "event":
-      return `${name} — gather for what’s next`;
-    case "agency":
-      return `${name} builds brands that move`;
-    default:
-      return idea.length > 20 ? `${name} — ${idea}` : `${name} — built around your goals`;
+      return { primary: "Get in touch", secondary: "View details" };
   }
 }
 
@@ -64,31 +45,44 @@ export function buildContentBrief(preferences: SitePreferences): ContentBrief {
       id: preferences.templateId,
       name: "Custom",
       categoryId: preferences.categoryId,
-      imageKeywords: [preferences.categoryId],
+      imageKeywords: [preferences.customCategoryLabel || preferences.categoryId],
     } as SiteTemplateDefinition);
 
   const category = getCategoryById(preferences.categoryId);
+  const categoryLabel =
+    preferences.categoryId === "custom" && preferences.customCategoryLabel
+      ? preferences.customCategoryLabel
+      : category?.label ?? preferences.categoryId;
+
+  const entities = extractPromptEntities(preferences);
   const { primary, secondary } = ctaLabels(preferences);
+
+  const ideaKeywords = entities.nouns.slice(0, 4);
+  const imageKeywords = [
+    ...template.imageKeywords.slice(0, 2),
+    ...ideaKeywords,
+    preferences.businessName,
+  ].filter(Boolean);
 
   return {
     categoryId: preferences.categoryId,
     templateId: template.id,
     templateName: template.name,
-    categoryLabel: category?.label ?? preferences.categoryId,
+    categoryLabel,
     businessName: preferences.businessName,
     idea: preferences.businessIdea,
-    audience: preferences.targetAudience || "ambitious customers who value clarity",
+    audience: preferences.targetAudience || entities.audienceHint,
     tone: preferences.tone,
     ctaLabel: primary,
     ctaSecondary: secondary,
-    headline: headlineFor(preferences, template),
+    headline: promptHeadline(preferences, entities),
     subheadline:
       preferences.keyMessages ||
-      preferences.businessIdea.slice(0, 160) ||
-      `A ${category?.label ?? "modern"} experience designed for ${preferences.targetAudience || "your audience"}.`,
-    tagline: `${template.name} · ${category?.label ?? "Site"}`,
-    imageKeywords: template.imageKeywords?.length
-      ? template.imageKeywords
-      : [preferences.categoryId, preferences.businessName],
+      entities.phrases[1] ||
+      preferences.businessIdea.slice(0, 180) ||
+      `A ${categoryLabel.toLowerCase()} experience designed for ${entities.audienceHint}.`,
+    tagline: `${template.name} · ${categoryLabel}`,
+    imageKeywords,
+    entities,
   };
 }

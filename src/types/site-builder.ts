@@ -19,7 +19,21 @@ export type SiteCategoryId =
   | "nonprofit"
   | "blog"
   | "event"
-  | "internal_tool_landing";
+  | "internal_tool_landing"
+  | "custom";
+
+/** Visual wireframe style for the template gallery preview. */
+export type SiteTemplatePreviewLayout =
+  | "saas_split"
+  | "store_grid"
+  | "editorial_folio"
+  | "dining_dark"
+  | "clinic_calm"
+  | "agency_bold"
+  | "magazine"
+  | "event_stage"
+  | "ops_dashboard"
+  | "landing_centered";
 
 /** Known block types the preview renderer understands. */
 export type SiteBlockType =
@@ -60,16 +74,21 @@ export type SiteTemplateDefinition = {
   name: string;
   description: string;
   bestFor: string[];
+  /** Credit / inspiration for open-source landing patterns. */
+  inspiredBy: string;
   siteType: SiteType;
   defaultTone: SiteTone;
   defaultTheme: SiteThemePreset;
   defaultPages: SitePageOption[];
   defaultFeatures: SiteFeatureOption[];
   defaultCta: SiteCtaGoal;
+  /** Hero layout forced by this template. */
+  heroLayout: "fullBleed" | "split" | "centered" | "minimal";
   /** Ordered section recipes keyed by page slug. */
   sectionsByPage: Record<string, SiteTemplateSectionRecipe[]>;
   imageKeywords: string[];
   previewAccent: string;
+  previewLayout: SiteTemplatePreviewLayout;
 };
 
 export type SiteThemePreset =
@@ -198,6 +217,8 @@ export type SitePreferences = {
   countryBase: string;
   /** Required before generate — application category. */
   categoryId: SiteCategoryId;
+  /** When categoryId is custom — user-written category label. */
+  customCategoryLabel?: string;
   /** Required before generate — template within the category. */
   templateId: string;
   tone: SiteTone;

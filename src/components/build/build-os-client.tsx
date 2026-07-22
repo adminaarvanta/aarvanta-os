@@ -29,6 +29,7 @@ import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { HostingCheckoutPanel } from "@/components/build/hosting-checkout-panel";
 import { ThemeStylePanel } from "@/components/build/theme-style-panel";
+import { TemplateLayoutPreview } from "@/components/build/template-layout-preview";
 import { Button } from "@/components/ui/button";
 import {
   clearComposeDraftCache,
@@ -144,6 +145,7 @@ export function BuildOsClient() {
   const [step, setStep] = useState<ComposeStep>("category");
 
   const [categoryId, setCategoryId] = useState<SiteCategoryId | null>(null);
+  const [customCategoryLabel, setCustomCategoryLabel] = useState("");
   const [templateId, setTemplateId] = useState<string | null>(null);
 
   const [prompt, setPrompt] = useState("");
@@ -182,6 +184,7 @@ export function BuildOsClient() {
     setPages(next.preferences.pages ?? ["home", "about", "contact"]);
     setFeatures(next.preferences.features ?? ["contact_form"]);
     setCategoryId(next.preferences.categoryId ?? null);
+    setCustomCategoryLabel(next.preferences.customCategoryLabel ?? "");
     setTemplateId(next.preferences.templateId ?? null);
     setThemePreset(next.preferences.themePreset);
     setCustomTheme(
@@ -239,6 +242,7 @@ export function BuildOsClient() {
       if (cache?.prompt || cache?.categoryId) {
         setPrompt(cache.prompt);
         setCategoryId(cache.categoryId);
+        setCustomCategoryLabel(cache.customCategoryLabel ?? "");
         setTemplateId(cache.templateId);
         setStep(cache.step ?? "category");
         setThemePreset(cache.themePreset);
@@ -270,6 +274,10 @@ export function BuildOsClient() {
       return inferPreferencesFromPrompt(safePrompt, {
         categoryId,
         templateId,
+        customCategoryLabel:
+          categoryId === "custom" && customCategoryLabel.trim().length >= 2
+            ? customCategoryLabel.trim()
+            : undefined,
         businessName: businessName.trim() || undefined,
         targetAudience: audience.trim() || undefined,
         tone,
@@ -285,6 +293,7 @@ export function BuildOsClient() {
     [
       categoryId,
       templateId,
+      customCategoryLabel,
       prompt,
       businessName,
       audience,
@@ -304,6 +313,7 @@ export function BuildOsClient() {
         prompt,
         siteType: null,
         categoryId,
+        customCategoryLabel: customCategoryLabel || undefined,
         templateId,
         step: nextStep ?? step,
         themePreset,
@@ -312,7 +322,7 @@ export function BuildOsClient() {
         savedAt: new Date().toISOString(),
       });
     },
-    [prompt, categoryId, templateId, step, themePreset, customTheme, screenshots]
+    [prompt, categoryId, customCategoryLabel, templateId, step, themePreset, customTheme, screenshots]
   );
 
   const saveDraft = useCallback(async () => {
@@ -480,6 +490,10 @@ export function BuildOsClient() {
       setError("Pick a category and a template first.");
       return;
     }
+    if (categoryId === "custom" && customCategoryLabel.trim().length < 2) {
+      setError("Name your custom category before generating.");
+      return;
+    }
     if (!prompt.trim() || prompt.trim().length < 12) {
       setError("Describe your business in a sentence or two — at least a dozen characters.");
       return;
@@ -643,6 +657,19 @@ export function BuildOsClient() {
   function selectCategory(id: SiteCategoryId) {
     setCategoryId(id);
     setTemplateId(null);
+    if (id !== "custom") {
+      setCustomCategoryLabel("");
+      setStep("template");
+      syncLocalCache(job?.id, "template");
+      return;
+    }
+    // Stay on category step so the user can name their niche first.
+    setStep("category");
+    syncLocalCache(job?.id, "category");
+  }
+
+  function continueCustomCategory() {
+    if (customCategoryLabel.trim().length < 2) return;
     setStep("template");
     syncLocalCache(job?.id, "template");
   }
@@ -665,6 +692,7 @@ export function BuildOsClient() {
   function applyExample(example: (typeof EXAMPLE_PROMPTS)[number]) {
     const tpl = getTemplateById(example.templateId);
     setCategoryId(example.categoryId);
+    setCustomCategoryLabel("");
     setTemplateId(example.templateId);
     setPrompt(example.prompt);
     if (tpl) {
@@ -681,7 +709,12 @@ export function BuildOsClient() {
 
   const draftJobs = recentJobs.filter((j) => j.status === "draft" || !j.generatedSite);
   const generatedJobs = recentJobs.filter((j) => Boolean(j.generatedSite));
-  const canGenerate = Boolean(categoryId && templateId && prompt.trim().length >= 12);
+  const canGenerate = Boolean(
+    categoryId &&
+      templateId &&
+      prompt.trim().length >= 12 &&
+      (categoryId !== "custom" || customCategoryLabel.trim().length >= 2)
+  );
 
   /* ================================================================ */
   /* Studio                                                            */
@@ -930,28 +963,59 @@ export function BuildOsClient() {
 
         {/* STEP: Category */}
         {step === "category" && (
-          <div className="mt-8 grid animate-fade-up gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {SITE_CATEGORIES.map((card) => {
-              const Icon = CATEGORY_ICONS[card.icon] ?? Sparkles;
-              const active = categoryId === card.id;
-              return (
-                <button
-                  key={card.id}
-                  type="button"
-                  onClick={() => selectCategory(card.id)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    active ? "border-gold bg-primary-soft" : "border-border bg-surface-elevated/60 hover:border-gold/35"
-                  }`}
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-gold-bright">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <p className="mt-3 text-sm font-semibold text-foreground">{card.label}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted">{card.description}</p>
-                  <p className="mt-2 text-[10px] text-dim">{card.examples}</p>
-                </button>
-              );
-            })}
+          <div className="mt-8 animate-fade-up space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {SITE_CATEGORIES.map((card) => {
+                const Icon = CATEGORY_ICONS[card.icon] ?? Sparkles;
+                const active = categoryId === card.id;
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => selectCategory(card.id)}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      active ? "border-gold bg-primary-soft" : "border-border bg-surface-elevated/60 hover:border-gold/35"
+                    }`}
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-gold-bright">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-foreground">{card.label}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted">{card.description}</p>
+                    <p className="mt-2 text-[10px] text-dim">{card.examples}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {categoryId === "custom" ? (
+              <div className="rounded-2xl border border-border bg-surface-elevated/80 p-4">
+                <p className="text-sm font-medium text-foreground">Name your category</p>
+                <p className="mt-1 text-xs text-muted">
+                  e.g. Pet grooming marketplace, B2B logistics directory, yoga retreat brand
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <input
+                    value={customCategoryLabel}
+                    onChange={(e) => setCustomCategoryLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") continueCustomCategory();
+                    }}
+                    placeholder="Your niche or category"
+                    className="min-w-0 flex-1 rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    onClick={continueCustomCategory}
+                    disabled={customCategoryLabel.trim().length < 2}
+                  >
+                    Choose template
+                    <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -966,10 +1030,20 @@ export function BuildOsClient() {
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to categories
             </button>
+            {activeCategory ? (
+              <p className="mb-4 text-sm text-muted">
+                Templates for{" "}
+                <span className="font-medium text-foreground">
+                  {categoryId === "custom" && customCategoryLabel.trim()
+                    ? customCategoryLabel.trim()
+                    : activeCategory.label}
+                </span>
+                <span className="text-dim"> — open-source-inspired layouts with structural previews</span>
+              </p>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               {templatesForCategory.map((tpl) => {
                 const active = templateId === tpl.id;
-                const sections = tpl.sectionsByPage.home ?? [];
                 return (
                   <button
                     key={tpl.id}
@@ -979,27 +1053,14 @@ export function BuildOsClient() {
                       active ? "border-gold ring-1 ring-gold/50" : "border-border hover:border-gold/35"
                     }`}
                   >
-                    {/* CSS mock of section layout */}
-                    <div className="space-y-1.5 p-3" style={{ backgroundColor: `${tpl.previewAccent}12` }}>
-                      <div className="h-3 w-2/3 rounded" style={{ backgroundColor: tpl.previewAccent }} />
-                      {sections.slice(0, 4).map((s, i) => (
-                        <div
-                          key={`${s.label}-${i}`}
-                          className="h-2 rounded"
-                          style={{
-                            width: `${90 - i * 12}%`,
-                            backgroundColor: tpl.previewAccent,
-                            opacity: 0.35 - i * 0.05,
-                          }}
-                        />
-                      ))}
-                    </div>
+                    <TemplateLayoutPreview template={tpl} className="min-h-[140px]" />
                     <div className="bg-surface-elevated p-4">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-foreground">{tpl.name}</p>
                         {active ? <Check className="h-4 w-4 text-gold" /> : null}
                       </div>
                       <p className="mt-1 text-xs leading-relaxed text-muted">{tpl.description}</p>
+                      <p className="mt-2 text-[10px] text-dim">{tpl.inspiredBy}</p>
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         {tpl.bestFor.map((b) => (
                           <span
@@ -1032,8 +1093,18 @@ export function BuildOsClient() {
 
             {activeCategory && templateId ? (
               <p className="text-xs text-dim">
-                <span className="text-muted">{activeCategory.label}</span> ·{" "}
-                <span className="text-muted">{getTemplateById(templateId)?.name}</span>
+                <span className="text-muted">
+                  {categoryId === "custom" && customCategoryLabel.trim()
+                    ? customCategoryLabel.trim()
+                    : activeCategory.label}
+                </span>{" "}
+                · <span className="text-muted">{getTemplateById(templateId)?.name}</span>
+                {getTemplateById(templateId)?.inspiredBy ? (
+                  <>
+                    {" "}
+                    · <span className="text-dim">{getTemplateById(templateId)?.inspiredBy}</span>
+                  </>
+                ) : null}
               </p>
             ) : null}
 
@@ -1216,20 +1287,25 @@ export function BuildOsClient() {
               </div>
             </div>
 
-            {/* Theme */}
-            <div>
-              <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-dim">
-                Style — presets or your brand
-              </p>
-              <ThemeStylePanel
-                themePreset={themePreset}
-                customTheme={customTheme}
-                onChange={({ themePreset: nextPreset, customTheme: nextCustom }) => {
-                  setThemePreset(nextPreset);
-                  setCustomTheme(nextCustom);
-                }}
-              />
-            </div>
+            {/* Theme — secondary; template already set layout */}
+            <details className="rounded-2xl border border-border bg-surface-elevated/50 open:pb-4">
+              <summary className="cursor-pointer list-none px-4 py-3 text-xs font-medium text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
+                Optional colors & fonts
+                <span className="ml-2 font-normal text-dim">
+                  Template layout is fixed — tweak palette only if you want
+                </span>
+              </summary>
+              <div className="px-4">
+                <ThemeStylePanel
+                  themePreset={themePreset}
+                  customTheme={customTheme}
+                  onChange={({ themePreset: nextPreset, customTheme: nextCustom }) => {
+                    setThemePreset(nextPreset);
+                    setCustomTheme(nextCustom);
+                  }}
+                />
+              </div>
+            </details>
           </div>
         )}
       </div>

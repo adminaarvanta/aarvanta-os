@@ -58,14 +58,9 @@ export function blockHasSamplePayload(block: SiteBlock): boolean {
   }
 }
 
-function pageRichness(blocks: SiteBlock[]): number {
-  if (!blocks.length) return 0;
-  return blocks.filter(blockHasSamplePayload).length / blocks.length;
-}
-
 /**
- * Prefer the rich heuristic sample site. Only overlay AI copy when the AI
- * page is itself densely filled — never let sparse AI wipe sample catalogs.
+ * Keep skeleton structure/media, but always prefer AI text and list props when present
+ * so different prompts produce different copy (not locked to generic samples).
  */
 export function preferSampleFilledSite(
   sampleSite: GeneratedSite,
@@ -77,52 +72,30 @@ export function preferSampleFilledSite(
     const aiPage =
       aiSite.pages.find((p) => p.slug === samplePage.slug) ?? aiSite.pages[idx];
     if (!aiPage?.blocks?.length) return samplePage;
-    if (pageRichness(aiPage.blocks) < 0.7) return samplePage;
 
     const mergedBlocks = samplePage.blocks.map((sampleBlock, blockIdx) => {
       const aiBlock =
         aiPage.blocks.find((b) => b.id === sampleBlock.id) ??
         aiPage.blocks.find((b) => b.type === sampleBlock.type) ??
         aiPage.blocks[blockIdx];
-      if (!aiBlock || !blockHasSamplePayload(aiBlock)) return sampleBlock;
+      if (!aiBlock) return sampleBlock;
 
-      return {
-        ...sampleBlock,
-        props: {
-          ...sampleBlock.props,
-          ...aiBlock.props,
-          imageUrl:
-            (aiBlock.props.imageUrl as string | undefined) ||
-            (sampleBlock.props.imageUrl as string | undefined),
-          items: asArray(aiBlock.props.items).length
-            ? aiBlock.props.items
-            : sampleBlock.props.items,
-          products: asArray(aiBlock.props.products).length
-            ? aiBlock.props.products
-            : sampleBlock.props.products,
-          quotes: asArray(aiBlock.props.quotes).length
-            ? aiBlock.props.quotes
-            : sampleBlock.props.quotes,
-          tiers: asArray(aiBlock.props.tiers).length
-            ? aiBlock.props.tiers
-            : sampleBlock.props.tiers,
-          members: asArray(aiBlock.props.members).length
-            ? aiBlock.props.members
-            : sampleBlock.props.members,
-          posts: asArray(aiBlock.props.posts).length
-            ? aiBlock.props.posts
-            : sampleBlock.props.posts,
-          tabs: asArray(aiBlock.props.tabs).length
-            ? aiBlock.props.tabs
-            : sampleBlock.props.tabs,
-          columns: asArray(aiBlock.props.columns).length
-            ? aiBlock.props.columns
-            : sampleBlock.props.columns,
-          sections: asArray(aiBlock.props.sections).length
-            ? aiBlock.props.sections
-            : sampleBlock.props.sections,
-        },
-      };
+      const mergedProps: Record<string, unknown> = { ...sampleBlock.props };
+      for (const [key, value] of Object.entries(aiBlock.props ?? {})) {
+        if (key === "imageUrl" || key === "avatarUrl") {
+          if (typeof value === "string" && value.trim()) mergedProps[key] = value;
+          continue;
+        }
+        if (typeof value === "string" && value.trim().length >= 3) {
+          mergedProps[key] = value;
+          continue;
+        }
+        if (Array.isArray(value) && value.length > 0) {
+          mergedProps[key] = value;
+        }
+      }
+
+      return { ...sampleBlock, props: mergedProps };
     });
 
     return { ...samplePage, blocks: mergedBlocks, title: aiPage.title || samplePage.title };

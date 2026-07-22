@@ -18,6 +18,7 @@ export const siteCategoryIdSchema = z.enum([
   "blog",
   "event",
   "internal_tool_landing",
+  "custom",
 ]);
 export const siteThemePresetSchema = z.enum([
   "gold_navy",
@@ -120,6 +121,7 @@ export const sitePreferencesSchema = z.object({
   targetAudience: z.string().max(300).optional(),
   countryBase: z.string().min(2).max(8).default("UK"),
   categoryId: siteCategoryIdSchema,
+  customCategoryLabel: z.string().min(2).max(80).optional(),
   templateId: z.string().min(2).max(80),
   tone: siteToneSchema.default("professional"),
   siteType: siteTypeSchema.default("business"),

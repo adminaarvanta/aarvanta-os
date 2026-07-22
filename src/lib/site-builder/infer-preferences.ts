@@ -100,6 +100,7 @@ export function inferPreferencesFromPrompt(
     targetAudience: overrides.targetAudience,
     countryBase: overrides.countryBase ?? "UK",
     categoryId: overrides.categoryId,
+    customCategoryLabel: overrides.customCategoryLabel,
     templateId: template.id,
     tone: overrides.tone ?? template.defaultTone ?? inferTone(trimmed),
     siteType,
