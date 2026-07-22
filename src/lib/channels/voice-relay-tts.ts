@@ -1,18 +1,25 @@
 /**
- * ConversationRelay TTS — ElevenLabs via Twilio (human-like voiceover).
- * Billed through Twilio; no separate ElevenLabs API key required.
+ * ConversationRelay TTS provider selection.
  *
- * Market fit: ElevenLabs is the quality leader for natural speech;
- * ConversationRelay's Flash 2.5 telephony voice is mid-tier cost vs Amazon Polly
- * (cheaper) and custom ElevenLabs/OpenAI streaming pipelines (more ops + usually more $$).
+ * Defaults to Amazon Polly Neural — Twilio's standard/low-cost voice path
+ * (no premium ElevenLabs voice). Conversation Relay itself is still ~$0.07/min.
+ *
+ * Set VOICE_RELAY_TTS_PROVIDER=ElevenLabs for more human-like speech (same Relay fee).
+ * Set VOICE_RELAY_BUDGET_MODE=true to skip ConversationRelay entirely (one-shot <Say> only —
+ * no two-way AI, avoids the $0.07/min Relay charge).
  */
+export type ConversationRelayTtsProvider = "Amazon" | "Google" | "ElevenLabs";
+
+export function isVoiceRelayBudgetMode(): boolean {
+  const v = process.env.VOICE_RELAY_BUDGET_MODE?.trim().toLowerCase();
+  return v === "true" || v === "1" || v === "yes";
+}
+
 export function getConversationRelayTts() {
   const provider = (
-    process.env.VOICE_RELAY_TTS_PROVIDER?.trim() || "ElevenLabs"
-  ) as "ElevenLabs" | "Amazon" | "Google";
+    process.env.VOICE_RELAY_TTS_PROVIDER?.trim() || "Amazon"
+  ) as ConversationRelayTtsProvider;
 
-  // Default: Twilio en-US telephony ElevenLabs voice (Mark) + Flash 2.5
-  // Format: {voiceId}-{model}-{speed}_{stability}_{similarity}
   const voice =
     process.env.VOICE_RELAY_TTS_VOICE?.trim() ||
     (provider === "ElevenLabs"

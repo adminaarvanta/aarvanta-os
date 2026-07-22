@@ -74,20 +74,28 @@ Save. Enable **ConversationRelay** in Twilio if the Console asks you to onboard.
 - `https://os.aarvanta.co/api/health` → Voice Relay item **ok**
 - `https://YOUR-HOST/voice-relay/health` → `"openai": true`
 
-## Voiceover (TTS)
+## Voiceover (TTS) & cost
 
-ConversationRelay speaks with **ElevenLabs** by default (human-like telephony voice via Twilio — no separate ElevenLabs key). Alternatives on the same TwiML path: `Amazon` / `Google`.
+There is **no fully free** two-way PSTN AI on Twilio. Conversation Relay is **~$0.07/min** plus normal call minutes.
 
-Optional Vercel env:
+| Mode | Env | Two-way AI? | Approx. extra |
+|------|-----|-------------|----------------|
+| **Budget (cheapest)** | `VOICE_RELAY_BUDGET_MODE=true` | No — one-shot Polly `<Say>` | Call minutes only |
+| **Standard (default)** | `VOICE_RELAY_TTS_PROVIDER=Amazon` | Yes | Relay $0.07/min + call minutes |
+| **Human voice** | `VOICE_RELAY_TTS_PROVIDER=ElevenLabs` | Yes | Same Relay fee (Twilio-integrated TTS) |
+
 ```bash
-VOICE_RELAY_TTS_PROVIDER=ElevenLabs
-VOICE_RELAY_TTS_VOICE=UgBBYS2sOqTuMpoF3BR0-flash_v2_5-0.95_0.65_0.8
-VOICE_RELAY_ELEVENLABS_TEXT_NORM=on
+# Cheapest two-way (default after this change)
+VOICE_RELAY_TTS_PROVIDER=Amazon
+VOICE_RELAY_TTS_VOICE=Joanna-Neural
+
+# Skip ConversationRelay entirely (free of the $0.07/min fee)
+VOICE_RELAY_BUDGET_MODE=true
 ```
 
 ## Fallback
 
-If `VOICE_RELAY_WSS_URL` is unset, Voice OS still works with **one-shot `<Say>` TTS** (no two-way AI).
+If `VOICE_RELAY_WSS_URL` is unset (or budget mode), Voice OS uses **one-shot `<Say>` TTS** (no two-way AI).
 
 ## Desktop note
 

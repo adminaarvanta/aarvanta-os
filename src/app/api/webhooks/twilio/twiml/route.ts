@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
-import { getConversationRelayTts } from "@/lib/channels/voice-relay-tts";
+import {
+  getConversationRelayTts,
+  isVoiceRelayBudgetMode,
+} from "@/lib/channels/voice-relay-tts";
 
 /**
  * Twilio fetches this URL when a Voice OS call connects (inbound or outbound).
@@ -64,7 +67,9 @@ async function twimlResponse(req: Request) {
   // Keep welcome short — long goals make the agent over-talk
   const spoken = (message?.trim() || defaultWelcome).slice(0, 280);
   const goal = (message?.trim() || defaultWelcome).slice(0, 400);
-  const relayUrl = mode === "say" ? null : getVoiceRelayWssUrl();
+  // Budget mode / mode=say → Amazon Polly <Say> only (no ConversationRelay fee).
+  const relayUrl =
+    mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
   const twiml = relayUrl
     ? buildConversationRelayTwiml(relayUrl, spoken, {
