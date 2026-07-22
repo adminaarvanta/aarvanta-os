@@ -13,7 +13,8 @@ import {
  * Otherwise → one-shot <Say> TTS.
  *
  * Query params:
- * - message / goal — spoken welcome + LLM context
+ * - message / goal — briefing (topic/context) for the AI; never spoken verbatim.
+ *   In one-shot <Say> fallback (no relay) it IS spoken, since there is no AI.
  * - mode=say — force one-shot TTS
  * - direction=inbound|outbound
  * - conversationId — for transcript callback correlation
@@ -64,20 +65,26 @@ async function twimlResponse(req: Request) {
       ? "Hi, thanks for calling Aarvanta. How can I help?"
       : "Hi, this is Aarvanta. Do you have a moment?";
 
-  // Keep welcome short — long goals make the agent over-talk
-  const spoken = (message?.trim() || defaultWelcome).slice(0, 280);
-  const goal = (message?.trim() || defaultWelcome).slice(0, 400);
+  const brief = message?.trim() ?? "";
+  // The operator's text is a BRIEFING for the AI (topic/context), never words
+  // to read verbatim. It goes to the relay as the `goal` parameter.
+  const goal = brief.slice(0, 600);
   // Budget mode / mode=say → Amazon Polly <Say> only (no ConversationRelay fee).
   const relayUrl =
     mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
+  // With the relay: inbound gets a short fixed greeting; outbound gets NO
+  // welcomeGreeting — the relay generates the opening line from the briefing.
+  // Without the relay (one-shot <Say>) there is no AI, so speak the text as-is.
+  const welcome = direction === "inbound" ? defaultWelcome : "";
+
   const twiml = relayUrl
-    ? buildConversationRelayTwiml(relayUrl, spoken, {
+    ? buildConversationRelayTwiml(relayUrl, welcome, {
         direction,
         conversationId,
         goal,
       })
-    : buildSayTwiml(spoken);
+    : buildSayTwiml((brief || defaultWelcome).slice(0, 280));
 
   return new NextResponse(twiml, {
     status: 200,
@@ -105,11 +112,14 @@ function buildConversationRelayTwiml(
     tts.provider === "ElevenLabs"
       ? ` elevenlabsTextNormalization="${escapeXml(tts.elevenlabsTextNormalization)}"`
       : "";
+  // Outbound calls carry no welcomeGreeting — the relay AI opens the call
+  // itself from the briefing, so the operator's text is never spoken verbatim.
+  const welcomeAttr = welcome ? ` welcomeGreeting="${escapeXml(welcome)}"` : "";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <ConversationRelay url="${escapeXml(wssUrl)}" welcomeGreeting="${escapeXml(welcome)}" language="en-US" ttsProvider="${escapeXml(tts.provider)}" voice="${escapeXml(tts.voice)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any">
+    <ConversationRelay url="${escapeXml(wssUrl)}"${welcomeAttr} language="en-US" ttsProvider="${escapeXml(tts.provider)}" voice="${escapeXml(tts.voice)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any">
       <Parameter name="goal" value="${escapeXml(params.goal)}" />
       <Parameter name="direction" value="${escapeXml(params.direction)}" />
       <Parameter name="conversationId" value="${escapeXml(params.conversationId)}" />

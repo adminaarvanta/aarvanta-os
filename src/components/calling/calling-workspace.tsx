@@ -36,7 +36,7 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState(
-    "Hi, this is Aarvanta calling about your inquiry. Do you have a minute to talk?"
+    "Follow up on their recent inquiry about Aarvanta and see if they have any questions."
   );
   const [scheduledAt, setScheduledAt] = useState("");
   const [busy, setBusy] = useState(false);
@@ -169,7 +169,7 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
         </div>
         <p className="text-xs text-muted">
           {mode === "now"
-            ? "Places a Twilio call from your Voice OS number. With Voice Relay on EC2, the AI talks two-way using your text as the opening goal; otherwise it speaks once (TTS)."
+            ? "Places a Twilio call from your Voice OS number. The text below is a briefing for the AI — it describes the topic and goal of the call. The AI writes its own opening line from it; it is never read aloud word-for-word."
             : "Schedule a call for later. Due calls are dialed by the scheduler cron."}
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -198,6 +198,7 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
         )}
         <textarea
           className={`min-h-[88px] ${inputClass}`}
+          placeholder="Call briefing for the AI — topic, purpose, key points (not spoken verbatim)"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           required

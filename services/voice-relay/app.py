@@ -125,6 +125,13 @@ async def end_session(ws: WebSocket, handoff: str = "completed") -> None:
     await ws.send_json({"type": "end", "handoffData": handoff})
 
 
+OUTBOUND_OPENING_INSTRUCTION = (
+    "(The person just answered the phone. Open the call now: greet them and say "
+    "why you are calling in ONE short, natural sentence based on your call briefing. "
+    "Never read the briefing text aloud word-for-word.)"
+)
+
+
 def build_system_prompt(params: dict[str, Any]) -> str:
     parts = [SYSTEM_PROMPT]
     direction = (params.get("direction") or "").strip().lower()
@@ -134,7 +141,11 @@ def build_system_prompt(params: dict[str, Any]) -> str:
         parts.append("Outbound call: state why you called in one short line, then listen.")
     goal = (params.get("goal") or params.get("context") or "").strip()
     if goal:
-        parts.append(f"Context (do not read this aloud word-for-word): {goal[:240]}")
+        parts.append(
+            "Call briefing from the operator — this is CONTEXT about the topic and "
+            "purpose of the call. Use it to guide the conversation. NEVER read it "
+            f"aloud word-for-word:\n{goal[:600]}"
+        )
     return "\n\n".join(parts)
 
 
@@ -289,6 +300,23 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     session.get("from"),
                     params.get("direction"),
                 )
+                # Outbound calls have no TwiML welcomeGreeting — the AI opens
+                # the call itself with a line generated from the briefing.
+                if str(params.get("direction") or "").lower().startswith("outbound"):
+                    try:
+                        opening = await stream_reply(
+                            websocket, history, system, OUTBOUND_OPENING_INSTRUCTION
+                        )
+                        # Drop the synthetic instruction from history; keep the
+                        # assistant's opening so the conversation flows naturally.
+                        if len(history) >= 2 and history[-2]["role"] == "user":
+                            del history[-2]
+                        transcript.append({"role": "assistant", "content": opening})
+                    except Exception as exc:  # noqa: BLE001
+                        log.exception("opening line failed: %s", exc)
+                        fallback = "Hi, this is Aarvanta. Do you have a moment?"
+                        await send_text(websocket, fallback, last=True)
+                        transcript.append({"role": "assistant", "content": fallback})
                 continue
 
             if msg_type == "prompt":
