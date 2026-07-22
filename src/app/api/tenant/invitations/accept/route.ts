@@ -10,9 +10,12 @@ import {
   hasUserPassword,
   upsertUserPassword,
 } from "@/lib/auth/user-credentials";
+import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { getOptionalSession } from "@/lib/tenant/context";
+
+export const runtime = "nodejs";
 
 const acceptSchema = z.object({
   token: z.string().min(4).max(120),
@@ -27,6 +30,7 @@ function userIdFromEmail(email: string): string {
 
 export async function POST(req: Request) {
   try {
+    await ensureDatastoreReady();
     const body = await parseJsonBody<unknown>(req);
     if (body instanceof NextResponse) return body;
 
@@ -45,7 +49,7 @@ export async function POST(req: Request) {
       return apiError("NOT_FOUND", "Invitation not found.", 404);
     }
 
-    const email = preview.email.toLowerCase();
+    const email = preview.email.trim().toLowerCase();
     const alreadyHasPassword = await hasUserPassword(email);
 
     // Allow completing signup on an already-accepted invite if no password yet.
@@ -97,7 +101,7 @@ export async function POST(req: Request) {
     const member = await repo.createMember(
       {
         userId,
-        email: invitation.email,
+        email,
         name,
         role: invitation.role,
       },
@@ -126,7 +130,7 @@ export async function POST(req: Request) {
         role: member.role,
         tenantId: member.tenantId,
         workspaceId: member.workspaceId,
-        companyId: scope.companyId,
+        companyId: member.companyId || scope.companyId,
       };
       const token = await createSessionToken(sessionPayload);
       response.cookies.set(
@@ -145,6 +149,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    await ensureDatastoreReady();
     const token = new URL(req.url).searchParams.get("token");
     if (!token) {
       return apiError("VALIDATION_ERROR", "token is required", 400);
@@ -156,13 +161,14 @@ export async function GET(req: Request) {
       return apiError("NOT_FOUND", "Invitation not found.", 404);
     }
 
+    const email = invitation.email.trim().toLowerCase();
     const [organization, workspace, needsPassword] = await Promise.all([
       repo.getOrganization(invitation.tenantId),
       repo.getWorkspace(invitation.workspaceId),
       (async () => {
         if (invitation.status === "pending") return true;
         if (invitation.status === "accepted") {
-          return !(await hasUserPassword(invitation.email));
+          return !(await hasUserPassword(email));
         }
         return false;
       })(),
