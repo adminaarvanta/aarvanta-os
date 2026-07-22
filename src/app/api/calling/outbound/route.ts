@@ -54,6 +54,8 @@ export async function POST(req: Request) {
       channel: "voice",
       contact,
       content: parsed.data.message,
+      conversationId: conversation.id,
+      voiceDirection: "outbound",
     });
   } catch (error) {
     return NextResponse.json(

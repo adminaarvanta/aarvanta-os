@@ -115,6 +115,8 @@ export async function POST(
         subject: channel === "email" ? emailSubject : subject,
         emailInReplyTo: lastInboundEmailMessageId(existing),
         emailMessageId: outboundMessageId,
+        conversationId: id,
+        voiceDirection: channel === "voice" ? "outbound" : undefined,
       });
     } catch (error) {
       return NextResponse.json(

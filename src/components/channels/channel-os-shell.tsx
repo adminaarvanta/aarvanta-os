@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { MessageCircle, Phone } from "lucide-react";
 import { ChannelStatusBanner } from "@/components/channels/channel-status-banner";
+import { VoiceRelayStatusBadge } from "@/components/channels/voice-relay-status";
 import { StartChannelThread } from "@/components/channels/start-channel-thread";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { IdentityBadge } from "@/components/inbox/identity-badge";
@@ -42,11 +43,11 @@ const CONFIGS: Record<"whatsapp" | "voice", ChannelOsConfig> = {
     basePath: "/voice",
     title: "Voice OS",
     description:
-      "AI calling — outbound TTS calls, dialer, call log, and Twilio status webhooks.",
+      "AI calling — two-way ConversationRelay when Voice Relay is on EC2; otherwise one-shot TTS.",
     liveHint:
-      "Outbound uses Twilio. Two-way AI via ConversationRelay when VOICE_RELAY_WSS_URL is set.",
+      "Outbound + inbound via Twilio. Two-way AI when VOICE_RELAY_WSS_URL is set.",
     setupHint:
-      "Set TWILIO_* + NEXT_PUBLIC_APP_URL. For two-way AI voice, deploy services/voice-relay on EC2 and set VOICE_RELAY_WSS_URL.",
+      "Set TWILIO_* + NEXT_PUBLIC_APP_URL. Deploy services/voice-relay on EC2 and set VOICE_RELAY_WSS_URL.",
   },
 };
 
@@ -76,6 +77,7 @@ export async function ChannelOsListPage({
               liveHint={config.liveHint}
               setupHint={config.setupHint}
             />
+            {os === "voice" ? <VoiceRelayStatusBadge /> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {os === "voice" ? (
