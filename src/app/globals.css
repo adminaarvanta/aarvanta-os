@@ -95,6 +95,7 @@ html.light {
   --color-muted: var(--text-muted);
   --color-dim: var(--text-dim);
   --color-success: var(--success);
+  --color-danger: var(--danger);
   --font-sans: var(--font-inter);
 }
 
