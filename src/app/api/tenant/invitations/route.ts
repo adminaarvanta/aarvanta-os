@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const repo = getTenantRepository();
     const invitation = await repo.createInvitation(
       {
-        email: parsed.data.email,
+        email: parsed.data.email.trim().toLowerCase(),
         role: parsed.data.role,
         workspaceId: ctx.scope.workspaceId,
         invitedBy: ctx.userId,
