@@ -115,9 +115,13 @@ export const siteDeploymentConfigSchema = z.object({
   }),
 });
 
+/** Keep in sync with clamps in infer-preferences. */
+export const BUSINESS_IDEA_MAX = 4000;
+export const CUSTOM_PROMPT_MAX = 8000;
+
 export const sitePreferencesSchema = z.object({
   businessName: z.string().min(2).max(80),
-  businessIdea: z.string().min(10).max(1000),
+  businessIdea: z.string().min(10).max(BUSINESS_IDEA_MAX),
   targetAudience: z.string().max(300).optional(),
   countryBase: z.string().min(2).max(8).default("UK"),
   categoryId: siteCategoryIdSchema,
@@ -133,7 +137,7 @@ export const sitePreferencesSchema = z.object({
   features: z.array(siteFeatureOptionSchema).default(["contact_form"]),
   ctaGoal: siteCtaGoalSchema.default("contact"),
   keyMessages: z.string().max(500).optional(),
-  customPrompt: z.string().max(2000).optional(),
+  customPrompt: z.string().max(CUSTOM_PROMPT_MAX).optional(),
   referenceUrl: z.union([z.string().url(), z.literal("")]).optional(),
   referenceScreenshots: z.array(siteReferenceScreenshotSchema).max(3).optional(),
   deployment: siteDeploymentConfigSchema,
@@ -142,7 +146,7 @@ export const sitePreferencesSchema = z.object({
 /** Looser schema for auto-saved drafts (user may not have finished the brief yet). */
 export const siteDraftPreferencesSchema = sitePreferencesSchema.extend({
   businessName: z.string().min(1).max(80),
-  businessIdea: z.string().min(1).max(1000),
+  businessIdea: z.string().min(1).max(BUSINESS_IDEA_MAX),
   categoryId: siteCategoryIdSchema.optional(),
   templateId: z.string().max(80).optional(),
 });

@@ -86,7 +86,11 @@ function categoryFlavor(categoryId: SiteCategoryId, customLabel?: string): strin
 
 /** Derive prompt-specific copy so every brief produces different site content. */
 export function extractPromptEntities(preferences: SitePreferences): PromptEntities {
-  const idea = preferences.businessIdea || preferences.customPrompt || preferences.businessName;
+  // Prefer the longer customPrompt (refine + brief) when present.
+  const idea =
+    preferences.customPrompt ||
+    preferences.businessIdea ||
+    preferences.businessName;
   const seed = hashSeed(
     `${preferences.templateId}|${preferences.categoryId}|${idea}|${preferences.businessName}`
   );

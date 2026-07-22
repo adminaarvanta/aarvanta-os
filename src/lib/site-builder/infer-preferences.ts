@@ -9,11 +9,20 @@ import type {
   SiteType,
 } from "@/types/site-builder";
 import { DEFAULT_DEPLOYMENT } from "@/lib/site-builder/normalize-preferences";
+import {
+  BUSINESS_IDEA_MAX,
+  CUSTOM_PROMPT_MAX,
+} from "@/lib/site-builder/schemas";
 import { getThemePreset } from "@/lib/site-builder/theme-presets";
 import {
   defaultTemplateForCategory,
   getTemplateById,
 } from "@/lib/site-builder/templates/resolve-template";
+
+function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return text.slice(0, max - 1).trimEnd() + "…";
+}
 
 const EXAMPLE_PROMPTS = [
   {
@@ -94,9 +103,13 @@ export function inferPreferencesFromPrompt(
     overrides.features ?? template.defaultFeatures;
   const ctaGoal: SiteCtaGoal = overrides.ctaGoal ?? template.defaultCta;
 
+  const fullIdea =
+    trimmed || overrides.businessIdea || `${businessName} website`;
+  const fullPrompt = overrides.customPrompt ?? trimmed;
+
   return {
     businessName,
-    businessIdea: trimmed || overrides.businessIdea || `${businessName} website`,
+    businessIdea: clip(fullIdea, BUSINESS_IDEA_MAX),
     targetAudience: overrides.targetAudience,
     countryBase: overrides.countryBase ?? "UK",
     categoryId: overrides.categoryId,
@@ -112,7 +125,7 @@ export function inferPreferencesFromPrompt(
     features,
     ctaGoal,
     keyMessages: overrides.keyMessages,
-    customPrompt: overrides.customPrompt ?? trimmed,
+    customPrompt: fullPrompt ? clip(fullPrompt, CUSTOM_PROMPT_MAX) : undefined,
     referenceUrl: overrides.referenceUrl,
     referenceScreenshots: overrides.referenceScreenshots ?? [],
     deployment: {
