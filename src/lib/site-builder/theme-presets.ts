@@ -221,3 +221,38 @@ export function resolveSiteTheme(preferences: SitePreferences): SitePlanTheme {
     googleFontsUrl: fontPack.googleFontsUrl,
   };
 }
+
+/** Map a BrandSystem into SitePlanTheme tokens for the renderer. */
+export function themeFromBrand(
+  brand: import("@/types/site-builder").BrandSystem,
+  fallbackPreset: SiteThemePreset = "custom"
+): SitePlanTheme {
+  const fontPack = getFontPack(brand.fontPackId);
+  return {
+    presetId: fallbackPreset === "custom" ? "custom" : fallbackPreset,
+    primaryColor: normalizeHex(brand.primary, "#3867FF"),
+    accentColor: normalizeHex(brand.secondary, "#FFD166"),
+    backgroundColor: normalizeHex(brand.background, "#FFFFFF"),
+    fontStyle: `${brand.style} · ${brand.toneOfVoice}`,
+    styleNotes: `${brand.style} brand · ${brand.animation} motion · ${brand.imageStyle} imagery`,
+    fontFamily: brand.font.includes(",") ? brand.font : `"${brand.font}", system-ui, sans-serif`,
+    headingFont: brand.headingFont
+      ? brand.headingFont.includes(",")
+        ? brand.headingFont
+        : `"${brand.headingFont}", Georgia, serif`
+      : fontPack.headingFont,
+    googleFontsUrl: brand.googleFontsUrl ?? fontPack.googleFontsUrl,
+    buttonRadius: brand.buttonRadius,
+    animation: brand.animation,
+    imageStyle: brand.imageStyle,
+    spacingScale: brand.spacingScale,
+  };
+}
+
+/** Prefer brand system on preferences when present. */
+export function resolveSiteThemeWithBrand(preferences: SitePreferences): SitePlanTheme {
+  if (preferences.brandSystem) {
+    return themeFromBrand(preferences.brandSystem, preferences.themePreset);
+  }
+  return resolveSiteTheme(preferences);
+}

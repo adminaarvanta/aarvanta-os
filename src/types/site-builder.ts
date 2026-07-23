@@ -210,17 +210,90 @@ export type SiteDeploymentConfig = {
   ec2: SiteEc2Config;
 };
 
+/** Structured business understanding from the Business Intelligence agent. */
+export type BusinessProfile = {
+  industry: string;
+  subcategory: string;
+  audience: string[];
+  location: string;
+  pricing: "Budget" | "Medium" | "Premium" | "Luxury";
+  brandTone: string;
+  primaryGoal: string;
+  secondaryGoals: string[];
+};
+
+/** Coherent design system from the Brand Intelligence agent. */
+export type BrandSystem = {
+  primary: string;
+  secondary: string;
+  background: string;
+  font: string;
+  headingFont?: string;
+  fontPackId: SiteFontPackId;
+  buttonRadius: string;
+  style: string;
+  animation: "Minimal" | "Subtle" | "Expressive";
+  imageStyle: string;
+  spacingScale: "Compact" | "Comfortable" | "Airy";
+  iconSet: string;
+  toneOfVoice: string;
+  googleFontsUrl?: string;
+};
+
+/** Page candidate with confidence — only include=true pages are generated. */
+export type PagePlanCandidate = {
+  slug: SitePageOption | string;
+  title: string;
+  purpose: string;
+  confidence: number;
+  include: boolean;
+};
+
+export type SiteImagePlan = {
+  subject: string;
+  aspect: "16:9" | "4:3" | "1:1" | "3:4" | "9:16";
+  style: string;
+  keywords: string[];
+};
+
+export type SiteAssetRef = {
+  id: string;
+  kind: "image" | "logo" | "icon";
+  url: string;
+  alt?: string;
+  sectionId?: string;
+};
+
+/** Default confidence threshold — pages below this are excluded unless forced. */
+export const PAGE_CONFIDENCE_THRESHOLD = 70;
+
+export type SiteGenerationStage =
+  | "business"
+  | "brand"
+  | "pages"
+  | "layout"
+  | "content"
+  | "media"
+  | "done";
+
+export type SiteGenerationProgress = {
+  stage: SiteGenerationStage;
+  percent: number;
+  message: string;
+  updatedAt: string;
+};
+
 export type SitePreferences = {
   businessName: string;
   businessIdea: string;
   targetAudience?: string;
   countryBase: string;
-  /** Required before generate — application category. */
-  categoryId: SiteCategoryId;
+  /** Optional — application category (ARIA path may infer). */
+  categoryId?: SiteCategoryId;
   /** When categoryId is custom — user-written category label. */
   customCategoryLabel?: string;
-  /** Required before generate — template within the category. */
-  templateId: string;
+  /** Optional — template prior within the category (ARIA path may pick default). */
+  templateId?: string;
   tone: SiteTone;
   siteType: SiteType;
   designStyle: SiteDesignStyle;
@@ -236,12 +309,23 @@ export type SitePreferences = {
   referenceUrl?: string;
   referenceScreenshots?: SiteReferenceScreenshot[];
   deployment: SiteDeploymentConfig;
+  /** Cached business intelligence from last run / draft. */
+  businessProfile?: BusinessProfile;
+  /** Cached brand system from last run / draft. */
+  brandSystem?: BrandSystem;
+  /** Page confidence proposals (user can toggle include). */
+  pageCandidates?: PagePlanCandidate[];
+  /** Min confidence to auto-include pages (default 70). */
+  pageConfidenceThreshold?: number;
 };
 
 export type SiteBlock = {
   id: string;
   type: SiteBlockType | string;
+  /** Design-system variant — defaults to "default". */
+  variantId?: string;
   props: Record<string, unknown>;
+  imagePlan?: SiteImagePlan;
 };
 
 export type GeneratedSitePage = {
@@ -260,6 +344,11 @@ export type GeneratedSite = {
   pages: GeneratedSitePage[];
   categoryId?: SiteCategoryId;
   templateId?: string;
+  business?: BusinessProfile;
+  brand?: BrandSystem;
+  assets?: SiteAssetRef[];
+  /** Blueprint schema version. */
+  version?: number;
   generatedAt: string;
 };
 
@@ -267,12 +356,16 @@ export type SitePlanSection = {
   type: string;
   label: string;
   description: string;
+  variantId?: string;
+  imagePlan?: SiteImagePlan;
 };
 
 export type SitePlanPage = {
   slug: string;
   title: string;
   purpose: string;
+  confidence?: number;
+  include?: boolean;
   sections: SitePlanSection[];
 };
 
@@ -291,6 +384,10 @@ export type SitePlanTheme = {
   fontFamily?: string;
   headingFont?: string;
   googleFontsUrl?: string;
+  buttonRadius?: string;
+  animation?: BrandSystem["animation"];
+  imageStyle?: string;
+  spacingScale?: BrandSystem["spacingScale"];
 };
 
 export type SiteDeployNote = {
@@ -315,6 +412,10 @@ export type SitePlan = {
   navigation: SitePlanNavItem[];
   pages: SitePlanPage[];
   deployment: SitePlanDeployment;
+  business?: BusinessProfile;
+  brand?: BrandSystem;
+  pageCandidates?: PagePlanCandidate[];
+  version?: number;
 };
 
 export type SiteBuildJobStatus =
@@ -332,6 +433,8 @@ export type SiteBuildJob = TenantScope & {
   preferences: SitePreferences;
   plan?: SitePlan;
   generatedSite?: GeneratedSite;
+  /** Live generation progress for streaming UI. */
+  progress?: SiteGenerationProgress;
   usedAi?: boolean;
   error?: string;
   approvedAt?: string;

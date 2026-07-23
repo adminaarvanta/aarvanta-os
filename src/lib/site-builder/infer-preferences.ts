@@ -14,10 +14,7 @@ import {
   CUSTOM_PROMPT_MAX,
 } from "@/lib/site-builder/schemas";
 import { getThemePreset } from "@/lib/site-builder/theme-presets";
-import {
-  defaultTemplateForCategory,
-  getTemplateById,
-} from "@/lib/site-builder/templates/resolve-template";
+import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
 
 function clip(text: string, max: number): string {
   if (text.length <= max) return text;
@@ -77,20 +74,18 @@ function inferTone(prompt: string): SiteTone {
 }
 
 /**
- * Enrich preferences from a prompt AFTER category + template are chosen.
- * Does not invent category/template — those must be supplied via overrides.
+ * Enrich preferences from a prompt.
+ * Category/template are optional priors — the ARIA pipeline can infer them.
  */
 export function inferPreferencesFromPrompt(
   prompt: string,
   overrides: Partial<SitePreferences> & {
-    categoryId: SiteCategoryId;
-    templateId: string;
-  }
+    categoryId?: SiteCategoryId;
+    templateId?: string;
+  } = {}
 ): SitePreferences {
   const trimmed = prompt.trim();
-  const template =
-    getTemplateById(overrides.templateId) ??
-    defaultTemplateForCategory(overrides.categoryId);
+  const template = resolveTemplatePrior(overrides.templateId, overrides.categoryId);
 
   const siteType: SiteType = overrides.siteType ?? template.siteType;
   const themePreset: SiteThemePreset =
@@ -112,9 +107,9 @@ export function inferPreferencesFromPrompt(
     businessIdea: clip(fullIdea, BUSINESS_IDEA_MAX),
     targetAudience: overrides.targetAudience,
     countryBase: overrides.countryBase ?? "UK",
-    categoryId: overrides.categoryId,
+    categoryId: overrides.categoryId ?? template.categoryId,
     customCategoryLabel: overrides.customCategoryLabel,
-    templateId: template.id,
+    templateId: overrides.templateId ?? template.id,
     tone: overrides.tone ?? template.defaultTone ?? inferTone(trimmed),
     siteType,
     designStyle: overrides.designStyle ?? preset.designStyle,
@@ -128,6 +123,10 @@ export function inferPreferencesFromPrompt(
     customPrompt: fullPrompt ? clip(fullPrompt, CUSTOM_PROMPT_MAX) : undefined,
     referenceUrl: overrides.referenceUrl,
     referenceScreenshots: overrides.referenceScreenshots ?? [],
+    businessProfile: overrides.businessProfile,
+    brandSystem: overrides.brandSystem,
+    pageCandidates: overrides.pageCandidates,
+    pageConfidenceThreshold: overrides.pageConfidenceThreshold,
     deployment: {
       ...DEFAULT_DEPLOYMENT,
       ...(overrides.deployment ?? {}),

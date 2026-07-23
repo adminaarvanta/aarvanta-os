@@ -8,8 +8,10 @@ import {
   fetchCategoryImages,
   imageAt,
 } from "@/lib/site-builder/media/unsplash";
-import { requireTemplate } from "@/lib/site-builder/templates/resolve-template";
-import { resolveSiteTheme } from "@/lib/site-builder/theme-presets";
+import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
+import {
+  resolveSiteThemeWithBrand,
+} from "@/lib/site-builder/theme-presets";
 import type {
   GeneratedSite,
   GeneratedSitePage,
@@ -435,26 +437,41 @@ async function heuristicGenerate(
   preferences: SitePreferences
 ): Promise<GeneratedSite> {
   blockSeq = 0;
-  const template = requireTemplate(preferences.templateId);
+  const template = resolveTemplatePrior(
+    preferences.templateId,
+    preferences.categoryId
+  );
   const brief = buildContentBrief(preferences);
-  const theme = resolveSiteTheme(preferences);
+  const theme = resolveSiteThemeWithBrand(preferences);
   const images = await fetchCategoryImages(template.categoryId, brief.imageKeywords, 12);
 
-  const pageSlugs = preferences.pages.length
-    ? preferences.pages
-    : (Object.keys(template.sectionsByPage) as typeof preferences.pages);
+  const pageSlugs = plan.pages.length
+    ? plan.pages.map((p) => p.slug)
+    : preferences.pages.length
+      ? preferences.pages
+      : Object.keys(template.sectionsByPage);
 
   const pages = pageSlugs.map((slug) => {
+    const planPage = plan.pages.find((p) => p.slug === slug);
     const recipes =
-      template.sectionsByPage[slug] ??
-      plan.pages.find((p) => p.slug === slug)?.sections.map((s) => ({
+      planPage?.sections.map((s) => ({
         type: s.type as SiteBlockType,
         label: s.label,
         description: s.description,
       })) ??
+      template.sectionsByPage[slug] ??
       [{ type: "rich_text" as const, label: titleCase(slug), description: brief.subheadline }];
 
-    return buildPageFromRecipes(slug, recipes, brief, preferences, template, images);
+    const page = buildPageFromRecipes(slug, recipes, brief, preferences, template, images);
+    return {
+      ...page,
+      title: planPage?.title ?? page.title,
+      blocks: page.blocks.map((b, i) => ({
+        ...b,
+        variantId: planPage?.sections[i]?.variantId ?? b.variantId ?? "default",
+        imagePlan: planPage?.sections[i]?.imagePlan,
+      })),
+    };
   });
 
   return {
@@ -470,11 +487,18 @@ async function heuristicGenerate(
       fontFamily: theme.fontFamily,
       headingFont: theme.headingFont,
       googleFontsUrl: theme.googleFontsUrl,
+      buttonRadius: theme.buttonRadius ?? plan.theme.buttonRadius,
+      animation: theme.animation ?? plan.theme.animation,
+      imageStyle: theme.imageStyle ?? plan.theme.imageStyle,
+      spacingScale: theme.spacingScale ?? plan.theme.spacingScale,
     },
     navigation: pages.map((p) => ({ label: p.title, slug: p.slug })),
     pages,
-    categoryId: preferences.categoryId,
-    templateId: preferences.templateId,
+    categoryId: preferences.categoryId ?? template.categoryId,
+    templateId: preferences.templateId ?? template.id,
+    business: preferences.businessProfile ?? plan.business,
+    brand: preferences.brandSystem ?? plan.brand,
+    version: 1,
     generatedAt: crmNow(),
   };
 }
@@ -491,7 +515,10 @@ export async function generateSiteFromPlan(
 
   try {
     const brief = buildContentBrief(preferences);
-    const template = requireTemplate(preferences.templateId);
+    const template = resolveTemplatePrior(
+      preferences.templateId,
+      preferences.categoryId
+    );
     const aiSite = await completeJson<GeneratedSite>({
       system: `You are Build OS, an expert website copywriter.
 Return JSON for a complete multi-page marketing website.
@@ -511,6 +538,8 @@ CRITICAL RULES:
           customPrompt: preferences.customPrompt,
           categoryId: preferences.categoryId,
           templateId: preferences.templateId,
+          business: preferences.businessProfile ?? plan.business,
+          brand: preferences.brandSystem ?? plan.brand,
           entities: brief.entities,
         },
         skeleton: sampleSite,
@@ -520,10 +549,13 @@ CRITICAL RULES:
 
     const merged = preferSampleFilledSite(sampleSite, {
       ...aiSite,
-      categoryId: preferences.categoryId,
-      templateId: preferences.templateId,
+      categoryId: preferences.categoryId ?? template.categoryId,
+      templateId: preferences.templateId ?? template.id,
       theme: sampleSite.theme,
       navigation: sampleSite.navigation,
+      business: sampleSite.business,
+      brand: sampleSite.brand,
+      version: 1,
     });
 
     return { site: merged, usedAi: true };

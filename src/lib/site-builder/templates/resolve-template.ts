@@ -33,3 +33,22 @@ export function defaultTemplateForCategory(
   }
   return list[0];
 }
+
+/** Resolve an optional template prior for the ARIA pipeline (never throws). */
+export function resolveTemplatePrior(
+  templateId?: string,
+  categoryId?: SiteCategoryId
+): SiteTemplateDefinition {
+  if (templateId) {
+    const tpl = getTemplateById(templateId);
+    if (tpl) return tpl;
+  }
+  if (categoryId) {
+    try {
+      return defaultTemplateForCategory(categoryId);
+    } catch {
+      /* fall through */
+    }
+  }
+  return SITE_TEMPLATES[0]!;
+}

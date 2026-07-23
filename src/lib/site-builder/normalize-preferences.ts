@@ -22,6 +22,10 @@ export function normalizeSitePreferences(
     customTheme,
     referenceUrl: data.referenceUrl || undefined,
     referenceScreenshots: data.referenceScreenshots ?? [],
+    businessProfile: data.businessProfile,
+    brandSystem: data.brandSystem,
+    pageCandidates: data.pageCandidates,
+    pageConfidenceThreshold: data.pageConfidenceThreshold,
     deployment: {
       hostingProvider: "aws_ec2",
       domain: {

@@ -2,7 +2,7 @@ import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
 import { resolveSiteTheme } from "@/lib/site-builder/theme-presets";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
-import { requireTemplate } from "@/lib/site-builder/templates/resolve-template";
+import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
 import type { SitePlan, SitePreferences } from "@/types/site-builder";
 
 const PAGE_LABELS: Record<string, string> = {
@@ -27,7 +27,10 @@ function slugify(name: string): string {
 }
 
 function heuristicPlan(preferences: SitePreferences): SitePlan {
-  const template = requireTemplate(preferences.templateId);
+  const template = resolveTemplatePrior(
+    preferences.templateId,
+    preferences.categoryId
+  );
   const theme = resolveSiteTheme(preferences);
   const slug = slugify(preferences.businessName) || "site";
   const pages = preferences.pages.map((pageKey) => {
@@ -86,7 +89,10 @@ export async function planSiteFromPreferences(
   }
 
   try {
-    const template = requireTemplate(preferences.templateId);
+    const template = resolveTemplatePrior(
+      preferences.templateId,
+      preferences.categoryId
+    );
     const ai = await completeJson<{
       summary?: string;
       styleNotes?: string;

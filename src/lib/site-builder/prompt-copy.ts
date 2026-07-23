@@ -91,13 +91,14 @@ export function extractPromptEntities(preferences: SitePreferences): PromptEntit
     preferences.customPrompt ||
     preferences.businessIdea ||
     preferences.businessName;
+  const categoryId = preferences.categoryId ?? "professional";
   const seed = hashSeed(
-    `${preferences.templateId}|${preferences.categoryId}|${idea}|${preferences.businessName}`
+    `${preferences.templateId ?? "auto"}|${categoryId}|${idea}|${preferences.businessName}`
   );
   const phrases = splitPhrases(idea);
   const nouns = extractNouns(idea);
   const name = preferences.businessName;
-  const flavor = categoryFlavor(preferences.categoryId, preferences.customCategoryLabel);
+  const flavor = categoryFlavor(categoryId, preferences.customCategoryLabel);
   const audience =
     preferences.targetAudience ||
     (nouns[0] ? `${titleize(nouns[0])} customers` : `people who need a better ${flavor}`);
@@ -228,7 +229,10 @@ export function promptHeadline(
   if (phrase && phrase.length >= 12 && phrase.length <= 90) {
     return phrase.charAt(0).toUpperCase() + phrase.slice(1);
   }
-  const n0 = titleize(entities.nouns[0] ?? categoryFlavor(preferences.categoryId, preferences.customCategoryLabel));
+  const n0 = titleize(
+    entities.nouns[0] ??
+      categoryFlavor(preferences.categoryId ?? "professional", preferences.customCategoryLabel)
+  );
   switch (preferences.categoryId) {
     case "ecommerce":
       return `${name} — ${n0} worth coming back for`;

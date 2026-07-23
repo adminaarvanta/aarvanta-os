@@ -1,6 +1,6 @@
 import type { SiteCategoryId, SitePreferences, SiteTemplateDefinition } from "@/types/site-builder";
 import { getCategoryById } from "@/lib/site-builder/templates/categories";
-import { getTemplateById } from "@/lib/site-builder/templates/catalog";
+import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
 import {
   extractPromptEntities,
   promptHeadline,
@@ -39,20 +39,17 @@ function ctaLabels(prefs: SitePreferences): { primary: string; secondary: string
 }
 
 export function buildContentBrief(preferences: SitePreferences): ContentBrief {
-  const template =
-    getTemplateById(preferences.templateId) ??
-    ({
-      id: preferences.templateId,
-      name: "Custom",
-      categoryId: preferences.categoryId,
-      imageKeywords: [preferences.customCategoryLabel || preferences.categoryId],
-    } as SiteTemplateDefinition);
+  const template: SiteTemplateDefinition = resolveTemplatePrior(
+    preferences.templateId,
+    preferences.categoryId
+  );
 
-  const category = getCategoryById(preferences.categoryId);
+  const categoryId = preferences.categoryId ?? template.categoryId;
+  const category = getCategoryById(categoryId);
   const categoryLabel =
-    preferences.categoryId === "custom" && preferences.customCategoryLabel
+    categoryId === "custom" && preferences.customCategoryLabel
       ? preferences.customCategoryLabel
-      : category?.label ?? preferences.categoryId;
+      : category?.label ?? categoryId;
 
   const entities = extractPromptEntities(preferences);
   const { primary, secondary } = ctaLabels(preferences);
@@ -65,7 +62,7 @@ export function buildContentBrief(preferences: SitePreferences): ContentBrief {
   ].filter(Boolean);
 
   return {
-    categoryId: preferences.categoryId,
+    categoryId,
     templateId: template.id,
     templateName: template.name,
     categoryLabel,

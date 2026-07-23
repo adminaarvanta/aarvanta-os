@@ -119,14 +119,67 @@ export const siteDeploymentConfigSchema = z.object({
 export const BUSINESS_IDEA_MAX = 4000;
 export const CUSTOM_PROMPT_MAX = 8000;
 
+export const businessProfileSchema = z.object({
+  industry: z.string().min(1).max(80),
+  subcategory: z.string().min(1).max(80),
+  audience: z.array(z.string().min(1).max(60)).min(1).max(8),
+  location: z.string().min(1).max(80),
+  pricing: z.enum(["Budget", "Medium", "Premium", "Luxury"]),
+  brandTone: z.string().min(1).max(60),
+  primaryGoal: z.string().min(1).max(80),
+  secondaryGoals: z.array(z.string().min(1).max(80)).max(6),
+});
+
+export const brandSystemSchema = z.object({
+  primary: hexColorSchema,
+  secondary: hexColorSchema,
+  background: hexColorSchema,
+  font: z.string().min(1).max(60),
+  headingFont: z.string().min(1).max(60).optional(),
+  fontPackId: siteFontPackIdSchema,
+  buttonRadius: z.string().min(1).max(12),
+  style: z.string().min(1).max(60),
+  animation: z.enum(["Minimal", "Subtle", "Expressive"]),
+  imageStyle: z.string().min(1).max(80),
+  spacingScale: z.enum(["Compact", "Comfortable", "Airy"]),
+  iconSet: z.string().min(1).max(60),
+  toneOfVoice: z.string().min(1).max(120),
+  googleFontsUrl: z.string().max(500).optional(),
+});
+
+export const pagePlanCandidateSchema = z.object({
+  slug: z.string().min(1).max(40),
+  title: z.string().min(1).max(80),
+  purpose: z.string().min(1).max(240),
+  confidence: z.number().min(0).max(100),
+  include: z.boolean(),
+});
+
+export const siteImagePlanSchema = z.object({
+  subject: z.string().min(1).max(200),
+  aspect: z.enum(["16:9", "4:3", "1:1", "3:4", "9:16"]),
+  style: z.string().min(1).max(80),
+  keywords: z.array(z.string()).max(8),
+});
+
+export const siteGenerationStageSchema = z.enum([
+  "business",
+  "brand",
+  "pages",
+  "layout",
+  "content",
+  "media",
+  "done",
+]);
+
 export const sitePreferencesSchema = z.object({
   businessName: z.string().min(2).max(80),
   businessIdea: z.string().min(10).max(BUSINESS_IDEA_MAX),
   targetAudience: z.string().max(300).optional(),
   countryBase: z.string().min(2).max(8).default("UK"),
-  categoryId: siteCategoryIdSchema,
+  categoryId: siteCategoryIdSchema.optional(),
   customCategoryLabel: z.string().min(2).max(80).optional(),
-  templateId: z.string().min(2).max(80),
+  templateId: z.string().min(2).max(80).optional(),
   tone: siteToneSchema.default("professional"),
   siteType: siteTypeSchema.default("business"),
   designStyle: siteDesignStyleSchema.default("modern"),
@@ -141,6 +194,10 @@ export const sitePreferencesSchema = z.object({
   referenceUrl: z.union([z.string().url(), z.literal("")]).optional(),
   referenceScreenshots: z.array(siteReferenceScreenshotSchema).max(3).optional(),
   deployment: siteDeploymentConfigSchema,
+  businessProfile: businessProfileSchema.optional(),
+  brandSystem: brandSystemSchema.optional(),
+  pageCandidates: z.array(pagePlanCandidateSchema).max(20).optional(),
+  pageConfidenceThreshold: z.number().min(0).max(100).optional(),
 });
 
 /** Looser schema for auto-saved drafts (user may not have finished the brief yet). */
@@ -161,12 +218,16 @@ export const sitePlanSectionSchema = z.object({
   type: z.string(),
   label: z.string(),
   description: z.string(),
+  variantId: z.string().optional(),
+  imagePlan: siteImagePlanSchema.optional(),
 });
 
 export const sitePlanPageSchema = z.object({
   slug: z.string(),
   title: z.string(),
   purpose: z.string(),
+  confidence: z.number().min(0).max(100).optional(),
+  include: z.boolean().optional(),
   sections: z.array(sitePlanSectionSchema),
 });
 
@@ -181,6 +242,13 @@ export const sitePlanSchema = z.object({
     backgroundColor: z.string(),
     fontStyle: z.string(),
     styleNotes: z.string(),
+    fontFamily: z.string().optional(),
+    headingFont: z.string().optional(),
+    googleFontsUrl: z.string().optional(),
+    buttonRadius: z.string().optional(),
+    animation: z.enum(["Minimal", "Subtle", "Expressive"]).optional(),
+    imageStyle: z.string().optional(),
+    spacingScale: z.enum(["Compact", "Comfortable", "Airy"]).optional(),
   }),
   navigation: z.array(
     z.object({
@@ -202,4 +270,8 @@ export const sitePlanSchema = z.object({
       })
     ),
   }),
+  business: businessProfileSchema.optional(),
+  brand: brandSystemSchema.optional(),
+  pageCandidates: z.array(pagePlanCandidateSchema).optional(),
+  version: z.number().optional(),
 });
