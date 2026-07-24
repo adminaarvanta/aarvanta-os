@@ -246,6 +246,7 @@ export function themeFromBrand(
     animation: brand.animation,
     imageStyle: brand.imageStyle,
     spacingScale: brand.spacingScale,
+    navStyle: brand.navStyle,
   };
 }
 

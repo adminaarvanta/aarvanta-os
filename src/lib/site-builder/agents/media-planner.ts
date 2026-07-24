@@ -49,6 +49,7 @@ function planForBlock(
 
 /**
  * Media planner — attaches image plans and resolves URLs via Unsplash/picsum.
+ * Always rewrites nested product/gallery image URLs from the industry-matched pool.
  */
 export async function runMediaPlanner(
   site: GeneratedSite,
@@ -63,9 +64,10 @@ export async function runMediaPlanner(
     business.industry,
     business.subcategory,
     brand.imageStyle,
-    ...(preferences.businessIdea.split(/\s+/).slice(0, 4) || []),
+    preferences.businessName,
+    ...preferences.businessIdea.split(/\s+/).filter(Boolean).slice(0, 8),
   ];
-  const images = await fetchCategoryImages(categoryId, keywords, 16);
+  const images = await fetchCategoryImages(categoryId, keywords, 24);
   const assets: SiteAssetRef[] = [];
   let imgIndex = 0;
 
@@ -86,9 +88,7 @@ export async function runMediaPlanner(
       if (!needsImage) return block;
 
       const imagePlan = block.imagePlan ?? planForBlock(String(block.type), brand, business);
-      const url =
-        (typeof block.props.imageUrl === "string" && block.props.imageUrl) ||
-        imageAt(images, imgIndex, `${site.slug}-${block.id}`);
+      const url = imageAt(images, imgIndex, `${site.slug}-${block.id}`);
       imgIndex += 1;
 
       const assetId = `asset_${block.id}`;
@@ -100,13 +100,39 @@ export async function runMediaPlanner(
         sectionId: block.id,
       });
 
+      const props: Record<string, unknown> = { ...block.props, imageUrl: url };
+
+      if (block.type === "products" && Array.isArray(props.products)) {
+        const products = props.products as Array<Record<string, unknown>>;
+        props.products = products.map((product, i) => {
+          const nextUrl = imageAt(images, imgIndex + i, `${site.slug}-${block.id}-p-${i}`);
+          return {
+            ...product,
+            imageUrl: nextUrl,
+          };
+        });
+        imgIndex += products.length;
+      }
+
+      if (
+        (block.type === "gallery" || block.type === "portfolio_grid") &&
+        Array.isArray(props.items)
+      ) {
+        const items = props.items as Array<Record<string, unknown>>;
+        props.items = items.map((item, i) => {
+          const nextUrl = imageAt(images, imgIndex + i, `${site.slug}-${block.id}-i-${i}`);
+          return {
+            ...item,
+            imageUrl: nextUrl,
+          };
+        });
+        imgIndex += items.length;
+      }
+
       return {
         ...block,
         imagePlan,
-        props: {
-          ...block.props,
-          imageUrl: url,
-        },
+        props,
       };
     }),
   }));

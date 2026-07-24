@@ -173,14 +173,14 @@ export function BuildStudioLayout({
             Preview
           </span>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-5">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 sm:p-5">
           {site ? (
             <div
               className={cn(
-                "mx-auto overflow-hidden rounded-xl border border-border shadow-lg transition-all",
-                device === "desktop" && "max-w-5xl",
-                device === "tablet" && "max-w-2xl",
-                device === "mobile" && "max-w-sm"
+                "mx-auto min-w-0 overflow-hidden rounded-xl border border-border shadow-lg transition-all",
+                device === "desktop" && "w-full max-w-5xl",
+                device === "tablet" && "w-full max-w-[768px]",
+                device === "mobile" && "w-full max-w-[390px]"
               )}
             >
               <GeneratedSitePreview site={site} />

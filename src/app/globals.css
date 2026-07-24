@@ -308,3 +308,16 @@ font {
   background: transparent !important;
   box-shadow: none !important;
 }
+
+/* Generated site preview — prevent horizontal bleed inside device frames */
+.site-preview {
+  container-type: inline-size;
+  max-width: 100%;
+}
+
+.site-preview img,
+.site-preview video {
+  max-width: 100%;
+  height: auto;
+}
+

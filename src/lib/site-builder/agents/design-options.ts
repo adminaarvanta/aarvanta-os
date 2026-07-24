@@ -26,7 +26,85 @@ type DesignDirection = {
   homeSectionTypes: Array<{ type: string; label: string; description: string; variantId?: string }>;
 };
 
-const DIRECTIONS: DesignDirection[] = [
+const STORE_DIRECTIONS: DesignDirection[] = [
+  {
+    id: "design_store_immersive",
+    name: "Store Immersive",
+    tagline: "Lifestyle hero + featured picks",
+    description: "Full-bleed product photography, social proof, and a strong shop CTA.",
+    styleTags: ["Commerce", "Lifestyle", "Bold"],
+    heroVariant: "fullBleed",
+    brandOverrides: {
+      style: "Bold",
+      animation: "Expressive",
+      spacingScale: "Compact",
+      buttonRadius: "9999",
+      imageStyle: "Lifestyle",
+      fontPackId: "tech",
+      navStyle: "store",
+    },
+    homeSectionTypes: [
+      { type: "hero", label: "Hero", description: "Immersive shop opening", variantId: "fullBleed" },
+      { type: "stats", label: "Proof", description: "Trust metrics" },
+      { type: "products", label: "Featured", description: "Top products", variantId: "featured" },
+      { type: "features", label: "Why us", description: "Buying reasons", variantId: "cards" },
+      { type: "testimonials", label: "Reviews", description: "Customer voices" },
+      { type: "cta_banner", label: "CTA", description: "Shop CTA" },
+    ],
+  },
+  {
+    id: "design_store_grid",
+    name: "Catalog Forward",
+    tagline: "Clean merchandising grid",
+    description: "Split hero, category storytelling, and a product-first homepage.",
+    styleTags: ["Commerce", "Grid", "Clear"],
+    heroVariant: "split",
+    brandOverrides: {
+      style: "Modern",
+      animation: "Subtle",
+      spacingScale: "Comfortable",
+      buttonRadius: "12",
+      imageStyle: "Editorial",
+      fontPackId: "modern_sans",
+      navStyle: "underline",
+    },
+    homeSectionTypes: [
+      { type: "hero", label: "Hero", description: "Split value prop", variantId: "split" },
+      { type: "logo_cloud", label: "As seen in", description: "Press / partners" },
+      { type: "products", label: "Bestsellers", description: "Merch grid", variantId: "featured" },
+      { type: "feature_tabs", label: "Collections", description: "How to shop" },
+      { type: "testimonials", label: "Reviews", description: "Quotes" },
+      { type: "newsletter", label: "List", description: "Email capture" },
+    ],
+  },
+  {
+    id: "design_store_boutique",
+    name: "Boutique Editorial",
+    tagline: "Quiet luxury storefront",
+    description: "Centered typography, story-led about, gallery mood, refined product cards.",
+    styleTags: ["Boutique", "Editorial", "Premium"],
+    heroVariant: "centered",
+    brandOverrides: {
+      style: "Minimal",
+      animation: "Minimal",
+      spacingScale: "Airy",
+      buttonRadius: "4",
+      imageStyle: "Editorial",
+      fontPackId: "luxury_serif",
+      navStyle: "centered",
+    },
+    homeSectionTypes: [
+      { type: "hero", label: "Hero", description: "Centered statement", variantId: "centered" },
+      { type: "about_split", label: "Story", description: "Brand narrative" },
+      { type: "gallery", label: "Lookbook", description: "Visual mood" },
+      { type: "products", label: "Edit", description: "Curated picks", variantId: "list" },
+      { type: "faq_accordion", label: "FAQ", description: "Shipping answers" },
+      { type: "contact", label: "Contact", description: "Get in touch" },
+    ],
+  },
+];
+
+const SERVICE_DIRECTIONS: DesignDirection[] = [
   {
     id: "design_bold_immersive",
     name: "Bold Immersive",
@@ -41,12 +119,12 @@ const DIRECTIONS: DesignDirection[] = [
       buttonRadius: "9999",
       imageStyle: "Lifestyle",
       fontPackId: "tech",
+      navStyle: "pills",
     },
     homeSectionTypes: [
       { type: "hero", label: "Hero", description: "Immersive opening", variantId: "fullBleed" },
       { type: "stats", label: "Proof", description: "Key metrics" },
-      { type: "features", label: "Highlights", description: "Why choose us" },
-      { type: "products", label: "Featured", description: "Top offerings" },
+      { type: "features", label: "Highlights", description: "Why choose us", variantId: "cards" },
       { type: "testimonials", label: "Stories", description: "Customer voices" },
       { type: "cta_banner", label: "CTA", description: "Final conversion" },
     ],
@@ -65,11 +143,12 @@ const DIRECTIONS: DesignDirection[] = [
       buttonRadius: "12",
       imageStyle: "Editorial",
       fontPackId: "modern_sans",
+      navStyle: "underline",
     },
     homeSectionTypes: [
       { type: "hero", label: "Hero", description: "Split value prop", variantId: "split" },
       { type: "logo_cloud", label: "Trusted by", description: "Social proof logos" },
-      { type: "features", label: "Benefits", description: "Core differentiators" },
+      { type: "features", label: "Benefits", description: "Core differentiators", variantId: "row" },
       { type: "feature_tabs", label: "How it works", description: "Tabbed detail" },
       { type: "testimonials", label: "Reviews", description: "Quotes" },
       { type: "newsletter", label: "Stay close", description: "Email capture" },
@@ -90,6 +169,7 @@ const DIRECTIONS: DesignDirection[] = [
       buttonRadius: "4",
       imageStyle: "Editorial",
       fontPackId: "luxury_serif",
+      navStyle: "minimal",
     },
     homeSectionTypes: [
       { type: "hero", label: "Hero", description: "Centered statement", variantId: "centered" },
@@ -102,10 +182,24 @@ const DIRECTIONS: DesignDirection[] = [
   },
 ];
 
+function directionsFor(
+  business: BusinessProfile,
+  prefs: SitePreferences
+): DesignDirection[] {
+  const store =
+    prefs.features.includes("ecommerce") ||
+    prefs.categoryId === "ecommerce" ||
+    prefs.ctaGoal === "buy" ||
+    /(sell|retail|shop|store)/i.test(`${business.primaryGoal} ${business.industry}`);
+  return store ? STORE_DIRECTIONS : SERVICE_DIRECTIONS;
+}
+
 const PALETTES: Array<Pick<BrandSystem, "primary" | "secondary" | "background">> = [
   { primary: "#EA580C", secondary: "#FDBA74", background: "#140E0A" },
   { primary: "#2563EB", secondary: "#60A5FA", background: "#0B1220" },
   { primary: "#1A2B48", secondary: "#3D6B9F", background: "#FFFFFF" },
+  { primary: "#B8965D", secondary: "#C9AA72", background: "#040608" },
+  { primary: "#0F766E", secondary: "#5EEAD4", background: "#042F2E" },
 ];
 
 function baseBrand(business: BusinessProfile, prefs: SitePreferences): BrandSystem {
@@ -220,7 +314,27 @@ function fillHomeBlocks(
             items: ["Northstar", "Harbor", "Lumen", "Kindred"].map((label) => ({ label })),
           },
         };
-      case "products":
+      case "products": {
+        const catalogItems = [0, 1, 2, 3].map((i) => ({
+          id: `${optionId}_p_${i}`,
+          name: `${business.subcategory} ${i + 1}`,
+          price: `£${(19 + i * 6).toFixed(2)}`,
+          description: prefs.businessIdea.slice(0, 80),
+          category: business.subcategory.split(/\s+/)[0] || "Shop",
+          imageUrl: imageAt(images, index + i + 1, `${optionId}-p-${i}`),
+        }));
+        return {
+          id,
+          type: "products",
+          variantId: section.variantId ?? "featured",
+          props: {
+            title: section.label,
+            subtitle: `Picks for ${business.audience[0] ?? "your customers"}`,
+            products: catalogItems,
+            categories: Array.from(new Set(catalogItems.map((p) => p.category))),
+          },
+        };
+      }
       case "gallery":
       case "portfolio_grid":
         return {
@@ -360,7 +474,8 @@ function heuristicOptions(
   images: string[]
 ): SiteDesignOption[] {
   const base = baseBrand(business, prefs);
-  return DIRECTIONS.map((direction, i) => {
+  const directions = directionsFor(business, prefs);
+  return directions.map((direction, i) => {
     const brand = applyDirectionBrand(base, direction, i);
     const homeSections: SitePlanSection[] = direction.homeSectionTypes.map((s) => ({
       type: s.type,
@@ -402,7 +517,12 @@ export async function generateDesignOptions(
 
   const images = await fetchCategoryImages(
     prefs.categoryId ?? "professional",
-    [business.industry, business.subcategory, prefs.businessName],
+    [
+      business.industry,
+      business.subcategory,
+      prefs.businessName,
+      ...prefs.businessIdea.split(/\s+/).slice(0, 6),
+    ],
     12
   );
 
@@ -424,12 +544,13 @@ export async function generateDesignOptions(
       }>({
         system: `You name and describe 3 distinct website design directions for a business.
 Return JSON { options: [{ id, name, tagline, description, styleTags, headline, subheadline }] }.
-Use ids: design_bold_immersive, design_split_modern, design_editorial_calm.
+Use ids matching the provided option ids.
 Make names/taglines specific to the business — not generic.`,
         user: JSON.stringify({
           businessName: prefs.businessName,
           businessIdea: prefs.businessIdea,
           business,
+          optionIds: options.map((o) => o.id),
         }),
         temperature: 0.6,
       });

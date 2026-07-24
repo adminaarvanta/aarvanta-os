@@ -145,6 +145,7 @@ export const brandSystemSchema = z.object({
   iconSet: z.string().min(1).max(60),
   toneOfVoice: z.string().min(1).max(120),
   googleFontsUrl: z.string().max(500).optional(),
+  navStyle: z.enum(["pills", "underline", "centered", "minimal", "store"]).optional(),
 });
 
 export const pagePlanCandidateSchema = z.object({
@@ -252,6 +253,7 @@ export const sitePlanSchema = z.object({
     animation: z.enum(["Minimal", "Subtle", "Expressive"]).optional(),
     imageStyle: z.string().optional(),
     spacingScale: z.enum(["Compact", "Comfortable", "Airy"]).optional(),
+    navStyle: z.enum(["pills", "underline", "centered", "minimal", "store"]).optional(),
   }),
   navigation: z.array(
     z.object({

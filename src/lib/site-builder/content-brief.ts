@@ -54,11 +54,15 @@ export function buildContentBrief(preferences: SitePreferences): ContentBrief {
   const entities = extractPromptEntities(preferences);
   const { primary, secondary } = ctaLabels(preferences);
 
-  const ideaKeywords = entities.nouns.slice(0, 4);
+  const ideaKeywords = [
+    ...entities.nouns.slice(0, 5),
+    ...preferences.businessIdea.split(/\s+/).filter((w) => w.length > 3).slice(0, 4),
+  ];
+  // Prefer idea nouns over generic template keywords so media buckets match the business.
   const imageKeywords = [
-    ...template.imageKeywords.slice(0, 2),
     ...ideaKeywords,
     preferences.businessName,
+    ...template.imageKeywords.slice(0, 1),
   ].filter(Boolean);
 
   return {

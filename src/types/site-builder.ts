@@ -238,6 +238,8 @@ export type BrandSystem = {
   iconSet: string;
   toneOfVoice: string;
   googleFontsUrl?: string;
+  /** Site chrome / header treatment. */
+  navStyle?: "pills" | "underline" | "centered" | "minimal" | "store";
 };
 
 /** Page candidate with confidence — only include=true pages are generated. */
@@ -407,6 +409,7 @@ export type SitePlanTheme = {
   animation?: BrandSystem["animation"];
   imageStyle?: string;
   spacingScale?: BrandSystem["spacingScale"];
+  navStyle?: BrandSystem["navStyle"];
 };
 
 export type SiteDeployNote = {

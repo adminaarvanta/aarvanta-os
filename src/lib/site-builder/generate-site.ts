@@ -1,6 +1,7 @@
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
 import { crmNow } from "@/lib/data/crm-helpers";
+import { buildCatalogProducts } from "@/lib/site-builder/catalog-products";
 import { buildContentBrief, type ContentBrief } from "@/lib/site-builder/content-brief";
 import { preferSampleFilledSite } from "@/lib/site-builder/ensure-sample-data";
 import {
@@ -110,7 +111,25 @@ function fillBlock(
           })),
         },
       };
-    case "products":
+    case "products": {
+      const wantsCatalog =
+        prefs.features.includes("ecommerce") ||
+        prefs.categoryId === "ecommerce" ||
+        prefs.ctaGoal === "buy";
+      if (wantsCatalog) {
+        const catalog = buildCatalogProducts(prefs, e, (i) => img(i));
+        return {
+          id: blockId("products", recipe.label),
+          type: "products",
+          variantId: "catalog",
+          props: {
+            title: `Shop ${name}`,
+            subtitle: `Browse ${catalog.categories.join(", ").toLowerCase()} — filter and page the catalog.`,
+            categories: catalog.categories,
+            products: catalog.products,
+          },
+        };
+      }
       return {
         id: blockId("products", recipe.label),
         type: "products",
@@ -126,6 +145,7 @@ function fillBlock(
           })),
         },
       };
+    }
     case "portfolio_grid":
       return {
         id: blockId("portfolio_grid", recipe.label),
@@ -443,7 +463,7 @@ async function heuristicGenerate(
   );
   const brief = buildContentBrief(preferences);
   const theme = resolveSiteThemeWithBrand(preferences);
-  const images = await fetchCategoryImages(template.categoryId, brief.imageKeywords, 12);
+  const images = await fetchCategoryImages(template.categoryId, brief.imageKeywords, 16);
 
   const pageSlugs = plan.pages.length
     ? plan.pages.map((p) => p.slug)
@@ -466,11 +486,47 @@ async function heuristicGenerate(
     return {
       ...page,
       title: planPage?.title ?? page.title,
-      blocks: page.blocks.map((b, i) => ({
-        ...b,
-        variantId: planPage?.sections[i]?.variantId ?? b.variantId ?? "default",
-        imagePlan: planPage?.sections[i]?.imagePlan,
-      })),
+      blocks: page.blocks.map((b, i) => {
+        const sectionVariant = planPage?.sections[i]?.variantId;
+        const nextVariant =
+          sectionVariant ??
+          b.variantId ??
+          (b.type === "products" &&
+          (preferences.features.includes("ecommerce") || preferences.categoryId === "ecommerce")
+            ? "catalog"
+            : "default");
+        const nextProps =
+          b.type === "hero" && sectionVariant && sectionVariant !== "default"
+            ? {
+                ...b.props,
+                layout:
+                  sectionVariant === "fullBleed" ||
+                  sectionVariant === "split" ||
+                  sectionVariant === "centered"
+                    ? sectionVariant
+                    : b.props.layout,
+              }
+            : b.props;
+        // Home featured products stay a compact grid; catalog UX lives on Products page.
+        const homeProducts =
+          slug === "home" && b.type === "products" && nextVariant === "catalog"
+            ? {
+                ...nextProps,
+                products: Array.isArray(nextProps.products)
+                  ? (nextProps.products as unknown[]).slice(0, 4)
+                  : nextProps.products,
+              }
+            : nextProps;
+        const homeVariant =
+          slug === "home" && b.type === "products" ? "featured" : nextVariant;
+
+        return {
+          ...b,
+          variantId: homeVariant,
+          props: homeProducts,
+          imagePlan: planPage?.sections[i]?.imagePlan,
+        };
+      }),
     };
   });
 
@@ -491,8 +547,12 @@ async function heuristicGenerate(
       animation: theme.animation ?? plan.theme.animation,
       imageStyle: theme.imageStyle ?? plan.theme.imageStyle,
       spacingScale: theme.spacingScale ?? plan.theme.spacingScale,
+      navStyle: theme.navStyle ?? plan.theme.navStyle,
     },
-    navigation: pages.map((p) => ({ label: p.title, slug: p.slug })),
+    navigation: pages.map((p) => ({
+      label: p.slug === "products" ? "Shop" : p.title,
+      slug: p.slug,
+    })),
     pages,
     categoryId: preferences.categoryId ?? template.categoryId,
     templateId: preferences.templateId ?? template.id,

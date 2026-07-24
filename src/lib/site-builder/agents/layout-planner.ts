@@ -26,8 +26,33 @@ const PAGE_LABELS: Record<string, string> = {
 
 function recipesForPage(
   slug: string,
-  template: SiteTemplateDefinition
+  template: SiteTemplateDefinition,
+  preferences?: SitePreferences
 ): SiteTemplateSectionRecipe[] {
+  const ecommerce =
+    preferences?.features.includes("ecommerce") ||
+    preferences?.categoryId === "ecommerce" ||
+    preferences?.ctaGoal === "buy";
+
+  if (slug === "products" && ecommerce) {
+    return [
+      {
+        type: "hero",
+        label: "Shop hero",
+        description: "Catalog introduction",
+      },
+      {
+        type: "products",
+        label: "Catalog",
+        description: "Category filters, search, and pagination",
+      },
+      {
+        type: "faq_accordion",
+        label: "Shipping & returns",
+        description: "Shop FAQ",
+      },
+    ];
+  }
   if (template.sectionsByPage[slug]) return template.sectionsByPage[slug]!;
   if (slug === "contact") {
     return [
@@ -58,9 +83,15 @@ function heuristicLayout(
   candidates: PagePlanCandidate[],
   template: SiteTemplateDefinition,
   brand: BrandSystem,
-  homeSectionsOverride?: SitePlanSection[]
+  homeSectionsOverride?: SitePlanSection[],
+  preferences?: SitePreferences
 ): SitePlanPage[] {
   const heroVariant = pickHeroVariant(brand);
+  const ecommerce =
+    preferences?.features.includes("ecommerce") ||
+    preferences?.categoryId === "ecommerce" ||
+    preferences?.ctaGoal === "buy";
+
   return candidates
     .filter((c) => c.include)
     .map((c) => {
@@ -71,7 +102,7 @@ function heuristicLayout(
               label: s.label,
               description: s.description,
             }))
-          : recipesForPage(c.slug, template);
+          : recipesForPage(c.slug, template, preferences);
       const sections: SitePlanSection[] = recipes.map((r, i) => ({
         type: r.type,
         label: r.label,
@@ -80,8 +111,22 @@ function heuristicLayout(
           c.slug === "home" && homeSectionsOverride?.[i]?.variantId
             ? homeSectionsOverride[i]!.variantId
             : r.type === "hero"
-              ? heroVariant
-              : "default",
+              ? heroVariant === "default"
+                ? brand.style === "Bold"
+                  ? "fullBleed"
+                  : brand.style === "Minimal" || brand.style === "Luxury"
+                    ? "centered"
+                    : "split"
+                : heroVariant
+              : r.type === "products" && ecommerce
+                ? c.slug === "products"
+                  ? "catalog"
+                  : "featured"
+                : r.type === "features"
+                  ? brand.spacingScale === "Airy"
+                    ? "row"
+                    : "cards"
+                  : "default",
       }));
       return {
         slug: c.slug,
@@ -106,7 +151,8 @@ export async function runLayoutPlanner(
     candidates,
     template,
     brand,
-    homeSectionsOverride
+    homeSectionsOverride,
+    preferences
   );
   if (!isAiConfigured()) {
     return { pages: fallback, usedAi: false };

@@ -61,6 +61,13 @@ function heuristicPages(
   ]);
 
   if (/(sell|retail|shop)/i.test(business.primaryGoal)) pool.add("products");
+  if (
+    preferences.features.includes("ecommerce") ||
+    preferences.categoryId === "ecommerce" ||
+    preferences.ctaGoal === "buy"
+  ) {
+    pool.add("products");
+  }
   if (/(saas|software)/i.test(business.industry)) pool.add("pricing");
   if (/(agency|service|clinic)/i.test(business.industry)) pool.add("services");
 
@@ -70,7 +77,15 @@ function heuristicPages(
       purpose: `${slug} page`,
       baseConfidence: 50,
     };
-    const confidence = scoreForBusiness(slug, business);
+    let confidence = scoreForBusiness(slug, business);
+    if (
+      slug === "products" &&
+      (preferences.features.includes("ecommerce") ||
+        preferences.categoryId === "ecommerce" ||
+        preferences.ctaGoal === "buy")
+    ) {
+      confidence = 98;
+    }
     return {
       slug,
       title: meta.title,
@@ -85,6 +100,17 @@ function heuristicPages(
     if (c.slug === "home" || c.slug === "contact") {
       c.include = true;
       c.confidence = Math.max(c.confidence, 95);
+    }
+    if (
+      c.slug === "products" &&
+      (preferences.features.includes("ecommerce") ||
+        preferences.categoryId === "ecommerce" ||
+        preferences.ctaGoal === "buy")
+    ) {
+      c.include = true;
+      c.confidence = Math.max(c.confidence, 98);
+      c.title = "Shop";
+      c.purpose = "Product catalog with categories and filters";
     }
   }
 

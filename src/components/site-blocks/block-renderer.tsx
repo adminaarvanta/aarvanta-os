@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import type { SiteBlock, SitePlanTheme } from "@/types/site-builder";
+import { ProductCatalog } from "@/components/site-blocks/product-catalog";
 import {
   buttonRadius,
   mediaStyle,
@@ -30,8 +31,12 @@ function SectionShell({
   id?: string;
 }) {
   return (
-    <section id={id} className={`px-5 py-14 sm:px-8 sm:py-20 ${className}`} style={style}>
-      <div className="mx-auto w-full max-w-6xl">{children}</div>
+    <section
+      id={id}
+      className={`min-w-0 px-4 py-10 @sm:px-6 @sm:py-14 @md:px-8 @md:py-20 ${className}`}
+      style={style}
+    >
+      <div className="mx-auto w-full min-w-0 max-w-6xl">{children}</div>
     </section>
   );
 }
@@ -69,7 +74,7 @@ function SectionHeading({
       {eyebrow ? <Eyebrow theme={theme}>{eyebrow}</Eyebrow> : null}
       {title ? (
         <h2
-          className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl"
+          className="mt-2 text-2xl font-semibold tracking-tight @sm:text-3xl @md:text-4xl"
           style={{ color: ink.text, fontFamily: theme.headingFont }}
         >
           {title}
@@ -99,7 +104,7 @@ function PrimaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="px-6 py-3 text-sm font-semibold shadow-sm transition-transform hover:scale-[1.02]"
+      className="w-full px-6 py-3 text-sm font-semibold shadow-sm transition-transform hover:scale-[1.02] @sm:w-auto"
       style={{ backgroundColor: theme.primaryColor, color: ink.onPrimary, borderRadius: buttonRadius(theme) }}
     >
       {label}
@@ -120,7 +125,7 @@ function GhostButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border px-6 py-3 text-sm font-semibold transition-colors"
+      className="w-full rounded-full border px-6 py-3 text-sm font-semibold transition-colors @sm:w-auto"
       style={{ borderColor: ink.border, color: ink.text, background: "transparent" }}
     >
       {label}
@@ -235,7 +240,7 @@ function FeatureTabs({
         })}
       </div>
       <div
-        className="mt-6 grid items-center gap-6 rounded-3xl p-6 sm:p-8 lg:grid-cols-2"
+        className="mt-6 grid items-center gap-6 rounded-3xl p-6 @sm:p-8 @lg:grid-cols-2"
         style={{ backgroundColor: ink.surface, border: `1px solid ${ink.border}` }}
       >
         <div>
@@ -363,7 +368,7 @@ function NewsletterForm({
     <SectionShell style={{ backgroundColor: ink.surface, borderTop: `1px solid ${ink.border}` }}>
       <div className="mx-auto max-w-2xl text-center">
         <h2
-          className="text-3xl font-semibold tracking-tight sm:text-4xl"
+          className="text-3xl font-semibold tracking-tight @sm:text-4xl"
           style={{ color: ink.text, fontFamily: theme.headingFont }}
         >
           {str(block.props.title, "Stay in the loop")}
@@ -377,7 +382,7 @@ function NewsletterForm({
           </p>
         ) : (
           <>
-            <div className="mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row">
+            <div className="mx-auto mt-6 flex max-w-md flex-col gap-2 @sm:flex-row">
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -438,26 +443,29 @@ export function BlockRenderer({
 
       if (layout === "split") {
         return (
-          <section className="grid min-h-[460px] items-stretch lg:grid-cols-2">
-            <div className="flex flex-col justify-center px-5 py-14 sm:px-10 sm:py-20">
+          <section className="grid min-w-0 items-stretch @md:grid-cols-2">
+            <div className="flex flex-col justify-center px-4 py-10 @sm:px-8 @sm:py-14 @md:px-10 @md:py-20">
               <Eyebrow theme={theme}>{eyebrow}</Eyebrow>
               <h1
-                className="mt-4 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl"
+                className="mt-3 text-[1.75rem] font-semibold leading-[1.12] tracking-tight @sm:mt-4 @sm:text-4xl @md:text-5xl"
                 style={{ color: ink.text, fontFamily: theme.headingFont }}
               >
                 {headline}
               </h1>
-              <p className="mt-4 max-w-md text-base leading-relaxed sm:text-lg" style={{ color: ink.muted }}>
+              <p className="mt-3 max-w-md text-sm leading-relaxed @sm:mt-4 @sm:text-base @md:text-lg" style={{ color: ink.muted }}>
                 {sub}
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-col gap-2 @sm:mt-8 @sm:flex-row @sm:flex-wrap @sm:gap-3">
                 <PrimaryButton label={cta} theme={theme} ink={ink} onClick={() => onCta(target)} />
                 {secondary ? (
                   <GhostButton label={secondary} ink={ink} onClick={() => onCta(target)} />
                 ) : null}
               </div>
             </div>
-            <div className="min-h-[300px]" style={mediaStyle(theme, imageUrl)} />
+            <div
+              className="min-h-[200px] @sm:min-h-[280px] @md:min-h-full"
+              style={mediaStyle(theme, imageUrl)}
+            />
           </section>
         );
       }
@@ -465,19 +473,19 @@ export function BlockRenderer({
 
       if (layout === "centered") {
         return (
-          <section className="px-5 py-20 sm:px-10 sm:py-28" style={{ backgroundColor: theme.backgroundColor }}>
+          <section className="min-w-0 px-4 py-12 @sm:px-8 @sm:py-20 @md:px-10 @md:py-28" style={{ backgroundColor: theme.backgroundColor }}>
             <div className="mx-auto max-w-3xl text-center">
               <Eyebrow theme={theme}>{eyebrow}</Eyebrow>
               <h1
-                className="mt-4 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl"
+                className="mt-3 text-[1.75rem] font-semibold leading-[1.12] tracking-tight @sm:mt-4 @sm:text-4xl @md:text-5xl"
                 style={{ color: ink.text, fontFamily: theme.headingFont }}
               >
                 {headline}
               </h1>
-              <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed sm:text-lg" style={{ color: ink.muted }}>
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed @sm:mt-4 @sm:text-base @md:text-lg" style={{ color: ink.muted }}>
                 {sub}
               </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <div className="mt-6 flex flex-col items-stretch justify-center gap-2 @sm:mt-8 @sm:flex-row @sm:flex-wrap @sm:items-center @sm:gap-3">
                 <PrimaryButton label={cta} theme={theme} ink={ink} onClick={() => onCta(target)} />
                 {secondary ? (
                   <GhostButton label={secondary} ink={ink} onClick={() => onCta(target)} />
@@ -490,20 +498,20 @@ export function BlockRenderer({
 
       return (
         <section
-          className="relative flex min-h-[540px] items-end overflow-hidden sm:min-h-[600px]"
+          className="relative flex min-h-[420px] min-w-0 items-end overflow-hidden @sm:min-h-[520px] @md:min-h-[600px]"
           style={mediaStyle(theme, imageUrl, true)}
         >
-          <div className="relative z-10 w-full px-5 pb-14 pt-32 sm:px-10 sm:pb-20">
+          <div className="relative z-10 w-full px-4 pb-10 pt-24 @sm:px-8 @sm:pb-16 @sm:pt-28 @md:px-10 @md:pb-20">
             <div className="mx-auto max-w-6xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">{eyebrow}</p>
               <h1
-                className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-6xl"
+                className="mt-3 max-w-3xl text-[1.85rem] font-semibold leading-[1.08] tracking-tight text-white @sm:mt-4 @sm:text-4xl @md:text-5xl @lg:text-6xl"
                 style={{ fontFamily: theme.headingFont }}
               >
                 {headline}
               </h1>
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">{sub}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/85 @sm:mt-4 @sm:text-base @md:text-lg">{sub}</p>
+              <div className="mt-6 flex flex-col gap-2 @sm:mt-8 @sm:flex-row @sm:flex-wrap @sm:gap-3">
                 <button
                   type="button"
                   onClick={() => onCta(target)}
@@ -553,6 +561,11 @@ export function BlockRenderer({
     case "features":
     case "services_grid": {
       const items = arr<{ title: string; description: string; icon?: string }>(p.items);
+      const variant = block.variantId ?? "cards";
+      const gridClass =
+        variant === "row"
+          ? "mt-8 grid gap-4 @sm:mt-10 @sm:grid-cols-2"
+          : "mt-8 grid gap-4 @sm:mt-10 @sm:grid-cols-2 @lg:grid-cols-3";
       return (
         <SectionShell>
           <SectionHeading
@@ -562,25 +575,31 @@ export function BlockRenderer({
             ink={ink}
             theme={theme}
           />
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className={gridClass}>
             {items.map((item) => (
               <li
                 key={item.title}
-                className="rounded-2xl p-6"
+                className={
+                  variant === "row"
+                    ? "flex gap-4 rounded-2xl p-5"
+                    : "rounded-2xl p-6"
+                }
                 style={{ backgroundColor: ink.surface, border: `1px solid ${ink.border}` }}
               >
                 <div
-                  className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold"
+                  className="mb-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold"
                   style={{ backgroundColor: `${theme.primaryColor}22`, color: theme.primaryColor }}
                 >
                   {(item.title?.[0] ?? "•").toUpperCase()}
                 </div>
-                <p className="text-base font-semibold" style={{ color: ink.text }}>
-                  {item.title}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed" style={{ color: ink.muted }}>
-                  {item.description}
-                </p>
+                <div>
+                  <p className="text-base font-semibold" style={{ color: ink.text }}>
+                    {item.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: ink.muted }}>
+                    {item.description}
+                  </p>
+                </div>
               </li>
             ))}
           </ul>
@@ -590,21 +609,68 @@ export function BlockRenderer({
 
     /* ---------------------------------------------------------------- */
     case "products": {
-      const products = arr<{ name: string; price: string; description: string; imageUrl?: string; badge?: string }>(
-        p.products
-      );
+      const products = arr<{
+        name: string;
+        price: string;
+        description: string;
+        imageUrl?: string;
+        badge?: string;
+        category?: string;
+        id?: string;
+      }>(p.products);
+      const categories = arr<string>(p.categories);
+      const variant = block.variantId ?? "default";
+
+      if (variant === "catalog") {
+        return (
+          <SectionShell>
+            <ProductCatalog
+              title={str(p.title, "Shop the collection")}
+              subtitle={str(p.subtitle, "Browse by category, filter, and page through the catalog.")}
+              products={products}
+              categories={categories.length ? categories : undefined}
+              theme={theme}
+              ink={ink}
+            />
+          </SectionShell>
+        );
+      }
+
+      const gridClass =
+        variant === "list"
+          ? "mt-8 grid gap-4 @sm:mt-10"
+          : variant === "featured"
+            ? "mt-8 grid gap-4 @sm:mt-10 @sm:grid-cols-2 @md:grid-cols-3"
+            : "mt-8 grid gap-4 @sm:mt-10 @sm:grid-cols-2 @lg:grid-cols-4";
+
       return (
         <SectionShell>
           <SectionHeading eyebrow="Shop" title={str(p.title, "Featured products")} subtitle={str(p.subtitle)} ink={ink} theme={theme} />
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className={gridClass}>
             {products.map((product) => (
               <li
-                key={product.name}
-                className="overflow-hidden rounded-2xl"
+                key={product.id ?? product.name}
+                className={
+                  variant === "list"
+                    ? "flex min-w-0 flex-col overflow-hidden rounded-2xl @sm:flex-row"
+                    : "min-w-0 overflow-hidden rounded-2xl"
+                }
                 style={{ border: `1px solid ${ink.border}`, backgroundColor: ink.surface }}
               >
-                <div className="aspect-[4/3]" style={mediaStyle(theme, product.imageUrl)} />
-                <div className="p-4">
+                <div
+                  className={
+                    variant === "list"
+                      ? "aspect-[16/10] w-full shrink-0 @sm:aspect-auto @sm:h-auto @sm:w-40 @md:w-48"
+                      : "aspect-[4/3]"
+                  }
+                  style={mediaStyle(theme, product.imageUrl)}
+                />
+                <div className="min-w-0 p-4">
+                  {product.category ? (
+                    <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.primaryColor }}>
+                      {product.category}
+                    </p>
+                  ) : null}
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-semibold" style={{ color: ink.text }}>
                       {product.name}
@@ -638,7 +704,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Work" title={str(p.title, "Selected work")} subtitle={str(p.subtitle)} ink={ink} theme={theme} />
-          <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-10 grid gap-4 @sm:grid-cols-2 @lg:grid-cols-3">
             {items.map((item) => (
               <li key={item.title} className="group overflow-hidden rounded-2xl" style={{ border: `1px solid ${ink.border}` }}>
                 <div
@@ -675,7 +741,7 @@ export function BlockRenderer({
       return (
         <SectionShell style={{ backgroundColor: ink.surface }}>
           <SectionHeading eyebrow="Testimonials" title={str(p.title, "What clients say")} subtitle={str(p.subtitle)} ink={ink} theme={theme} />
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-10 grid gap-5 @sm:grid-cols-2 @lg:grid-cols-3">
             {quotes.map((q, i) => {
               const text = q.quote ?? q.text ?? "";
               const who = q.name ?? q.author ?? "Client";
@@ -730,11 +796,11 @@ export function BlockRenderer({
             borderBottom: `1px solid ${ink.border}`,
           }}
         >
-          <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="grid gap-8 @sm:grid-cols-2 @lg:grid-cols-4">
             {items.map((item) => (
               <li key={item.label} className="text-center">
                 <p
-                  className="text-4xl font-semibold tracking-tight sm:text-5xl"
+                  className="text-4xl font-semibold tracking-tight @sm:text-5xl"
                   style={{ color: theme.primaryColor, fontFamily: theme.headingFont }}
                 >
                   {item.value}
@@ -763,7 +829,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Pricing" title={str(p.title, "Simple pricing")} subtitle={str(p.subtitle)} ink={ink} theme={theme} center />
-          <ul className="mx-auto mt-10 grid max-w-5xl gap-4 lg:grid-cols-3">
+          <ul className="mx-auto mt-10 grid max-w-5xl gap-4 @lg:grid-cols-3">
             {tiers.map((tier) => (
               <li
                 key={tier.name}
@@ -830,7 +896,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Process" title={str(p.title, "How it works")} ink={ink} theme={theme} />
-          <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-10 grid gap-6 @sm:grid-cols-2 @lg:grid-cols-4">
             {items.map((item, i) => (
               <li key={item.title} className="relative">
                 <div
@@ -858,7 +924,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Team" title={str(p.title, "People behind the work")} subtitle={str(p.subtitle)} ink={ink} theme={theme} />
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <ul className="mt-10 grid gap-5 @sm:grid-cols-2 @lg:grid-cols-4">
             {members.map((member) => {
               const avatar = member.avatarUrl ?? member.imageUrl;
               return (
@@ -908,7 +974,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Compare" title={str(p.title, "A clearer way forward")} ink={ink} theme={theme} center />
-          <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-2">
+          <div className="mx-auto mt-10 grid max-w-4xl gap-4 @sm:grid-cols-2">
             {columns.map((col) => (
               <div
                 key={col.name}
@@ -944,13 +1010,13 @@ export function BlockRenderer({
       return (
         <SectionShell id={blockId}>
           <div
-            className="overflow-hidden rounded-[28px] px-6 py-14 text-center sm:px-12"
+            className="overflow-hidden rounded-[28px] px-6 py-14 text-center @sm:px-12"
             style={{ background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`, color: "#0B1220" }}
           >
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl" style={{ fontFamily: theme.headingFont }}>
+            <h2 className="text-3xl font-semibold tracking-tight @sm:text-4xl" style={{ fontFamily: theme.headingFont }}>
               {str(p.title, "Ready to start?")}
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm opacity-80 sm:text-base">{str(p.body ?? p.description)}</p>
+            <p className="mx-auto mt-3 max-w-xl text-sm opacity-80 @sm:text-base">{str(p.body ?? p.description)}</p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <button
                 type="button"
@@ -980,7 +1046,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Gallery" title={str(p.title, "Inside the experience")} subtitle={str(p.subtitle)} ink={ink} theme={theme} />
-          <ul className="mt-10 grid gap-3 sm:grid-cols-3">
+          <ul className="mt-10 grid gap-3 @sm:grid-cols-3">
             {items.map((item, i) => (
               <li key={`${item.caption ?? item.title ?? "img"}-${i}`} className="group overflow-hidden rounded-2xl">
                 <div
@@ -1005,7 +1071,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Menu" title={str(p.title, "Menu highlights")} ink={ink} theme={theme} />
-          <div className="mt-10 grid gap-8 lg:grid-cols-2">
+          <div className="mt-10 grid gap-8 @lg:grid-cols-2">
             {sections.map((section) => (
               <div key={section.name}>
                 <p
@@ -1048,12 +1114,12 @@ export function BlockRenderer({
       return (
         <SectionShell id={blockId ?? "booking"}>
           <div
-            className="grid items-center gap-8 rounded-3xl p-8 sm:p-10 lg:grid-cols-2"
+            className="grid items-center gap-8 rounded-3xl p-8 @sm:p-10 @lg:grid-cols-2"
             style={{ backgroundColor: ink.surface, border: `1px solid ${ink.border}` }}
           >
             <div>
               <Eyebrow theme={theme}>Booking</Eyebrow>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl" style={{ color: ink.text, fontFamily: theme.headingFont }}>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight @sm:text-4xl" style={{ color: ink.text, fontFamily: theme.headingFont }}>
                 {str(p.title, "Book your next step")}
               </h2>
               <p className="mt-3 text-base leading-relaxed" style={{ color: ink.muted }}>
@@ -1097,10 +1163,10 @@ export function BlockRenderer({
       const bullets = arr<string>(p.bullets);
       return (
         <SectionShell id={blockId}>
-          <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div className="grid items-center gap-10 @lg:grid-cols-2">
             <div>
               <Eyebrow theme={theme}>{str(p.eyebrow, "About")}</Eyebrow>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl" style={{ color: ink.text, fontFamily: theme.headingFont }}>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight @sm:text-4xl" style={{ color: ink.text, fontFamily: theme.headingFont }}>
                 {str(p.title)}
               </h2>
               <p className="mt-4 text-base leading-relaxed" style={{ color: ink.muted }}>
@@ -1134,7 +1200,7 @@ export function BlockRenderer({
       return (
         <SectionShell>
           <SectionHeading eyebrow="Journal" title={str(p.title, "Latest insights")} subtitle={str(p.subtitle)} ink={ink} theme={theme} />
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-10 grid gap-5 @sm:grid-cols-2 @lg:grid-cols-3">
             {posts.map((post) => (
               <li key={post.title} className="overflow-hidden rounded-2xl" style={{ border: `1px solid ${ink.border}` }}>
                 <div className="aspect-[16/9]" style={mediaStyle(theme, post.imageUrl)} />
@@ -1167,10 +1233,10 @@ export function BlockRenderer({
       const showForm = p.showForm !== false;
       return (
         <SectionShell id={blockId ?? "contact"}>
-          <div className="grid gap-10 lg:grid-cols-2">
+          <div className="grid gap-10 @lg:grid-cols-2">
             <div>
               <Eyebrow theme={theme}>Contact</Eyebrow>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl" style={{ color: ink.text, fontFamily: theme.headingFont }}>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight @sm:text-4xl" style={{ color: ink.text, fontFamily: theme.headingFont }}>
                 {str(p.title, "Let's talk")}
               </h2>
               <p className="mt-3 text-base leading-relaxed" style={{ color: ink.muted }}>

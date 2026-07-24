@@ -166,7 +166,7 @@ export async function runGenerationPipeline(
     summary: `${businessResult.profile.industry} site for ${preferences.businessName}: ${businessResult.profile.primaryGoal}`,
     theme,
     navigation: layoutResult.pages.map((p) => ({
-      label: p.title,
+      label: p.slug === "products" ? "Shop" : p.title,
       slug: p.slug,
     })),
     pages: layoutResult.pages,

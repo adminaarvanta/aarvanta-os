@@ -55,6 +55,14 @@ function heuristicBrand(
     iconSet: "Lucide outline",
     toneOfVoice: `${business.brandTone} · clear · benefit-led`,
     googleFontsUrl: fontPack.googleFontsUrl,
+    navStyle:
+      preferences.features.includes("ecommerce") ||
+      preferences.categoryId === "ecommerce" ||
+      /sell|shop|retail/i.test(business.primaryGoal)
+        ? "store"
+        : preferences.designStyle === "minimal"
+          ? "minimal"
+          : "pills",
   };
 }
 
