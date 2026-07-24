@@ -53,10 +53,12 @@ export function BrandLogo({
   const themeMode = mode ?? contextMode;
   const displayHeight = DISPLAY_HEIGHT[size];
   const src = LOGO_PATHS[themeMode][variant];
+  /** Icon asset is landscape (~4:3); keep layout box square and contain. */
+  const iconBox = displayHeight;
   const intrinsicHeight = displayHeight * 2;
   const intrinsicWidth =
     variant === "icon"
-      ? intrinsicHeight
+      ? Math.round(intrinsicHeight * (412 / 311))
       : Math.round(intrinsicHeight * FULL_LOGO_ASPECT);
 
   const image = (
@@ -73,7 +75,9 @@ export function BrandLogo({
         "!bg-transparent object-contain",
         // On dark UI, treat pure black pixels as transparent against the surface
         themeMode === "dark" && "mix-blend-lighten",
-        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : "h-auto w-auto",
+        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : null,
+        !fullWidth && variant === "icon" && "h-auto w-auto",
+        !fullWidth && variant === "full" && "h-auto w-auto",
         className
       )}
       style={
@@ -86,15 +90,21 @@ export function BrandLogo({
                 maxWidth: 236,
                 backgroundColor: "transparent",
               }
-            : {
-                height: displayHeight,
-                width: variant === "icon" ? displayHeight : "auto",
-                maxWidth:
-                  variant === "full"
-                    ? displayHeight * FULL_LOGO_ASPECT
-                    : displayHeight,
-                backgroundColor: "transparent",
-              }
+            : variant === "icon"
+              ? {
+                  height: iconBox,
+                  width: iconBox,
+                  maxHeight: iconBox,
+                  maxWidth: iconBox,
+                  objectFit: "contain",
+                  backgroundColor: "transparent",
+                }
+              : {
+                  height: displayHeight,
+                  width: "auto",
+                  maxWidth: displayHeight * FULL_LOGO_ASPECT,
+                  backgroundColor: "transparent",
+                }
       }
     />
   );

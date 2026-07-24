@@ -59,29 +59,38 @@ export function AppSidebar({
     <>
       <aside
         className={cn(
-          "relative z-20 hidden h-full shrink-0 flex-col border-r border-border-subtle bg-surface transition-[width] duration-200 md:flex",
+          "relative z-20 hidden h-full shrink-0 flex-col overflow-x-hidden border-r border-border-subtle bg-surface transition-[width] duration-200 md:flex",
           collapsed ? "w-[72px]" : "w-[260px]"
         )}
       >
         <div
           className={cn(
             "flex shrink-0 items-center border-b border-border-subtle",
-            collapsed ? "h-16 flex-col justify-center gap-1 px-1 py-2" : "h-[120px] justify-center px-2 py-2"
+            collapsed
+              ? "flex-col justify-center gap-1 px-2 py-2.5"
+              : "h-[120px] justify-center px-2 py-2"
           )}
         >
           <Link
             href={SIDEBAR_BRAND.href}
-            className="flex items-center justify-center rounded-lg transition-colors hover:bg-surface-muted"
+            className={cn(
+              "flex items-center justify-center rounded-lg transition-colors hover:bg-surface-muted",
+              collapsed && "h-10 w-10 shrink-0 overflow-hidden"
+            )}
             aria-label={SIDEBAR_BRAND.title}
           >
-            <BrandLogo size={collapsed ? "sm" : "sidebar"} variant={collapsed ? "icon" : "full"} />
+            <BrandLogo
+              size={collapsed ? "sm" : "sidebar"}
+              variant={collapsed ? "icon" : "full"}
+              className={collapsed ? "!h-8 !w-8 max-h-8 max-w-8" : undefined}
+            />
           </Link>
           <button
             type="button"
             onClick={toggle}
             className={cn(
               "rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-hover hover:text-gold",
-              collapsed ? "" : "absolute right-2 top-3"
+              collapsed ? "shrink-0" : "absolute right-2 top-3"
             )}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
