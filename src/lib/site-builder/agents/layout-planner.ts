@@ -57,18 +57,31 @@ function pickHeroVariant(brand: BrandSystem): string {
 function heuristicLayout(
   candidates: PagePlanCandidate[],
   template: SiteTemplateDefinition,
-  brand: BrandSystem
+  brand: BrandSystem,
+  homeSectionsOverride?: SitePlanSection[]
 ): SitePlanPage[] {
   const heroVariant = pickHeroVariant(brand);
   return candidates
     .filter((c) => c.include)
     .map((c) => {
-      const recipes = recipesForPage(c.slug, template);
-      const sections: SitePlanSection[] = recipes.map((r) => ({
+      const recipes =
+        c.slug === "home" && homeSectionsOverride?.length
+          ? homeSectionsOverride.map((s) => ({
+              type: s.type as SiteTemplateSectionRecipe["type"],
+              label: s.label,
+              description: s.description,
+            }))
+          : recipesForPage(c.slug, template);
+      const sections: SitePlanSection[] = recipes.map((r, i) => ({
         type: r.type,
         label: r.label,
         description: r.description,
-        variantId: r.type === "hero" ? heroVariant : "default",
+        variantId:
+          c.slug === "home" && homeSectionsOverride?.[i]?.variantId
+            ? homeSectionsOverride[i]!.variantId
+            : r.type === "hero"
+              ? heroVariant
+              : "default",
       }));
       return {
         slug: c.slug,
@@ -86,9 +99,15 @@ export async function runLayoutPlanner(
   business: BusinessProfile,
   brand: BrandSystem,
   candidates: PagePlanCandidate[],
-  template: SiteTemplateDefinition
+  template: SiteTemplateDefinition,
+  homeSectionsOverride?: SitePlanSection[]
 ): Promise<{ pages: SitePlanPage[]; usedAi: boolean }> {
-  const fallback = heuristicLayout(candidates, template, brand);
+  const fallback = heuristicLayout(
+    candidates,
+    template,
+    brand,
+    homeSectionsOverride
+  );
   if (!isAiConfigured()) {
     return { pages: fallback, usedAi: false };
   }
@@ -99,11 +118,13 @@ export async function runLayoutPlanner(
 Return JSON { pages: [{ slug, title, purpose, confidence, include, sections: [{ type, label, description, variantId }] }] }.
 Section types must be from: hero, features, services_grid, products, portfolio_grid, testimonials, stats, pricing_table, faq_accordion, logo_cloud, timeline, team_grid, comparison, cta_banner, gallery, menu_list, booking_cta, feature_tabs, rich_text, contact, newsletter, blog_list, about_split, content.
 variantId is usually "default"; for hero use default|centered|fullBleed|split.
-Keep page order sensible. Only include pages marked include=true.`,
+Keep page order sensible. Only include pages marked include=true.
+If a homepageSections prior is provided, keep that section order/types for home.`,
       user: JSON.stringify({
         business,
         brand: { style: brand.style, imageStyle: brand.imageStyle },
         candidates: candidates.filter((c) => c.include),
+        homepageSections: homeSectionsOverride,
         templatePrior: template.sectionsByPage,
         siteName: preferences.businessName,
       }),
@@ -116,16 +137,25 @@ Keep page order sensible. Only include pages marked include=true.`,
 
     const pages = raw.pages
       .filter((p) => p.include !== false)
-      .map((p) => ({
-        ...p,
-        include: true,
-        sections: (p.sections ?? []).map((s) => ({
-          type: s.type,
-          label: s.label || s.type,
-          description: s.description || s.label || s.type,
-          variantId: s.variantId || (s.type === "hero" ? pickHeroVariant(brand) : "default"),
-        })),
-      }))
+      .map((p) => {
+        if (p.slug === "home" && homeSectionsOverride?.length) {
+          return {
+            ...p,
+            include: true,
+            sections: homeSectionsOverride,
+          };
+        }
+        return {
+          ...p,
+          include: true,
+          sections: (p.sections ?? []).map((s) => ({
+            type: s.type,
+            label: s.label || s.type,
+            description: s.description || s.label || s.type,
+            variantId: s.variantId || (s.type === "hero" ? pickHeroVariant(brand) : "default"),
+          })),
+        };
+      })
       .filter((p) => p.sections.length > 0);
 
     return { pages: pages.length ? pages : fallback, usedAi: true };

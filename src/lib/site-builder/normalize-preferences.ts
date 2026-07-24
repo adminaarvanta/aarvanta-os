@@ -26,6 +26,8 @@ export function normalizeSitePreferences(
     brandSystem: data.brandSystem,
     pageCandidates: data.pageCandidates,
     pageConfidenceThreshold: data.pageConfidenceThreshold,
+    designOptions: data.designOptions as SitePreferences["designOptions"],
+    selectedDesignOptionId: data.selectedDesignOptionId,
     deployment: {
       hostingProvider: "aws_ec2",
       domain: {

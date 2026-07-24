@@ -125,7 +125,7 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
         );
         return;
       }
-      setSuccess("Call initiated via Twilio.");
+      setSuccess("Call initiated.");
       setPhone("");
       if (data.conversationId) {
         router.push(`/voice/${data.conversationId}`);
@@ -169,7 +169,7 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
         </div>
         <p className="text-xs text-muted">
           {mode === "now"
-            ? "Places a Twilio call from your Voice OS number. The text below is a briefing for the AI — it describes the topic and goal of the call. The AI writes its own opening line from it; it is never read aloud word-for-word."
+            ? "Places a call from your Voice OS number. The text below is a briefing for the AI — it describes the topic and goal of the call. The AI writes its own opening line from it; it is never read aloud word-for-word."
             : "Schedule a call for later. Due calls are dialed by the scheduler cron."}
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -241,8 +241,7 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
         <h3 className="text-sm font-semibold text-foreground">Call history</h3>
         {calls.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">
-            No calls yet. Place an outbound call, schedule one, or wait for inbound
-            Twilio voice webhooks.
+            No calls yet. Place an outbound call, schedule one, or wait for an inbound call.
           </p>
         ) : (
           <ul className="divide-y divide-border rounded-xl border border-border bg-surface-elevated">

@@ -4,7 +4,7 @@ import { PageFrame } from "@/components/layout/page-scroll";
 
 export default function BuildPage() {
   return (
-    <PageFrame>
+    <PageFrame className="bg-[hsl(222_28%_6%)]">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Suspense
           fallback={

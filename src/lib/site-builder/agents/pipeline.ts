@@ -1,6 +1,7 @@
 import { runBrandIntel } from "@/lib/site-builder/agents/brand-intel";
 import { runBusinessIntel } from "@/lib/site-builder/agents/business-intel";
 import { runCopyAgent } from "@/lib/site-builder/agents/copy-agent";
+import { getSelectedDesignOption } from "@/lib/site-builder/agents/design-options";
 import { runLayoutPlanner } from "@/lib/site-builder/agents/layout-planner";
 import { runMediaPlanner } from "@/lib/site-builder/agents/media-planner";
 import {
@@ -12,6 +13,7 @@ import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-templ
 import { themeFromBrand } from "@/lib/site-builder/theme-presets";
 import { crmNow } from "@/lib/data/crm-helpers";
 import type {
+  BrandSystem,
   GeneratedSite,
   SiteBuildJob,
   SiteGenerationProgress,
@@ -87,23 +89,32 @@ export async function runGenerationPipeline(
     business: businessResult.profile,
   });
 
-  await emit("brand", 22, "Designing your brand system…");
-  const brandResult = await runBrandIntel(preferences, businessResult.profile);
-  usedAi = usedAi || brandResult.usedAi;
+  const selectedDesign = getSelectedDesignOption(preferences);
+
+  await emit("brand", 22, "Applying your chosen design…");
+  let brand: BrandSystem;
+  if (selectedDesign) {
+    brand = selectedDesign.brand;
+    usedAi = true;
+  } else {
+    const brandResult = await runBrandIntel(preferences, businessResult.profile);
+    usedAi = usedAi || brandResult.usedAi;
+    brand = brandResult.brand;
+  }
   preferences = {
     ...preferences,
-    brandSystem: brandResult.brand,
+    brandSystem: brand,
     themePreset: "custom",
     customTheme: {
-      primaryColor: brandResult.brand.primary,
-      accentColor: brandResult.brand.secondary,
-      backgroundColor: brandResult.brand.background,
-      fontPackId: brandResult.brand.fontPackId,
+      primaryColor: brand.primary,
+      accentColor: brand.secondary,
+      backgroundColor: brand.background,
+      fontPackId: brand.fontPackId,
     },
   };
-  await emit("brand", 32, `Brand: ${brandResult.brand.style}`, {
+  await emit("brand", 32, `Brand: ${brand.style}`, {
     business: businessResult.profile,
-    brand: brandResult.brand,
+    brand,
   });
 
   const template = resolveTemplatePrior(
@@ -120,7 +131,7 @@ export async function runGenerationPipeline(
   const pageResult = await runPagePlanner(
     preferences,
     businessResult.profile,
-    brandResult.brand,
+    brand,
     template
   );
   usedAi = usedAi || pageResult.usedAi;
@@ -132,21 +143,22 @@ export async function runGenerationPipeline(
   };
   await emit("pages", 48, `${pages.length} pages selected`, {
     business: businessResult.profile,
-    brand: brandResult.brand,
+    brand,
     pageCandidates: pageResult.candidates,
   });
 
-  await emit("layout", 55, "Composing layouts…");
+  await emit("layout", 55, "Composing layouts from your design…");
   const layoutResult = await runLayoutPlanner(
     preferences,
     businessResult.profile,
-    brandResult.brand,
+    brand,
     pageResult.candidates,
-    template
+    template,
+    selectedDesign?.homeSections
   );
   usedAi = usedAi || layoutResult.usedAi;
 
-  const theme = themeFromBrand(brandResult.brand, "custom");
+  const theme = themeFromBrand(brand, "custom");
   const slug = slugify(preferences.businessName) || "site";
   const plan: SitePlan = {
     siteName: preferences.businessName,
@@ -166,14 +178,14 @@ export async function runGenerationPipeline(
       deployNotes: buildEc2DeployNotes(preferences.deployment),
     },
     business: businessResult.profile,
-    brand: brandResult.brand,
+    brand,
     pageCandidates: pageResult.candidates,
     version: 1,
   };
 
   await emit("layout", 62, "Layout ready", {
     business: businessResult.profile,
-    brand: brandResult.brand,
+    brand,
     pageCandidates: pageResult.candidates,
     plan,
   });
@@ -183,12 +195,12 @@ export async function runGenerationPipeline(
     plan,
     preferences,
     businessResult.profile,
-    brandResult.brand
+    brand
   );
   usedAi = usedAi || copyResult.usedAi;
   await emit("content", 82, "Copy drafted", {
     business: businessResult.profile,
-    brand: brandResult.brand,
+    brand,
     pageCandidates: pageResult.candidates,
     plan,
     site: copyResult.site,
@@ -199,14 +211,14 @@ export async function runGenerationPipeline(
     copyResult.site,
     preferences,
     businessResult.profile,
-    brandResult.brand
+    brand
   );
 
   const site: GeneratedSite = {
     ...mediaResult.site,
     theme,
     business: businessResult.profile,
-    brand: brandResult.brand,
+    brand,
     categoryId: preferences.categoryId,
     templateId: preferences.templateId,
     version: 1,
@@ -215,7 +227,7 @@ export async function runGenerationPipeline(
 
   await emit("done", 100, "Website ready", {
     business: businessResult.profile,
-    brand: brandResult.brand,
+    brand,
     pageCandidates: pageResult.candidates,
     plan,
     site,

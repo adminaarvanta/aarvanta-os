@@ -2,128 +2,81 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity,
-  ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
-  BookOpen,
-  Briefcase,
-  Calendar,
   Check,
   Clock3,
-  Heart,
   ImagePlus,
-  Image as ImageIcon,
-  Layers,
-  LayoutDashboard,
   Loader2,
-  MapPin,
-  ShoppingBag,
   Sparkles,
   Trash2,
-  Utensils,
-  Wand2,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
+import { BuildStudioLayout } from "@/components/build/build-studio-layout";
+import {
+  BUILD_WIZARD_STEPS,
+  BuildWizardRail,
+  type BuildWizardStepId,
+} from "@/components/build/build-wizard-rail";
+import { DesignOptionsPicker } from "@/components/build/design-options-picker";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
-import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { HostingCheckoutPanel } from "@/components/build/hosting-checkout-panel";
-import { ThemeStylePanel } from "@/components/build/theme-style-panel";
-import { TemplateLayoutPreview } from "@/components/build/template-layout-preview";
 import { Button } from "@/components/ui/button";
 import {
   clearComposeDraftCache,
   readComposeDraftCache,
   writeComposeDraftCache,
-  type ComposeStep,
 } from "@/lib/site-builder/compose-draft-cache";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import { EXAMPLE_PROMPTS, inferPreferencesFromPrompt } from "@/lib/site-builder/infer-preferences";
-import { SITE_CATEGORIES } from "@/lib/site-builder/templates/categories";
-import {
-  getTemplateById,
-  getTemplatesForCategory,
-} from "@/lib/site-builder/templates/catalog";
 import {
   defaultCustomThemeFromPreset,
-  resolveSiteThemeWithBrand,
 } from "@/lib/site-builder/theme-presets";
 import type {
   AwsEc2InstanceType,
-  PagePlanCandidate,
-  SiteCategoryId,
   SiteCustomTheme,
+  SiteDesignOption,
   SiteDomainPurchase,
   SiteFeatureOption,
   SiteGenerationStage,
-  SitePageOption,
   SitePreferences,
   SiteReferenceScreenshot,
   SiteThemePreset,
   SiteTone,
 } from "@/types/site-builder";
+import { cn } from "@/lib/utils";
 
 const MAX_SCREENSHOTS = 3;
 const MAX_SCREENSHOT_BYTES = 1_500_000;
-const DRAFT_AUTOSAVE_MS = 800;
 
-type StudioPhase = "compose" | "studio";
+const GOAL_OPTIONS = [
+  "Sell more products online",
+  "Build a loyal customer base",
+  "Increase brand awareness",
+  "Generate leads",
+  "Book more appointments",
+  "Showcase portfolio work",
+] as const;
 
-const GENERATION_STAGES: Array<{ id: SiteGenerationStage; label: string }> = [
-  { id: "business", label: "Business" },
-  { id: "brand", label: "Brand" },
-  { id: "pages", label: "Pages" },
-  { id: "layout", label: "Layout" },
-  { id: "content", label: "Copy" },
-  { id: "media", label: "Images" },
-  { id: "done", label: "Done" },
+const APP_OPTIONS: Array<{ id: SiteFeatureOption; label: string; description: string }> = [
+  { id: "ecommerce", label: "Store", description: "Products & checkout-ready pages" },
+  { id: "contact_form", label: "Forms", description: "Lead capture forms" },
+  { id: "booking", label: "Bookings", description: "Appointment scheduling" },
+  { id: "blog", label: "Blog", description: "Content & SEO articles" },
+  { id: "live_chat", label: "Chat", description: "Live chat widget" },
+  { id: "newsletter", label: "Newsletter", description: "Email capture" },
+  { id: "testimonials", label: "Reviews", description: "Social proof blocks" },
+  { id: "seo_pack", label: "SEO", description: "Meta & discoverability" },
 ];
 
-const CATEGORY_ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  "shopping-bag": ShoppingBag,
-  layers: Layers,
-  "map-pin": MapPin,
-  briefcase: Briefcase,
-  utensils: Utensils,
-  "heart-pulse": Activity,
-  sparkles: Sparkles,
-  image: ImageIcon,
-  "hand-heart": Heart,
-  "book-open": BookOpen,
-  calendar: Calendar,
-  "layout-dashboard": LayoutDashboard,
-};
+const QUICK_TAGS = ["Online Store", "Portfolio", "Blog", "Local Service", "SaaS"] as const;
 
-const TONE_OPTIONS: Array<{ id: SiteTone; label: string }> = [
-  { id: "professional", label: "Professional" },
-  { id: "friendly", label: "Friendly" },
+const TONE_VIBES: Array<{ id: SiteTone; label: string }> = [
+  { id: "friendly", label: "Playful" },
+  { id: "professional", label: "Trustworthy" },
   { id: "bold", label: "Bold" },
-  { id: "luxury", label: "Luxury" },
-];
-
-const PAGE_OPTIONS: Array<{ id: SitePageOption; label: string }> = [
-  { id: "home", label: "Home" },
-  { id: "about", label: "About" },
-  { id: "services", label: "Services" },
-  { id: "pricing", label: "Pricing" },
-  { id: "products", label: "Products" },
-  { id: "portfolio", label: "Portfolio" },
-  { id: "testimonials", label: "Testimonials" },
-  { id: "faq", label: "FAQ" },
-  { id: "blog", label: "Blog" },
-  { id: "contact", label: "Contact" },
-];
-
-const FEATURE_OPTIONS: Array<{ id: SiteFeatureOption; label: string }> = [
-  { id: "contact_form", label: "Contact form" },
-  { id: "booking", label: "Booking" },
-  { id: "ecommerce", label: "Ecommerce" },
-  { id: "newsletter", label: "Newsletter" },
-  { id: "testimonials", label: "Testimonials" },
-  { id: "blog", label: "Blog" },
-  { id: "live_chat", label: "Live chat" },
-  { id: "analytics", label: "Analytics" },
-  { id: "seo_pack", label: "SEO pack" },
+  { id: "luxury", label: "Premium" },
 ];
 
 function formatDraftTime(iso: string): string {
@@ -143,54 +96,66 @@ function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
-export function BuildOsClient() {
+export function BuildOsClient({
+  initialJobs = [],
+}: {
+  initialJobs?: import("@/types/site-builder").SiteBuildJob[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobParam = searchParams.get("job");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const themeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hydratedRef = useRef(false);
   const jobRef = useRef<import("@/types/site-builder").SiteBuildJob | null>(null);
+  const hydratedRef = useRef(false);
 
-  const [phase, setPhase] = useState<StudioPhase>("compose");
-  const [step, setStep] = useState<ComposeStep>("brief");
-
-  const [categoryId, setCategoryId] = useState<SiteCategoryId | null>(null);
-  const [customCategoryLabel, setCustomCategoryLabel] = useState("");
-  const [templateId, setTemplateId] = useState<string | null>(null);
-
+  const [step, setStep] = useState<BuildWizardStepId>("about");
   const [prompt, setPrompt] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [audience, setAudience] = useState("");
-  const [tone, setTone] = useState<SiteTone>("professional");
-  const [pages, setPages] = useState<SitePageOption[]>(["home", "about", "contact"]);
-  const [features, setFeatures] = useState<SiteFeatureOption[]>(["contact_form"]);
-  const [pageCandidates, setPageCandidates] = useState<PagePlanCandidate[]>([]);
-
+  const [tone, setTone] = useState<SiteTone>("friendly");
+  const [goals, setGoals] = useState<string[]>(["Sell more products online"]);
+  const [features, setFeatures] = useState<SiteFeatureOption[]>([
+    "ecommerce",
+    "contact_form",
+  ]);
   const [themePreset, setThemePreset] = useState<SiteThemePreset>("gold_navy");
   const [customTheme, setCustomTheme] = useState<SiteCustomTheme>(() =>
     defaultCustomThemeFromPreset("gold_navy")
   );
   const [screenshots, setScreenshots] = useState<SiteReferenceScreenshot[]>([]);
+  const [designOptions, setDesignOptions] = useState<SiteDesignOption[]>([]);
+  const [selectedDesignOptionId, setSelectedDesignOptionId] = useState<string | null>(null);
 
-  const [refineInput, setRefineInput] = useState("");
   const [job, setJob] = useState<import("@/types/site-builder").SiteBuildJob | null>(null);
-  const [recentJobs, setRecentJobs] = useState<import("@/types/site-builder").SiteBuildJob[]>([]);
+  const [recentJobs, setRecentJobs] = useState<import("@/types/site-builder").SiteBuildJob[]>(
+    initialJobs
+  );
   const [busy, setBusy] = useState(false);
+  const [designsBusy, setDesignsBusy] = useState(false);
   const [genProgress, setGenProgress] = useState<{
     stage: SiteGenerationStage;
     percent: number;
     message: string;
   } | null>(null);
-  const [draftSaving, setDraftSaving] = useState(false);
-  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [refineInput, setRefineInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [usedAi, setUsedAi] = useState(false);
 
   useEffect(() => {
     jobRef.current = job;
   }, [job]);
+
+  const completed = useMemo(() => {
+    const set = new Set<BuildWizardStepId>();
+    if (prompt.trim().length >= 12) set.add("about");
+    if (businessName.trim().length >= 2) set.add("name");
+    if (goals.length) set.add("goals");
+    if (features.length) set.add("apps");
+    if (selectedDesignOptionId) set.add("designs");
+    if (job?.preferences.deployment.domain.selectedDomain) set.add("domain");
+    if (job?.generatedSite) set.add("generate");
+    return set;
+  }, [prompt, businessName, goals, features, selectedDesignOptionId, job]);
 
   const hydrateFromJob = useCallback((next: import("@/types/site-builder").SiteBuildJob) => {
     setJob(next);
@@ -199,12 +164,9 @@ export function BuildOsClient() {
     setBusinessName(next.preferences.businessName ?? "");
     setAudience(next.preferences.targetAudience ?? "");
     setTone(next.preferences.tone);
-    setPages(next.preferences.pages ?? ["home", "about", "contact"]);
     setFeatures(next.preferences.features ?? ["contact_form"]);
-    setPageCandidates(next.preferences.pageCandidates ?? next.plan?.pageCandidates ?? []);
-    setCategoryId(next.preferences.categoryId ?? null);
-    setCustomCategoryLabel(next.preferences.customCategoryLabel ?? "");
-    setTemplateId(next.preferences.templateId ?? null);
+    setDesignOptions(next.preferences.designOptions ?? []);
+    setSelectedDesignOptionId(next.preferences.selectedDesignOptionId ?? null);
     setThemePreset(next.preferences.themePreset);
     setCustomTheme(
       next.preferences.customTheme ??
@@ -212,348 +174,230 @@ export function BuildOsClient() {
           next.preferences.themePreset === "custom" ? "gold_navy" : next.preferences.themePreset
         )
     );
-    const cache = readComposeDraftCache();
-    if (cache?.jobId === next.id && cache.screenshots?.length) {
-      setScreenshots(cache.screenshots);
-    } else {
-      setScreenshots(next.preferences.referenceScreenshots ?? []);
-    }
-    if (next.generatedSite) {
-      setPhase("studio");
-    } else {
-      setPhase("compose");
-      setStep(next.preferences.categoryId && next.preferences.templateId ? "brief" : "category");
-    }
-    setDraftSavedAt(next.updatedAt);
+    const fromKeys = next.preferences.keyMessages
+      ?.split("|")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (fromKeys?.length) setGoals(fromKeys);
+    if (next.generatedSite) setStep("generate");
+    else if (next.preferences.designOptions?.length) setStep("designs");
+    else setStep("about");
+  }, []);
+
+  const refreshJobList = useCallback(async () => {
+    const res = await fetch("/api/build");
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      jobs: import("@/types/site-builder").SiteBuildJob[];
+    };
+    setRecentJobs(data.jobs ?? []);
   }, []);
 
   const loadJob = useCallback(
     async (id: string) => {
       const res = await fetch(`/api/build/${id}`);
       if (!res.ok) return;
-      const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
+      const data = (await res.json()) as {
+        job: import("@/types/site-builder").SiteBuildJob;
+      };
       hydrateFromJob(data.job);
     },
     [hydrateFromJob]
   );
 
-  const refreshJobList = useCallback(async () => {
-    const res = await fetch("/api/build");
-    if (!res.ok) return;
-    const data = (await res.json()) as { jobs: import("@/types/site-builder").SiteBuildJob[] };
-    setRecentJobs(data.jobs.slice(0, 8));
-  }, []);
-
-  // Initial hydrate: URL job, else local cache + recent drafts list.
   useEffect(() => {
     if (hydratedRef.current) return;
     hydratedRef.current = true;
-
     void (async () => {
       await refreshJobList();
-
       if (jobParam) {
         await loadJob(jobParam);
         return;
       }
-
       const cache = readComposeDraftCache();
-      if (cache?.prompt || cache?.categoryId) {
+      if (cache?.prompt) {
         setPrompt(cache.prompt);
-        setCategoryId(cache.categoryId);
-        setCustomCategoryLabel(cache.customCategoryLabel ?? "");
-        setTemplateId(cache.templateId);
-        setStep(cache.step ?? "category");
+        setBusinessName(cache.businessName ?? "");
+        setAudience(cache.audience ?? "");
+        setGoals(cache.goals?.length ? cache.goals : ["Sell more products online"]);
         setThemePreset(cache.themePreset);
         setCustomTheme(cache.customTheme);
         setScreenshots(cache.screenshots ?? []);
-        if (cache.jobId) {
-          await loadJob(cache.jobId);
-          setPhase("compose");
-          setStep(cache.step ?? "brief");
-        }
+        setSelectedDesignOptionId(cache.selectedDesignOptionId ?? null);
+        setStep(cache.step ?? "about");
+        if (cache.jobId) await loadJob(cache.jobId);
       }
     })();
   }, [jobParam, loadJob, refreshJobList]);
 
-  // Keep URL job in sync when navigating with ?job=
   useEffect(() => {
     if (!hydratedRef.current) return;
-    if (jobParam && jobParam !== jobRef.current?.id) {
-      void loadJob(jobParam);
-    }
+    if (jobParam && jobParam !== jobRef.current?.id) void loadJob(jobParam);
   }, [jobParam, loadJob]);
 
-  /** Build preferences — category/template optional (ARIA auto-infers). */
   const buildPreferences = useCallback(
     (extraPrompt?: string): SitePreferences => {
       const mergedPrompt = [prompt.trim(), extraPrompt?.trim()].filter(Boolean).join("\n\n");
       const safePrompt = mergedPrompt || "Untitled draft";
-      const includedFromCandidates = pageCandidates
-        .filter((c) => c.include)
-        .map((c) => c.slug as SitePageOption);
       return inferPreferencesFromPrompt(safePrompt, {
-        categoryId: categoryId ?? undefined,
-        templateId: templateId ?? undefined,
-        customCategoryLabel:
-          categoryId === "custom" && customCategoryLabel.trim().length >= 2
-            ? customCategoryLabel.trim()
-            : undefined,
         businessName: businessName.trim() || undefined,
         targetAudience: audience.trim() || undefined,
         tone,
-        pages: includedFromCandidates.length
-          ? includedFromCandidates
-          : pages.length
-            ? pages
-            : undefined,
         features,
         themePreset,
         customTheme,
         customPrompt: mergedPrompt || undefined,
+        keyMessages: goals.join(" | "),
         referenceScreenshots: screenshots,
-        pageCandidates: pageCandidates.length ? pageCandidates : undefined,
+        designOptions: designOptions.length ? designOptions : undefined,
+        selectedDesignOptionId: selectedDesignOptionId ?? undefined,
         deployment: jobRef.current?.preferences.deployment,
         businessProfile: jobRef.current?.preferences.businessProfile,
         brandSystem: jobRef.current?.preferences.brandSystem,
       });
     },
     [
-      categoryId,
-      templateId,
-      customCategoryLabel,
       prompt,
       businessName,
       audience,
       tone,
-      pages,
       features,
       themePreset,
       customTheme,
       screenshots,
-      pageCandidates,
+      goals,
+      designOptions,
+      selectedDesignOptionId,
     ]
   );
 
   const syncLocalCache = useCallback(
-    (jobId?: string, nextStep?: ComposeStep) => {
+    (jobId?: string, nextStep?: BuildWizardStepId) => {
       writeComposeDraftCache({
         jobId: jobId ?? jobRef.current?.id,
         prompt,
-        siteType: null,
-        categoryId,
-        customCategoryLabel: customCategoryLabel || undefined,
-        templateId,
+        businessName,
+        audience,
+        goals,
         step: nextStep ?? step,
         themePreset,
         customTheme,
         screenshots,
+        selectedDesignOptionId,
         savedAt: new Date().toISOString(),
       });
     },
-    [prompt, categoryId, customCategoryLabel, templateId, step, themePreset, customTheme, screenshots]
+    [
+      prompt,
+      businessName,
+      audience,
+      goals,
+      step,
+      themePreset,
+      customTheme,
+      screenshots,
+      selectedDesignOptionId,
+    ]
   );
 
-  const saveDraft = useCallback(async () => {
-    if (prompt.trim().length < 3) return;
-
-    const preferences = buildPreferences();
-
-    setDraftSaving(true);
-    try {
-      const current = jobRef.current;
-      if (current) {
-        const res = await fetch(`/api/build/${current.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...preferences, referenceScreenshots: [] }),
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
-        setJob((prev) =>
-          prev
-            ? {
-                ...data.job,
-                generatedSite: prev.generatedSite ?? data.job.generatedSite,
-                plan: prev.plan ?? data.job.plan,
-              }
-            : data.job
-        );
-        setDraftSavedAt(data.job.updatedAt);
-        syncLocalCache(data.job.id);
-      } else {
-        const res = await fetch("/api/build", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...preferences, referenceScreenshots: [], mode: "draft" }),
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
-        setJob(data.job);
-        setDraftSavedAt(data.job.updatedAt);
-        syncLocalCache(data.job.id);
-        router.replace(`/build?job=${data.job.id}`);
-      }
-      void refreshJobList();
-    } finally {
-      setDraftSaving(false);
-    }
-  }, [categoryId, templateId, prompt, buildPreferences, syncLocalCache, router, refreshJobList]);
-
-  // Debounced auto-save for the brief step.
   useEffect(() => {
     if (!hydratedRef.current) return;
-    if (phase !== "compose" || step !== "brief") return;
+    if (step === "generate") return;
+    syncLocalCache();
+  }, [prompt, businessName, audience, goals, step, syncLocalCache]);
 
-    syncLocalCache(job?.id);
-
-    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-    draftTimerRef.current = setTimeout(() => {
-      void saveDraft();
-    }, DRAFT_AUTOSAVE_MS);
-
-    return () => {
-      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prompt, businessName, audience, tone, pages, features, themePreset, customTheme, screenshots, phase, step]);
-
-  async function persistThemeDraft(nextPreset: SiteThemePreset, nextCustom: SiteCustomTheme) {
-    const current = jobRef.current;
-    if (!current) return;
-    const preferences = {
-      ...current.preferences,
-      themePreset: nextPreset,
-      customTheme: nextCustom,
-      referenceScreenshots: [],
-    };
-    const res = await fetch(`/api/build/${current.id}`, {
-      method: "PATCH",
+  async function ensureJob(
+    preferences: SitePreferences
+  ): Promise<string | null> {
+    if (job?.id) {
+      await fetch(`/api/build/${job.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...preferences, referenceScreenshots: [] }),
+      });
+      return job.id;
+    }
+    const createRes = await fetch("/api/build", {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(preferences),
+      body: JSON.stringify({ ...preferences, mode: "draft", referenceScreenshots: [] }),
     });
-    if (!res.ok) return;
-    const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
-    setDraftSavedAt(data.job.updatedAt);
-    syncLocalCache(current.id);
-  }
-
-  async function persistDomainDraft(domain: SiteDomainPurchase) {
-    const current = jobRef.current;
-    if (!current) return;
-    const preferences = {
-      ...current.preferences,
-      deployment: { ...current.preferences.deployment, domain },
-      referenceScreenshots: [],
+    if (!createRes.ok) {
+      const body = (await createRes.json()) as { error?: { message?: string } };
+      setError(body.error?.message ?? "Could not create build job.");
+      return null;
+    }
+    const created = (await createRes.json()) as {
+      job: import("@/types/site-builder").SiteBuildJob;
     };
-    const res = await fetch(`/api/build/${current.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(preferences),
-    });
-    if (!res.ok) return;
-    const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
-    setDraftSavedAt(data.job.updatedAt);
-    syncLocalCache(current.id);
+    setJob(created.job);
+    router.replace(`/build?job=${created.job.id}`);
+    return created.job.id;
   }
 
-  /** Attach buy / bring-your-own domain without regenerating the site preview. */
-  function applyDomainChange(domain: SiteDomainPurchase) {
-    setJob((current) => {
-      if (!current) return current;
-      const deployment = { ...current.preferences.deployment, domain };
-      const preferences = { ...current.preferences, deployment };
-      const businessSlug = current.preferences.businessName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")
-        .slice(0, 48);
-      const slug = current.generatedSite?.slug || businessSlug || "my-site";
-      const liveUrl = domain.selectedDomain ? `https://${domain.selectedDomain}` : undefined;
-      const previewUrl = liveUrl ?? `https://${slug}.sites.aarvanta.cloud`;
-      return {
-        ...current,
-        preferences,
-        plan: current.plan
-          ? {
-              ...current.plan,
-              deployment: {
-                ...current.plan.deployment,
-                domain,
-                liveUrl,
-                previewUrl,
-                deployNotes: buildEc2DeployNotes(deployment),
-              },
-            }
-          : current.plan,
+  async function proposeDesigns() {
+    if (prompt.trim().length < 12) {
+      setError("Describe your business in a sentence or two.");
+      return;
+    }
+    if (businessName.trim().length < 2) {
+      setError("Add a site name first.");
+      setStep("name");
+      return;
+    }
+    const preferences = buildPreferences();
+    setDesignsBusy(true);
+    setError(null);
+    try {
+      const jobId = await ensureJob(preferences);
+      if (!jobId) return;
+      const res = await fetch(`/api/build/${jobId}/design-options`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(preferences),
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: { message?: string } };
+        setError(body.error?.message ?? "Could not generate designs.");
+        return;
+      }
+      const data = (await res.json()) as {
+        job: import("@/types/site-builder").SiteBuildJob;
+        options: SiteDesignOption[];
+        usedAi: boolean;
       };
-    });
-    void persistDomainDraft(domain);
-  }
-
-  /** Change colors/fonts live without regenerating content. */
-  function applyThemeLive(nextPreset: SiteThemePreset, nextCustom: SiteCustomTheme) {
-    setThemePreset(nextPreset);
-    setCustomTheme(nextCustom);
-    setJob((current) => {
-      if (!current?.generatedSite) return current;
-      const preferences = { ...current.preferences, themePreset: nextPreset, customTheme: nextCustom };
-      return {
-        ...current,
-        preferences,
-        generatedSite: { ...current.generatedSite, theme: resolveSiteThemeWithBrand(preferences) },
-        plan: current.plan ? { ...current.plan, theme: resolveSiteThemeWithBrand(preferences) } : current.plan,
-      };
-    });
-
-    if (themeTimerRef.current) clearTimeout(themeTimerRef.current);
-    themeTimerRef.current = setTimeout(() => {
-      void persistThemeDraft(nextPreset, nextCustom);
-    }, DRAFT_AUTOSAVE_MS);
+      setJob(data.job);
+      setDesignOptions(data.options);
+      setSelectedDesignOptionId(data.options[0]?.id ?? null);
+      setUsedAi(data.usedAi);
+      setStep("designs");
+      syncLocalCache(data.job.id, "designs");
+      void refreshJobList();
+    } finally {
+      setDesignsBusy(false);
+    }
   }
 
   async function generate(extraPrompt?: string) {
-    if (categoryId === "custom" && customCategoryLabel.trim().length < 2) {
-      setError("Name your custom category before generating.");
+    if (!selectedDesignOptionId) {
+      setError("Pick a design direction first.");
+      setStep("designs");
       return;
     }
-    if (!prompt.trim() || prompt.trim().length < 12) {
-      setError("Describe your business in a sentence or two — at least a dozen characters.");
-      return;
-    }
-
     const preferences = buildPreferences(extraPrompt);
-
     setBusy(true);
     setError(null);
+    setStep("generate");
     setGenProgress({ stage: "business", percent: 0, message: "Starting…" });
     try {
-      // Ensure we have a job id for the streaming generate endpoint
-      let jobId = job?.id;
-      if (!jobId) {
-        const createRes = await fetch("/api/build", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...preferences, mode: "draft" }),
-        });
-        if (!createRes.ok) {
-          const body = (await createRes.json()) as { error?: { message?: string } };
-          setError(body.error?.message ?? "Could not create build job.");
-          return;
-        }
-        const created = (await createRes.json()) as {
-          job: import("@/types/site-builder").SiteBuildJob;
-        };
-        jobId = created.job.id;
-        setJob(created.job);
-      }
+      const jobId = await ensureJob(preferences);
+      if (!jobId) return;
 
       const res = await fetch(`/api/build/${jobId}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(preferences),
       });
-
       if (!res.ok || !res.body) {
         const body = (await res.json().catch(() => null)) as {
           error?: { message?: string };
@@ -566,7 +410,6 @@ export function BuildOsClient() {
       const decoder = new TextDecoder();
       let buffer = "";
       let finalJob: import("@/types/site-builder").SiteBuildJob | null = null;
-      let finalUsedAi = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -575,9 +418,7 @@ export function BuildOsClient() {
         const chunks = buffer.split("\n\n");
         buffer = chunks.pop() ?? "";
         for (const chunk of chunks) {
-          const line = chunk
-            .split("\n")
-            .find((l) => l.startsWith("data: "));
+          const line = chunk.split("\n").find((l) => l.startsWith("data: "));
           if (!line) continue;
           try {
             const payload = JSON.parse(line.slice(6)) as {
@@ -587,68 +428,41 @@ export function BuildOsClient() {
               message?: string;
               job?: import("@/types/site-builder").SiteBuildJob;
               usedAi?: boolean;
-              partial?: {
-                pageCandidates?: PagePlanCandidate[];
-                site?: import("@/types/site-builder").GeneratedSite;
-                business?: SitePreferences["businessProfile"];
-                brand?: SitePreferences["brandSystem"];
-              };
+              partial?: { site?: import("@/types/site-builder").GeneratedSite };
             };
-
             if (payload.type === "progress") {
               setGenProgress({
                 stage: payload.stage ?? "business",
                 percent: payload.percent ?? 0,
                 message: payload.message ?? "",
               });
-              if (payload.partial?.pageCandidates) {
-                setPageCandidates(payload.partial.pageCandidates);
-              }
               if (payload.partial?.site) {
                 setJob((prev) =>
                   prev
-                    ? {
-                        ...prev,
-                        status: "generating",
-                        generatedSite: payload.partial!.site,
-                        preferences: {
-                          ...prev.preferences,
-                          businessProfile:
-                            payload.partial?.business ?? prev.preferences.businessProfile,
-                          brandSystem: payload.partial?.brand ?? prev.preferences.brandSystem,
-                          pageCandidates:
-                            payload.partial?.pageCandidates ?? prev.preferences.pageCandidates,
-                        },
-                      }
+                    ? { ...prev, status: "generating", generatedSite: payload.partial!.site }
                     : prev
                 );
-                setPhase("studio");
               }
             } else if (payload.type === "complete" && payload.job) {
               finalJob = payload.job;
-              finalUsedAi = payload.usedAi ?? false;
+              setUsedAi(payload.usedAi ?? false);
             } else if (payload.type === "error") {
-              setError(
-                (payload as { message?: string }).message ?? "Generation failed."
-              );
-              if (payload.job) setJob(payload.job);
+              setError((payload as { message?: string }).message ?? "Generation failed.");
             }
           } catch {
-            /* ignore malformed SSE */
+            /* ignore */
           }
         }
       }
 
       if (finalJob) {
         setJob(finalJob);
-        setUsedAi(finalUsedAi);
-        setPageCandidates(
-          finalJob.preferences.pageCandidates ?? finalJob.plan?.pageCandidates ?? []
+        setDesignOptions(finalJob.preferences.designOptions ?? designOptions);
+        setSelectedDesignOptionId(
+          finalJob.preferences.selectedDesignOptionId ?? selectedDesignOptionId
         );
-        setPhase("studio");
         setRefineInput("");
-        setDraftSavedAt(finalJob.updatedAt);
-        syncLocalCache(finalJob.id);
+        syncLocalCache(finalJob.id, "generate");
         router.replace(`/build?job=${finalJob.id}`);
         void refreshJobList();
       }
@@ -660,20 +474,11 @@ export function BuildOsClient() {
 
   async function onScreenshotFiles(files: FileList | null) {
     if (!files?.length) return;
-    setError(null);
     const remaining = MAX_SCREENSHOTS - screenshots.length;
-    if (remaining <= 0) {
-      setError(`Maximum ${MAX_SCREENSHOTS} reference images.`);
-      return;
-    }
-
+    if (remaining <= 0) return;
     const toAdd: SiteReferenceScreenshot[] = [];
     for (const file of Array.from(files).slice(0, remaining)) {
-      if (!file.type.startsWith("image/")) continue;
-      if (file.size > MAX_SCREENSHOT_BYTES) {
-        setError("Each image must be under 1.5 MB.");
-        continue;
-      }
+      if (!file.type.startsWith("image/") || file.size > MAX_SCREENSHOT_BYTES) continue;
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result));
@@ -690,48 +495,42 @@ export function BuildOsClient() {
     if (toAdd.length) setScreenshots((prev) => [...prev, ...toAdd]);
   }
 
-  function resetComposeState() {
-    setJob(null);
-    setCategoryId(null);
-    setTemplateId(null);
-    setPrompt("");
-    setBusinessName("");
-    setAudience("");
-    setTone("professional");
-    setPages(["home", "about", "contact"]);
-    setFeatures(["contact_form"]);
-    setPageCandidates([]);
-    setThemePreset("gold_navy");
-    setCustomTheme(defaultCustomThemeFromPreset("gold_navy"));
-    setScreenshots([]);
-    setRefineInput("");
-    setError(null);
-    setDraftSavedAt(null);
-    setGenProgress(null);
-    setStep("brief");
-    setPhase("compose");
-  }
-
-  async function discardJob(id: string) {
-    await fetch(`/api/build/${id}`, { method: "DELETE" });
-    if (job?.id === id) {
-      clearComposeDraftCache();
-      resetComposeState();
-      router.replace("/build");
-    }
-    void refreshJobList();
-  }
-
-  function startOver() {
-    clearComposeDraftCache();
-    resetComposeState();
-    router.replace("/build");
-    void refreshJobList();
-  }
-
-  function resumeJob(item: import("@/types/site-builder").SiteBuildJob) {
-    router.replace(`/build?job=${item.id}`);
-    hydrateFromJob(item);
+  function applyDomainChange(domain: SiteDomainPurchase) {
+    setJob((current) => {
+      if (!current) return current;
+      const deployment = { ...current.preferences.deployment, domain };
+      const liveUrl = domain.selectedDomain ? `https://${domain.selectedDomain}` : undefined;
+      const previewUrl =
+        current.plan?.deployment.previewUrl ??
+        `https://${current.preferences.businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.sites.aarvanta.cloud`;
+      return {
+        ...current,
+        preferences: { ...current.preferences, deployment },
+        plan: current.plan
+          ? {
+              ...current.plan,
+              deployment: {
+                ...current.plan.deployment,
+                domain,
+                liveUrl,
+                previewUrl,
+                deployNotes: buildEc2DeployNotes(deployment),
+              },
+            }
+          : current.plan,
+      };
+    });
+    const current = jobRef.current;
+    if (!current) return;
+    void fetch(`/api/build/${current.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...current.preferences,
+        deployment: { ...current.preferences.deployment, domain },
+        referenceScreenshots: [],
+      }),
+    });
   }
 
   async function patchDeployment(partial: {
@@ -754,814 +553,616 @@ export function BuildOsClient() {
     const optimistic = { ...current, preferences: nextPreferences };
     setJob(optimistic);
     jobRef.current = optimistic;
-    try {
-      const res = await fetch(`/api/build/${current.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nextPreferences),
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as { job: import("@/types/site-builder").SiteBuildJob };
-      const merged = {
-        ...data.job,
-        generatedSite: data.job.generatedSite ?? current.generatedSite,
-        plan: data.job.plan ?? current.plan,
-      };
-      setJob(merged);
-      jobRef.current = merged;
-    } catch {
-      // Keep optimistic local state; draft autosave may retry later.
-    }
+    await fetch(`/api/build/${current.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...nextPreferences, referenceScreenshots: [] }),
+    });
   }
 
-  /* ---- Step transitions ---- */
-
-  function selectCategory(id: SiteCategoryId) {
-    setCategoryId(id);
-    setTemplateId(null);
-    if (id !== "custom") {
-      setCustomCategoryLabel("");
-      setStep("template");
-      syncLocalCache(job?.id, "template");
-      return;
-    }
-    // Stay on category step so the user can name their niche first.
-    setStep("category");
-    syncLocalCache(job?.id, "category");
+  function startOver() {
+    clearComposeDraftCache();
+    setJob(null);
+    setPrompt("");
+    setBusinessName("");
+    setAudience("");
+    setTone("friendly");
+    setGoals(["Sell more products online"]);
+    setFeatures(["ecommerce", "contact_form"]);
+    setDesignOptions([]);
+    setSelectedDesignOptionId(null);
+    setScreenshots([]);
+    setRefineInput("");
+    setError(null);
+    setGenProgress(null);
+    setStep("about");
+    router.replace("/build");
   }
 
-  function continueCustomCategory() {
-    if (customCategoryLabel.trim().length < 2) return;
-    setStep("template");
-    syncLocalCache(job?.id, "template");
+  async function discardJob(id: string) {
+    await fetch(`/api/build/${id}`, { method: "DELETE" });
+    if (job?.id === id) startOver();
+    void refreshJobList();
   }
 
-  function selectTemplate(id: string) {
-    const tpl = getTemplateById(id);
-    setTemplateId(id);
-    if (tpl) {
-      setTone(tpl.defaultTone);
-      setPages(tpl.defaultPages);
-      setFeatures(tpl.defaultFeatures);
-      const preset = tpl.defaultTheme;
-      setThemePreset(preset);
-      setCustomTheme(defaultCustomThemeFromPreset(preset === "custom" ? "gold_navy" : preset));
-    }
-    setStep("brief");
-    syncLocalCache(job?.id, "brief");
-  }
-
-  function applyExample(example: (typeof EXAMPLE_PROMPTS)[number]) {
-    const tpl = getTemplateById(example.templateId);
-    setCategoryId(example.categoryId);
-    setCustomCategoryLabel("");
-    setTemplateId(example.templateId);
-    setPrompt(example.prompt);
-    if (tpl) {
-      setTone(tpl.defaultTone);
-      setPages(tpl.defaultPages);
-      setFeatures(tpl.defaultFeatures);
-      const preset = tpl.defaultTheme;
-      setThemePreset(preset);
-      setCustomTheme(defaultCustomThemeFromPreset(preset === "custom" ? "gold_navy" : preset));
-    }
-    setStep("brief");
-    syncLocalCache(job?.id, "brief");
-  }
-
-  const draftJobs = recentJobs.filter((j) => j.status === "draft" || !j.generatedSite);
-  const generatedJobs = recentJobs.filter((j) => Boolean(j.generatedSite));
-  const canGenerate = Boolean(
-    prompt.trim().length >= 12 &&
-      (categoryId !== "custom" || customCategoryLabel.trim().length >= 2)
+  const draftJobs = recentJobs.filter(
+    (j) => j.status === "draft" || j.status === "designs_ready" || !j.generatedSite
   );
+  const generatedJobs = recentJobs.filter((j) => Boolean(j.generatedSite));
+  const sectionCount =
+    job?.generatedSite?.pages.reduce((n, p) => n + p.blocks.length, 0) ?? 0;
 
-  /* ================================================================ */
-  /* Studio                                                            */
-  /* ================================================================ */
-
-  if (phase === "studio" && (job?.generatedSite || busy)) {
+  /* ---- Generate / studio ---- */
+  if (step === "generate") {
     return (
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="flex max-h-[42vh] w-full shrink-0 flex-col border-b border-border bg-surface lg:max-h-none lg:w-[380px] lg:border-b-0 lg:border-r">
-          <div className="border-b border-border-subtle px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gold">
-              Build OS Studio
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">
-              {job?.generatedSite?.siteName ?? (businessName || "Building your site")}
-            </h2>
-            <p className="mt-1 line-clamp-2 text-xs text-muted">
-              {job?.plan?.summary ??
-                job?.preferences.businessProfile?.industry ??
-                "Your site preview is ready. Refine with natural language."}
-            </p>
-            <p className="mt-2 text-[10px] text-dim">
-              {draftSaving
-                ? "Saving draft…"
-                : draftSavedAt
-                  ? `Draft saved · ${formatDraftTime(draftSavedAt)}`
-                  : usedAi
-                    ? "AI-enhanced generation"
-                    : "Autosave on"}
-            </p>
-          </div>
-
-          <div className="flex-1 space-y-5 overflow-y-auto p-5">
-            {genProgress || busy ? (
-              <div className="rounded-xl border border-border bg-surface-muted p-3">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-dim">
-                  Generating
-                </p>
-                <p className="mt-1 text-sm text-foreground">
-                  {genProgress?.message ?? "Working…"}
-                </p>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border">
-                  <div
-                    className="h-full rounded-full bg-gold transition-all duration-500"
-                    style={{ width: `${genProgress?.percent ?? 8}%` }}
-                  />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {GENERATION_STAGES.filter((s) => s.id !== "done").map((s) => {
-                    const active = genProgress?.stage === s.id;
-                    const doneIdx = GENERATION_STAGES.findIndex(
-                      (x) => x.id === genProgress?.stage
-                    );
-                    const thisIdx = GENERATION_STAGES.findIndex((x) => x.id === s.id);
-                    const complete = doneIdx > thisIdx;
-                    return (
-                      <span
-                        key={s.id}
-                        className={`rounded-full px-2 py-0.5 text-[10px] ${
-                          active
-                            ? "bg-gold/20 text-gold"
-                            : complete
-                              ? "text-foreground"
-                              : "text-dim"
-                        }`}
-                      >
-                        {s.label}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            {pageCandidates.length > 0 ? (
-              <div>
-                <p className="mb-2 text-xs font-medium text-foreground">Pages</p>
-                <p className="mb-2 text-[11px] text-dim">
-                  Confidence-scored plan — toggle pages, then regenerate to apply.
-                </p>
-                <div className="space-y-1.5">
-                  {pageCandidates.map((c) => (
-                    <label
-                      key={c.slug}
-                      className="flex cursor-pointer items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-2 text-xs"
-                    >
-                      <span className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={c.include}
-                          onChange={() => {
-                            setPageCandidates((prev) =>
-                              prev.map((p) =>
-                                p.slug === c.slug ? { ...p, include: !p.include } : p
-                              )
-                            );
-                          }}
-                        />
-                        <span className="text-foreground">{c.title}</span>
-                      </span>
-                      <span className="tabular-nums text-dim">{Math.round(c.confidence)}%</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {job?.preferences.businessProfile ? (
-              <div className="rounded-xl border border-border bg-surface-muted p-3">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-dim">
-                  Business intel
-                </p>
-                <p className="mt-1 text-xs text-foreground">
-                  {job.preferences.businessProfile.industry} ·{" "}
-                  {job.preferences.businessProfile.subcategory}
-                </p>
-                <p className="mt-1 text-[11px] text-muted">
-                  Goal: {job.preferences.businessProfile.primaryGoal} · Tone:{" "}
-                  {job.preferences.businessProfile.brandTone}
-                </p>
-              </div>
-            ) : null}
-
-            <div>
-              <p className="mb-2 text-xs font-medium text-foreground">Customize theme</p>
-              <ThemeStylePanel
-                compact
-                themePreset={themePreset}
-                customTheme={customTheme}
-                onChange={({ themePreset: nextPreset, customTheme: nextCustom }) =>
-                  applyThemeLive(nextPreset, nextCustom)
-                }
-              />
-              <p className="mt-2 text-[11px] text-dim">
-                Colors and fonts update instantly and stay saved with this draft.
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[hsl(222_28%_6%)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setStep(selectedDesignOptionId ? "domain" : "designs")}
+              className="text-xs font-medium text-muted hover:text-foreground"
+            >
+              ← Back
+            </button>
+            <div className="hidden h-4 w-px bg-border sm:block" />
+            <div className="hidden sm:block">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gold">
+                Build OS
+              </p>
+              <p className="text-[11px] text-dim">
+                {busy ? "Generating…" : job?.generatedSite ? "Studio" : "AI Generation"}
               </p>
             </div>
-
-            <div>
-              <p className="mb-2 text-xs font-medium text-foreground">Refine with AI</p>
-              <textarea
-                value={refineInput}
-                onChange={(e) => setRefineInput(e.target.value)}
-                rows={3}
-                placeholder="Make the hero warmer… Add pricing… More luxury tone…"
-                className="w-full rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
-              />
-              <Button
-                type="button"
-                className="mt-2 w-full"
-                onClick={() => void generate(refineInput)}
-                disabled={busy}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => syncLocalCache(job?.id, "generate")}
+            >
+              Save
+            </Button>
+            {job?.id ? (
+              <Link
+                href={`/build/preview/${job.id}`}
+                target="_blank"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:text-foreground"
               >
-                {busy ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating…
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    Update preview
-                  </>
-                )}
-              </Button>
-            </div>
+                Download <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            ) : null}
+            <Button type="button" size="sm" onClick={startOver} variant="secondary">
+              New site
+            </Button>
+            <Button type="button" size="sm" disabled={!job?.generatedSite}>
+              Publish Website
+            </Button>
+          </div>
+        </div>
+        {error ? <p className="border-b border-border px-4 py-2 text-xs text-red-400">{error}</p> : null}
+        <BuildStudioLayout
+          site={job?.generatedSite}
+          progress={
+            genProgress
+              ? {
+                  stage: genProgress.stage,
+                  percent: genProgress.percent,
+                  message: genProgress.message,
+                  updatedAt: new Date().toISOString(),
+                }
+              : job?.progress ?? null
+          }
+          busy={busy}
+          businessSummary={prompt}
+          pageCount={job?.generatedSite?.pages.length ?? 0}
+          sectionCount={sectionCount}
+          refineInput={refineInput}
+          onRefineInput={setRefineInput}
+          onRefine={() => void generate(refineInput)}
+          siteName={businessName || "Website"}
+          domainLabel={job?.preferences.deployment.domain.selectedDomain}
+          featureCount={features.length}
+          hostingSlot={
+            job ? (
+              <HostingCheckoutPanel
+                instanceType={job.preferences.deployment.ec2.instanceType}
+                buildJobId={job.id}
+                domain={job.preferences.deployment.domain.selectedDomain}
+                onInstanceTypeChange={(instanceType) =>
+                  void patchDeployment({ instanceType })
+                }
+              />
+            ) : null
+          }
+        />
+      </div>
+    );
+  }
 
-            {job ? (
-              <>
-                <div>
-                  <p className="mb-2 text-xs font-medium text-foreground">Domain</p>
-                  <p className="mb-3 text-[11px] text-dim">
-                    Buy through Aarvanta, or connect a domain you already own — we&apos;ll show the DNS
-                    records for your provider.
-                  </p>
-                  <DomainPurchasePanel
-                    businessName={
-                      job.preferences.businessName || job.generatedSite?.siteName || "yoursite"
+  /* ---- Wizard ---- */
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[hsl(222_28%_6%)] md:flex-row">
+      <BuildWizardRail
+        step={step}
+        completed={completed}
+        onSelect={(id) => {
+          const order = BUILD_WIZARD_STEPS.map((s) => s.id);
+          const target = order.indexOf(id);
+          const current = order.indexOf(step);
+          if (target <= current || completed.has(id)) {
+            setStep(id);
+            syncLocalCache(job?.id, id);
+          }
+        }}
+      />
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-8 sm:py-10">
+          {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+
+          {step === "about" && (
+            <div className="animate-fade-up space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+                  About Your Site
+                </h2>
+                <p className="mt-2 text-sm text-muted">
+                  Tell us what your website is all about — AI will understand the business.
+                </p>
+              </div>
+
+              {(draftJobs.length > 0 || generatedJobs.length > 0) && (
+                <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4">
+                  <div className="flex items-center gap-2">
+                    <Clock3 className="h-3.5 w-3.5 text-gold" />
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-dim">
+                      Continue where you left off
+                    </p>
+                  </div>
+                  <ul className="mt-3 space-y-2">
+                    {[...draftJobs, ...generatedJobs]
+                      .filter((item, i, a) => a.findIndex((j) => j.id === item.id) === i)
+                      .slice(0, 4)
+                      .map((item) => (
+                        <li
+                          key={item.id}
+                          className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2"
+                        >
+                          <button
+                            type="button"
+                            className="min-w-0 flex-1 text-left"
+                            onClick={() => {
+                              hydrateFromJob(item);
+                              router.replace(`/build?job=${item.id}`);
+                            }}
+                          >
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {item.preferences.businessName}
+                            </p>
+                            <p className="text-[10px] text-dim">
+                              {formatDraftTime(item.updatedAt)}
+                            </p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void discardJob(item.id)}
+                            className="rounded-lg p-1.5 text-dim hover:text-foreground"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={5}
+                placeholder="We sell handmade wooden toys for kids of all ages. Our toys are safe, educational and fun."
+                className="w-full rounded-2xl border border-border bg-surface-elevated px-4 py-3 text-base leading-relaxed text-foreground outline-none placeholder:text-dim focus:border-gold/40"
+              />
+              <div className="flex flex-wrap gap-2">
+                {QUICK_TAGS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setPrompt((prev) =>
+                        prev.includes(tag) ? prev : prev ? `${prev} (${tag})` : tag
+                      )
                     }
-                    countryBase={job.preferences.countryBase}
-                    domain={job.preferences.deployment.domain}
-                    buildJobId={job.id}
-                    onDomainChange={applyDomainChange}
+                    className="rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs text-muted hover:border-gold/40 hover:text-foreground"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {EXAMPLE_PROMPTS.map((ex) => (
+                  <button
+                    key={ex.id}
+                    type="button"
+                    onClick={() => {
+                      setPrompt(ex.prompt);
+                      setBusinessName(ex.prompt.split(/[—–\-:]/)[0]?.trim() || "");
+                    }}
+                    className="rounded-full border border-border px-3 py-1.5 text-[11px] text-dim hover:text-foreground"
+                  >
+                    Example: {ex.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  disabled={prompt.trim().length < 12}
+                  onClick={() => {
+                    setStep("name");
+                    syncLocalCache(job?.id, "name");
+                  }}
+                >
+                  Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "name" && (
+            <div className="animate-fade-up space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">Site Name</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Name your site — AI will shape logo style, fonts, and brand vibe.
+                </p>
+              </div>
+              <div className="grid gap-5 lg:grid-cols-[1.2fr_0.9fr]">
+                <div className="space-y-4">
+                  <input
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="e.g. Toy Haven"
+                    className="w-full rounded-2xl border border-border bg-surface-elevated px-4 py-3 text-lg text-foreground outline-none placeholder:text-dim focus:border-gold/40"
                   />
+                  <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-dim">
+                      Audience
+                    </p>
+                    <input
+                      value={audience}
+                      onChange={(e) => setAudience(e.target.value)}
+                      placeholder="Parents, gift buyers…"
+                      className="mt-3 w-full rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
+                    />
+                  </div>
+                  <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-dim">
+                      Brand vibe
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {TONE_VIBES.map((v) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => setTone(v.id)}
+                          className={cn(
+                            "rounded-full border px-3 py-1.5 text-xs transition",
+                            tone === v.id
+                              ? "border-gold bg-gold/15 text-gold-bright"
+                              : "border-border text-muted hover:border-gold/35"
+                          )}
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                {error && <p className="text-xs text-red-400">{error}</p>}
+                <div className="rounded-2xl border border-border bg-surface-elevated p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-dim">
+                    Brand preview
+                  </p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div
+                      className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-black"
+                      style={{ background: customTheme.accentColor }}
+                    >
+                      {(businessName.trim() || "A").slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-foreground">
+                        {businessName.trim() || "Your brand"}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {TONE_VIBES.find((v) => v.id === tone)?.label ?? "Friendly"} · DM Sans
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-5">
+                    <p className="text-[10px] uppercase tracking-wide text-dim">Palette</p>
+                    <div className="mt-2 flex gap-2">
+                      {[
+                        customTheme.primaryColor,
+                        customTheme.accentColor,
+                        customTheme.backgroundColor,
+                        "#1A2B48",
+                      ].map((color, i) => (
+                        <span
+                          key={`${color}-${i}`}
+                          className="h-8 w-8 rounded-full border border-border"
+                          style={{ background: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-5 rounded-xl border border-border bg-surface-muted px-3 py-3">
+                    <p className="text-[10px] uppercase tracking-wide text-dim">Sample headline</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {businessName.trim()
+                        ? `${businessName.trim()} — crafted for ${audience.trim() || "your customers"}`
+                        : "Your story, designed by AI"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <Button type="button" variant="secondary" onClick={() => setStep("about")}>
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  disabled={businessName.trim().length < 2}
+                  onClick={() => {
+                    setStep("goals");
+                    syncLocalCache(job?.id, "goals");
+                  }}
+                >
+                  Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
 
-                <div>
-                  <p className="mb-2 text-xs font-medium text-foreground">Hosting</p>
-                  <p className="mb-3 text-[11px] text-muted">
+          {step === "goals" && (
+            <div className="animate-fade-up space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">Goals</h2>
+                <p className="mt-2 text-sm text-muted">
+                  What should this website help you achieve?
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {GOAL_OPTIONS.map((goal) => {
+                  const on = goals.includes(goal);
+                  return (
+                    <button
+                      key={goal}
+                      type="button"
+                      onClick={() => setGoals((prev) => toggle(prev, goal))}
+                      className={cn(
+                        "rounded-2xl border p-4 text-left transition",
+                        on
+                          ? "border-gold bg-gold/10 ring-1 ring-gold/30"
+                          : "border-border bg-surface-elevated hover:border-gold/35"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground">{goal}</p>
+                        {on ? (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold text-black">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between">
+                <Button type="button" variant="secondary" onClick={() => setStep("name")}>
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!goals.length}
+                  onClick={() => {
+                    setStep("apps");
+                    syncLocalCache(job?.id, "apps");
+                  }}
+                >
+                  Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "apps" && (
+            <div className="animate-fade-up space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">Add Apps</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Choose features to include on your site.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {APP_OPTIONS.map((app) => {
+                  const on = features.includes(app.id);
+                  return (
+                    <button
+                      key={app.id}
+                      type="button"
+                      onClick={() => setFeatures((prev) => toggle(prev, app.id))}
+                      className={cn(
+                        "rounded-2xl border p-4 text-left transition",
+                        on
+                          ? "border-gold bg-gold/10 ring-1 ring-gold/30"
+                          : "border-border bg-surface-elevated hover:border-gold/35"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{app.label}</p>
+                          <p className="mt-1 text-xs text-muted">{app.description}</p>
+                        </div>
+                        {on ? (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold text-black">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void onScreenshotFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:text-foreground"
+                >
+                  <ImagePlus className="h-3.5 w-3.5" />
+                  Inspiration images
+                  {screenshots.length ? ` (${screenshots.length})` : ""}
+                </button>
+              </div>
+              <div className="flex justify-between">
+                <Button type="button" variant="secondary" onClick={() => setStep("goals")}>
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  disabled={designsBusy}
+                  onClick={() => void proposeDesigns()}
+                >
+                  {designsBusy ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Designing…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate designs
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "designs" && (
+            <div className="animate-fade-up">
+              {designOptions.length ? (
+                <DesignOptionsPicker
+                  options={designOptions}
+                  selectedId={selectedDesignOptionId}
+                  busy={busy || designsBusy}
+                  onSelect={(id) => {
+                    setSelectedDesignOptionId(id);
+                    syncLocalCache(job?.id, "designs");
+                  }}
+                  onConfirm={() => {
+                    setStep("domain");
+                    syncLocalCache(job?.id, "domain");
+                  }}
+                  onBack={() => setStep("apps")}
+                  confirmLabel="Continue to domain"
+                />
+              ) : (
+                <div className="space-y-4 text-center">
+                  <p className="text-sm text-muted">No designs yet.</p>
+                  <Button type="button" onClick={() => void proposeDesigns()}>
+                    Generate designs
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === "domain" && (
+            <div className="animate-fade-up space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">Domain</h2>
+                <p className="mt-2 text-sm text-muted">
+                  Search for a domain or connect one you already own.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+                <DomainPurchasePanel
+                  businessName={businessName || "yoursite"}
+                  countryBase="UK"
+                  domain={
+                    job?.preferences.deployment.domain ?? {
+                      status: "none",
+                      currency: "GBP",
+                      autoRenew: true,
+                    }
+                  }
+                  buildJobId={job?.id}
+                  onDomainChange={applyDomainChange}
+                />
+              </div>
+              {job ? (
+                <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+                  <p className="text-sm font-semibold text-foreground">Hosting</p>
+                  <p className="mt-1 mb-3 text-xs text-muted">
                     Subscribe to Aarvanta Hosting. Payments run through Stripe Checkout.
                   </p>
                   <HostingCheckoutPanel
                     instanceType={job.preferences.deployment.ec2.instanceType}
                     buildJobId={job.id}
                     domain={job.preferences.deployment.domain.selectedDomain}
-                    onInstanceTypeChange={(instanceType) => void patchDeployment({ instanceType })}
+                    onInstanceTypeChange={(instanceType) =>
+                      void patchDeployment({ instanceType })
+                    }
                   />
                 </div>
-              </>
-            ) : null}
-
-            <div className="rounded-xl border border-border bg-surface-muted p-3">
-              <p className="text-[10px] font-medium uppercase tracking-wide text-dim">Brief</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted">{prompt}</p>
-            </div>
-          </div>
-
-          <div className="flex gap-2 border-t border-border-subtle p-4">
-            <Button type="button" variant="secondary" onClick={startOver}>
-              New site
-            </Button>
-            {job ? (
-              <Link
-                href={`/build/preview/${job.id}`}
-                target="_blank"
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gold px-3 py-2.5 text-sm font-semibold text-black hover:bg-gold-bright"
-              >
-                Full preview
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            ) : null}
-          </div>
-        </aside>
-
-        <div className="min-h-0 flex-1 overflow-y-auto bg-background p-3 sm:p-5">
-          {job?.generatedSite ? (
-            <GeneratedSitePreview site={job.generatedSite} />
-          ) : (
-            <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-border text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-gold" />
-              <p className="mt-4 text-sm text-foreground">
-                {genProgress?.message ?? "Building your website…"}
-              </p>
-              <p className="mt-1 text-xs text-dim">
-                Business → Brand → Pages → Layout → Copy → Images
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  /* ================================================================ */
-  /* Compose wizard                                                    */
-  /* ================================================================ */
-
-  const templatesForCategory = categoryId ? getTemplatesForCategory(categoryId) : [];
-  const activeCategory = categoryId ? SITE_CATEGORIES.find((c) => c.id === categoryId) : null;
-
-  return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-90"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(184,150,93,0.18), transparent 55%), radial-gradient(ellipse 60% 40% at 100% 20%, rgba(77,166,255,0.08), transparent 45%)",
-        }}
-      />
-
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
-        <div className="animate-fade-up text-center">
-          <p className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-primary-soft px-3 py-1 text-[11px] font-medium text-gold-bright">
-            <Sparkles className="h-3.5 w-3.5" />
-            Build OS — AI website studio
-          </p>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            {step === "category"
-              ? "Optional: pick a style category"
-              : step === "template"
-                ? "Optional: pick a layout prior"
-                : "What is your site all about?"}
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
-            {step === "category"
-              ? "Skip this if you want — AI will infer industry and pages from your brief."
-              : step === "template"
-                ? `Templates seed section layouts for ${activeCategory?.label ?? "your category"}. Or skip and let AI plan.`
-                : "Tell us about the business. AI builds brand, pages, copy, and imagery — templates are optional."}
-          </p>
-        </div>
-
-        {/* Stepper */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-[11px] font-medium">
-          {(["brief", "category", "template"] as ComposeStep[]).map((s, i) => {
-            const order = ["brief", "category", "template"] as ComposeStep[];
-            const idx = order.indexOf(step);
-            const done = i < idx;
-            const on = s === step;
-            return (
-              <div key={s} className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 ${
-                    on
-                      ? "bg-gold text-black"
-                      : done
-                        ? "bg-primary-soft text-gold-bright"
-                        : "border border-border text-dim"
-                  }`}
-                >
-                  {done ? <Check className="h-3 w-3" /> : <span>{i + 1}</span>}
-                  {s === "category" ? "Category" : s === "template" ? "Template" : "Brief"}
-                </span>
-                {i < 2 ? <span className="text-dim">·</span> : null}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Resume list — on brief (primary entry) */}
-        {step === "brief" && (draftJobs.length > 0 || generatedJobs.length > 0) && (
-          <div className="mt-8 animate-fade-up rounded-2xl border border-border bg-surface-elevated/70 p-4">
-            <div className="flex items-center gap-2">
-              <Clock3 className="h-3.5 w-3.5 text-gold" />
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-dim">
-                Continue where you left off
-              </p>
-            </div>
-            <ul className="mt-3 space-y-2">
-              {[...draftJobs, ...generatedJobs]
-                .filter((item, idx, a) => a.findIndex((j) => j.id === item.id) === idx)
-                .slice(0, 5)
-                .map((item) => {
-                  const label =
-                    item.preferences.businessName ||
-                    item.preferences.businessIdea.slice(0, 48) ||
-                    "Untitled draft";
-                  const isDraft = item.status === "draft" || !item.generatedSite;
-                  return (
-                    <li
-                      key={item.id}
-                      className="flex items-center gap-2 rounded-xl border border-border bg-surface-muted/60 px-3 py-2"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => resumeJob(item)}
-                        className="min-w-0 flex-1 text-left"
-                      >
-                        <p className="truncate text-sm font-medium text-foreground">{label}</p>
-                        <p className="text-[10px] text-dim">
-                          {isDraft ? "Draft" : "Generated"} · {formatDraftTime(item.updatedAt)}
-                        </p>
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Discard ${label}`}
-                        onClick={() => void discardJob(item.id)}
-                        className="rounded-lg p-1.5 text-dim hover:bg-surface hover:text-foreground"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </li>
-                  );
-                })}
-            </ul>
-          </div>
-        )}
-
-        {/* STEP: Category */}
-        {step === "category" && (
-          <div className="mt-8 animate-fade-up space-y-4">
-            <div className="flex justify-end">
-              <Button type="button" variant="secondary" onClick={() => setStep("brief")}>
-                Skip — use AI planning
-              </Button>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {SITE_CATEGORIES.map((card) => {
-                const Icon = CATEGORY_ICONS[card.icon] ?? Sparkles;
-                const active = categoryId === card.id;
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    onClick={() => selectCategory(card.id)}
-                    className={`rounded-2xl border p-4 text-left transition ${
-                      active ? "border-gold bg-primary-soft" : "border-border bg-surface-elevated/60 hover:border-gold/35"
-                    }`}
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-gold-bright">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-foreground">{card.label}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted">{card.description}</p>
-                    <p className="mt-2 text-[10px] text-dim">{card.examples}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            {categoryId === "custom" ? (
-              <div className="rounded-2xl border border-border bg-surface-elevated/80 p-4">
-                <p className="text-sm font-medium text-foreground">Name your category</p>
-                <p className="mt-1 text-xs text-muted">
-                  e.g. Pet grooming marketplace, B2B logistics directory, yoga retreat brand
-                </p>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <input
-                    value={customCategoryLabel}
-                    onChange={(e) => setCustomCategoryLabel(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") continueCustomCategory();
-                    }}
-                    placeholder="Your niche or category"
-                    className="min-w-0 flex-1 rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
-                    autoFocus
-                  />
-                  <Button
-                    type="button"
-                    onClick={continueCustomCategory}
-                    disabled={customCategoryLabel.trim().length < 2}
-                  >
-                    Choose template
-                    <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        {/* STEP: Template */}
-        {step === "template" && (
-          <div className="mt-8 animate-fade-up">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setStep("category")}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                Back to categories
-              </button>
-              <Button type="button" variant="secondary" onClick={() => setStep("brief")}>
-                Skip to brief
-              </Button>
-            </div>
-            {activeCategory ? (
-              <p className="mb-4 text-sm text-muted">
-                Templates for{" "}
-                <span className="font-medium text-foreground">
-                  {categoryId === "custom" && customCategoryLabel.trim()
-                    ? customCategoryLabel.trim()
-                    : activeCategory.label}
-                </span>
-                <span className="text-dim"> — open-source-inspired layouts with structural previews</span>
-              </p>
-            ) : null}
-            <div className="grid gap-4 sm:grid-cols-2">
-              {templatesForCategory.map((tpl) => {
-                const active = templateId === tpl.id;
-                return (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => selectTemplate(tpl.id)}
-                    className={`overflow-hidden rounded-2xl border text-left transition ${
-                      active ? "border-gold ring-1 ring-gold/50" : "border-border hover:border-gold/35"
-                    }`}
-                  >
-                    <TemplateLayoutPreview template={tpl} className="min-h-[140px]" />
-                    <div className="bg-surface-elevated p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-foreground">{tpl.name}</p>
-                        {active ? <Check className="h-4 w-4 text-gold" /> : null}
-                      </div>
-                      <p className="mt-1 text-xs leading-relaxed text-muted">{tpl.description}</p>
-                      <p className="mt-2 text-[10px] text-dim">{tpl.inspiredBy}</p>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {tpl.bestFor.map((b) => (
-                          <span
-                            key={b}
-                            className="rounded-full border border-border px-2 py-0.5 text-[10px] text-dim"
-                          >
-                            {b}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* STEP: Brief */}
-        {step === "brief" && (
-          <div className="mt-8 animate-fade-up space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setStep("category")}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-foreground"
-              >
-                Optional: choose a style template
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </button>
-              {activeCategory && templateId ? (
-                <p className="text-xs text-dim">
-                  <span className="text-muted">
-                    {categoryId === "custom" && customCategoryLabel.trim()
-                      ? customCategoryLabel.trim()
-                      : activeCategory.label}
-                  </span>{" "}
-                  · <span className="text-muted">{getTemplateById(templateId)?.name}</span>
-                </p>
-              ) : (
-                <p className="text-xs text-dim">No template selected — AI will plan structure</p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-border bg-surface-elevated/90 p-3 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.55)] backdrop-blur sm:p-4">
-              <label className="px-2 text-[11px] font-medium uppercase tracking-wide text-dim">
-                Site name
-              </label>
-              <input
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="e.g. Toy Haven"
-                className="mb-3 w-full rounded-xl border-0 bg-transparent px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-dim"
-              />
-              <label className="px-2 text-[11px] font-medium uppercase tracking-wide text-dim">
-                What is your site all about?
-              </label>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={4}
-                placeholder="e.g. We sell educational toys online for parents and schools in India. Friendly brand, medium pricing."
-                className="w-full resize-none rounded-xl border-0 bg-transparent px-2 py-2 text-base leading-relaxed text-foreground outline-none placeholder:text-dim sm:text-[15px]"
-              />
-
-              <div className="mt-2 flex flex-wrap gap-2 px-1">
-                <span className="self-center text-[10px] font-medium uppercase tracking-wide text-dim">
-                  Example briefs
-                </span>
-                {EXAMPLE_PROMPTS.map((ex) => (
-                  <button
-                    key={ex.id}
-                    type="button"
-                    onClick={() => applyExample(ex)}
-                    className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-[11px] text-muted transition hover:border-gold/40 hover:text-foreground"
-                  >
-                    {ex.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      void onScreenshotFiles(e.target.files);
-                      e.target.value = "";
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:border-gold/40 hover:text-foreground"
-                  >
-                    <ImagePlus className="h-3.5 w-3.5" />
-                    Inspiration
-                    {screenshots.length > 0 ? ` (${screenshots.length})` : ""}
-                  </button>
-                  {screenshots.map((shot) => (
-                    <span
-                      key={shot.id}
-                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-muted py-0.5 pl-1 pr-1.5 text-[10px] text-muted"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={shot.dataUrl} alt="" className="h-5 w-5 rounded object-cover" />
-                      <button
-                        type="button"
-                        aria-label={`Remove ${shot.name}`}
-                        onClick={() => setScreenshots((prev) => prev.filter((s) => s.id !== shot.id))}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                  <span className="text-[10px] text-dim">
-                    {draftSaving
-                      ? "Saving draft…"
-                      : draftSavedAt
-                        ? `Draft saved · ${formatDraftTime(draftSavedAt)}`
-                        : prompt.trim().length >= 3
-                          ? "Draft will autosave"
-                          : "Start typing to save a draft"}
-                  </span>
-                </div>
-
+              ) : null}
+              <div className="flex justify-between">
+                <Button type="button" variant="secondary" onClick={() => setStep("designs")}>
+                  Back
+                </Button>
                 <Button
                   type="button"
+                  disabled={busy || !selectedDesignOptionId}
                   onClick={() => void generate()}
-                  disabled={busy || !canGenerate}
-                  className="min-w-[140px]"
                 >
                   {busy ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating…
+                      Building…
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Generate site
+                      Build website
                     </>
                   )}
                 </Button>
               </div>
+              <p className="text-center text-[11px] text-dim">
+                {usedAi ? "AI-enhanced" : "Demo heuristics available"} · Domain is optional — you
+                can skip and build now.
+              </p>
             </div>
-
-            {error && <p className="text-center text-xs text-red-400">{error}</p>}
-
-            {/* Business details */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-foreground">Business name (optional)</span>
-                <input
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="Auto-detected from your brief"
-                  className="rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-foreground">Audience (optional)</span>
-                <input
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  placeholder="e.g. UK homeowners, early-stage founders"
-                  className="rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground placeholder:text-dim"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-foreground">Tone</span>
-                <select
-                  value={tone}
-                  onChange={(e) => setTone(e.target.value as SiteTone)}
-                  className="rounded-xl border border-border bg-surface-muted px-3 py-2.5 text-sm text-foreground"
-                >
-                  {TONE_OPTIONS.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            {/* Pages */}
-            <div>
-              <p className="mb-2 text-xs font-medium text-foreground">Pages</p>
-              <div className="flex flex-wrap gap-2">
-                {PAGE_OPTIONS.map((opt) => {
-                  const on = pages.includes(opt.id);
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setPages((prev) => toggle(prev, opt.id))}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
-                        on ? "border-gold bg-primary-soft text-gold-bright" : "border-border text-muted hover:border-gold/40"
-                      }`}
-                    >
-                      {on ? <Check className="h-3 w-3" /> : null}
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Features */}
-            <div>
-              <p className="mb-2 text-xs font-medium text-foreground">Features</p>
-              <div className="flex flex-wrap gap-2">
-                {FEATURE_OPTIONS.map((opt) => {
-                  const on = features.includes(opt.id);
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setFeatures((prev) => toggle(prev, opt.id))}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${
-                        on ? "border-gold bg-primary-soft text-gold-bright" : "border-border text-muted hover:border-gold/40"
-                      }`}
-                    >
-                      {on ? <Check className="h-3 w-3" /> : null}
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Theme — secondary; template already set layout */}
-            <details className="rounded-2xl border border-border bg-surface-elevated/50 open:pb-4">
-              <summary className="cursor-pointer list-none px-4 py-3 text-xs font-medium text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
-                Optional colors & fonts
-                <span className="ml-2 font-normal text-dim">
-                  Template layout is fixed — tweak palette only if you want
-                </span>
-              </summary>
-              <div className="px-4">
-                <ThemeStylePanel
-                  themePreset={themePreset}
-                  customTheme={customTheme}
-                  onChange={({ themePreset: nextPreset, customTheme: nextCustom }) => {
-                    setThemePreset(nextPreset);
-                    setCustomTheme(nextCustom);
-                  }}
-                />
-              </div>
-            </details>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

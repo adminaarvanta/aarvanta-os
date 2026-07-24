@@ -59,8 +59,8 @@ export async function POST(req: Request) {
     // Keep server docs small — screenshots stay in the browser draft cache.
     const preferences = normalizeSitePreferences({
       ...parsed.data,
-      categoryId: parsed.data.categoryId ?? "saas",
-      templateId: parsed.data.templateId ?? "saas_launch",
+      categoryId: parsed.data.categoryId,
+      templateId: parsed.data.templateId,
       referenceScreenshots: [],
     });
     const draft = createSiteBuildJob(preferences, scope);

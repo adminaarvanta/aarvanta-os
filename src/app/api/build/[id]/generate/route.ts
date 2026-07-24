@@ -49,7 +49,19 @@ export async function POST(req: Request, context: RouteContext) {
         { status: 400 }
       );
     }
-    working = updateSitePreferences(job, normalizeSitePreferences(parsed.data));
+    const incoming = normalizeSitePreferences(parsed.data);
+    // Preserve design options already stored on the job (homepage previews are large
+    // and may be omitted from the generate request body).
+    working = updateSitePreferences(job, {
+      ...incoming,
+      designOptions: incoming.designOptions?.length
+        ? incoming.designOptions
+        : job.preferences.designOptions,
+      selectedDesignOptionId:
+        incoming.selectedDesignOptionId ?? job.preferences.selectedDesignOptionId,
+      businessProfile: incoming.businessProfile ?? job.preferences.businessProfile,
+      brandSystem: incoming.brandSystem ?? job.preferences.brandSystem,
+    });
     await repo.save(working);
   }
 

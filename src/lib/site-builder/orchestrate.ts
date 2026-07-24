@@ -3,6 +3,7 @@ import {
   runGenerationPipeline,
   type PipelineProgressEvent,
 } from "@/lib/site-builder/agents/pipeline";
+import { generateDesignOptions } from "@/lib/site-builder/agents/design-options";
 import { planSiteFromPreferences } from "@/lib/site-builder/plan-site";
 import { generateSiteFromPlan } from "@/lib/site-builder/generate-site";
 import { resolveSiteThemeWithBrand } from "@/lib/site-builder/theme-presets";
@@ -31,6 +32,33 @@ export function createSiteBuildJob(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/** Propose ≥3 homepage design directions for the user to choose. */
+export async function proposeDesignOptions(job: SiteBuildJob): Promise<SiteBuildJob> {
+  try {
+    const { preferences, usedAi } = await generateDesignOptions(job.preferences);
+    return {
+      ...job,
+      status: "designs_ready",
+      preferences,
+      usedAi,
+      error: undefined,
+      generatedSite: undefined,
+      plan: undefined,
+      progress: undefined,
+      updatedAt: crmNow(),
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Design options failed.";
+    return {
+      ...job,
+      status: "failed",
+      error: message,
+      updatedAt: crmNow(),
+    };
+  }
 }
 
 /** Full ARIA-style specialist pipeline with optional progress callbacks. */

@@ -127,6 +127,8 @@ export function inferPreferencesFromPrompt(
     brandSystem: overrides.brandSystem,
     pageCandidates: overrides.pageCandidates,
     pageConfidenceThreshold: overrides.pageConfidenceThreshold,
+    designOptions: overrides.designOptions,
+    selectedDesignOptionId: overrides.selectedDesignOptionId,
     deployment: {
       ...DEFAULT_DEPLOYMENT,
       ...(overrides.deployment ?? {}),

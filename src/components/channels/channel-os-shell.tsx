@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { MessageCircle, Phone } from "lucide-react";
-import { ChannelStatusBanner } from "@/components/channels/channel-status-banner";
-import { VoiceRelayStatusBadge } from "@/components/channels/voice-relay-status";
 import { StartChannelThread } from "@/components/channels/start-channel-thread";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { IdentityBadge } from "@/components/inbox/identity-badge";
@@ -24,8 +22,6 @@ type ChannelOsConfig = {
   basePath: string;
   title: string;
   description: string;
-  liveHint: string;
-  setupHint: string;
 };
 
 const CONFIGS: Record<"whatsapp" | "voice", ChannelOsConfig> = {
@@ -33,21 +29,13 @@ const CONFIGS: Record<"whatsapp" | "voice", ChannelOsConfig> = {
     channel: "whatsapp",
     basePath: "/whatsapp",
     title: "WhatsApp OS",
-    description: "Business messaging — inbound webhooks, outbound replies, and new threads.",
-    liveHint: "Messages send via Meta Cloud API when configured.",
-    setupHint:
-      "Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_VERIFY_TOKEN, and WHATSAPP_APP_SECRET to go live.",
+    description: "Business messaging — inbound and outbound threads in one place.",
   },
   voice: {
     channel: "voice",
     basePath: "/voice",
     title: "Voice OS",
-    description:
-      "AI calling — two-way ConversationRelay when Voice Relay is on EC2; otherwise one-shot TTS.",
-    liveHint:
-      "Outbound + inbound via Twilio. Two-way AI when VOICE_RELAY_WSS_URL is set.",
-    setupHint:
-      "Set TWILIO_* + NEXT_PUBLIC_APP_URL. Deploy services/voice-relay on EC2 and set VOICE_RELAY_WSS_URL.",
+    description: "AI calling — outbound dialer, inbound calls, and conversation history.",
   },
 };
 
@@ -72,12 +60,6 @@ export async function ChannelOsListPage({
               {config.title}
             </h2>
             <p className="text-xs text-muted sm:text-sm">{config.description}</p>
-            <ChannelStatusBanner
-              channel={config.channel}
-              liveHint={config.liveHint}
-              setupHint={config.setupHint}
-            />
-            {os === "voice" ? <VoiceRelayStatusBadge /> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {os === "voice" ? (

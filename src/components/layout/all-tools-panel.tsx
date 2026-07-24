@@ -58,6 +58,7 @@ export function AllToolsPanel({
   onClose,
   pathname,
   tenant,
+  sidebarCollapsed = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -67,6 +68,7 @@ export function AllToolsPanel({
     workspace: Workspace;
     workspaces: Workspace[];
   } | null;
+  sidebarCollapsed?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,7 +105,11 @@ export function AllToolsPanel({
       />
       <div
         data-demo-tour="all-tools-panel"
-        className="fixed left-[260px] top-0 z-50 flex h-full w-[min(720px,calc(100vw-260px))] flex-col border-r border-border bg-surface shadow-xl"
+        className={`fixed top-0 z-50 flex h-full flex-col border-r border-border bg-surface shadow-xl ${
+          sidebarCollapsed
+            ? "left-[72px] w-[min(720px,calc(100vw-72px))]"
+            : "left-[260px] w-[min(720px,calc(100vw-260px))]"
+        }`}
       >
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">All tools</h2>

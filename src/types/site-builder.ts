@@ -283,6 +283,21 @@ export type SiteGenerationProgress = {
   updatedAt: string;
 };
 
+/** AI-generated design direction — user picks one before full site build. */
+export type SiteDesignOption = {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  styleTags: string[];
+  heroVariant: "fullBleed" | "split" | "centered" | "default";
+  brand: BrandSystem;
+  /** Homepage section tree that becomes the layout prior for generation. */
+  homeSections: SitePlanSection[];
+  /** Homepage-only preview site for the picker UI. */
+  preview: GeneratedSite;
+};
+
 export type SitePreferences = {
   businessName: string;
   businessIdea: string;
@@ -292,7 +307,7 @@ export type SitePreferences = {
   categoryId?: SiteCategoryId;
   /** When categoryId is custom — user-written category label. */
   customCategoryLabel?: string;
-  /** Optional — template prior within the category (ARIA path may pick default). */
+  /** @deprecated Catalog templates — replaced by AI design options. */
   templateId?: string;
   tone: SiteTone;
   siteType: SiteType;
@@ -317,6 +332,10 @@ export type SitePreferences = {
   pageCandidates?: PagePlanCandidate[];
   /** Min confidence to auto-include pages (default 70). */
   pageConfidenceThreshold?: number;
+  /** AI-proposed design directions (homepage previews). */
+  designOptions?: SiteDesignOption[];
+  /** User-selected design option id. */
+  selectedDesignOptionId?: string;
 };
 
 export type SiteBlock = {
@@ -422,6 +441,7 @@ export type SiteBuildJobStatus =
   | "draft"
   | "planning"
   | "plan_ready"
+  | "designs_ready"
   | "approved"
   | "generating"
   | "generated"

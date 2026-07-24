@@ -198,6 +198,9 @@ export const sitePreferencesSchema = z.object({
   brandSystem: brandSystemSchema.optional(),
   pageCandidates: z.array(pagePlanCandidateSchema).max(20).optional(),
   pageConfidenceThreshold: z.number().min(0).max(100).optional(),
+  selectedDesignOptionId: z.string().min(1).max(80).optional(),
+  // designOptions are large (preview sites) — accepted loosely when present
+  designOptions: z.array(z.any()).max(6).optional(),
 });
 
 /** Looser schema for auto-saved drafts (user may not have finished the brief yet). */

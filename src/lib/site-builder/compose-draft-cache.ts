@@ -1,26 +1,25 @@
 import type {
-  SiteCategoryId,
   SiteCustomTheme,
   SiteReferenceScreenshot,
   SiteThemePreset,
-  SiteType,
 } from "@/types/site-builder";
+import type { BuildWizardStepId } from "@/components/build/build-wizard-rail";
 
-const STORAGE_KEY = "aarvanta.build.composeDraft.v2";
+const STORAGE_KEY = "aarvanta.build.composeDraft.v4";
 
-export type ComposeStep = "category" | "template" | "brief";
+export type ComposeStep = BuildWizardStepId;
 
 export type ComposeDraftCache = {
   jobId?: string;
   prompt: string;
-  siteType: SiteType | null;
-  categoryId: SiteCategoryId | null;
-  customCategoryLabel?: string;
-  templateId: string | null;
+  businessName?: string;
+  audience?: string;
+  goals?: string[];
   step: ComposeStep;
   themePreset: SiteThemePreset;
   customTheme: SiteCustomTheme;
   screenshots: SiteReferenceScreenshot[];
+  selectedDesignOptionId?: string | null;
   savedAt: string;
 };
 
@@ -42,7 +41,7 @@ export function writeComposeDraftCache(draft: ComposeDraftCache): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
   } catch {
-    // Quota / private mode — ignore; server draft still helps.
+    /* ignore */
   }
 }
 
@@ -51,6 +50,6 @@ export function clearComposeDraftCache(): void {
   try {
     window.localStorage.removeItem(STORAGE_KEY);
   } catch {
-    // ignore
+    /* ignore */
   }
 }
