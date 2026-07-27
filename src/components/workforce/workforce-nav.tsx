@@ -20,7 +20,7 @@ export function WorkforceNav() {
       aria-label="AI Workforce sections"
     >
       <div
-        className="mx-auto flex max-w-3xl gap-1 border-b"
+        className="mx-auto flex max-w-5xl gap-1 border-b"
         style={{ borderColor: "var(--wf-line)" }}
       >
         {links.map((link) => {

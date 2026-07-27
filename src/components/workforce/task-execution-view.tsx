@@ -81,7 +81,7 @@ export function TaskExecutionView({
         <p className="mt-1 text-sm" style={{ color: "var(--wf-muted)" }}>
           {report.outcome}
         </p>
-        <div className="mx-auto mt-6 grid max-w-sm grid-cols-3 gap-2">
+        <div className="mx-auto mt-6 grid max-w-md grid-cols-3 gap-2">
           {[
             { icon: Phone, label: "Calls", value: report.callsMade },
             { icon: MessageSquare, label: "Messages", value: report.messagesSent },

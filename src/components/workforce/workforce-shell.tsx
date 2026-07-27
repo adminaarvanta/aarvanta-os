@@ -55,7 +55,7 @@ export function WfHeader({
       className="shrink-0 px-5 py-5 sm:px-8"
       style={{ background: "var(--wf-bg)" }}
     >
-      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
         <div>
           <h2
             className="text-[22px] font-bold tracking-tight"

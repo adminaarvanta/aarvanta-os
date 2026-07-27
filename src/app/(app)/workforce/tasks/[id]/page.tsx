@@ -55,7 +55,7 @@ export default async function WorkforceTaskDetailPage({ params }: PageProps) {
       />
       <WorkforceNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
           <TaskExecutionView
             execution={execution}
             goalLabel={goalLabel}

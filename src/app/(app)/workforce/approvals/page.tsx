@@ -32,7 +32,7 @@ export default async function WorkforceApprovalsPage() {
       />
       <WorkforceNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
-        <div className="mx-auto max-w-lg space-y-4">
+        <div className="mx-auto max-w-3xl space-y-4">
           {pending.length === 0 ? (
             <WfPanel>
               <p
