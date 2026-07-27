@@ -52,7 +52,7 @@ export type RegisterDomainResult = {
 
 /** Thin registrar surface used by Build OS domain search + Stripe fulfillment. */
 export type DomainRegistrar = {
-  readonly id: "opensrs" | "demo";
+  readonly id: "namecom" | "opensrs" | "demo";
   checkAvailability(domains: string[]): Promise<DomainAvailabilityResult[]>;
   getPrice(domain: string, years?: number): Promise<DomainPriceResult>;
   registerDomain(input: RegisterDomainInput): Promise<RegisterDomainResult>;

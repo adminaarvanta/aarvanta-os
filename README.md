@@ -176,21 +176,22 @@ Set `AI_AUTO_SUMMARIZE=false` to disable automatic updates. In demo mode without
 
 > **Note:** Cursor’s API is for coding agents (repo tasks), not inbox summarization. Use OpenAI for Communication Hub AI.
 
-### 12. Domain reseller (OpenSRS)
+### 12. Domain reseller (name.com)
 
-Build OS can sell domains inside the app via the **OpenSRS** wholesale reseller program. Customers pay with Stripe; registrations run against your prepaid OpenSRS balance.
+Build OS sells domains inside the app via the **name.com** Core API reseller program (OpenSRS remains as a code fallback). Customers pay with Stripe; registrations bill your name.com account.
 
-Full partner signup, API allowlisting, and env checklist: **[docs/OPENSRS_SETUP.md](docs/OPENSRS_SETUP.md)**.
+Full partner signup and env checklist: **[docs/NAMECOM_SETUP.md](docs/NAMECOM_SETUP.md)**.
 
 ```bash
-OPENSRS_USERNAME=...
-OPENSRS_API_KEY=...
-OPENSRS_ENV=test   # use live after Horizon testing + IP allowlist
+NAMECOM_USERNAME=...
+NAMECOM_API_TOKEN_DEV=...   # sandbox
+NAMECOM_API_TOKEN=...       # production
+NAMECOM_ENV=test            # use live after sandbox testing
 DOMAIN_RETAIL_MARKUP_PCT=25
 DOMAIN_USD_TO_GBP_RATE=0.79
 ```
 
-In demo mode, domain search uses an offline catalog. With credentials in production, search hits OpenSRS `LOOKUP` / `GET_PRICE`, and paid checkouts fulfill via `SW_REGISTER` on the Stripe webhook.
+In demo mode, domain search uses an offline catalog. With credentials in production, search hits name.com `checkAvailability`, and paid checkouts fulfill via `POST /core/v1/domains` on the Stripe webhook.
 
 ### 13. Build OS (category → template → site)
 

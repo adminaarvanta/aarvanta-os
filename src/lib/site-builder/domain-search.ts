@@ -4,7 +4,7 @@ import { searchDomainListings } from "@/lib/site-builder/domain-catalog";
 import { slugifyBrand } from "@/lib/launch/brand";
 import type { SiteDomainListing } from "@/types/site-builder";
 
-/** Server-only domain search — may call OpenSRS. Do not import from client components. */
+/** Server-only domain search — may call name.com / OpenSRS. Do not import from client components. */
 
 function currencyForCountry(countryBase: string): "GBP" | "USD" {
   const c = countryBase.toUpperCase();
@@ -69,7 +69,7 @@ function candidateDomains(input: {
 }
 
 /**
- * Search domains via OpenSRS when live; otherwise the demo catalog.
+ * Search domains via the live registrar when configured; otherwise the demo catalog.
  * Retail price = wholesale USD × markup × FX (for GBP).
  */
 export async function searchDomainListingsAsync(input: {
@@ -121,7 +121,7 @@ export async function searchDomainListingsAsync(input: {
       };
     });
   } catch (err) {
-    console.error("[domains] OpenSRS search failed, falling back to demo catalog", err);
+    console.error("[domains] Live registrar search failed, falling back to demo catalog", err);
     return searchDomainListings(input);
   }
 }

@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     return unauthorized();
   }
 
-  // Live OpenSRS registrations must go through Stripe checkout → webhook fulfillment.
+  // Live registrar registrations must go through Stripe checkout → webhook fulfillment.
   if (!isDemoMode() && isLiveDomainRegistrar()) {
     return NextResponse.json(
       {

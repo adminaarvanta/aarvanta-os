@@ -1,9 +1,9 @@
 import {
   getDomainRetailMarkupPct,
   getDomainUsdToGbpRate,
-} from "@/lib/registrars/opensrs-config";
+} from "@/lib/registrars/domain-pricing";
 
-/** Convert OpenSRS wholesale USD → retail price in the shopper currency. */
+/** Convert registrar wholesale USD → retail price in the shopper currency. */
 export function wholesaleToRetail(input: {
   wholesaleUsd: number;
   currency: "GBP" | "USD";

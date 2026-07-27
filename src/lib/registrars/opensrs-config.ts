@@ -1,4 +1,9 @@
 import type { DomainRegistrantContact } from "@/lib/registrars/types";
+import {
+  getDefaultRegistrantContact,
+  getDomainRetailMarkupPct,
+  getDomainUsdToGbpRate,
+} from "@/lib/registrars/domain-pricing";
 
 export type OpenSrsEnv = "test" | "live";
 
@@ -27,35 +32,7 @@ export function getOpenSrsEnv(): OpenSrsEnv {
   return env("OPENSRS_ENV") === "live" ? "live" : "test";
 }
 
-/** Retail markup on wholesale USD (e.g. 30 → +30%). Default 25. */
-export function getDomainRetailMarkupPct(): number {
-  const raw = Number(env("DOMAIN_RETAIL_MARKUP_PCT") ?? "25");
-  if (!Number.isFinite(raw) || raw < 0) return 25;
-  return raw;
-}
-
-/** Fixed FX for converting OpenSRS USD wholesale → GBP retail. Default 0.79. */
-export function getDomainUsdToGbpRate(): number {
-  const raw = Number(env("DOMAIN_USD_TO_GBP_RATE") ?? "0.79");
-  if (!Number.isFinite(raw) || raw <= 0) return 0.79;
-  return raw;
-}
-
-export function getDefaultRegistrantContact(): DomainRegistrantContact {
-  return {
-    firstName: env("OPENSRS_CONTACT_FIRST") ?? "Domain",
-    lastName: env("OPENSRS_CONTACT_LAST") ?? "Admin",
-    orgName: env("OPENSRS_CONTACT_ORG") ?? env("ORGANIZATION_NAME") ?? "Aarvanta OS",
-    email: env("OPENSRS_CONTACT_EMAIL") ?? env("AUTH_EMAIL") ?? "domains@aarvanta.co",
-    phone: env("OPENSRS_CONTACT_PHONE") ?? "+44.2000000000",
-    address1: env("OPENSRS_CONTACT_ADDRESS1") ?? "1 Example Street",
-    address2: env("OPENSRS_CONTACT_ADDRESS2"),
-    city: env("OPENSRS_CONTACT_CITY") ?? "London",
-    state: env("OPENSRS_CONTACT_STATE") ?? "England",
-    postalCode: env("OPENSRS_CONTACT_POSTAL") ?? "EC1A 1BB",
-    country: env("OPENSRS_CONTACT_COUNTRY") ?? "GB",
-  };
-}
+export { getDefaultRegistrantContact, getDomainRetailMarkupPct, getDomainUsdToGbpRate };
 
 export function getOpenSrsConfig(): OpenSrsConfig | null {
   const username = env("OPENSRS_USERNAME");

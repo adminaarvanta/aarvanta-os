@@ -1,6 +1,8 @@
 # OpenSRS domain reseller setup
 
-Aarvanta Build OS sells domains through the **OpenSRS (Tucows)** wholesale reseller API. Customers pay via Stripe; Aarvanta registers the domain against a prepaid OpenSRS balance.
+> **Note:** Build OS prefers **name.com** when `NAMECOM_*` credentials are set. See [NAMECOM_SETUP.md](./NAMECOM_SETUP.md). Use OpenSRS only as a fallback or legacy path.
+
+Aarvanta Build OS can sell domains through the **OpenSRS (Tucows)** wholesale reseller API. Customers pay via Stripe; Aarvanta registers the domain against a prepaid OpenSRS balance.
 
 ## 1. Create a reseller account
 

@@ -8,10 +8,8 @@ import {
   getDomainRegistrar,
   isLiveDomainRegistrar,
 } from "@/lib/registrars";
-import {
-  generateRegistrantCredentials,
-} from "@/lib/registrars/opensrs-client";
-import { getDefaultRegistrantContact } from "@/lib/registrars/opensrs-config";
+import { generateRegistrantCredentials } from "@/lib/registrars/opensrs-client";
+import { getDefaultRegistrantContact } from "@/lib/registrars/domain-pricing";
 import { toPurchasedDomainPreference } from "@/lib/site-builder/domain-purchase";
 import type { TenantScope } from "@/types/communication";
 import type { BillingPlanId } from "@/types/platform-modules";
@@ -123,7 +121,7 @@ async function completeDomainOrder(session: Stripe.Checkout.Session, scope: Tena
       registrarOrderId: order.registrarOrderId,
     });
   } catch (err) {
-    console.error("[stripe] OpenSRS domain registration failed after payment", {
+    console.error("[stripe] Domain registration failed after payment", {
       orderId: order.id,
       domain: order.domain,
       err,

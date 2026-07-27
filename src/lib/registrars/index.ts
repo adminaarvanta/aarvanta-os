@@ -1,4 +1,9 @@
 import {
+  getNameComConfig,
+  isNameComConfigured,
+} from "@/lib/registrars/namecom-config";
+import { createNameComClient } from "@/lib/registrars/namecom-client";
+import {
   getOpenSrsConfig,
   isOpenSrsConfigured,
 } from "@/lib/registrars/opensrs-config";
@@ -17,6 +22,13 @@ function isDemoAppMode(): boolean {
   return process.env.APP_MODE !== "production";
 }
 
+function forceLiveRegistrar(): boolean {
+  return (
+    process.env.NAMECOM_FORCE_LIVE === "true" ||
+    process.env.OPENSRS_FORCE_LIVE === "true"
+  );
+}
+
 function demoAvailable(domain: string): boolean {
   const hash = domain.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
   const reserved = ["google", "facebook", "amazon", "microsoft", "apple"];
@@ -26,7 +38,7 @@ function demoAvailable(domain: string): boolean {
 
 /**
  * Demo registrar — offline heuristic availability; register is a local stub.
- * Used in APP_MODE=demo or when OpenSRS credentials are absent.
+ * Used in APP_MODE=demo or when no live registrar credentials are present.
  */
 class DemoDomainRegistrar implements DomainRegistrar {
   readonly id = "demo" as const;
@@ -60,22 +72,29 @@ class DemoDomainRegistrar implements DomainRegistrar {
 
 /**
  * Resolve the active domain registrar.
- * OpenSRS when credentials are set (and not demo-only); otherwise offline demo.
+ * Prefer name.com when configured; fall back to OpenSRS; otherwise offline demo.
  */
 export function getDomainRegistrar(): DomainRegistrar {
-  if (isDemoAppMode() && process.env.OPENSRS_FORCE_LIVE !== "true") {
+  if (isDemoAppMode() && !forceLiveRegistrar()) {
     return new DemoDomainRegistrar();
   }
-  if (!isOpenSrsConfigured()) {
-    return new DemoDomainRegistrar();
+
+  if (isNameComConfigured()) {
+    const config = getNameComConfig();
+    if (config) return createNameComClient(config);
   }
-  const config = getOpenSrsConfig();
-  if (!config) return new DemoDomainRegistrar();
-  return createOpenSrsClient(config);
+
+  if (isOpenSrsConfigured()) {
+    const config = getOpenSrsConfig();
+    if (config) return createOpenSrsClient(config);
+  }
+
+  return new DemoDomainRegistrar();
 }
 
 export function isLiveDomainRegistrar(): boolean {
-  return getDomainRegistrar().id === "opensrs";
+  const id = getDomainRegistrar().id;
+  return id === "namecom" || id === "opensrs";
 }
 
 export type {

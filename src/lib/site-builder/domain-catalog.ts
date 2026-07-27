@@ -1,7 +1,7 @@
 import { slugifyBrand } from "@/lib/launch/brand";
 import type { SiteDomainListing } from "@/types/site-builder";
 
-/** Client-safe domain helpers. OpenSRS live search lives in domain-search.ts (server-only). */
+/** Client-safe domain helpers. Live registrar search lives in domain-search.ts (server-only). */
 
 const TLD_PRICING_GBP: Record<string, number> = {
   ".co.uk": 9.99,

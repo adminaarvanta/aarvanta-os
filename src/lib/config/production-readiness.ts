@@ -6,6 +6,7 @@ import {
 } from "@/lib/channels/voice-relay";
 import { isFirebaseConfigured } from "@/lib/firebase/admin";
 import { isProductionMode } from "@/lib/config/app-mode";
+import { getNameComRuntimeStatus } from "@/lib/registrars/namecom-config";
 import { getOpenSrsRuntimeStatus } from "@/lib/registrars/opensrs-config";
 import { getStripeRuntimeStatus } from "@/lib/stripe/config";
 
@@ -254,23 +255,51 @@ export function getProductionReadiness(): ProductionReadiness {
     }
   }
 
-  const opensrs = getOpenSrsRuntimeStatus();
-  if (opensrs.status !== "live") {
+  const namecom = getNameComRuntimeStatus();
+  if (namecom.status !== "live") {
     warnings.push(
-      "OpenSRS not configured — Build OS domain search/purchase uses the demo catalog (no real registrations)"
+      "name.com not configured — Build OS domain search/purchase uses demo catalog unless OpenSRS is set"
     );
     items.push({
-      id: "opensrs",
-      label: "OpenSRS domain reseller",
+      id: "namecom",
+      label: "name.com domain reseller",
       status: "warning",
-      detail: opensrs.reason,
+      detail: namecom.reason,
+    });
+  } else {
+    items.push({
+      id: "namecom",
+      label: "name.com domain reseller",
+      status: "ok",
+      detail: namecom.env,
+    });
+  }
+
+  const opensrs = getOpenSrsRuntimeStatus();
+  if (opensrs.status !== "live") {
+    if (namecom.status !== "live") {
+      warnings.push(
+        "No live domain registrar — Build OS domain search/purchase uses the demo catalog (no real registrations)"
+      );
+    }
+    items.push({
+      id: "opensrs",
+      label: "OpenSRS domain reseller (fallback)",
+      status: namecom.status === "live" ? "ok" : "warning",
+      detail:
+        namecom.status === "live"
+          ? "Idle — name.com is primary"
+          : opensrs.reason,
     });
   } else {
     items.push({
       id: "opensrs",
-      label: "OpenSRS domain reseller",
+      label: "OpenSRS domain reseller (fallback)",
       status: "ok",
-      detail: opensrs.env,
+      detail:
+        namecom.status === "live"
+          ? `${opensrs.env} (name.com preferred)`
+          : opensrs.env,
     });
   }
 
