@@ -53,23 +53,35 @@ export default async function AgentPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
+      <header
+        className="shrink-0 border-b px-4 py-4 sm:px-6"
+        style={{ background: "var(--wf-panel)", borderColor: "var(--wf-line)" }}
+      >
         <Link
           href="/workforce"
-          className="text-xs text-gold hover:underline"
+          className="text-xs font-semibold"
+          style={{ color: "var(--wf-accent)" }}
         >
           ← AI Workforce
         </Link>
         <div className="mt-2 flex items-start gap-3">
-          <div className="rounded-lg bg-gold/15 p-2.5 ring-1 ring-gold/30">
-            <Icon className="h-5 w-5 text-gold" />
+          <div
+            className="rounded-2xl p-2.5"
+            style={{ background: "var(--wf-accent-soft)" }}
+          >
+            <Icon className="h-5 w-5" style={{ color: "var(--wf-accent)" }} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
+            <h2
+              className="text-lg font-bold sm:text-xl"
+              style={{ color: "var(--wf-ink)" }}
+            >
               {agent.name}
             </h2>
-            <p className="text-xs text-gold">{agent.title}</p>
-            <p className="mt-1 text-xs text-muted sm:text-sm">
+            <p className="text-xs font-semibold" style={{ color: "var(--wf-accent)" }}>
+              {agent.title}
+            </p>
+            <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--wf-muted)" }}>
               {agent.tagline} · {agent.primaryFunction}
             </p>
           </div>

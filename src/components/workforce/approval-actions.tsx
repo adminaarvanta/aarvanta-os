@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
+import {
+  WfPrimaryButton,
+  WfSecondaryButton,
+} from "@/components/workforce/workforce-shell";
 import type { WorkforceApproval } from "@/types/workforce";
 
 export function ApprovalActions({
@@ -20,9 +24,7 @@ export function ApprovalActions({
   );
   const [error, setError] = useState<string | null>(null);
 
-  async function resolve(
-    resolution: "approved" | "rejected" | "modified"
-  ) {
+  async function resolve(resolution: "approved" | "rejected" | "modified") {
     setBusy(true);
     setError(null);
     try {
@@ -51,7 +53,7 @@ export function ApprovalActions({
 
   if (approval.status !== "pending") {
     return (
-      <p className="text-sm text-muted">
+      <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
         Resolved: {approval.resolution}
         {approval.modifiedOffer ? ` · ${approval.modifiedOffer}` : ""}
       </p>
@@ -59,78 +61,135 @@ export function ApprovalActions({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="grid gap-2 sm:grid-cols-3 text-sm">
+    <div className="space-y-4">
+      <div className="flex items-start gap-3">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          style={{ background: "var(--wf-wait-soft)" }}
+        >
+          <AlertTriangle className="h-5 w-5" style={{ color: "#B45309" }} />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold" style={{ color: "var(--wf-ink)" }}>
+            Decision Required
+          </h3>
+          <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
+            {approval.reason}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
         {approval.currentOffer && (
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs text-muted">Current offer</p>
-            <p className="font-medium text-foreground">{approval.currentOffer}</p>
+          <div
+            className="rounded-xl border p-4"
+            style={{ borderColor: "var(--wf-line)", background: "var(--wf-bg)" }}
+          >
+            <p
+              className="text-[11px] font-bold uppercase tracking-wider"
+              style={{ color: "var(--wf-muted)" }}
+            >
+              Current Offer
+            </p>
+            <p className="mt-1 text-lg font-bold" style={{ color: "var(--wf-ink)" }}>
+              {approval.currentOffer}
+            </p>
           </div>
         )}
         {approval.requestedOffer && (
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs text-muted">Requested</p>
-            <p className="font-medium text-foreground">{approval.requestedOffer}</p>
-          </div>
-        )}
-        {typeof approval.dealValue === "number" && (
-          <div className="rounded-lg border border-border bg-surface-muted p-3">
-            <p className="text-xs text-muted">Deal value</p>
-            <p className="font-medium text-foreground">
-              ₹{approval.dealValue.toLocaleString("en-IN")}
+          <div
+            className="rounded-xl border p-4"
+            style={{
+              borderColor: "var(--wf-accent)",
+              background: "var(--wf-accent-soft)",
+            }}
+          >
+            <p
+              className="text-[11px] font-bold uppercase tracking-wider"
+              style={{ color: "var(--wf-accent-deep)" }}
+            >
+              Requested Offer
+            </p>
+            <p
+              className="mt-1 text-lg font-bold"
+              style={{ color: "var(--wf-accent-deep)" }}
+            >
+              {approval.requestedOffer}
             </p>
           </div>
         )}
       </div>
-      {approval.marginImpact && (
-        <p className="text-xs text-muted">{approval.marginImpact}</p>
-      )}
+
+      <div className="grid gap-3 sm:grid-cols-2 text-sm">
+        {typeof approval.dealValue === "number" && (
+          <div>
+            <p style={{ color: "var(--wf-muted)" }}>Deal value</p>
+            <p className="font-bold" style={{ color: "var(--wf-ink)" }}>
+              ₹{approval.dealValue.toLocaleString("en-IN")}
+            </p>
+          </div>
+        )}
+        {approval.marginImpact && (
+          <div>
+            <p style={{ color: "var(--wf-muted)" }}>Impact</p>
+            <p className="font-bold" style={{ color: "var(--wf-danger)" }}>
+              {approval.marginImpact}
+            </p>
+          </div>
+        )}
+      </div>
 
       {modifyMode && (
         <input
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+          className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+          style={{ borderColor: "var(--wf-line)", color: "var(--wf-ink)" }}
           value={modifiedOffer}
           onChange={(e) => setModifiedOffer(e.target.value)}
           placeholder="Enter modified offer"
         />
       )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p className="text-sm font-medium" style={{ color: "var(--wf-danger)" }}>
+          {error}
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-2">
-        <Button
+        <button
           type="button"
           disabled={busy}
           onClick={() => resolve("approved")}
+          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          style={{ background: "var(--wf-ok)" }}
         >
           {approval.proposedAction}
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="secondary"
           disabled={busy}
           onClick={() => resolve("rejected")}
+          className="rounded-xl border px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+          style={{ borderColor: "var(--wf-danger)", color: "var(--wf-danger)" }}
         >
-          Reject & continue
-        </Button>
+          Reject & Continue
+        </button>
         {!modifyMode ? (
-          <Button
+          <WfSecondaryButton
             type="button"
-            variant="ghost"
             disabled={busy}
             onClick={() => setModifyMode(true)}
           >
-            Edit offer
-          </Button>
+            Edit Offer
+          </WfSecondaryButton>
         ) : (
-          <Button
+          <WfPrimaryButton
             type="button"
-            variant="secondary"
             disabled={busy || !modifiedOffer.trim()}
             onClick={() => resolve("modified")}
           >
             Save modified offer
-          </Button>
+          </WfPrimaryButton>
         )}
       </div>
     </div>

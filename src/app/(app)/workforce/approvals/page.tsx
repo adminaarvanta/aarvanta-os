@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ShieldAlert } from "lucide-react";
 import { ApprovalActions } from "@/components/workforce/approval-actions";
 import { WorkforceNav } from "@/components/workforce/workforce-nav";
+import { WfHeader, WfPanel } from "@/components/workforce/workforce-shell";
 import {
   getWorkforceExecutionsStore,
   getWorkforceGoalsStore,
@@ -22,58 +22,57 @@ export default async function WorkforceApprovalsPage() {
 
   return (
     <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
-            <ShieldAlert className="h-5 w-5 text-gold" />
-            Approvals
-          </h2>
-          <p className="text-xs text-muted sm:text-sm">
-            Human checkpoints when AI reaches a policy limit.
-          </p>
-        </div>
-      </header>
+      <WfHeader
+        title="Approvals"
+        subtitle={
+          pending.length === 0
+            ? "You're all caught up"
+            : `${pending.length} waiting for you`
+        }
+      />
       <WorkforceNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 sm:p-6">
-        {pending.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">
-            No pending approvals.
-          </p>
-        ) : (
-          pending.map((approval) => {
-            const execution = execMap.get(approval.executionId);
-            const goal = execution
-              ? goalMap.get(execution.goalId)
-              : undefined;
-            return (
-              <article
-                key={approval.id}
-                className="rounded-xl border border-border bg-surface-elevated p-5 space-y-3"
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
+        <div className="mx-auto max-w-lg space-y-4">
+          {pending.length === 0 ? (
+            <WfPanel>
+              <p
+                className="py-8 text-center text-sm"
+                style={{ color: "var(--wf-muted)" }}
               >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-semibold text-foreground">
+                No pending approvals.
+              </p>
+            </WfPanel>
+          ) : (
+            pending.map((approval) => {
+              const execution = execMap.get(approval.executionId);
+              const goal = execution
+                ? goalMap.get(execution.goalId)
+                : undefined;
+              return (
+                <WfPanel key={approval.id} className="space-y-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold" style={{ color: "var(--wf-ink)" }}>
                       {goal ? goalDisplayLabel(goal) : "Workforce task"}
                     </h3>
-                    <p className="text-sm text-muted">{approval.reason}</p>
+                    {execution && (
+                      <Link
+                        href={`/workforce/tasks/${execution.id}`}
+                        className="shrink-0 text-xs font-semibold"
+                        style={{ color: "var(--wf-accent)" }}
+                      >
+                        Open →
+                      </Link>
+                    )}
                   </div>
-                  {execution && (
-                    <Link
-                      href={`/workforce/tasks/${execution.id}`}
-                      className="text-xs font-medium text-gold hover:text-gold-bright"
-                    >
-                      Open task →
-                    </Link>
-                  )}
-                </div>
-                <ApprovalActions
-                  executionId={approval.executionId}
-                  approval={approval}
-                />
-              </article>
-            );
-          })
-        )}
+                  <ApprovalActions
+                    executionId={approval.executionId}
+                    approval={approval}
+                  />
+                </WfPanel>
+              );
+            })
+          )}
+        </div>
       </div>
     </>
   );
