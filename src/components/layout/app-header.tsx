@@ -10,6 +10,7 @@ import {
   FileText,
   Workflow,
   Target,
+  Handshake,
 } from "lucide-react";
 
 const GlobalSearch = dynamic(
@@ -54,6 +55,7 @@ const quickActions = [
   { label: "Add New Lead", href: "/crm/leads", icon: Target },
   { label: "Create Workflow", href: "/workflows", icon: Workflow },
   { label: "Generate Report", href: "/analytics", icon: FileText },
+  { label: "Start referrals", href: "/referrals", icon: Handshake },
   { label: "Invite Team Member", href: "/settings", icon: UserPlus },
 ];
 

@@ -91,6 +91,22 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     dotClass: "bg-success",
     iconClass: "text-success bg-success/10",
   },
+  {
+    id: "referrals",
+    label: "Referrals",
+    href: "/referrals",
+    description: "Earn with affiliate links & payouts",
+    dotClass: "bg-gold",
+    iconClass: "text-gold bg-gold/10",
+  },
+  {
+    id: "affiliate",
+    label: "Partner program",
+    href: "/affiliate",
+    description: "Apply as an external affiliate partner",
+    dotClass: "bg-accent-cyan",
+    iconClass: "text-accent-cyan bg-accent-cyan/10",
+  },
 ];
 
 /**
@@ -160,6 +176,14 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
     description: "Billing & cashflow",
     dotClass: "bg-accent-cyan",
     iconClass: "text-accent-cyan bg-accent-cyan/10",
+  },
+  {
+    id: "affiliate",
+    label: "PartnerOS",
+    href: "/referrals",
+    description: "Referrals, commissions & payouts",
+    dotClass: "bg-gold",
+    iconClass: "text-gold bg-gold/10",
   },
 ];
 

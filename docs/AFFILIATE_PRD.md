@@ -2,8 +2,22 @@
 
 Growth channel for external partners and existing customers: shared attribution, referred-buyer discounts, CPA + revenue-share earnings, and platform-admin regional caps.
 
-**Status:** Phase 1 + Phase 2 implemented in-app (`/affiliate`, `/r/[code]`, `/referrals`, `/affiliate/admin`).  
+**Status:** Phase 1 + Phase 2 implemented in-app.  
 **Spec coverage:** `partner-affiliate` (GTM).
+
+### Where to open it
+
+| Entry | Path |
+|-------|------|
+| Marketing nav / footer **Partners** | `/affiliate` |
+| Sidebar shortcuts **Referrals** | `/referrals` |
+| Sidebar shortcuts **Partner program** | `/affiliate` |
+| Dashboard OS map **PartnerOS** | `/referrals` |
+| Header **+** quick action **Start referrals** | `/referrals` |
+| Settings → Partner & Affiliate | `/referrals` |
+| Billing → **Start referrals** | `/referrals` |
+| All Tools → Partner & Affiliate | `/affiliate/dashboard` |
+| Admin portal | `/affiliate/admin` |
 
 ---
 

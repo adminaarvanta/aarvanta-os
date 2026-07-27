@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SystemStatusPanel } from "@/components/settings/system-status-panel";
@@ -255,6 +256,33 @@ export function SettingsClient({
           {message}
         </p>
       )}
+
+      <Panel>
+        <SectionHeader
+          title="Partner & Affiliate"
+          description="Share your referral link, track leads and commissions, request payouts."
+        />
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/referrals"
+            className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black hover:bg-gold-bright"
+          >
+            Start referrals
+          </Link>
+          <Link
+            href="/affiliate"
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground hover:border-gold/40"
+          >
+            Partner apply page
+          </Link>
+          <Link
+            href="/affiliate/dashboard"
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground hover:border-gold/40"
+          >
+            Affiliate dashboard
+          </Link>
+        </div>
+      </Panel>
 
       <WorkspaceSettingsPanel
         initialSettings={workspaceSettings}

@@ -5,6 +5,7 @@ import { BrandLogo } from "@/components/brand/logo";
 
 const links = [
   { href: "/pricing", label: "Pricing" },
+  { href: "/affiliate", label: "Partners" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
@@ -62,6 +63,9 @@ export function MarketingFooter() {
         <div className="flex flex-wrap gap-4 text-xs text-muted">
           <Link href="/pricing" className="hover:text-gold">
             Pricing
+          </Link>
+          <Link href="/affiliate" className="hover:text-gold">
+            Partners
           </Link>
           <Link href="/about" className="hover:text-gold">
             About
