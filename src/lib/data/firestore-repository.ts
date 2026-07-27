@@ -8,6 +8,7 @@ import {
   appendOutboundCall,
   appendOutboundEmail,
   appendOutboundMessage,
+  attachCallRecording,
   createConversation,
   inScope,
   newId,
@@ -282,6 +283,8 @@ export const firestoreRepository: ConversationRepository = {
           durationSeconds: input.durationSeconds,
           summary: input.summary,
           recordingUrl: input.recordingUrl,
+          recordingSid: input.recordingSid,
+          callSid: input.callSid,
           authorName: input.contactName ?? input.phone,
         }),
         scope
@@ -306,6 +309,8 @@ export const firestoreRepository: ConversationRepository = {
             durationSeconds: input.durationSeconds,
             summary: input.summary,
             recordingUrl: input.recordingUrl,
+            recordingSid: input.recordingSid,
+            callSid: input.callSid,
             occurredAt: now,
             authorName: input.contactName ?? input.phone,
           },
@@ -313,6 +318,12 @@ export const firestoreRepository: ConversationRepository = {
       ),
       scope
     );
+  },
+
+  async attachCallRecording(conversationId, input, scope) {
+    const conv = await getScopedConversation(conversationId, scope);
+    if (!conv) return null;
+    return save(attachCallRecording(conv, input));
   },
 
   async addInboundChat(input, scope) {

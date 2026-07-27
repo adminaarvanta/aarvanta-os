@@ -88,6 +88,10 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
   }
 
   if (event.type === "call") {
+    const playbackSrc =
+      event.recordingSid
+        ? `/api/calling/recordings/${encodeURIComponent(event.recordingSid)}`
+        : event.recordingUrl;
     return (
       <div className="rounded-xl border border-border bg-surface-elevated px-4 py-3 text-sm">
         <div className="flex items-center gap-2 font-medium text-foreground">
@@ -98,6 +102,11 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
         {event.summary && (
           <p className="mt-1 text-muted">{event.summary}</p>
         )}
+        {playbackSrc ? (
+          <audio controls preload="none" className="mt-2 w-full max-w-md" src={playbackSrc}>
+            <track kind="captions" />
+          </audio>
+        ) : null}
         <p className="mt-1 text-[10px] text-muted">
           {formatRelative(event.occurredAt)}
         </p>

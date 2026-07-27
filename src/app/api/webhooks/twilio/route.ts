@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getRepository } from "@/lib/data/repository";
+import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
 import {
   isWebhookProcessed,
@@ -27,6 +29,35 @@ async function parseTwilioBody(req: Request) {
       ? (JSON.parse(rawBody) as Record<string, string>)
       : {};
   return { data, rawBody };
+}
+
+async function startInboundRecording(callSid: string) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!accountSid || !authToken || !appUrl) return;
+
+  const recordingCallback = `${appUrl.replace(/\/$/, "")}/api/webhooks/twilio/recording`;
+  const body = new URLSearchParams({
+    RecordingChannels: "dual",
+    RecordingStatusCallback: recordingCallback,
+    RecordingStatusCallbackMethod: "POST",
+  });
+  body.append("RecordingStatusCallbackEvent", "completed");
+
+  await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls/${callSid}/Recordings.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    }
+  ).catch((err) => {
+    console.error("[twilio] inbound recording start failed", err);
+  });
 }
 
 export async function POST(req: Request) {
@@ -68,10 +99,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true, processed: 1, type: "sms" });
   }
 
+  // Inbound answered: optionally start recording (ConversationRelay path)
+  const callStatus = data.CallStatus?.trim().toLowerCase();
+  const callSidEarly = data.CallSid?.trim();
+  if (callSidEarly && (callStatus === "in-progress" || callStatus === "answered")) {
+    const rawDirection = (data.Direction ?? "").toLowerCase();
+    const isInbound = !rawDirection.startsWith("outbound");
+    if (isInbound) {
+      const settings = await getWorkspaceSettings(scope.workspaceId);
+      const voice = resolveVoiceCallingConfig(settings);
+      if (voice.callRecordingEnabled) {
+        const key = `recstart:${callSidEarly}`;
+        if (!(await isWebhookProcessed("twilio_voice_rec_start", key))) {
+          await startInboundRecording(callSidEarly);
+          await markWebhookProcessed("twilio_voice_rec_start", key, scope);
+        }
+      }
+    }
+  }
+
   const call = parseTwilioVoiceStatus(data);
   if (call) {
-    // Dedupe per call + terminal status (Twilio may retry; sid alone is not enough
-    // if we ever process intermediate events).
     const eventKey = `${call.callSid}:${call.status}`;
     if (await isWebhookProcessed("twilio_voice", eventKey)) {
       return NextResponse.json({ received: true, processed: 0, duplicate: true });
@@ -90,6 +138,7 @@ export async function POST(req: Request) {
         {
           summary: call.summary,
           durationSeconds: call.durationSeconds,
+          callSid: call.callSid,
         },
         scope
       );
@@ -99,6 +148,7 @@ export async function POST(req: Request) {
           phone: call.phone,
           durationSeconds: call.durationSeconds,
           summary: call.summary,
+          callSid: call.callSid,
         },
         scope
       );

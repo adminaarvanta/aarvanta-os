@@ -100,7 +100,13 @@ export function appendOutboundEmail(
 
 export function appendOutboundCall(
   conv: Conversation,
-  input: { summary: string; durationSeconds?: number },
+  input: {
+    summary: string;
+    durationSeconds?: number;
+    recordingUrl?: string;
+    recordingSid?: string;
+    callSid?: string;
+  },
   author?: { name: string; id?: string }
 ): Conversation {
   const now = new Date().toISOString();
@@ -110,6 +116,9 @@ export function appendOutboundCall(
     direction: "outbound",
     durationSeconds: input.durationSeconds ?? 0,
     summary: input.summary,
+    recordingUrl: input.recordingUrl,
+    recordingSid: input.recordingSid,
+    callSid: input.callSid,
     occurredAt: now,
     authorName: author?.name ?? "You",
     ...optionalAuthor(author),
@@ -192,6 +201,8 @@ export function appendInboundCall(
     durationSeconds: number;
     summary?: string;
     recordingUrl?: string;
+    recordingSid?: string;
+    callSid?: string;
     authorName: string;
     direction?: "inbound" | "outbound";
   }
@@ -204,6 +215,8 @@ export function appendInboundCall(
     durationSeconds: input.durationSeconds,
     summary: input.summary,
     recordingUrl: input.recordingUrl,
+    recordingSid: input.recordingSid,
+    callSid: input.callSid,
     occurredAt: now,
     authorName: input.authorName,
   };
@@ -215,6 +228,49 @@ export function appendInboundCall(
     lastActivityAt: now,
     updatedAt: now,
     unreadCount: conv.unreadCount + 1,
+  };
+}
+
+/** Attach recording metadata to the matching (or latest) call event. */
+export function attachCallRecording(
+  conv: Conversation,
+  input: {
+    recordingUrl: string;
+    recordingSid?: string;
+    callSid?: string;
+  }
+): Conversation {
+  const now = new Date().toISOString();
+  const timeline = [...conv.timeline];
+  let idx = -1;
+  if (input.callSid) {
+    idx = timeline.findIndex(
+      (e) => e.type === "call" && e.callSid === input.callSid
+    );
+  }
+  if (idx < 0) {
+    for (let i = timeline.length - 1; i >= 0; i--) {
+      if (timeline[i]?.type === "call") {
+        idx = i;
+        break;
+      }
+    }
+  }
+  if (idx < 0) return conv;
+
+  const event = timeline[idx];
+  if (!event || event.type !== "call") return conv;
+  timeline[idx] = {
+    ...event,
+    recordingUrl: input.recordingUrl,
+    recordingSid: input.recordingSid ?? event.recordingSid,
+    callSid: input.callSid ?? event.callSid,
+  };
+
+  return {
+    ...conv,
+    timeline,
+    updatedAt: now,
   };
 }
 

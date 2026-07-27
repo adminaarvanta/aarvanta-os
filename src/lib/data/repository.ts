@@ -51,7 +51,13 @@ export interface ConversationRepository {
   ): Promise<Conversation | null>;
   addOutboundCall(
     conversationId: string,
-    input: { summary: string; durationSeconds?: number },
+    input: {
+      summary: string;
+      durationSeconds?: number;
+      recordingUrl?: string;
+      recordingSid?: string;
+      callSid?: string;
+    },
     scope: TenantScope,
     author?: { name: string; id?: string }
   ): Promise<Conversation | null>;
@@ -85,9 +91,20 @@ export interface ConversationRepository {
       durationSeconds: number;
       summary?: string;
       recordingUrl?: string;
+      recordingSid?: string;
+      callSid?: string;
     },
     scope: TenantScope
   ): Promise<Conversation>;
+  attachCallRecording(
+    conversationId: string,
+    input: {
+      recordingUrl: string;
+      recordingSid?: string;
+      callSid?: string;
+    },
+    scope: TenantScope
+  ): Promise<Conversation | null>;
   addInboundChat(
     input: {
       sessionId: string;

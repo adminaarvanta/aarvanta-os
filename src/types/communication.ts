@@ -89,7 +89,12 @@ export interface TimelineCall extends TimelineBase {
   direction: "inbound" | "outbound";
   durationSeconds: number;
   summary?: string;
+  /** Twilio recording media URL (or app proxy path). */
   recordingUrl?: string;
+  /** Twilio RecordingSid for authenticated playback. */
+  recordingSid?: string;
+  /** Twilio CallSid for correlating recording callbacks. */
+  callSid?: string;
 }
 
 export interface TimelineEmail extends TimelineBase {

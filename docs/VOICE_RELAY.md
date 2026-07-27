@@ -78,20 +78,41 @@ Save. Enable **ConversationRelay** in Twilio if the Console asks you to onboard.
 
 There is **no fully free** two-way PSTN AI on Twilio. Conversation Relay is **~$0.07/min** plus normal call minutes.
 
-| Mode | Env | Two-way AI? | Approx. extra |
-|------|-----|-------------|----------------|
+| Mode | Env / UI | Two-way AI? | Approx. extra |
+|------|----------|-------------|----------------|
 | **Budget (cheapest)** | `VOICE_RELAY_BUDGET_MODE=true` | No — one-shot Polly `<Say>` | Call minutes only |
-| **Standard (default)** | `VOICE_RELAY_TTS_PROVIDER=Amazon` | Yes | Relay $0.07/min + call minutes |
-| **Human voice** | `VOICE_RELAY_TTS_PROVIDER=ElevenLabs` | Yes | Same Relay fee (Twilio-integrated TTS) |
+| **Amazon / Google / ElevenLabs** | Voice OS → Voice configuration (or env) | Yes | Relay $0.07/min + call minutes |
+
+### Voice configuration (Voice OS UI)
+
+In **`/voice`** (and compact on **`/calling`**), operators can set:
+
+- **Provider** — ElevenLabs, Google, or Amazon Polly
+- **Language** — e.g. `en-US`, `en-GB`, `hi-IN` (passed to ConversationRelay + relay LLM prompt)
+- **Voice** — curated list, or paste a **custom Twilio/ElevenLabs voice ID**
+- **Record calls** — opt-in (default off); optional spoken consent notice
+
+Prefs persist on the workspace (`voiceTtsProvider`, `voiceId`, `voiceLanguage`, `voiceCustomId`, `callRecordingEnabled`, `callRecordingAnnounce`). Env vars remain the fallback when prefs are unset:
 
 ```bash
-# Cheapest two-way (default after this change)
-VOICE_RELAY_TTS_PROVIDER=Amazon
-VOICE_RELAY_TTS_VOICE=Joanna-Neural
-
+VOICE_RELAY_TTS_PROVIDER=ElevenLabs
+VOICE_RELAY_TTS_VOICE=UgBBYS2sOqTuMpoF3BR0-flash_v2_5-0.95_0.65_0.8
 # Skip ConversationRelay entirely (free of the $0.07/min fee)
 VOICE_RELAY_BUDGET_MODE=true
 ```
+
+### Call recording
+
+When **Record calls** is enabled in Voice OS:
+
+1. Outbound: Twilio `Record=true` + dual channel + `RecordingStatusCallback` → `/api/webhooks/twilio/recording`
+2. Inbound: on `in-progress`, app starts a recording via Twilio REST
+3. Completed recordings attach `recordingSid` / proxy URL to the call timeline event
+4. Playback: authenticated `GET /api/calling/recordings/{RecordingSid}` (inbox / Voice OS timeline)
+
+Consent: when announce is on, TwiML welcome includes: “This call may be recorded for quality and training purposes.”
+
+Retention: Twilio’s default for the recording media; delete via Twilio Console if needed (no automated GDPR purge in MVP).
 
 ## Fallback
 

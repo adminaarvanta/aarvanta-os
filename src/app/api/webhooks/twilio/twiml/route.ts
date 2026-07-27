@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
-import {
-  getConversationRelayTts,
-  isVoiceRelayBudgetMode,
-} from "@/lib/channels/voice-relay-tts";
+import { isVoiceRelayBudgetMode } from "@/lib/channels/voice-relay-tts";
+import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
+import { getWebhookTenantScope } from "@/lib/tenant/context";
 
 /**
  * Twilio fetches this URL when a Voice OS call connects (inbound or outbound).
@@ -60,31 +60,41 @@ async function twimlResponse(req: Request) {
 
   if (!direction) direction = "outbound";
 
+  const scope = getWebhookTenantScope();
+  const settings = await getWorkspaceSettings(scope.workspaceId);
+  const voice = resolveVoiceCallingConfig(settings);
+
   const defaultWelcome =
     direction === "inbound"
       ? "Hi, thanks for calling Aarvanta. How can I help?"
       : "Hi, this is Aarvanta. Do you have a moment?";
 
   const brief = message?.trim() ?? "";
-  // The operator's text is a BRIEFING for the AI (topic/context), never words
-  // to read verbatim. It goes to the relay as the `goal` parameter.
   const goal = brief.slice(0, 600);
-  // Budget mode / mode=say → Amazon Polly <Say> only (no ConversationRelay fee).
   const relayUrl =
     mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
-  // With the relay: inbound gets a short fixed greeting; outbound gets NO
-  // welcomeGreeting — the relay generates the opening line from the briefing.
-  // Without the relay (one-shot <Say>) there is no AI, so speak the text as-is.
-  const welcome = direction === "inbound" ? defaultWelcome : "";
+  let welcome = direction === "inbound" ? defaultWelcome : "";
+  if (voice.callRecordingEnabled && voice.callRecordingAnnounce) {
+    welcome = welcome
+      ? `${voice.recordingNotice} ${welcome}`
+      : voice.recordingNotice;
+  }
 
   const twiml = relayUrl
     ? buildConversationRelayTwiml(relayUrl, welcome, {
         direction,
         conversationId,
         goal,
+        language: voice.language,
+        provider: voice.provider,
+        voiceId: voice.voice,
+        elevenlabsTextNormalization: voice.elevenlabsTextNormalization,
       })
-    : buildSayTwiml((brief || defaultWelcome).slice(0, 280));
+    : buildSayTwiml(
+        (brief || welcome || defaultWelcome).slice(0, 280),
+        voice.provider === "Amazon" ? voice.voice : "Polly.Joanna"
+      );
 
   return new NextResponse(twiml, {
     status: 200,
@@ -95,34 +105,43 @@ async function twimlResponse(req: Request) {
   });
 }
 
-function buildSayTwiml(spoken: string) {
+function buildSayTwiml(spoken: string, pollyVoice: string) {
+  const voiceAttr = pollyVoice.startsWith("Polly.")
+    ? pollyVoice
+    : `Polly.${pollyVoice.replace(/-Neural$/, "")}`;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">${escapeXml(spoken)}</Say>
+  <Say voice="${escapeXml(voiceAttr)}">${escapeXml(spoken)}</Say>
 </Response>`;
 }
 
 function buildConversationRelayTwiml(
   wssUrl: string,
   welcome: string,
-  params: { direction: string; conversationId: string; goal: string }
+  params: {
+    direction: string;
+    conversationId: string;
+    goal: string;
+    language: string;
+    provider: string;
+    voiceId: string;
+    elevenlabsTextNormalization: string;
+  }
 ) {
-  const tts = getConversationRelayTts();
   const elevenNorm =
-    tts.provider === "ElevenLabs"
-      ? ` elevenlabsTextNormalization="${escapeXml(tts.elevenlabsTextNormalization)}"`
+    params.provider === "ElevenLabs"
+      ? ` elevenlabsTextNormalization="${escapeXml(params.elevenlabsTextNormalization)}"`
       : "";
-  // Outbound calls carry no welcomeGreeting — the relay AI opens the call
-  // itself from the briefing, so the operator's text is never spoken verbatim.
   const welcomeAttr = welcome ? ` welcomeGreeting="${escapeXml(welcome)}"` : "";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <ConversationRelay url="${escapeXml(wssUrl)}"${welcomeAttr} language="en-US" ttsProvider="${escapeXml(tts.provider)}" voice="${escapeXml(tts.voice)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any">
+    <ConversationRelay url="${escapeXml(wssUrl)}"${welcomeAttr} language="${escapeXml(params.language)}" ttsProvider="${escapeXml(params.provider)}" voice="${escapeXml(params.voiceId)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any">
       <Parameter name="goal" value="${escapeXml(params.goal)}" />
       <Parameter name="direction" value="${escapeXml(params.direction)}" />
       <Parameter name="conversationId" value="${escapeXml(params.conversationId)}" />
+      <Parameter name="language" value="${escapeXml(params.language)}" />
       <Parameter name="source" value="aarvanta-voice-os" />
     </ConversationRelay>
   </Connect>

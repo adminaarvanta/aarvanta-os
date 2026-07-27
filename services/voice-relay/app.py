@@ -139,6 +139,11 @@ def build_system_prompt(params: dict[str, Any]) -> str:
         parts.append("Inbound call: answer briefly, ask what they need, stay short.")
     elif direction == "outbound":
         parts.append("Outbound call: state why you called in one short line, then listen.")
+    language = (params.get("language") or "").strip()
+    if language and language.lower() not in ("en-us", "en"):
+        parts.append(
+            f"Respond in the language for locale '{language}'. Keep replies short and natural for a phone call."
+        )
     goal = (params.get("goal") or params.get("context") or "").strip()
     if goal:
         parts.append(

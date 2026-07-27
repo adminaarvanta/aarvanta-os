@@ -4,6 +4,9 @@ import {
   shouldSimulateChannel,
 } from "@/lib/channels/config";
 import { sendGmailEmail } from "@/lib/channels/gmail-client";
+import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
+import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
+import { getWebhookTenantScope } from "@/lib/tenant/context";
 
 export interface DeliveryContext {
   channel: Channel;
@@ -96,6 +99,12 @@ async function initiateTwilioVoiceCall(
   }
   const twimlUrl = `${base}/api/webhooks/twilio/twiml?${params.toString()}`;
   const statusCallback = `${base}/api/webhooks/twilio`;
+  const recordingCallback = `${base}/api/webhooks/twilio/recording`;
+
+  const scope = getWebhookTenantScope();
+  const settings = await getWorkspaceSettings(scope.workspaceId);
+  const voice = resolveVoiceCallingConfig(settings);
+
   const body = new URLSearchParams({
     To: to,
     From: from,
@@ -106,6 +115,14 @@ async function initiateTwilioVoiceCall(
   });
   for (const event of ["initiated", "ringing", "answered", "completed"]) {
     body.append("StatusCallbackEvent", event);
+  }
+
+  if (voice.callRecordingEnabled) {
+    body.set("Record", "true");
+    body.set("RecordingChannels", "dual");
+    body.set("RecordingStatusCallback", recordingCallback);
+    body.set("RecordingStatusCallbackMethod", "POST");
+    body.append("RecordingStatusCallbackEvent", "completed");
   }
 
   const response = await fetch(

@@ -8,6 +8,8 @@
  * Set VOICE_RELAY_TTS_PROVIDER=Amazon for the basic Polly voice.
  * Set VOICE_RELAY_BUDGET_MODE=true to skip ConversationRelay entirely (one-shot <Say> only —
  * no two-way AI, avoids the $0.07/min Relay charge).
+ *
+ * Workspace Voice OS prefs override env when present — see voice-calling-config.ts.
  */
 export type ConversationRelayTtsProvider = "Amazon" | "Google" | "ElevenLabs";
 
@@ -16,7 +18,8 @@ export function isVoiceRelayBudgetMode(): boolean {
   return v === "true" || v === "1" || v === "yes";
 }
 
-export function getConversationRelayTts() {
+/** Env-only defaults (used when workspace prefs are unset). */
+export function getConversationRelayTtsFromEnv() {
   const provider = (
     process.env.VOICE_RELAY_TTS_PROVIDER?.trim() || "ElevenLabs"
   ) as ConversationRelayTtsProvider;
@@ -33,4 +36,9 @@ export function getConversationRelayTts() {
     process.env.VOICE_RELAY_ELEVENLABS_TEXT_NORM?.trim() || "on";
 
   return { provider, voice, elevenlabsTextNormalization };
+}
+
+/** @deprecated Prefer resolveVoiceCallingConfig — kept for callers that only need env. */
+export function getConversationRelayTts() {
+  return getConversationRelayTtsFromEnv();
 }

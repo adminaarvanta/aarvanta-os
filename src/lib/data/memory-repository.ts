@@ -9,6 +9,7 @@ import {
   appendOutboundCall,
   appendOutboundEmail,
   appendOutboundMessage,
+  attachCallRecording,
   createConversation,
   inScope,
   newId,
@@ -263,6 +264,8 @@ export const memoryRepository: ConversationRepository = {
         durationSeconds: input.durationSeconds,
         summary: input.summary,
         recordingUrl: input.recordingUrl,
+        recordingSid: input.recordingSid,
+        callSid: input.callSid,
         authorName: input.contactName ?? input.phone,
       });
       return finishInbound(conversations[idx], scope);
@@ -285,6 +288,8 @@ export const memoryRepository: ConversationRepository = {
           durationSeconds: input.durationSeconds,
           summary: input.summary,
           recordingUrl: input.recordingUrl,
+          recordingSid: input.recordingSid,
+          callSid: input.callSid,
           occurredAt: now,
           authorName: input.contactName ?? input.phone,
         },
@@ -292,6 +297,13 @@ export const memoryRepository: ConversationRepository = {
     );
     conversations.push(conversation);
     return finishInbound(conversation, scope);
+  },
+
+  async attachCallRecording(conversationId, input, scope) {
+    const idx = findIndex(conversationId, scope);
+    if (idx === -1) return null;
+    conversations[idx] = attachCallRecording(conversations[idx], input);
+    return structuredClone(conversations[idx]);
   },
 
   async addInboundChat(input, scope) {

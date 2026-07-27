@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CalendarClock, Phone, PhoneOutgoing } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VoiceConfigPanel } from "@/components/voice/voice-config-panel";
 import { formatRelative } from "@/lib/utils";
 
 export type CallLogItem = {
@@ -140,6 +141,7 @@ export function CallingWorkspace({ calls }: { calls: CallLogItem[] }) {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+      <VoiceConfigPanel compact />
       <form
         onSubmit={onSubmit}
         className="rounded-xl border border-border bg-surface-elevated p-4 sm:p-5 space-y-3"

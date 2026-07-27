@@ -6,6 +6,7 @@ import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { IdentityBadge } from "@/components/inbox/identity-badge";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { OpenConversationLink } from "@/components/inbox/open-conversation-link";
+import { VoiceConfigPanel } from "@/components/voice/voice-config-panel";
 import { Badge } from "@/components/ui/badge";
 import { conversationsForChannel } from "@/lib/channels/filter-conversations";
 import { CHANNEL_LABELS } from "@/lib/constants";
@@ -77,6 +78,11 @@ export async function ChannelOsListPage({
             />
           </div>
         </div>
+        {os === "voice" ? (
+          <div className="mt-4">
+            <VoiceConfigPanel />
+          </div>
+        ) : null}
       </header>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="min-h-0 w-full shrink-0 overflow-y-auto overscroll-contain bg-surface-elevated md:w-80 md:border-r md:border-border">

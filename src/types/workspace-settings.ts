@@ -1,3 +1,5 @@
+import type { ConversationRelayTtsProvider } from "@/lib/channels/voice-relay-tts";
+
 export type WorkspaceSettings = {
   workspaceId: string;
   /** AI triages inbox threads and generates HR documents. */
@@ -20,6 +22,18 @@ export type WorkspaceSettings = {
   storeSlug?: string;
   logoUrl?: string;
   primaryDomain?: string;
+  /** Voice OS — ConversationRelay TTS provider. */
+  voiceTtsProvider?: ConversationRelayTtsProvider;
+  /** Voice OS — Twilio voice id (or custom paste). */
+  voiceId?: string;
+  /** Voice OS — BCP-47 language for STT/TTS (e.g. en-US). */
+  voiceLanguage?: string;
+  /** When set, overrides curated voiceId (custom ElevenLabs/Twilio voice). */
+  voiceCustomId?: string;
+  /** Opt-in Twilio call recording (default off). */
+  callRecordingEnabled?: boolean;
+  /** Speak a short recording notice when recording is on (default true). */
+  callRecordingAnnounce?: boolean;
   updatedAt: string;
 };
 
@@ -37,5 +51,11 @@ export type WorkspaceSettingsPatch = Partial<
     | "storeSlug"
     | "logoUrl"
     | "primaryDomain"
+    | "voiceTtsProvider"
+    | "voiceId"
+    | "voiceLanguage"
+    | "voiceCustomId"
+    | "callRecordingEnabled"
+    | "callRecordingAnnounce"
   >
 >;
