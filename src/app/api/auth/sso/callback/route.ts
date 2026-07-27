@@ -1,5 +1,27 @@
 import { NextResponse } from "next/server";
-import { isSsoConfigured } from "@/lib/auth/sso-oidc";
+import { sanitizeNextPath } from "@/lib/auth/cookie-options";
+import {
+  PENDING_SIGNUP_COOKIE,
+  createPendingSignupToken,
+  getPendingSignupCookieOptions,
+} from "@/lib/auth/pending-signup";
+import {
+  createSessionToken,
+  getSessionCookieOptions,
+  SESSION_COOKIE,
+} from "@/lib/auth/session";
+import { exchangeOidcCode, isSsoConfigured } from "@/lib/auth/sso-oidc";
+import {
+  findCredentialsByGoogleSub,
+  getUserCredentials,
+  upsertGoogleIdentity,
+} from "@/lib/auth/user-credentials";
+import { isDemoMode } from "@/lib/config/app-mode";
+import { ensureDatastoreReady } from "@/lib/data/datastore";
+import { getTenantRepository } from "@/lib/data/tenant-store";
+import type { SsoProvider } from "@/types/platform-modules";
+
+export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -8,36 +30,145 @@ export async function GET(req: Request) {
   const error = url.searchParams.get("error");
 
   if (error) {
-    return NextResponse.redirect(new URL(`/login?error=invalid_credentials`, req.url));
+    return NextResponse.redirect(
+      new URL(`/login?error=invalid_credentials`, req.url)
+    );
   }
 
   if (!code || !stateRaw) {
-    return NextResponse.redirect(new URL("/login?error=invalid_credentials", req.url));
+    return NextResponse.redirect(
+      new URL("/login?error=invalid_credentials", req.url)
+    );
   }
 
-  let next = "/dashboard";
-  let provider = "google";
+  let next = "/build";
+  let provider: SsoProvider = "google";
+  let intent: "login" | "register" = "login";
   try {
-    const state = JSON.parse(Buffer.from(stateRaw, "base64url").toString()) as {
-      provider?: string;
+    const state = JSON.parse(
+      Buffer.from(stateRaw, "base64url").toString()
+    ) as {
+      provider?: SsoProvider;
       next?: string;
+      intent?: "login" | "register";
     };
-    if (state.next) next = state.next;
+    if (state.next) next = sanitizeNextPath(state.next);
     if (state.provider) provider = state.provider;
+    if (state.intent === "register") intent = "register";
   } catch {
-    /* use defaults */
+    /* defaults */
   }
 
-  if (!isSsoConfigured(provider as "google")) {
+  if (!isSsoConfigured(provider)) {
     return NextResponse.redirect(new URL("/login?error=misconfigured", req.url));
   }
 
-  // Full token exchange requires IdP credentials — redirect to password login with hint.
-  const loginUrl = new URL("/login", req.url);
-  loginUrl.searchParams.set("next", next);
-  loginUrl.searchParams.set(
-    "error",
-    process.env.SSO_AUTO_PROVISION === "true" ? "invalid_credentials" : "misconfigured"
-  );
-  return NextResponse.redirect(loginUrl);
+  try {
+    await ensureDatastoreReady();
+    const redirectUri = `${url.origin}/api/auth/sso/callback`;
+    const { user } = await exchangeOidcCode({
+      provider,
+      code,
+      redirectUri,
+    });
+
+    const email = user.email?.trim().toLowerCase();
+    if (!email) {
+      return NextResponse.redirect(
+        new URL("/login?error=invalid_credentials", req.url)
+      );
+    }
+
+    const name =
+      user.name?.trim() ||
+      [user.given_name, user.family_name].filter(Boolean).join(" ").trim() ||
+      email.split("@")[0] ||
+      "User";
+
+    const bySub = await findCredentialsByGoogleSub(user.sub);
+    const byEmail = await getUserCredentials(email);
+    const creds = bySub ?? byEmail;
+
+    if (creds) {
+      if (!creds.googleSub) {
+        await upsertGoogleIdentity({
+          email: creds.email,
+          userId: creds.userId,
+          googleSub: user.sub,
+        });
+      }
+
+      const repo = getTenantRepository();
+      const memberships = await repo.listMembershipsForUser(creds.userId);
+      const member = memberships[0];
+      if (!member) {
+        // Credentials without membership — treat as incomplete signup
+        const pending = await createPendingSignupToken({
+          email,
+          name,
+          googleSub: user.sub,
+          next,
+        });
+        const response = NextResponse.redirect(
+          new URL(`/register/complete?next=${encodeURIComponent(next)}`, req.url)
+        );
+        response.cookies.set(
+          PENDING_SIGNUP_COOKIE,
+          pending,
+          getPendingSignupCookieOptions(req.url)
+        );
+        return response;
+      }
+
+      const session = {
+        email: member.email,
+        name: member.name,
+        userId: member.userId,
+        role: member.role,
+        tenantId: member.tenantId,
+        workspaceId: member.workspaceId,
+        companyId: member.companyId,
+      };
+
+      if (!isDemoMode() || process.env.AUTH_SECRET) {
+        const token = await createSessionToken(session);
+        const response = NextResponse.redirect(new URL(next, req.url));
+        response.cookies.set(
+          SESSION_COOKIE,
+          token,
+          getSessionCookieOptions(undefined, req.url)
+        );
+        return response;
+      }
+
+      return NextResponse.redirect(new URL(next, req.url));
+    }
+
+    // New Google user — collect phone/country before provisioning.
+    const pending = await createPendingSignupToken({
+      email,
+      name,
+      googleSub: user.sub,
+      next,
+    });
+    const completeUrl = new URL("/register/complete", req.url);
+    completeUrl.searchParams.set("next", next);
+    if (intent === "register") {
+      completeUrl.searchParams.set("from", "register");
+    }
+    const response = NextResponse.redirect(completeUrl);
+    response.cookies.set(
+      PENDING_SIGNUP_COOKIE,
+      pending,
+      getPendingSignupCookieOptions(req.url)
+    );
+    return response;
+  } catch (err) {
+    console.error("[sso/callback]", err);
+    const dest =
+      intent === "register"
+        ? `/register?error=sso_failed`
+        : `/login?error=invalid_credentials`;
+    return NextResponse.redirect(new URL(dest, req.url));
+  }
 }

@@ -72,4 +72,9 @@ export type CreateMemberInput = {
   email: string;
   name: string;
   role: MemberRole;
+  phone?: string;
+  country?: string;
+  companyName?: string;
+  authProvider?: import("@/types/tenant").MemberAuthProvider;
+  profileComplete?: boolean;
 };

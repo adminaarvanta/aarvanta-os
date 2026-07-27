@@ -73,7 +73,13 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
       </button>
 
       <p className="text-center text-xs text-muted">
-        Invited? Use the password you created when accepting your invite.
+        New here?{" "}
+        <Link
+          href={`/register?next=${encodeURIComponent(safeNextPath)}`}
+          className="text-gold hover:underline"
+        >
+          Create a free account
+        </Link>
       </p>
 
       <div className="relative my-2">
@@ -89,7 +95,7 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
         href={`/api/auth/sso/start?provider=google&next=${encodeURIComponent(safeNextPath)}`}
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
       >
-        Sign in with SSO
+        Continue with Google
       </a>
     </form>
   );

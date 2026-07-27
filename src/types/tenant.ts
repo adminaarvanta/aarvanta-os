@@ -11,7 +11,7 @@ export interface Organization {
   id: string;
   name: string;
   slug: string;
-  plan: "starter" | "growth" | "enterprise";
+  plan: "free" | "starter" | "growth" | "enterprise";
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +26,8 @@ export interface Workspace {
   updatedAt: string;
 }
 
+export type MemberAuthProvider = "password" | "google";
+
 export interface WorkspaceMember extends TenantScope {
   id: string;
   userId: string;
@@ -33,6 +35,15 @@ export interface WorkspaceMember extends TenantScope {
   name: string;
   role: MemberRole;
   status: MemberStatus;
+  /** E.164 or national format; required for free-tier self-serve accounts. */
+  phone?: string;
+  /** ISO country code or display country name. */
+  country?: string;
+  /** Optional company label from signup. */
+  companyName?: string;
+  authProvider?: MemberAuthProvider;
+  /** False until phone/country collected (Google signup). */
+  profileComplete?: boolean;
   joinedAt: string;
   updatedAt: string;
 }

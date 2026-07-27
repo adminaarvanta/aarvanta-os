@@ -1,12 +1,15 @@
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import type { MemberAuthProvider } from "@/types/tenant";
 
 export type UserCredentialRecord = {
   email: string;
   userId: string;
   passwordHash: string;
   passwordSalt: string;
+  authProvider?: MemberAuthProvider;
+  googleSub?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -73,9 +76,53 @@ export async function upsertUserPassword(input: {
     userId: input.userId,
     passwordHash: hash,
     passwordSalt: salt,
+    authProvider: "password",
+    googleSub: existing?.googleSub,
     createdAt: existing?.createdAt ?? stamp,
     updatedAt: stamp,
   });
+}
+
+export async function upsertGoogleIdentity(input: {
+  email: string;
+  userId: string;
+  googleSub: string;
+}): Promise<UserCredentialRecord> {
+  const key = emailKey(input.email);
+  const existing = await readRecord(key);
+  const stamp = nowIso();
+  return writeRecord({
+    email: key,
+    userId: input.userId,
+    passwordHash: existing?.passwordHash ?? "",
+    passwordSalt: existing?.passwordSalt ?? "",
+    authProvider: existing?.passwordHash ? existing.authProvider ?? "password" : "google",
+    googleSub: input.googleSub,
+    createdAt: existing?.createdAt ?? stamp,
+    updatedAt: stamp,
+  });
+}
+
+export async function findCredentialsByGoogleSub(
+  googleSub: string
+): Promise<UserCredentialRecord | null> {
+  const sub = googleSub.trim();
+  if (!sub) return null;
+
+  for (const record of memory.values()) {
+    if (record.googleSub === sub) return record;
+  }
+
+  if (isDemoMode() || !isFirebaseConfigured()) return null;
+  const db = getAdminFirestore();
+  if (!db) return null;
+  const snap = await db
+    .collection(COLLECTION)
+    .where("googleSub", "==", sub)
+    .limit(1)
+    .get();
+  if (snap.empty) return null;
+  return snap.docs[0]!.data() as UserCredentialRecord;
 }
 
 export async function verifyUserPassword(
@@ -83,7 +130,7 @@ export async function verifyUserPassword(
   password: string
 ): Promise<UserCredentialRecord | null> {
   const record = await readRecord(email);
-  if (!record) return null;
+  if (!record?.passwordHash || !record.passwordSalt) return null;
   if (!verifyPassword(password, record.passwordHash, record.passwordSalt)) {
     return null;
   }

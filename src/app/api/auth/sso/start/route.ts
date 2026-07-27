@@ -7,7 +7,8 @@ const VALID_PROVIDERS: SsoProvider[] = ["entra", "google", "okta", "onelogin"];
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const provider = (url.searchParams.get("provider") ?? "google") as SsoProvider;
-  const next = url.searchParams.get("next") ?? "/dashboard";
+  const next = url.searchParams.get("next") ?? "/build";
+  const intent = url.searchParams.get("intent") === "register" ? "register" : "login";
 
   if (!VALID_PROVIDERS.includes(provider)) {
     return NextResponse.redirect(
@@ -21,7 +22,9 @@ export async function GET(req: Request) {
 
   const origin = url.origin;
   const redirectUri = `${origin}/api/auth/sso/callback`;
-  const state = Buffer.from(JSON.stringify({ provider, next })).toString("base64url");
+  const state = Buffer.from(
+    JSON.stringify({ provider, next, intent })
+  ).toString("base64url");
   const authorizeUrl = buildOidcAuthorizeUrl({ provider, redirectUri, state });
 
   if (!authorizeUrl) {

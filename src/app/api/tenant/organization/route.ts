@@ -6,7 +6,7 @@ import { getSessionContext, requirePermission } from "@/lib/tenant/context";
 
 const patchSchema = z.object({
   name: z.string().min(1).optional(),
-  plan: z.enum(["starter", "growth", "enterprise"]).optional(),
+  plan: z.enum(["free", "starter", "growth", "enterprise"]).optional(),
 });
 
 export async function PATCH(req: Request) {

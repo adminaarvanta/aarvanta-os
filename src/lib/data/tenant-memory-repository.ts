@@ -218,6 +218,11 @@ export const tenantMemoryRepository: TenantRepository = {
       name: input.name,
       role: input.role,
       status: "active" as const,
+      phone: input.phone,
+      country: input.country,
+      companyName: input.companyName,
+      authProvider: input.authProvider,
+      profileComplete: input.profileComplete ?? true,
       joinedAt: now,
       updatedAt: now,
     };

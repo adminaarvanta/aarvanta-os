@@ -6,6 +6,7 @@ const SESSION_COOKIE = "aarvanta_session";
 
 const PUBLIC_PREFIXES = [
   "/login",
+  "/register",
   "/invite",
   "/pricing",
   "/about",

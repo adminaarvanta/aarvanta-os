@@ -270,6 +270,11 @@ export const tenantFirestoreRepository: TenantRepository = {
       name: input.name,
       role: input.role,
       status: "active",
+      phone: input.phone,
+      country: input.country,
+      companyName: input.companyName,
+      authProvider: input.authProvider,
+      profileComplete: input.profileComplete ?? true,
       joinedAt: now,
       updatedAt: now,
     };
