@@ -11,6 +11,7 @@ const PUBLIC_PREFIXES = [
   "/about",
   "/contact",
   "/store",
+  "/p",
   "/chat",
   "/api/chat",
   "/api/store",

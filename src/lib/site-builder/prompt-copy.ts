@@ -86,14 +86,16 @@ function categoryFlavor(categoryId: SiteCategoryId, customLabel?: string): strin
 
 /** Derive prompt-specific copy so every brief produces different site content. */
 export function extractPromptEntities(preferences: SitePreferences): PromptEntities {
-  // Prefer the longer customPrompt (refine + brief) when present.
-  const idea =
-    preferences.customPrompt ||
-    preferences.businessIdea ||
-    preferences.businessName;
+  // Prefer the longer customPrompt when present; fold refine for uniqueness.
+  const idea = [
+    preferences.customPrompt || preferences.businessIdea || preferences.businessName,
+    preferences.refineInstructions?.trim(),
+  ]
+    .filter(Boolean)
+    .join("\n");
   const categoryId = preferences.categoryId ?? "professional";
   const seed = hashSeed(
-    `${preferences.templateId ?? "auto"}|${categoryId}|${idea}|${preferences.businessName}`
+    `${preferences.templateId ?? "auto"}|${categoryId}|${idea}|${preferences.businessName}|${preferences.refineInstructions ?? ""}`
   );
   const phrases = splitPhrases(idea);
   const nouns = extractNouns(idea);

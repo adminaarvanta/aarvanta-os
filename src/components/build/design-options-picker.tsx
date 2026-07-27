@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { Button } from "@/components/ui/button";
 import type { SiteDesignOption } from "@/types/site-builder";
@@ -17,6 +17,7 @@ export function DesignOptionsPicker({
   onSelect,
   onConfirm,
   onBack,
+  onRefresh,
   confirmLabel = "Continue",
 }: {
   options: SiteDesignOption[];
@@ -25,6 +26,7 @@ export function DesignOptionsPicker({
   onSelect: (id: string) => void;
   onConfirm: () => void;
   onBack: () => void;
+  onRefresh?: () => void;
   confirmLabel?: string;
 }) {
   return (
@@ -45,6 +47,21 @@ export function DesignOptionsPicker({
           <Button type="button" variant="secondary" onClick={onBack} disabled={busy}>
             Back to brief
           </Button>
+          {onRefresh ? (
+            <Button type="button" variant="secondary" onClick={onRefresh} disabled={busy}>
+              {busy ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Refreshing…
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh designs
+                </>
+              )}
+            </Button>
+          ) : null}
           <Button
             type="button"
             onClick={onConfirm}
@@ -66,7 +83,12 @@ export function DesignOptionsPicker({
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div
+        className={cn(
+          "grid gap-5 lg:grid-cols-3",
+          busy && "pointer-events-none opacity-60"
+        )}
+      >
         {options.map((option) => {
           const active = selectedId === option.id;
           return (

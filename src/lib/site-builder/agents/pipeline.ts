@@ -12,6 +12,7 @@ import {
   runPagePlanner,
 } from "@/lib/site-builder/agents/page-planner";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
+import { ensureShareToken } from "@/lib/site-builder/share-token";
 import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
 import { themeFromBrand } from "@/lib/site-builder/theme-presets";
 import { crmNow } from "@/lib/data/crm-helpers";
@@ -232,6 +233,13 @@ export async function runGenerationPipeline(
     site = alignHomeToSelectedDesign(site, selectedDesign);
   }
 
+  // Ensure preview remounts after refine / regenerate
+  site = {
+    ...site,
+    generatedAt: crmNow(),
+    version: (site.version ?? 1) + (preferences.refineInstructions ? 1 : 0),
+  };
+
   await emit("done", 100, "Website ready", {
     business: businessResult.profile,
     brand,
@@ -240,7 +248,7 @@ export async function runGenerationPipeline(
     site,
   });
 
-  const updatedJob: SiteBuildJob = {
+  const updatedJob: SiteBuildJob = ensureShareToken({
     ...job,
     status: "generated",
     preferences,
@@ -250,7 +258,7 @@ export async function runGenerationPipeline(
     usedAi,
     error: undefined,
     updatedAt: crmNow(),
-  };
+  });
 
   return { job: updatedJob, plan, site, preferences, usedAi };
 }

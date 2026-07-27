@@ -1,5 +1,6 @@
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
+import { applyRefineHeuristics } from "@/lib/site-builder/apply-refine";
 import { buildContentBrief } from "@/lib/site-builder/content-brief";
 import { preferSampleFilledSite } from "@/lib/site-builder/ensure-sample-data";
 import { generateSiteFromPlan } from "@/lib/site-builder/generate-site";
@@ -29,7 +30,7 @@ export async function runCopyAgent(
     pages: plan.pages.map((p) => p.slug as SitePreferences["pages"][number]),
   });
 
-  const enriched: GeneratedSite = {
+  let enriched: GeneratedSite = {
     ...site,
     business,
     brand,
@@ -38,7 +39,10 @@ export async function runCopyAgent(
   };
 
   if (!isAiConfigured()) {
-    return { site: enriched, usedAi };
+    return {
+      site: applyRefineHeuristics(enriched, preferences.refineInstructions),
+      usedAi,
+    };
   }
 
   try {
@@ -46,9 +50,13 @@ export async function runCopyAgent(
     const home = enriched.pages.find((p) => p.slug === "home");
     const hero = home?.blocks.find((b) => b.type === "hero");
     if (!hero) {
-      return { site: enriched, usedAi };
+      return {
+        site: applyRefineHeuristics(enriched, preferences.refineInstructions),
+        usedAi,
+      };
     }
 
+    const refine = preferences.refineInstructions?.trim();
     const heroCopy = await completeJson<{
       eyebrow?: string;
       headline: string;
@@ -56,11 +64,16 @@ export async function runCopyAgent(
       cta: string;
       secondaryCta?: string;
     }>({
-      system: `Write conversion-focused hero copy. Return JSON with headline, subheadline, cta, optional eyebrow and secondaryCta. Tone: ${brand.toneOfVoice}.`,
+      system: `Write conversion-focused hero copy. Return JSON with headline, subheadline, cta, optional eyebrow and secondaryCta. Tone: ${brand.toneOfVoice}.${
+        refine
+          ? ` CRITICAL: Apply this change request exactly where relevant: ${refine}`
+          : ""
+      }`,
       user: JSON.stringify({
         businessName: preferences.businessName,
         business,
         idea: preferences.businessIdea,
+        refineInstructions: refine,
         brief: { headline: brief.headline, tagline: brief.tagline },
       }),
       temperature: 0.65,
@@ -83,11 +96,15 @@ export async function runCopyAgent(
       p.slug === "home" ? { ...p, blocks: nextBlocks } : p
     );
 
+    enriched = preferSampleFilledSite(enriched, { ...enriched, pages: nextPages });
     return {
-      site: preferSampleFilledSite(enriched, { ...enriched, pages: nextPages }),
+      site: applyRefineHeuristics(enriched, preferences.refineInstructions),
       usedAi: true,
     };
   } catch {
-    return { site: enriched, usedAi };
+    return {
+      site: applyRefineHeuristics(enriched, preferences.refineInstructions),
+      usedAi,
+    };
   }
 }

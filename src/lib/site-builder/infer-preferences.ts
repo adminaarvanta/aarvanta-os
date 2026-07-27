@@ -121,6 +121,7 @@ export function inferPreferencesFromPrompt(
     ctaGoal,
     keyMessages: overrides.keyMessages,
     customPrompt: fullPrompt ? clip(fullPrompt, CUSTOM_PROMPT_MAX) : undefined,
+    refineInstructions: overrides.refineInstructions,
     referenceUrl: overrides.referenceUrl,
     referenceScreenshots: overrides.referenceScreenshots ?? [],
     businessProfile: overrides.businessProfile,

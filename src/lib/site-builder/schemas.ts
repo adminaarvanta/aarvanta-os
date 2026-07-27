@@ -260,6 +260,7 @@ export const sitePreferencesSchema = z.object({
   ctaGoal: siteCtaGoalSchema.default("contact"),
   keyMessages: z.string().max(500).optional(),
   customPrompt: z.string().max(CUSTOM_PROMPT_MAX).optional(),
+  refineInstructions: z.string().max(2000).optional(),
   referenceUrl: z.union([z.string().url(), z.literal("")]).optional(),
   referenceScreenshots: z.array(siteReferenceScreenshotSchema).max(3).optional(),
   deployment: siteDeploymentConfigSchema,

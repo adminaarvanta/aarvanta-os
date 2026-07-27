@@ -22,8 +22,8 @@ export const BUILD_WIZARD_STEPS: Array<{
   { id: "goals", label: "Goals", description: "What success looks like" },
   { id: "apps", label: "Add Apps", description: "Features to include" },
   { id: "designs", label: "Design", description: "Pick a homepage look" },
+  { id: "generate", label: "AI Generation", description: "Build & preview" },
   { id: "domain", label: "Domain", description: "Choose or connect" },
-  { id: "generate", label: "AI Generation", description: "Build your site" },
 ];
 
 export function BuildWizardRail({

@@ -600,7 +600,12 @@ CRITICAL RULES:
 2. Rewrite ALL text props so they are SPECIFIC to the user's businessIdea — never reuse generic SaaS filler like "Clarity first" or "Proven process".
 3. Product names, services, FAQs, testimonials, and headlines must mention concrete details from the brief.
 4. Keep imageUrl values from the skeleton.
-5. Tone: ${preferences.tone}. Category: ${brief.categoryLabel}. Template: ${template.name} (${template.inspiredBy}).`,
+5. Tone: ${preferences.tone}. Category: ${brief.categoryLabel}. Template: ${template.name} (${template.inspiredBy}).
+${
+  preferences.refineInstructions?.trim()
+    ? `6. APPLY THESE CHANGE REQUESTS (highest priority): ${preferences.refineInstructions.trim()}`
+    : ""
+}`,
       user: JSON.stringify({
         brief: {
           businessName: preferences.businessName,
@@ -609,6 +614,7 @@ CRITICAL RULES:
           customCategoryLabel: preferences.customCategoryLabel,
           keyMessages: preferences.keyMessages,
           customPrompt: preferences.customPrompt,
+          refineInstructions: preferences.refineInstructions,
           categoryId: preferences.categoryId,
           templateId: preferences.templateId,
           business: preferences.businessProfile ?? plan.business,

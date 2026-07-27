@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -22,6 +21,7 @@ import {
 import { DesignOptionsPicker } from "@/components/build/design-options-picker";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
 import { HostingCheckoutPanel } from "@/components/build/hosting-checkout-panel";
+import { ThemeStylePanel } from "@/components/build/theme-style-panel";
 import { Button } from "@/components/ui/button";
 import {
   clearComposeDraftCache,
@@ -30,6 +30,7 @@ import {
 } from "@/lib/site-builder/compose-draft-cache";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import { EXAMPLE_PROMPTS, inferPreferencesFromPrompt } from "@/lib/site-builder/infer-preferences";
+import { publicSharePath } from "@/lib/site-builder/share-token";
 import {
   defaultCustomThemeFromPreset,
 } from "@/lib/site-builder/theme-presets";
@@ -140,6 +141,11 @@ export function BuildOsClient({
   const [refineInput, setRefineInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [usedAi, setUsedAi] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [studioRightTab, setStudioRightTab] = useState<"assistant" | "website">(
+    "assistant"
+  );
+  const [sharePath, setSharePath] = useState<string | null>(null);
 
   useEffect(() => {
     jobRef.current = job;
@@ -179,6 +185,8 @@ export function BuildOsClient({
       .map((s) => s.trim())
       .filter(Boolean);
     if (fromKeys?.length) setGoals(fromKeys);
+    setSharePath(next.shareToken ? publicSharePath(next.shareToken) : null);
+    setStatusMessage(null);
     if (next.generatedSite) setStep("generate");
     else if (next.preferences.designOptions?.length) setStep("designs");
     else setStep("about");
@@ -237,16 +245,17 @@ export function BuildOsClient({
 
   const buildPreferences = useCallback(
     (extraPrompt?: string): SitePreferences => {
-      const mergedPrompt = [prompt.trim(), extraPrompt?.trim()].filter(Boolean).join("\n\n");
-      const safePrompt = mergedPrompt || "Untitled draft";
-      return inferPreferencesFromPrompt(safePrompt, {
+      const basePrompt = prompt.trim() || "Untitled draft";
+      const refine = extraPrompt?.trim();
+      return inferPreferencesFromPrompt(basePrompt, {
         businessName: businessName.trim() || undefined,
         targetAudience: audience.trim() || undefined,
         tone,
         features,
         themePreset,
         customTheme,
-        customPrompt: mergedPrompt || undefined,
+        customPrompt: basePrompt || undefined,
+        refineInstructions: refine || undefined,
         keyMessages: goals.join(" | "),
         referenceScreenshots: screenshots,
         designOptions: designOptions.length ? designOptions : undefined,
@@ -385,8 +394,10 @@ export function BuildOsClient({
       return;
     }
     const preferences = buildPreferences(extraPrompt);
+    const isRefine = Boolean(extraPrompt?.trim());
     setBusy(true);
     setError(null);
+    setStatusMessage(null);
     setStep("generate");
     setGenProgress({ stage: "business", percent: 0, message: "Starting…" });
     try {
@@ -457,11 +468,17 @@ export function BuildOsClient({
 
       if (finalJob) {
         setJob(finalJob);
+        if (finalJob.shareToken) {
+          setSharePath(publicSharePath(finalJob.shareToken));
+        }
         setDesignOptions(finalJob.preferences.designOptions ?? designOptions);
         setSelectedDesignOptionId(
           finalJob.preferences.selectedDesignOptionId ?? selectedDesignOptionId
         );
         setRefineInput("");
+        if (isRefine) {
+          setStatusMessage("Site updated with your changes.");
+        }
         syncLocalCache(finalJob.id, "generate");
         router.replace(`/build?job=${finalJob.id}`);
         void refreshJobList();
@@ -470,6 +487,74 @@ export function BuildOsClient({
       setBusy(false);
       setGenProgress(null);
     }
+  }
+
+  async function saveDraftToServer() {
+    const preferences = buildPreferences();
+    setError(null);
+    try {
+      const jobId = await ensureJob(preferences);
+      if (!jobId) return;
+      const res = await fetch(`/api/build/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...preferences,
+          designOptions,
+          selectedDesignOptionId: selectedDesignOptionId ?? undefined,
+          referenceScreenshots: [],
+        }),
+      });
+      if (!res.ok) {
+        setError("Could not save draft.");
+        return;
+      }
+      const data = (await res.json()) as {
+        job: import("@/types/site-builder").SiteBuildJob;
+      };
+      setJob(data.job);
+      syncLocalCache(data.job.id, step === "generate" ? "generate" : step);
+      setStatusMessage("Draft saved.");
+    } catch {
+      setError("Could not save draft.");
+    }
+  }
+
+  async function mintShareLink(): Promise<string | null> {
+    if (!job?.id || !job.generatedSite) return null;
+    const res = await fetch(`/api/build/${job.id}/share`, { method: "POST" });
+    if (!res.ok) {
+      setError("Could not create a share link.");
+      return null;
+    }
+    const data = (await res.json()) as {
+      job: import("@/types/site-builder").SiteBuildJob;
+      path: string;
+    };
+    setJob(data.job);
+    setSharePath(data.path);
+    return data.path;
+  }
+
+  async function publishWebsite() {
+    const path = sharePath ?? (await mintShareLink());
+    if (!path) return;
+    const url =
+      typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+    try {
+      await navigator.clipboard.writeText(url);
+      setStatusMessage(`Share link copied: ${url}`);
+    } catch {
+      setStatusMessage(`Share link: ${url}`);
+    }
+    setStudioRightTab("website");
+    window.open(path, "_blank", "noopener,noreferrer");
+  }
+
+  async function openPublicPreview() {
+    const path = sharePath ?? (await mintShareLink());
+    if (!path) return;
+    window.open(path, "_blank", "noopener,noreferrer");
   }
 
   async function onScreenshotFiles(files: FileList | null) {
@@ -574,6 +659,9 @@ export function BuildOsClient({
     setScreenshots([]);
     setRefineInput("");
     setError(null);
+    setStatusMessage(null);
+    setSharePath(null);
+    setStudioRightTab("assistant");
     setGenProgress(null);
     setStep("about");
     router.replace("/build");
@@ -595,12 +683,14 @@ export function BuildOsClient({
   /* ---- Generate / studio ---- */
   if (step === "generate") {
     return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[hsl(222_28%_6%)]">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2.5">
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setStep(selectedDesignOptionId ? "domain" : "designs")}
+              onClick={() =>
+                setStep(job?.generatedSite ? "domain" : "designs")
+              }
               className="text-xs font-medium text-muted hover:text-foreground"
             >
               ← Back
@@ -620,28 +710,37 @@ export function BuildOsClient({
               type="button"
               size="sm"
               variant="secondary"
-              onClick={() => syncLocalCache(job?.id, "generate")}
+              onClick={() => void saveDraftToServer()}
+              disabled={busy}
             >
               Save
             </Button>
-            {job?.id ? (
-              <Link
-                href={`/build/preview/${job.id}`}
-                target="_blank"
-                className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:text-foreground"
-              >
-                Download <ArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
-            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={!job?.generatedSite || busy}
+              onClick={() => void openPublicPreview()}
+            >
+              Preview <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+            </Button>
             <Button type="button" size="sm" onClick={startOver} variant="secondary">
               New site
             </Button>
-            <Button type="button" size="sm" disabled={!job?.generatedSite}>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!job?.generatedSite || busy}
+              onClick={() => void publishWebsite()}
+            >
               Publish Website
             </Button>
           </div>
         </div>
         {error ? <p className="border-b border-border px-4 py-2 text-xs text-red-400">{error}</p> : null}
+        {statusMessage && !error ? (
+          <p className="border-b border-border px-4 py-2 text-xs text-success">{statusMessage}</p>
+        ) : null}
         <BuildStudioLayout
           site={job?.generatedSite}
           progress={
@@ -661,9 +760,20 @@ export function BuildOsClient({
           refineInput={refineInput}
           onRefineInput={setRefineInput}
           onRefine={() => void generate(refineInput)}
+          onConnectDomain={() => {
+            setStep("domain");
+            syncLocalCache(job?.id, "domain");
+          }}
+          onPublish={() => void publishWebsite()}
+          onInviteHint={() =>
+            setStatusMessage("Team invites are coming soon — share the preview link for now.")
+          }
           siteName={businessName || "Website"}
           domainLabel={job?.preferences.deployment.domain.selectedDomain}
           featureCount={features.length}
+          statusMessage={statusMessage}
+          rightTab={studioRightTab}
+          onRightTabChange={setStudioRightTab}
           hostingSlot={
             job ? (
               <HostingCheckoutPanel
@@ -683,7 +793,7 @@ export function BuildOsClient({
 
   /* ---- Wizard ---- */
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[hsl(222_28%_6%)] md:flex-row">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:flex-row">
       <BuildWizardRail
         step={step}
         completed={completed}
@@ -883,22 +993,15 @@ export function BuildOsClient({
                     </div>
                   </div>
                   <div className="mt-5">
-                    <p className="text-[10px] uppercase tracking-wide text-dim">Palette</p>
-                    <div className="mt-2 flex gap-2">
-                      {[
-                        customTheme.primaryColor,
-                        customTheme.accentColor,
-                        customTheme.backgroundColor,
-                        "#1A2B48",
-                      ].map((color, i) => (
-                        <span
-                          key={`${color}-${i}`}
-                          className="h-8 w-8 rounded-full border border-border"
-                          style={{ background: color }}
-                          title={color}
-                        />
-                      ))}
-                    </div>
+                    <ThemeStylePanel
+                      compact
+                      themePreset={themePreset}
+                      customTheme={customTheme}
+                      onChange={({ themePreset: nextPreset, customTheme: nextCustom }) => {
+                        setThemePreset(nextPreset);
+                        setCustomTheme(nextCustom);
+                      }}
+                    />
                   </div>
                   <div className="mt-5 rounded-xl border border-border bg-surface-muted px-3 py-3">
                     <p className="text-[10px] uppercase tracking-wide text-dim">Sample headline</p>
@@ -1089,12 +1192,10 @@ export function BuildOsClient({
                       });
                     }
                   }}
-                  onConfirm={() => {
-                    setStep("domain");
-                    syncLocalCache(job?.id, "domain");
-                  }}
+                  onConfirm={() => void generate()}
+                  onRefresh={() => void proposeDesigns()}
                   onBack={() => setStep("apps")}
-                  confirmLabel="Continue to domain"
+                  confirmLabel="Build website"
                 />
               ) : (
                 <div className="space-y-4 text-center">
@@ -1147,30 +1248,45 @@ export function BuildOsClient({
                 </div>
               ) : null}
               <div className="flex justify-between">
-                <Button type="button" variant="secondary" onClick={() => setStep("designs")}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() =>
+                    setStep(job?.generatedSite ? "generate" : "designs")
+                  }
+                >
                   Back
                 </Button>
                 <Button
                   type="button"
-                  disabled={busy || !selectedDesignOptionId}
-                  onClick={() => void generate()}
+                  disabled={busy || (!job?.generatedSite && !selectedDesignOptionId)}
+                  onClick={() => {
+                    if (job?.generatedSite) {
+                      setStep("generate");
+                      syncLocalCache(job?.id, "generate");
+                    } else {
+                      void generate();
+                    }
+                  }}
                 >
                   {busy ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Building…
                     </>
+                  ) : job?.generatedSite ? (
+                    <>
+                      Back to studio <ArrowRight className="ml-1.5 h-4 w-4" />
+                    </>
                   ) : (
                     <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Build website
+                      Build website <Sparkles className="ml-1.5 h-4 w-4" />
                     </>
                   )}
                 </Button>
               </div>
               <p className="text-center text-[11px] text-dim">
-                {usedAi ? "AI-enhanced" : "Demo heuristics available"} · Domain is optional — you
-                can skip and build now.
+                Domain is optional — connect anytime after previewing your site.
               </p>
             </div>
           )}

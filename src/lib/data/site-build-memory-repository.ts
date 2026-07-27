@@ -19,6 +19,12 @@ export const siteBuildMemoryRepository: SiteBuildRepository = {
     return item && inCrmScope(item, scope) ? item : null;
   },
 
+  async getByShareToken(token) {
+    const normalized = token.trim();
+    if (!normalized) return null;
+    return jobs.find((j) => j.shareToken === normalized && j.generatedSite) ?? null;
+  },
+
   async save(job) {
     const idx = jobs.findIndex((j) => j.id === job.id);
     if (idx === -1) {

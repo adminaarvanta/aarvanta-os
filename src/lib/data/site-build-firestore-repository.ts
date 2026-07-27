@@ -34,6 +34,19 @@ export const siteBuildFirestoreRepository: SiteBuildRepository = {
     return inCrmScope(data, scope) ? data : null;
   },
 
+  async getByShareToken(token) {
+    const normalized = token.trim();
+    if (!normalized) return null;
+    const snap = await getDb()
+      .collection(COLLECTION)
+      .where("shareToken", "==", normalized)
+      .limit(1)
+      .get();
+    if (snap.empty) return null;
+    const data = snap.docs[0]!.data() as SiteBuildJob;
+    return data.generatedSite ? data : null;
+  },
+
   async save(job) {
     await getDb().collection(COLLECTION).doc(job.id).set(job);
     return job;

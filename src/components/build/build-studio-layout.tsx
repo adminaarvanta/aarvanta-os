@@ -8,6 +8,7 @@ import {
   Tablet,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { GenerationMagicSlides } from "@/components/build/generation-magic-slides";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { Button } from "@/components/ui/button";
 import type {
@@ -21,8 +22,8 @@ const STAGES: Array<{ id: SiteGenerationStage; label: string }> = [
   { id: "business", label: "Analyzing business" },
   { id: "brand", label: "Creating brand & style" },
   { id: "pages", label: "Planning pages" },
-  { id: "content", label: "Writing content" },
   { id: "layout", label: "Designing layout" },
+  { id: "content", label: "Writing content" },
   { id: "media", label: "Generating images" },
   { id: "done", label: "Finishing up" },
 ];
@@ -54,11 +55,16 @@ export function BuildStudioLayout({
   refineInput,
   onRefineInput,
   onRefine,
-  onPublishHint,
+  onConnectDomain,
+  onPublish,
+  onInviteHint,
   siteName,
   domainLabel,
   featureCount = 0,
   hostingSlot,
+  statusMessage,
+  rightTab: controlledRightTab,
+  onRightTabChange,
 }: {
   site?: GeneratedSite | null;
   progress: SiteGenerationProgress | null;
@@ -69,18 +75,29 @@ export function BuildStudioLayout({
   refineInput: string;
   onRefineInput: (v: string) => void;
   onRefine: () => void;
-  onPublishHint?: () => void;
+  onConnectDomain?: () => void;
+  onPublish?: () => void;
+  onInviteHint?: () => void;
   siteName: string;
   domainLabel?: string;
   featureCount?: number;
   hostingSlot?: ReactNode;
+  statusMessage?: string | null;
+  rightTab?: "assistant" | "website";
+  onRightTabChange?: (tab: "assistant" | "website") => void;
 }) {
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [rightTab, setRightTab] = useState<"assistant" | "website">("assistant");
+  const [internalRightTab, setInternalRightTab] = useState<"assistant" | "website">(
+    "assistant"
+  );
+  const rightTab = controlledRightTab ?? internalRightTab;
+  const setRightTab = onRightTabChange ?? setInternalRightTab;
   const done = Boolean(site) && !busy;
+  const showMagic = busy && !site;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+      <GenerationMagicSlides progress={progress} visible={showMagic} />
       <section className="flex max-h-[38vh] w-full shrink-0 flex-col border-b border-border bg-surface-elevated lg:max-h-none lg:w-[280px] lg:border-b-0 lg:border-r">
         <div className="border-b border-border-subtle px-5 py-5">
           <h2 className="text-lg font-semibold leading-snug text-foreground">
@@ -183,7 +200,7 @@ export function BuildStudioLayout({
                 device === "mobile" && "w-full max-w-[390px]"
               )}
             >
-              <GeneratedSitePreview site={site} />
+              <GeneratedSitePreview key={site.generatedAt} site={site} />
             </div>
           ) : (
             <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-border text-center">
@@ -229,6 +246,11 @@ export function BuildStudioLayout({
               {refineInput.trim() ? (
                 <div className="ml-6 rounded-xl bg-gold/15 px-3 py-2 text-foreground">
                   {refineInput}
+                </div>
+              ) : null}
+              {statusMessage ? (
+                <div className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+                  {statusMessage}
                 </div>
               ) : null}
               {done ? (
@@ -283,18 +305,36 @@ export function BuildStudioLayout({
                 Next steps
               </p>
               <ul className="mt-2 space-y-2">
-                {["Connect Domain", "Publish Website", "Invite Team Members"].map((item) => (
-                  <li key={item}>
-                    <button
-                      type="button"
-                      onClick={onPublishHint}
-                      className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-foreground hover:border-gold/40"
-                    >
-                      <Check className="h-3.5 w-3.5 text-gold" />
-                      {item}
-                    </button>
-                  </li>
-                ))}
+                <li>
+                  <button
+                    type="button"
+                    onClick={onConnectDomain}
+                    className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-foreground hover:border-gold/40"
+                  >
+                    <Check className="h-3.5 w-3.5 text-gold" />
+                    Connect Domain
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={onPublish}
+                    className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-foreground hover:border-gold/40"
+                  >
+                    <Check className="h-3.5 w-3.5 text-gold" />
+                    Publish Website
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={onInviteHint}
+                    className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-sm text-foreground hover:border-gold/40"
+                  >
+                    <Check className="h-3.5 w-3.5 text-gold" />
+                    Invite Team Members
+                  </button>
+                </li>
               </ul>
             </div>
             {hostingSlot ? (

@@ -324,6 +324,8 @@ export type SitePreferences = {
   ctaGoal: SiteCtaGoal;
   keyMessages?: string;
   customPrompt?: string;
+  /** Studio refine request — applied on regenerate without re-inferring the brief. */
+  refineInstructions?: string;
   referenceUrl?: string;
   referenceScreenshots?: SiteReferenceScreenshot[];
   deployment: SiteDeploymentConfig;
@@ -457,6 +459,8 @@ export type SiteBuildJob = TenantScope & {
   preferences: SitePreferences;
   plan?: SitePlan;
   generatedSite?: GeneratedSite;
+  /** Public share token for /p/[token] preview (unguessable). */
+  shareToken?: string;
   /** Live generation progress for streaming UI. */
   progress?: SiteGenerationProgress;
   usedAi?: boolean;
