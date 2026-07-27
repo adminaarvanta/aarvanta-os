@@ -30,7 +30,7 @@ import {
 } from "@/lib/site-builder/compose-draft-cache";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import { EXAMPLE_PROMPTS, inferPreferencesFromPrompt } from "@/lib/site-builder/infer-preferences";
-import { publicSharePath } from "@/lib/site-builder/share-token";
+import { publicSharePath } from "@/lib/site-builder/share-path";
 import {
   defaultCustomThemeFromPreset,
 } from "@/lib/site-builder/theme-presets";

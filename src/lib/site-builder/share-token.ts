@@ -1,6 +1,9 @@
 import { randomBytes } from "crypto";
 import { crmNow } from "@/lib/data/crm-helpers";
+import { publicSharePath } from "@/lib/site-builder/share-path";
 import type { SiteBuildJob } from "@/types/site-builder";
+
+export { publicSharePath };
 
 export function createShareToken(): string {
   return randomBytes(18).toString("base64url");
@@ -14,8 +17,4 @@ export function ensureShareToken(job: SiteBuildJob): SiteBuildJob {
     shareToken: createShareToken(),
     updatedAt: crmNow(),
   };
-}
-
-export function publicSharePath(token: string): string {
-  return `/p/${token}`;
 }
