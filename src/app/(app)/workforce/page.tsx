@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import Link from "next/link";
 import { AgentCard } from "@/components/workforce/agent-card";
 import { AgentDirectory } from "@/components/workforce/agent-directory";
 import { RunList } from "@/components/workforce/run-list";
@@ -8,18 +9,29 @@ import { WorkforceUpgradePanel } from "@/components/workforce/workforce-upgrade-
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getWorkforceRepository } from "@/lib/data/workforce-store";
 import { getWorkforceUpgradeRepository } from "@/lib/data/workforce-upgrade-store";
-import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
+import { getDirectoryAgentCards } from "@/lib/workforce/pipeline/agent-status";
 import { getTenantScope } from "@/lib/tenant/context";
+import type { AgentLiveStatus, AgentPerformance, AgentType } from "@/types/workforce";
 
 export default async function WorkforcePage() {
   const scope = await getTenantScope();
   const upgradeRepo = getWorkforceUpgradeRepository();
-  const [runs, ai, sharedMemory, collaborations] = await Promise.all([
+  const [runs, ai, sharedMemory, collaborations, directory] = await Promise.all([
     getWorkforceRepository().listRuns(scope, { limit: 10 }),
     Promise.resolve(getAiRuntimeStatus()),
     upgradeRepo.listSharedMemory(scope),
     upgradeRepo.listCollaborations(scope),
+    getDirectoryAgentCards(scope),
   ]);
+
+  const statuses = Object.fromEntries(
+    directory.map((d) => [d.agent.type, d.status.status])
+  ) as Partial<Record<AgentType, AgentLiveStatus>>;
+  const performance = Object.fromEntries(
+    directory.map((d) => [d.agent.type, d.performance])
+  ) as Partial<Record<AgentType, AgentPerformance>>;
+
+  const workingCount = directory.filter((d) => d.status.status === "working").length;
 
   return (
     <>
@@ -31,48 +43,53 @@ export default async function WorkforcePage() {
               AI Workforce
             </h2>
             <p className="text-xs text-muted sm:text-sm">
-              AI Employee Directory — 7 agents with shared memory, collaboration, chat, and tasks.
+              Assign business goals — the orchestrator picks AI employees, tools, and
+              approvals.
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-muted">
-            AI:{" "}
-            <span className="font-medium text-gold-bright">
-              {ai.status === "live"
-                ? `OpenAI · ${ai.model}`
-                : ai.status === "heuristic"
-                  ? "Heuristic (demo)"
-                  : "Not configured"}
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/workforce/tasks?start=1"
+              className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black hover:bg-gold-bright"
+            >
+              Start task
+            </Link>
+            <div className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-muted">
+              {workingCount} working · AI:{" "}
+              <span className="font-medium text-gold-bright">
+                {ai.status === "live"
+                  ? `OpenAI · ${ai.model}`
+                  : ai.status === "heuristic"
+                    ? "Heuristic (demo)"
+                    : "Not configured"}
+              </span>
+            </div>
           </div>
         </div>
       </header>
       <WorkforceNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
-        <section className="rounded-xl border border-border bg-surface-elevated p-4 space-y-2">
-          <p className="text-sm font-medium text-foreground">
-            Test agents with sample CRM data
-          </p>
-          <p className="text-xs text-muted">
-            Loads companies, leads, pipeline deals, and open tasks assigned to each
-            AI agent. Then open an agent → Tasks → Complete with agent.
-          </p>
-          <SeedCrmSampleButton />
-        </section>
-
         <section>
           <h3 className="mb-4 text-sm font-semibold text-foreground">
             AI Employee Directory
           </h3>
-          <AgentDirectory />
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {directory.map(({ agent, status, performance: perf }) => (
+              <AgentCard
+                key={agent.type}
+                agent={agent}
+                status={status.status}
+                performance={perf}
+              />
+            ))}
+          </div>
         </section>
 
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-foreground">Quick access</h3>
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {AGENT_DEFINITIONS.map((agent) => (
-              <AgentCard key={agent.type} agent={agent} />
-            ))}
-          </div>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">
+            By department
+          </h3>
+          <AgentDirectory statuses={statuses} performance={performance} />
         </section>
 
         <section>
@@ -86,9 +103,23 @@ export default async function WorkforcePage() {
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Recent runs</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">
+            Recent agent runs
+          </h3>
           <RunList runs={runs} />
         </section>
+
+        <details className="rounded-xl border border-border bg-surface-elevated p-4">
+          <summary className="cursor-pointer text-sm font-medium text-muted">
+            Dev tools
+          </summary>
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-muted">
+              Loads sample CRM companies, leads, deals, and open tasks for agents.
+            </p>
+            <SeedCrmSampleButton />
+          </div>
+        </details>
       </div>
     </>
   );

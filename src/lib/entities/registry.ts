@@ -10,6 +10,9 @@ const ENTITY_ROUTES: Partial<Record<EntityType, (id: string) => string>> = {
   conversation: (id) => `/inbox/${id}`,
   hr_case: (id) => `/hr?case=${id}`,
   launch_session: (id) => `/launch?session=${id}`,
+  workforce_goal: () => `/workforce/tasks`,
+  workforce_execution: (id) => `/workforce/tasks/${id}`,
+  workforce_approval: () => `/workforce/approvals`,
 };
 
 export function entityRef(
@@ -44,6 +47,9 @@ export function entityTypeLabel(type: EntityType): string {
     ai_agent: "AI agent",
     project: "Project",
     launch_session: "Launch session",
+    workforce_goal: "Workforce goal",
+    workforce_execution: "Workforce task",
+    workforce_approval: "Workforce approval",
   };
   return labels[type] ?? type;
 }

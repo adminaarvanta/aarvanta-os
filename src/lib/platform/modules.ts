@@ -346,8 +346,8 @@ export const PLATFORM_MODULES: PlatformModule[] = [
   {
     id: "autonomous",
     label: "Autonomous Agents",
-    description: "Planning, delegation, task queue, agent hierarchy",
-    href: "/workforce/autonomous",
+    description: "Goal engine, task planning, orchestrator, approvals",
+    href: "/workforce/tasks",
     icon: Sparkles,
     group: "Intelligence",
     phase: 30,

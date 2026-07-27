@@ -48,7 +48,12 @@ export type DomainEventType =
   | "launch.deployed"
   | "payroll.processed"
   | "contract.signed"
-  | "ai.decision.generated";
+  | "ai.decision.generated"
+  | "workforce.goal_created"
+  | "workforce.execution_started"
+  | "workforce.step_completed"
+  | "workforce.approval_requested"
+  | "workforce.execution_completed";
 
 export type ListDomainEventsFilters = {
   type?: DomainEventType;

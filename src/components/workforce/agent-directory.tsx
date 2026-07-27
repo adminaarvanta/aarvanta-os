@@ -13,7 +13,12 @@ import {
   AGENT_DEFINITIONS,
   agentDepartmentLabel,
 } from "@/lib/workforce/agents";
-import type { AgentDefinition, AgentType } from "@/types/workforce";
+import type {
+  AgentDefinition,
+  AgentLiveStatus,
+  AgentPerformance,
+  AgentType,
+} from "@/types/workforce";
 import { cn } from "@/lib/utils";
 
 const icons: Record<AgentType, LucideIcon> = {
@@ -36,7 +41,13 @@ const departmentOrder: AgentDefinition["department"][] = [
   "customer_success",
 ];
 
-export function AgentDirectory() {
+export function AgentDirectory({
+  statuses,
+  performance,
+}: {
+  statuses?: Partial<Record<AgentType, AgentLiveStatus>>;
+  performance?: Partial<Record<AgentType, AgentPerformance>>;
+}) {
   const byDepartment = departmentOrder.map((dept) => ({
     department: dept,
     agents: AGENT_DEFINITIONS.filter((a) => a.department === dept),
@@ -54,6 +65,8 @@ export function AgentDirectory() {
             <div className="space-y-3">
               {agents.map((agent) => {
                 const Icon = icons[agent.type];
+                const status = statuses?.[agent.type] ?? "waiting";
+                const eff = performance?.[agent.type]?.efficiency ?? 78;
                 return (
                   <Link
                     key={agent.type}
@@ -69,8 +82,18 @@ export function AgentDirectory() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-foreground">{agent.name}</p>
+                        <span
+                          className={cn(
+                            "rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase",
+                            status === "working"
+                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                              : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                          )}
+                        >
+                          {status === "working" ? "Working" : "Waiting"}
+                        </span>
                         <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-medium text-gold-bright ring-1 ring-gold/20">
-                          {agent.primaryFunction}
+                          {eff}% efficiency
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-muted">{agent.title}</p>

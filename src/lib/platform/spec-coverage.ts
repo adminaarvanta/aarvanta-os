@@ -306,9 +306,9 @@ export const SPEC_PHASES: Array<{
         id: "autonomous",
         phase: 30,
         name: "Autonomous AI Workforce",
-        href: "/workforce/autonomous",
+        href: "/workforce/tasks",
         status: "partial",
-        summary: "Planning, delegation, task queue, agent hierarchy.",
+        summary: "Goal-first pipeline: Goal Engine → Plan → Context → Orchestrator → Approvals → Report.",
       },
       {
         id: "sso",

@@ -32,6 +32,11 @@ export const DOMAIN_EVENT_LABELS: Record<DomainEventType, string> = {
   "payroll.processed": "Payroll processed",
   "contract.signed": "Contract signed",
   "ai.decision.generated": "AI decision generated",
+  "workforce.goal_created": "Workforce goal created",
+  "workforce.execution_started": "Workforce execution started",
+  "workforce.step_completed": "Workforce step completed",
+  "workforce.approval_requested": "Workforce approval requested",
+  "workforce.execution_completed": "Workforce execution completed",
 };
 
 export function labelForEventType(type: DomainEventType): string {
