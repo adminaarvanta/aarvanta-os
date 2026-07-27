@@ -49,8 +49,8 @@ export function BrandLogo({
   fullWidth?: boolean;
   mode?: "dark" | "light";
 }) {
-  const { mode: contextMode } = useThemeMode();
-  const themeMode = mode ?? contextMode;
+  const { resolved: contextResolved } = useThemeMode();
+  const themeMode = mode ?? contextResolved;
   const displayHeight = DISPLAY_HEIGHT[size];
   const src = LOGO_PATHS[themeMode][variant];
   /** Icon asset is landscape (~4:3); keep layout box square and contain. */
