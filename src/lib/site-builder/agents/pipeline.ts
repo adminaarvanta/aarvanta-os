@@ -12,6 +12,7 @@ import {
   runPagePlanner,
 } from "@/lib/site-builder/agents/page-planner";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
+import { applyBrandRefine, applyRefineHeuristics } from "@/lib/site-builder/apply-refine";
 import { ensureShareToken } from "@/lib/site-builder/share-token";
 import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
 import { themeFromBrand } from "@/lib/site-builder/theme-presets";
@@ -105,6 +106,8 @@ export async function runGenerationPipeline(
     usedAi = usedAi || brandResult.usedAi;
     brand = brandResult.brand;
   }
+  // Studio refine can override colours without changing layout.
+  brand = applyBrandRefine(brand, preferences.refineInstructions);
   preferences = {
     ...preferences,
     brandSystem: brand,
@@ -115,6 +118,11 @@ export async function runGenerationPipeline(
       backgroundColor: brand.background,
       fontPackId: brand.fontPackId,
     },
+    designOptions: preferences.designOptions?.map((option) =>
+      selectedDesign && option.id === selectedDesign.id
+        ? { ...option, brand }
+        : option
+    ),
   };
   await emit("brand", 32, `Brand: ${brand.style}`, {
     business: businessResult.profile,
@@ -233,9 +241,10 @@ export async function runGenerationPipeline(
     site = alignHomeToSelectedDesign(site, selectedDesign);
   }
 
-  // Ensure preview remounts after refine / regenerate
   site = {
-    ...site,
+    ...applyRefineHeuristics(site, preferences.refineInstructions),
+    brand,
+    theme,
     generatedAt: crmNow(),
     version: (site.version ?? 1) + (preferences.refineInstructions ? 1 : 0),
   };

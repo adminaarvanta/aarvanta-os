@@ -803,11 +803,6 @@ export function alignHomeToSelectedDesign(
 
   return {
     ...site,
-    brand: selected.brand,
-    theme: {
-      ...site.theme,
-      ...themeFromBrand(selected.brand, "custom"),
-    },
     pages: site.pages.map((p) =>
       p.slug === "home" || p.slug === "" ? { ...p, blocks: aligned } : p
     ),
