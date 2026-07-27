@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   CUSTOM_VOICE_OPTION_ID,
@@ -53,6 +54,7 @@ export function VoiceConfigPanel({
   compact?: boolean;
   className?: string;
 }) {
+  const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<VoicePrefs>(() => prefsFromSettings(null));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -140,37 +142,55 @@ export function VoiceConfigPanel({
     void save(next);
   }
 
-  if (loading) {
-    return (
-      <div className={`rounded-xl border border-border bg-surface-elevated p-4 text-sm text-muted ${className}`}>
-        Loading voice settings…
-      </div>
-    );
-  }
+  const providerLabel =
+    PROVIDERS.find((p) => p.id === provider)?.label ?? provider;
 
   return (
     <div
       className={`rounded-xl border border-border bg-surface-elevated ${compact ? "p-3" : "p-4"} ${className}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            {compact ? "Call voice" : "Voice configuration"}
-          </p>
-          {!compact ? (
-            <p className="mt-0.5 text-xs text-muted">
-              Provider, language, and recording for AI calls. Applied to the next dial.
-            </p>
-          ) : null}
-        </div>
-        {saving ? (
-          <span className="text-[10px] text-dim">Saving…</span>
-        ) : message ? (
-          <span className="text-[10px] text-muted">{message}</span>
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg text-left text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-surface-elevated"
+          aria-expanded={open}
+        >
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          />
+          <span>{open ? "Hide voice settings" : "Voice settings"}</span>
+        </button>
+        {!open && !loading ? (
+          <span className="shrink-0 text-xs text-muted">{providerLabel}</span>
+        ) : open && saving ? (
+          <span className="shrink-0 text-[10px] text-dim">Saving…</span>
+        ) : open && message ? (
+          <span className="shrink-0 text-[10px] text-muted">{message}</span>
         ) : null}
       </div>
 
-      <div className={`mt-3 grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
+      {open && loading ? (
+        <p className="mt-3 text-sm text-muted">Loading voice settings…</p>
+      ) : null}
+
+      {open && !loading ? (
+        <>
+          <div className="mt-3 flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {compact ? "Call voice" : "Voice configuration"}
+              </p>
+              {!compact ? (
+                <p className="mt-0.5 text-xs text-muted">
+                  Provider, language, and recording for AI calls. Applied to the next dial.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className={`mt-3 grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
         <label className="block text-xs text-muted">
           Provider
           <select
@@ -277,6 +297,8 @@ export function VoiceConfigPanel({
           </label>
         ) : null}
       </div>
+        </>
+      ) : null}
     </div>
   );
 }
