@@ -163,6 +163,74 @@ export const siteImagePlanSchema = z.object({
   keywords: z.array(z.string()).max(8),
 });
 
+const ALLOWED_HOME_SECTION_TYPES = [
+  "hero",
+  "features",
+  "services_grid",
+  "products",
+  "portfolio_grid",
+  "testimonials",
+  "stats",
+  "pricing_table",
+  "faq_accordion",
+  "logo_cloud",
+  "timeline",
+  "team_grid",
+  "comparison",
+  "cta_banner",
+  "gallery",
+  "menu_list",
+  "booking_cta",
+  "feature_tabs",
+  "rich_text",
+  "contact",
+  "newsletter",
+  "blog_list",
+  "about_split",
+] as const;
+
+/** AI payload for one homepage design direction (before preview fill). */
+export const aiDesignOptionSpecSchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(80),
+  tagline: z.string().min(1).max(120),
+  description: z.string().min(1).max(400),
+  styleTags: z.array(z.string().min(1).max(40)).min(1).max(6),
+  heroVariant: z.enum(["fullBleed", "split", "centered", "default"]),
+  brand: z.object({
+    primary: hexColorSchema,
+    secondary: hexColorSchema,
+    background: hexColorSchema,
+    fontPackId: siteFontPackIdSchema,
+    buttonRadius: z.string().min(1).max(12),
+    style: z.string().min(1).max(60),
+    animation: z.enum(["Minimal", "Subtle", "Expressive"]),
+    imageStyle: z.string().min(1).max(80),
+    spacingScale: z.enum(["Compact", "Comfortable", "Airy"]),
+    navStyle: z.enum(["pills", "underline", "centered", "minimal", "store"]).optional(),
+    toneOfVoice: z.string().min(1).max(120).optional(),
+  }),
+  homeSections: z
+    .array(
+      z.object({
+        type: z.enum(ALLOWED_HOME_SECTION_TYPES),
+        label: z.string().min(1).max(80),
+        description: z.string().min(1).max(200),
+        variantId: z.string().min(1).max(40).optional(),
+      })
+    )
+    .min(3)
+    .max(10),
+  headline: z.string().min(1).max(120).optional(),
+  subheadline: z.string().min(1).max(240).optional(),
+});
+
+export const aiDesignOptionsResponseSchema = z.object({
+  options: z.array(aiDesignOptionSpecSchema).min(3).max(3),
+});
+
+export type AiDesignOptionSpec = z.infer<typeof aiDesignOptionSpecSchema>;
+
 export const siteGenerationStageSchema = z.enum([
   "business",
   "brand",

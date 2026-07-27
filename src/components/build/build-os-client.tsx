@@ -1076,6 +1076,18 @@ export function BuildOsClient({
                   onSelect={(id) => {
                     setSelectedDesignOptionId(id);
                     syncLocalCache(job?.id, "designs");
+                    if (job?.id) {
+                      void fetch(`/api/build/${job.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          ...buildPreferences(),
+                          selectedDesignOptionId: id,
+                          designOptions,
+                          referenceScreenshots: [],
+                        }),
+                      });
+                    }
                   }}
                   onConfirm={() => {
                     setStep("domain");

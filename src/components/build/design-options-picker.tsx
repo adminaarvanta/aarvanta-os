@@ -4,6 +4,11 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { Button } from "@/components/ui/button";
 import type { SiteDesignOption } from "@/types/site-builder";
+import { cn } from "@/lib/utils";
+
+const THUMB_WIDTH = 1200;
+const THUMB_SCALE = 0.38;
+const THUMB_FRAME_HEIGHT = 320;
 
 export function DesignOptionsPicker({
   options,
@@ -33,8 +38,7 @@ export function DesignOptionsPicker({
             Pick a homepage look
           </h2>
           <p className="mt-1 max-w-xl text-sm text-muted">
-            AI proposed {options.length} layouts. Choose one — we&apos;ll build the full site from
-            that direction.
+            3 AI designs from your brief — pick one to build the full site.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -66,27 +70,42 @@ export function DesignOptionsPicker({
         {options.map((option) => {
           const active = selectedId === option.id;
           return (
-            <button
+            <div
               key={option.id}
-              type="button"
+              role="button"
+              tabIndex={0}
+              aria-pressed={active}
               onClick={() => onSelect(option.id)}
-              className={`group overflow-hidden rounded-2xl border text-left transition ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelect(option.id);
+                }
+              }}
+              className={cn(
+                "group cursor-pointer overflow-hidden rounded-2xl border text-left transition",
                 active
                   ? "border-gold ring-2 ring-gold/40"
                   : "border-border hover:border-gold/40"
-              }`}
+              )}
             >
               <div className="border-b border-border bg-surface-elevated p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground">{option.name}</p>
                     <p className="mt-0.5 text-xs text-muted">{option.tagline}</p>
                   </div>
-                  {active ? (
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gold text-black">
-                      <Check className="h-3.5 w-3.5" />
-                    </span>
-                  ) : null}
+                  <span
+                    className={cn(
+                      "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border",
+                      active
+                        ? "border-gold bg-gold text-black"
+                        : "border-border text-transparent"
+                    )}
+                    aria-hidden
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
                 </div>
                 <p className="mt-2 line-clamp-2 text-[11px] leading-relaxed text-dim">
                   {option.description}
@@ -101,13 +120,47 @@ export function DesignOptionsPicker({
                     </span>
                   ))}
                 </div>
-              </div>
-              <div className="max-h-[420px] overflow-hidden bg-background">
-                <div className="origin-top scale-[0.55] sm:scale-[0.48]" style={{ width: "181%" }}>
-                  <GeneratedSitePreview site={option.preview} className="rounded-none border-0 shadow-none" />
+                <div className="mt-2 flex items-center gap-2">
+                  {[
+                    option.brand.primary,
+                    option.brand.secondary,
+                    option.brand.background,
+                  ].map((color) => (
+                    <span
+                      key={color}
+                      className="h-4 w-4 rounded-full border border-border"
+                      style={{ background: color }}
+                      title={color}
+                    />
+                  ))}
+                  <span className="text-[10px] uppercase tracking-wide text-dim">
+                    {option.heroVariant}
+                  </span>
                 </div>
               </div>
-            </button>
+
+              <div
+                className="relative overflow-hidden bg-background"
+                style={{ height: THUMB_FRAME_HEIGHT }}
+              >
+                <div
+                  className="origin-top-left"
+                  style={{
+                    width: THUMB_WIDTH,
+                    transform: `scale(${THUMB_SCALE})`,
+                    height: THUMB_FRAME_HEIGHT / THUMB_SCALE,
+                  }}
+                >
+                  <GeneratedSitePreview
+                    site={option.preview}
+                    interactive={false}
+                    thumbnail
+                    className="rounded-none border-0 shadow-none"
+                  />
+                </div>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 to-transparent" />
+              </div>
+            </div>
           );
         })}
       </div>

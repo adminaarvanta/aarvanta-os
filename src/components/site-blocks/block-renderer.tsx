@@ -472,24 +472,33 @@ export function BlockRenderer({
 
 
       if (layout === "centered") {
+        const supportImage = str(p.supportImageUrl) || str(p.imageUrl);
         return (
-          <section className="min-w-0 px-4 py-12 @sm:px-8 @sm:py-20 @md:px-10 @md:py-28" style={{ backgroundColor: theme.backgroundColor }}>
-            <div className="mx-auto max-w-3xl text-center">
-              <Eyebrow theme={theme}>{eyebrow}</Eyebrow>
-              <h1
-                className="mt-3 text-[1.75rem] font-semibold leading-[1.12] tracking-tight @sm:mt-4 @sm:text-4xl @md:text-5xl"
-                style={{ color: ink.text, fontFamily: theme.headingFont }}
-              >
-                {headline}
-              </h1>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed @sm:mt-4 @sm:text-base @md:text-lg" style={{ color: ink.muted }}>
-                {sub}
-              </p>
-              <div className="mt-6 flex flex-col items-stretch justify-center gap-2 @sm:mt-8 @sm:flex-row @sm:flex-wrap @sm:items-center @sm:gap-3">
-                <PrimaryButton label={cta} theme={theme} ink={ink} onClick={() => onCta(target)} />
-                {secondary ? (
-                  <GhostButton label={secondary} ink={ink} onClick={() => onCta(target)} />
-                ) : null}
+          <section className="min-w-0" style={{ backgroundColor: theme.backgroundColor }}>
+            {supportImage ? (
+              <div
+                className="h-36 w-full @sm:h-44 @md:h-52"
+                style={mediaStyle(theme, supportImage)}
+              />
+            ) : null}
+            <div className="px-4 py-12 @sm:px-8 @sm:py-16 @md:px-10 @md:py-20">
+              <div className="mx-auto max-w-3xl text-center">
+                <Eyebrow theme={theme}>{eyebrow}</Eyebrow>
+                <h1
+                  className="mt-3 text-[1.75rem] font-semibold leading-[1.12] tracking-tight @sm:mt-4 @sm:text-4xl @md:text-5xl"
+                  style={{ color: ink.text, fontFamily: theme.headingFont }}
+                >
+                  {headline}
+                </h1>
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed @sm:mt-4 @sm:text-base @md:text-lg" style={{ color: ink.muted }}>
+                  {sub}
+                </p>
+                <div className="mt-6 flex flex-col items-stretch justify-center gap-2 @sm:mt-8 @sm:flex-row @sm:flex-wrap @sm:items-center @sm:gap-3">
+                  <PrimaryButton label={cta} theme={theme} ink={ink} onClick={() => onCta(target)} />
+                  {secondary ? (
+                    <GhostButton label={secondary} ink={ink} onClick={() => onCta(target)} />
+                  ) : null}
+                </div>
               </div>
             </div>
           </section>

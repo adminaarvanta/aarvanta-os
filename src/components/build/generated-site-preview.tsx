@@ -15,9 +15,15 @@ import { themeInk } from "@/components/site-blocks/theme";
 export function GeneratedSitePreview({
   site,
   className,
+  interactive = true,
+  thumbnail = false,
 }: {
   site: GeneratedSite;
   className?: string;
+  /** When false, nav/CTAs are display-only (picker cards). */
+  interactive?: boolean;
+  /** Compact chrome for design picker thumbnails. */
+  thumbnail?: boolean;
 }) {
   const [activeSlug, setActiveSlug] = useState(site.pages[0]?.slug ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,31 +38,39 @@ export function GeneratedSitePreview({
     theme.navStyle ??
     site.brand?.navStyle ??
     (site.business?.primaryGoal?.toLowerCase().includes("sell") ? "store" : "pills");
+  const fontKey =
+    site.brand?.fontPackId ||
+    theme.googleFontsUrl?.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 48) ||
+    theme.presetId;
 
   useEffect(() => {
     if (!theme.googleFontsUrl) return;
-    const id = `build-os-font-${theme.presetId}`;
+    const id = `build-os-font-${fontKey}`;
     if (document.getElementById(id)) return;
     const link = document.createElement("link");
     link.id = id;
     link.rel = "stylesheet";
     link.href = theme.googleFontsUrl;
     document.head.appendChild(link);
-  }, [theme.googleFontsUrl, theme.presetId]);
+  }, [theme.googleFontsUrl, fontKey]);
 
   useEffect(() => {
     setActiveSlug(site.pages[0]?.slug ?? "");
     setMenuOpen(false);
   }, [site.generatedAt, site.pages]);
 
-  const goTo = useCallback((slug: string) => {
-    setActiveSlug(slug);
-    setMenuOpen(false);
-  }, []);
+  const goTo = useCallback(
+    (slug: string) => {
+      if (!interactive) return;
+      setActiveSlug(slug);
+      setMenuOpen(false);
+    },
+    [interactive]
+  );
 
   const handleCta = useCallback(
     (target: string) => {
-      if (!target) return;
+      if (!interactive || !target) return;
       if (typeof document !== "undefined") {
         const existing = document.getElementById(target);
         if (existing) {
@@ -78,7 +92,7 @@ export function GeneratedSitePreview({
         }, 80);
       }
     },
-    [goTo, site.pages]
+    [goTo, interactive, site.pages]
   );
 
   if (!activePage) return null;
@@ -174,7 +188,9 @@ export function GeneratedSitePreview({
 
   return (
     <div
-      className={`site-preview @container w-full min-w-0 overflow-x-hidden overflow-y-auto rounded-2xl border border-border shadow-xl ${className ?? ""}`}
+      className={`site-preview @container w-full min-w-0 overflow-x-hidden overflow-y-auto rounded-2xl border border-border shadow-xl ${
+        !interactive ? "pointer-events-none select-none" : ""
+      } ${className ?? ""}`}
       style={
         {
           backgroundColor: theme.backgroundColor,
@@ -183,6 +199,7 @@ export function GeneratedSitePreview({
           ["--site-btn-radius" as string]: radius,
         } as CSSProperties
       }
+      aria-hidden={!interactive || undefined}
     >
       <header
         className={`sticky top-0 z-30 border-b backdrop-blur-md ${
@@ -204,17 +221,19 @@ export function GeneratedSitePreview({
           <div className="mx-auto flex max-w-6xl flex-col items-stretch gap-2 px-4 py-3 @[640px]:items-center @[640px]:gap-3 @[640px]:px-8 @[640px]:py-4">
             <div className="flex items-center justify-between gap-3">
               {brandMark}
-              <button
-                type="button"
-                className="rounded-lg p-2 @[640px]:hidden"
-                style={{ color: ink.text }}
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-                onClick={() => setMenuOpen((o) => !o)}
-              >
-                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
+              {!thumbnail && interactive ? (
+                <button
+                  type="button"
+                  className="rounded-lg p-2 @[640px]:hidden"
+                  style={{ color: ink.text }}
+                  aria-label={menuOpen ? "Close menu" : "Open menu"}
+                  onClick={() => setMenuOpen((o) => !o)}
+                >
+                  {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </button>
+              ) : null}
             </div>
-            <nav className="hidden flex-wrap items-center justify-center gap-1 @[640px]:flex">
+            <nav className={`${thumbnail ? "flex" : "hidden @[640px]:flex"} flex-wrap items-center justify-center gap-1`}>
               {navButtons}
             </nav>
             {menuOpen ? (
@@ -244,17 +263,21 @@ export function GeneratedSitePreview({
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 @[640px]:px-8 @[640px]:py-3.5">
             {brandMark}
             <div className="flex items-center gap-2">
-              <nav className="hidden flex-wrap items-center gap-1 @[720px]:flex">{navButtons}</nav>
+              <nav className={`${thumbnail ? "flex" : "hidden @[720px]:flex"} flex-wrap items-center gap-1`}>
+                {navButtons}
+              </nav>
               {cartButton}
-              <button
-                type="button"
-                className="rounded-lg p-2 @[720px]:hidden"
-                style={{ color: ink.text }}
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-                onClick={() => setMenuOpen((o) => !o)}
-              >
-                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
+              {!thumbnail && interactive ? (
+                <button
+                  type="button"
+                  className="rounded-lg p-2 @[720px]:hidden"
+                  style={{ color: ink.text }}
+                  aria-label={menuOpen ? "Close menu" : "Open menu"}
+                  onClick={() => setMenuOpen((o) => !o)}
+                >
+                  {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </button>
+              ) : null}
             </div>
           </div>
         )}

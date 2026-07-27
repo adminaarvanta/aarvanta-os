@@ -1,8 +1,12 @@
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
 import { runBusinessIntel } from "@/lib/site-builder/agents/business-intel";
-import { getFontPack } from "@/lib/site-builder/font-packs";
+import { getFontPack, type SiteFontPackId } from "@/lib/site-builder/font-packs";
 import { fetchCategoryImages, imageAt } from "@/lib/site-builder/media/unsplash";
+import {
+  aiDesignOptionsResponseSchema,
+  type AiDesignOptionSpec,
+} from "@/lib/site-builder/schemas";
 import { themeFromBrand } from "@/lib/site-builder/theme-presets";
 import { crmNow } from "@/lib/data/crm-helpers";
 import type {
@@ -25,6 +29,8 @@ type DesignDirection = {
   brandOverrides: Partial<BrandSystem>;
   homeSectionTypes: Array<{ type: string; label: string; description: string; variantId?: string }>;
 };
+
+type CopySeeds = { headline?: string; subheadline?: string };
 
 const STORE_DIRECTIONS: DesignDirection[] = [
   {
@@ -202,6 +208,13 @@ const PALETTES: Array<Pick<BrandSystem, "primary" | "secondary" | "background">>
   { primary: "#0F766E", secondary: "#5EEAD4", background: "#042F2E" },
 ];
 
+function normalizeHex(value: string, fallback: string): string {
+  const v = value.trim();
+  if (/^#[0-9A-Fa-f]{6}$/.test(v)) return v.toUpperCase();
+  if (/^[0-9A-Fa-f]{6}$/.test(v)) return `#${v.toUpperCase()}`;
+  return fallback;
+}
+
 function baseBrand(business: BusinessProfile, prefs: SitePreferences): BrandSystem {
   const pack = getFontPack(
     prefs.tone === "luxury" ? "luxury_serif" : prefs.tone === "bold" ? "tech" : "modern_sans"
@@ -243,48 +256,93 @@ function applyDirectionBrand(
   };
 }
 
+function brandFromAiSpec(
+  base: BrandSystem,
+  spec: AiDesignOptionSpec["brand"],
+  business: BusinessProfile
+): BrandSystem {
+  const pack = getFontPack(spec.fontPackId as SiteFontPackId);
+  return {
+    ...base,
+    primary: normalizeHex(spec.primary, base.primary),
+    secondary: normalizeHex(spec.secondary, base.secondary),
+    background: normalizeHex(spec.background, base.background),
+    fontPackId: pack.id,
+    font: pack.previewBody,
+    headingFont: pack.previewHeading,
+    googleFontsUrl: pack.googleFontsUrl,
+    buttonRadius: spec.buttonRadius,
+    style: spec.style,
+    animation: spec.animation,
+    imageStyle: spec.imageStyle,
+    spacingScale: spec.spacingScale,
+    navStyle: spec.navStyle,
+    toneOfVoice: spec.toneOfVoice || `${business.brandTone} · clear · benefit-led`,
+    iconSet: "Lucide outline",
+  };
+}
+
+function ensureHeroFirst(sections: SitePlanSection[], heroVariant: SiteDesignOption["heroVariant"]): SitePlanSection[] {
+  const withHero = [...sections];
+  if (!withHero.some((s) => s.type === "hero")) {
+    withHero.unshift({
+      type: "hero",
+      label: "Hero",
+      description: "Opening statement",
+      variantId: heroVariant === "default" ? "fullBleed" : heroVariant,
+    });
+  }
+  return withHero.slice(0, 8);
+}
+
 function fillHomeBlocks(
   sections: SitePlanSection[],
   prefs: SitePreferences,
   business: BusinessProfile,
   images: string[],
-  optionId: string
+  optionId: string,
+  seeds?: CopySeeds
 ): SiteBlock[] {
   const name = prefs.businessName;
-  return sections.map((section, index) => {
+  // Cap preview to above-the-fold for readable thumbnails
+  const previewSections = sections.slice(0, 5);
+
+  return previewSections.map((section, index) => {
     const id = `${optionId}_${section.type}_${index}`;
     const img = imageAt(images, index, `${optionId}-${index}`);
+    const variantId = section.variantId ?? "default";
+
     switch (section.type) {
-      case "hero":
+      case "hero": {
+        const layout =
+          variantId === "fullBleed" || variantId === "split" || variantId === "centered"
+            ? variantId
+            : "fullBleed";
         return {
           id,
           type: "hero",
-          variantId: section.variantId ?? "default",
+          variantId: layout,
           props: {
-            layout:
-              section.variantId === "fullBleed"
-                ? "fullBleed"
-                : section.variantId === "split"
-                  ? "split"
-                  : section.variantId === "centered"
-                    ? "centered"
-                    : "fullBleed",
+            layout,
             eyebrow: business.subcategory,
-            headline: `${name} — ${business.primaryGoal.toLowerCase()}`,
-            subheadline: prefs.businessIdea.slice(0, 160),
+            headline: seeds?.headline || `${name} — ${business.primaryGoal.toLowerCase()}`,
+            subheadline: seeds?.subheadline || prefs.businessIdea.slice(0, 160),
             cta: business.primaryGoal.includes("Sell") ? "Shop now" : "Get started",
             secondaryCta: "Learn more",
             ctaTarget: "contact",
             imageUrl: img,
+            // Centered heroes still get a supporting visual band in the picker
+            supportImageUrl: layout === "centered" ? imageAt(images, index + 1, `${optionId}-support`) : undefined,
           },
         };
+      }
       case "features":
         return {
           id,
           type: "features",
-          variantId: "default",
+          variantId: variantId === "row" ? "row" : "cards",
           props: {
-            title: `Why ${name}`,
+            title: section.label || `Why ${name}`,
             subtitle: `Built for ${business.audience[0] ?? "your customers"}`,
             items: business.audience.slice(0, 3).map((a, i) => ({
               title: a,
@@ -297,6 +355,7 @@ function fillHomeBlocks(
         return {
           id,
           type: "stats",
+          variantId,
           props: {
             items: [
               { label: "Customers", value: "2k+" },
@@ -309,8 +368,9 @@ function fillHomeBlocks(
         return {
           id,
           type: "logo_cloud",
+          variantId,
           props: {
-            title: "Trusted partners",
+            title: section.label || "Trusted partners",
             items: ["Northstar", "Harbor", "Lumen", "Kindred"].map((label) => ({ label })),
           },
         };
@@ -326,7 +386,7 @@ function fillHomeBlocks(
         return {
           id,
           type: "products",
-          variantId: section.variantId ?? "featured",
+          variantId: variantId === "list" || variantId === "catalog" ? variantId : "featured",
           props: {
             title: section.label,
             subtitle: `Picks for ${business.audience[0] ?? "your customers"}`,
@@ -340,6 +400,7 @@ function fillHomeBlocks(
         return {
           id,
           type: section.type,
+          variantId,
           props: {
             title: section.label,
             items: [0, 1, 2].map((i) => ({
@@ -353,9 +414,10 @@ function fillHomeBlocks(
         return {
           id,
           type: "testimonials",
+          variantId,
           props: {
-            title: "What people say",
-            items: [
+            title: section.label || "What people say",
+            quotes: [
               {
                 quote: `${name} made ${business.subcategory.toLowerCase()} feel effortless.`,
                 author: business.audience[0] ?? "Customer",
@@ -368,8 +430,9 @@ function fillHomeBlocks(
         return {
           id,
           type: "cta_banner",
+          variantId,
           props: {
-            title: `Ready to ${business.primaryGoal.toLowerCase()}?`,
+            title: section.label || `Ready to ${business.primaryGoal.toLowerCase()}?`,
             subtitle: `Join ${business.audience[0] ?? "customers"} choosing ${name}.`,
             cta: "Get started",
             ctaTarget: "contact",
@@ -379,8 +442,9 @@ function fillHomeBlocks(
         return {
           id,
           type: "about_split",
+          variantId,
           props: {
-            title: `About ${name}`,
+            title: section.label || `About ${name}`,
             body: prefs.businessIdea.slice(0, 220),
             imageUrl: img,
           },
@@ -389,8 +453,9 @@ function fillHomeBlocks(
         return {
           id,
           type: "faq_accordion",
+          variantId,
           props: {
-            title: "Questions",
+            title: section.label || "Questions",
             items: [
               {
                 question: `What is ${name}?`,
@@ -407,8 +472,9 @@ function fillHomeBlocks(
         return {
           id,
           type: "contact",
+          variantId,
           props: {
-            title: "Contact",
+            title: section.label || "Contact",
             subtitle: `Talk to the ${name} team`,
           },
         };
@@ -416,8 +482,9 @@ function fillHomeBlocks(
         return {
           id,
           type: "newsletter",
+          variantId,
           props: {
-            title: "Stay in the loop",
+            title: section.label || "Stay in the loop",
             subtitle: `News from ${name}`,
           },
         };
@@ -425,8 +492,9 @@ function fillHomeBlocks(
         return {
           id,
           type: "feature_tabs",
+          variantId,
           props: {
-            title: "How it works",
+            title: section.label || "How it works",
             tabs: [
               { label: "Discover", body: prefs.businessIdea.slice(0, 100) },
               { label: "Choose", body: `Options tailored for ${business.audience[0] ?? "you"}.` },
@@ -438,6 +506,7 @@ function fillHomeBlocks(
         return {
           id,
           type: section.type,
+          variantId,
           props: {
             title: section.label,
             body: section.description,
@@ -451,13 +520,13 @@ function buildPreview(
   prefs: SitePreferences,
   brand: BrandSystem,
   blocks: SiteBlock[],
-  option: DesignDirection
+  tagline: string
 ): GeneratedSite {
   const theme = themeFromBrand(brand, "custom");
   return {
     siteName: prefs.businessName,
     slug: prefs.businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) || "site",
-    tagline: option.tagline,
+    tagline,
     theme,
     navigation: [{ label: "Home", slug: "home" }],
     pages: [{ slug: "home", title: "Home", blocks }],
@@ -468,39 +537,129 @@ function buildPreview(
   };
 }
 
-function heuristicOptions(
+async function imagesForOption(
   prefs: SitePreferences,
   business: BusinessProfile,
-  images: string[]
-): SiteDesignOption[] {
+  optionId: string,
+  styleHint: string,
+  optionIndex = 0
+): Promise<string[]> {
+  const urls = await fetchCategoryImages(
+    prefs.categoryId ?? "professional",
+    [
+      business.industry,
+      business.subcategory,
+      prefs.businessName,
+      styleHint,
+      optionId,
+      `opt${optionIndex}`,
+      ...prefs.businessIdea.split(/\s+/).filter(Boolean).slice(0, 4),
+    ],
+    12
+  );
+  // Rotate so each card's hero starts on a different image even when buckets overlap.
+  if (urls.length <= 1) return urls;
+  const rotate = (optionIndex * 3 + optionId.length) % urls.length;
+  return [...urls.slice(rotate), ...urls.slice(0, rotate)];
+}
+
+function optionFromDirection(
+  prefs: SitePreferences,
+  business: BusinessProfile,
+  direction: DesignDirection,
+  paletteIndex: number,
+  images: string[],
+  seeds?: CopySeeds
+): SiteDesignOption {
   const base = baseBrand(business, prefs);
-  const directions = directionsFor(business, prefs);
-  return directions.map((direction, i) => {
-    const brand = applyDirectionBrand(base, direction, i);
-    const homeSections: SitePlanSection[] = direction.homeSectionTypes.map((s) => ({
+  const brand = applyDirectionBrand(base, direction, paletteIndex);
+  const homeSections: SitePlanSection[] = ensureHeroFirst(
+    direction.homeSectionTypes.map((s) => ({
       type: s.type,
       label: s.label,
       description: s.description,
       variantId: s.variantId ?? (s.type === "hero" ? direction.heroVariant : "default"),
-    }));
-    const blocks = fillHomeBlocks(homeSections, prefs, business, images, direction.id);
-    return {
-      id: direction.id,
-      name: direction.name,
-      tagline: direction.tagline,
-      description: direction.description,
-      styleTags: direction.styleTags,
-      heroVariant: direction.heroVariant,
-      brand,
-      homeSections,
-      preview: buildPreview(prefs, brand, blocks, direction),
-    };
+    })),
+    direction.heroVariant
+  );
+  const blocks = fillHomeBlocks(homeSections, prefs, business, images, direction.id, seeds);
+  return {
+    id: direction.id,
+    name: direction.name,
+    tagline: direction.tagline,
+    description: direction.description,
+    styleTags: direction.styleTags,
+    heroVariant: direction.heroVariant,
+    brand,
+    homeSections,
+    preview: buildPreview(prefs, brand, blocks, direction.tagline),
+  };
+}
+
+async function heuristicOptions(
+  prefs: SitePreferences,
+  business: BusinessProfile
+): Promise<SiteDesignOption[]> {
+  const directions = directionsFor(business, prefs);
+  const results: SiteDesignOption[] = [];
+  for (let i = 0; i < directions.length; i++) {
+    const direction = directions[i]!;
+    const images = await imagesForOption(
+      prefs,
+      business,
+      direction.id,
+      direction.brandOverrides.imageStyle ?? "Lifestyle",
+      i
+    );
+    results.push(optionFromDirection(prefs, business, direction, i, images));
+  }
+  return results;
+}
+
+function optionFromAiSpec(
+  prefs: SitePreferences,
+  business: BusinessProfile,
+  spec: AiDesignOptionSpec,
+  images: string[],
+  fallback: DesignDirection,
+  paletteIndex: number
+): SiteDesignOption {
+  const base = baseBrand(business, prefs);
+  const brand = brandFromAiSpec(base, spec.brand, business);
+  const heroVariant =
+    spec.heroVariant === "default" ? fallback.heroVariant : spec.heroVariant;
+  const homeSections = ensureHeroFirst(
+    spec.homeSections.map((s) => ({
+      type: s.type,
+      label: s.label,
+      description: s.description,
+      variantId:
+        s.type === "hero"
+          ? s.variantId ?? heroVariant
+          : s.variantId ?? "default",
+    })),
+    heroVariant
+  );
+  const blocks = fillHomeBlocks(homeSections, prefs, business, images, spec.id, {
+    headline: spec.headline,
+    subheadline: spec.subheadline,
   });
+  return {
+    id: spec.id || fallback.id,
+    name: spec.name,
+    tagline: spec.tagline,
+    description: spec.description,
+    styleTags: spec.styleTags,
+    heroVariant,
+    brand,
+    homeSections,
+    preview: buildPreview(prefs, brand, blocks, spec.tagline),
+  };
 }
 
 /**
- * Generate ≥3 distinct homepage design directions for the user to pick from.
- * Does not build the full multi-page site yet.
+ * Generate exactly 3 distinct homepage design directions from the user brief.
+ * AI authors full specs when configured; DIRECTIONS are fallback only.
  */
 export async function generateDesignOptions(
   preferences: SitePreferences
@@ -515,78 +674,70 @@ export async function generateDesignOptions(
     businessProfile: business,
   };
 
-  const images = await fetchCategoryImages(
-    prefs.categoryId ?? "professional",
-    [
-      business.industry,
-      business.subcategory,
-      prefs.businessName,
-      ...prefs.businessIdea.split(/\s+/).slice(0, 6),
-    ],
-    12
-  );
-
-  let options = heuristicOptions(prefs, business, images);
+  const fallbacks = directionsFor(business, prefs);
+  let options = await heuristicOptions(prefs, business);
   let usedAi = businessAi;
 
   if (isAiConfigured()) {
     try {
-      const ai = await completeJson<{
-        options?: Array<{
-          id: string;
-          name: string;
-          tagline: string;
-          description: string;
-          styleTags?: string[];
-          headline?: string;
-          subheadline?: string;
-        }>;
-      }>({
-        system: `You name and describe 3 distinct website design directions for a business.
-Return JSON { options: [{ id, name, tagline, description, styleTags, headline, subheadline }] }.
-Use ids matching the provided option ids.
-Make names/taglines specific to the business — not generic.`,
+      const raw = await completeJson<unknown>({
+        system: `You are a senior web designer. Create exactly 3 DISTINCT homepage design directions for this business.
+Return JSON: { options: [ { id, name, tagline, description, styleTags, heroVariant, brand, homeSections, headline, subheadline } ] }.
+
+Rules:
+- Make each option feel like a different product (different layout order, heroVariant, palette, fonts, navStyle).
+- heroVariant must be one of: fullBleed, split, centered — use each once across the 3 options.
+- brand must include: primary, secondary, background (6-digit #hex), fontPackId (editorial|modern_sans|tech|friendly|luxury_serif|clean_mono), buttonRadius, style, animation (Minimal|Subtle|Expressive), imageStyle, spacingScale (Compact|Comfortable|Airy), navStyle (pills|underline|centered|minimal|store), toneOfVoice.
+- homeSections: 4–7 sections; first must be hero; types from hero, features, products, stats, testimonials, cta_banner, about_split, gallery, logo_cloud, feature_tabs, faq_accordion, newsletter, contact, portfolio_grid.
+- Names/taglines/headline/subheadline must be specific to THIS business — not generic.
+- Use ids: design_ai_a, design_ai_b, design_ai_c.`,
         user: JSON.stringify({
           businessName: prefs.businessName,
           businessIdea: prefs.businessIdea,
+          targetAudience: prefs.targetAudience,
+          tone: prefs.tone,
+          features: prefs.features,
+          goals: prefs.keyMessages,
           business,
-          optionIds: options.map((o) => o.id),
         }),
-        temperature: 0.6,
+        temperature: 0.7,
       });
 
-      if (Array.isArray(ai.options) && ai.options.length >= 3) {
-        options = options.map((opt, i) => {
-          const patch = ai.options![i];
-          if (!patch) return opt;
-          const hero = opt.preview.pages[0]?.blocks.find((b) => b.type === "hero");
-          const nextBlocks =
-            opt.preview.pages[0]?.blocks.map((b) =>
-              b.type === "hero" && hero
-                ? {
-                    ...b,
-                    props: {
-                      ...b.props,
-                      headline: patch.headline || b.props.headline,
-                      subheadline: patch.subheadline || b.props.subheadline,
-                    },
-                  }
-                : b
-            ) ?? [];
-          return {
-            ...opt,
-            name: patch.name || opt.name,
-            tagline: patch.tagline || opt.tagline,
-            description: patch.description || opt.description,
-            styleTags: patch.styleTags?.length ? patch.styleTags : opt.styleTags,
-            preview: {
-              ...opt.preview,
-              tagline: patch.tagline || opt.tagline,
-              pages: [{ slug: "home", title: "Home", blocks: nextBlocks }],
-            },
-          };
-        });
-        usedAi = true;
+      const parsed = aiDesignOptionsResponseSchema.safeParse(raw);
+      if (parsed.success) {
+        const built: SiteDesignOption[] = [];
+        for (let i = 0; i < 3; i++) {
+          const spec = parsed.data.options[i]!;
+          const fallback = fallbacks[i] ?? fallbacks[0]!;
+          try {
+            const images = await imagesForOption(
+              prefs,
+              business,
+              spec.id,
+              spec.brand.imageStyle,
+              i
+            );
+            built.push(optionFromAiSpec(prefs, business, spec, images, fallback, i));
+          } catch {
+            const images = await imagesForOption(
+              prefs,
+              business,
+              fallback.id,
+              fallback.brandOverrides.imageStyle ?? "Lifestyle",
+              i
+            );
+            built.push(
+              optionFromDirection(prefs, business, fallback, i, images, {
+                headline: spec.headline,
+                subheadline: spec.subheadline,
+              })
+            );
+          }
+        }
+        if (built.length === 3) {
+          options = built;
+          usedAi = true;
+        }
       }
     } catch {
       /* keep heuristics */
@@ -609,4 +760,56 @@ export function getSelectedDesignOption(
   const id = preferences.selectedDesignOptionId;
   if (!id || !preferences.designOptions?.length) return undefined;
   return preferences.designOptions.find((o) => o.id === id);
+}
+
+/** Repair home page blocks to match selected design section order/types. */
+export function alignHomeToSelectedDesign(
+  site: GeneratedSite,
+  selected: SiteDesignOption
+): GeneratedSite {
+  const home = site.pages.find((p) => p.slug === "home" || p.slug === "");
+  if (!home) return site;
+
+  const byType = new Map<string, (typeof home.blocks)[number]>();
+  for (const block of home.blocks) {
+    if (!byType.has(String(block.type))) byType.set(String(block.type), block);
+  }
+
+  const aligned = selected.homeSections.map((section, i) => {
+    const existing = home.blocks[i]?.type === section.type
+      ? home.blocks[i]
+      : byType.get(section.type) ?? home.blocks[i];
+    if (!existing) {
+      return {
+        id: `aligned_${section.type}_${i}`,
+        type: section.type,
+        variantId: section.variantId ?? "default",
+        props: { title: section.label, body: section.description },
+      };
+    }
+    const variantId = section.variantId ?? existing.variantId ?? "default";
+    const props =
+      existing.type === "hero" &&
+      (variantId === "fullBleed" || variantId === "split" || variantId === "centered")
+        ? { ...existing.props, layout: variantId }
+        : existing.props;
+    return {
+      ...existing,
+      type: section.type,
+      variantId,
+      props,
+    };
+  });
+
+  return {
+    ...site,
+    brand: selected.brand,
+    theme: {
+      ...site.theme,
+      ...themeFromBrand(selected.brand, "custom"),
+    },
+    pages: site.pages.map((p) =>
+      p.slug === "home" || p.slug === "" ? { ...p, blocks: aligned } : p
+    ),
+  };
 }

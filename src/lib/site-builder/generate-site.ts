@@ -42,7 +42,7 @@ function partnerNames(seed: number, nouns: string[]): string[] {
 }
 
 function fillBlock(
-  recipe: SiteTemplateSectionRecipe,
+  recipe: SiteTemplateSectionRecipe & { variantId?: string },
   brief: ContentBrief,
   prefs: SitePreferences,
   template: SiteTemplateDefinition,
@@ -56,12 +56,22 @@ function fillBlock(
   const ctaTarget = prefs.ctaGoal === "book_call" ? "booking" : "contact";
 
   switch (recipe.type as SiteBlockType) {
-    case "hero":
+    case "hero": {
+      const sectionVariant = recipe.variantId;
+      const layoutFromVariant =
+        sectionVariant === "fullBleed" ||
+        sectionVariant === "split" ||
+        sectionVariant === "centered"
+          ? sectionVariant
+          : undefined;
       return {
         id: blockId("hero", recipe.label),
         type: "hero",
+        variantId: layoutFromVariant ?? "default",
         props: {
-          layout: template.heroLayout === "minimal" ? "split" : template.heroLayout,
+          layout:
+            layoutFromVariant ??
+            (template.heroLayout === "minimal" ? "split" : template.heroLayout),
           eyebrow: brief.categoryLabel,
           headline: brief.headline,
           subheadline: brief.subheadline,
@@ -71,6 +81,7 @@ function fillBlock(
           imageUrl: img(0),
         },
       };
+    }
     case "logo_cloud":
       return {
         id: blockId("logo_cloud", recipe.label),
@@ -84,6 +95,7 @@ function fillBlock(
       return {
         id: blockId("features", recipe.label),
         type: "features",
+        variantId: recipe.variantId === "row" ? "row" : "cards",
         props: {
           title: `Why ${name}`,
           subtitle: `Specific to ${brief.idea.slice(0, 100)}`,
@@ -478,6 +490,7 @@ async function heuristicGenerate(
         type: s.type as SiteBlockType,
         label: s.label,
         description: s.description,
+        variantId: s.variantId,
       })) ??
       template.sectionsByPage[slug] ??
       [{ type: "rich_text" as const, label: titleCase(slug), description: brief.subheadline }];

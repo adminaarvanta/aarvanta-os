@@ -1,7 +1,10 @@
 import { runBrandIntel } from "@/lib/site-builder/agents/brand-intel";
 import { runBusinessIntel } from "@/lib/site-builder/agents/business-intel";
 import { runCopyAgent } from "@/lib/site-builder/agents/copy-agent";
-import { getSelectedDesignOption } from "@/lib/site-builder/agents/design-options";
+import {
+  alignHomeToSelectedDesign,
+  getSelectedDesignOption,
+} from "@/lib/site-builder/agents/design-options";
 import { runLayoutPlanner } from "@/lib/site-builder/agents/layout-planner";
 import { runMediaPlanner } from "@/lib/site-builder/agents/media-planner";
 import {
@@ -214,7 +217,7 @@ export async function runGenerationPipeline(
     brand
   );
 
-  const site: GeneratedSite = {
+  let site: GeneratedSite = {
     ...mediaResult.site,
     theme,
     business: businessResult.profile,
@@ -224,6 +227,10 @@ export async function runGenerationPipeline(
     version: 1,
     generatedAt: crmNow(),
   };
+
+  if (selectedDesign) {
+    site = alignHomeToSelectedDesign(site, selectedDesign);
+  }
 
   await emit("done", 100, "Website ready", {
     business: businessResult.profile,

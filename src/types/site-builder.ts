@@ -66,6 +66,7 @@ export type SiteTemplateSectionRecipe = {
   type: SiteBlockType;
   label: string;
   description: string;
+  variantId?: string;
 };
 
 export type SiteTemplateDefinition = {
