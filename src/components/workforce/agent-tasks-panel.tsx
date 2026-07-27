@@ -4,17 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle2, Circle, Play } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  WfPanel,
+  WfPrimaryButton,
+  WfSecondaryButton,
+} from "@/components/workforce/workforce-shell";
 import type { CrmTask } from "@/types/crm";
 import type { AgentType } from "@/types/workforce";
 import { formatRelative } from "@/lib/utils";
-
-const priorityColors: Record<CrmTask["priority"], string> = {
-  low: "bg-surface-muted text-muted ring-border",
-  medium: "bg-gold/10 text-gold-bright ring-gold/35",
-  high: "bg-danger/15 text-danger ring-danger/45",
-};
 
 export function AgentTasksPanel({
   tasks,
@@ -53,8 +50,10 @@ export function AgentTasksPanel({
         return;
       }
       setMessage(
-        `Task completed${data.run?.id ? ` · run saved` : ""}${
-          Array.isArray(data.applied) ? ` · ${data.applied.length} actions applied` : ""
+        `Task completed${data.run?.id ? " · run saved" : ""}${
+          Array.isArray(data.applied)
+            ? ` · ${data.applied.length} actions applied`
+            : ""
         }.`
       );
       router.refresh();
@@ -75,7 +74,6 @@ export function AgentTasksPanel({
         body: JSON.stringify({ agentType, limit: 10 }),
       });
       const data = (await res.json()) as {
-        error?: unknown;
         processedCount?: number;
         failedCount?: number;
       };
@@ -98,74 +96,113 @@ export function AgentTasksPanel({
 
   if (tasks.length === 0) {
     return (
-      <section className="rounded-xl border border-border bg-surface-elevated p-5">
-        <h3 className="text-sm font-semibold text-foreground">Agent tasks</h3>
-        <p className="mt-2 text-sm text-muted">
-          No CRM tasks assigned to this agent yet. Assign a task from CRM Tasks
-          (choose this agent), or run the agent and apply create-task actions.
+      <WfPanel>
+        <h3 className="text-sm font-bold" style={{ color: "var(--wf-ink)" }}>
+          Agent tasks
+        </h3>
+        <p className="mt-2 text-sm" style={{ color: "var(--wf-muted)" }}>
+          No CRM tasks assigned yet. Start a workforce goal or assign a task from
+          CRM.
         </p>
-      </section>
+        <Link
+          href="/workforce/tasks?start=1"
+          className="mt-4 inline-flex rounded-full px-4 py-2 text-sm font-semibold text-white"
+          style={{ background: "var(--wf-accent)" }}
+        >
+          Start task
+        </Link>
+      </WfPanel>
     );
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface-elevated p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground">Agent tasks</h3>
+    <WfPanel className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-bold" style={{ color: "var(--wf-ink)" }}>
+          Agent tasks
+        </h3>
         <div className="flex flex-wrap items-center gap-2">
           {openTasks.length > 0 && (
-            <Button
+            <WfPrimaryButton
               type="button"
-              size="sm"
-              onClick={() => void processOpen()}
               disabled={batchBusy || busyId !== null}
+              onClick={() => void processOpen()}
+              className="!px-4 !py-2 text-xs"
             >
               <Play className="mr-1.5 h-3.5 w-3.5" />
               {batchBusy ? "Working…" : `Work on open (${openTasks.length})`}
-            </Button>
+            </WfPrimaryButton>
           )}
-          <Link href="/crm/tasks" className="text-xs text-gold hover:underline">
-            View all in CRM →
+          <Link
+            href="/crm/tasks"
+            className="text-xs font-semibold"
+            style={{ color: "var(--wf-accent)" }}
+          >
+            View in CRM →
           </Link>
         </div>
       </div>
-      {message && <p className="mb-3 text-xs text-muted">{message}</p>}
-      <ul className="space-y-3">
+      {message && (
+        <p className="text-xs" style={{ color: "var(--wf-muted)" }}>
+          {message}
+        </p>
+      )}
+      <ul className="space-y-2">
         {tasks.map((task) => (
           <li
             key={task.id}
-            className="rounded-lg border border-border bg-surface-muted p-4"
+            className="rounded-xl border p-4"
+            style={{ borderColor: "var(--wf-line)", background: "var(--wf-bg)" }}
           >
             <div className="flex items-start gap-3">
               {task.status === "done" ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent-cyan" />
+                <CheckCircle2
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  style={{ color: "var(--wf-ok)" }}
+                />
               ) : (
-                <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+                <Circle
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  style={{ color: "var(--wf-muted)" }}
+                />
               )}
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-foreground">{task.title}</p>
+                <p className="font-semibold" style={{ color: "var(--wf-ink)" }}>
+                  {task.title}
+                </p>
                 {task.description && (
-                  <p className="mt-1 text-xs text-muted">{task.description}</p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--wf-muted)" }}>
+                    {task.description}
+                  </p>
                 )}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Badge className={priorityColors[task.priority]}>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
+                    style={{
+                      background:
+                        task.priority === "high"
+                          ? "var(--wf-danger-soft)"
+                          : "var(--wf-accent-soft)",
+                      color:
+                        task.priority === "high"
+                          ? "var(--wf-danger)"
+                          : "var(--wf-accent)",
+                    }}
+                  >
                     {task.priority}
-                  </Badge>
-                  <Badge className="bg-background text-muted ring-border">
-                    {task.status.replace("_", " ")}
-                  </Badge>
-                  {task.dueDate && (
-                    <span className="text-[10px] text-muted">
-                      Due {task.dueDate}
-                    </span>
-                  )}
-                  <span className="text-[10px] text-muted">
+                  </span>
+                  <span
+                    className="text-[10px]"
+                    style={{ color: "var(--wf-muted)" }}
+                  >
+                    {task.status.replace("_", " ")} ·{" "}
                     {formatRelative(task.updatedAt)}
                   </span>
                   {task.agentRunId && (
                     <Link
                       href={`/workforce/runs/${task.agentRunId}`}
-                      className="text-[10px] text-gold hover:underline"
+                      className="text-[10px] font-semibold"
+                      style={{ color: "var(--wf-accent)" }}
                     >
                       View run
                     </Link>
@@ -173,16 +210,15 @@ export function AgentTasksPanel({
                 </div>
                 {task.status !== "done" && (
                   <div className="mt-3">
-                    <Button
+                    <WfSecondaryButton
                       type="button"
-                      size="sm"
-                      variant="secondary"
                       disabled={busyId !== null || batchBusy}
                       onClick={() => void executeOne(task.id)}
+                      className="!px-3 !py-1.5 text-xs"
                     >
                       <Play className="mr-1.5 h-3.5 w-3.5" />
                       {busyId === task.id ? "Working…" : "Complete with agent"}
-                    </Button>
+                    </WfSecondaryButton>
                   </div>
                 )}
               </div>
@@ -190,6 +226,6 @@ export function AgentTasksPanel({
           </li>
         ))}
       </ul>
-    </section>
+    </WfPanel>
   );
 }

@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  WfPrimaryButton,
+  WfSecondaryButton,
+} from "@/components/workforce/workforce-shell";
 import { apiFetch } from "@/lib/api/client-fetch";
 import type { AgentAction } from "@/types/workforce";
 
@@ -46,7 +49,10 @@ export function ApplyActionButton({
 
   if (action.applied) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-accent-cyan">
+      <span
+        className="inline-flex items-center gap-1 text-xs font-semibold"
+        style={{ color: "var(--wf-ok)" }}
+      >
         <Check className="h-3.5 w-3.5" />
         Applied
       </span>
@@ -55,20 +61,38 @@ export function ApplyActionButton({
 
   return (
     <div className="space-y-1">
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={pending}
-        onClick={apply}
-        className="w-full sm:w-auto"
-      >
-        {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-        {isInfoOnly ? "Acknowledge" : "Apply"}
-      </Button>
-      {message && <p className="text-xs text-accent-cyan">{message}</p>}
+      {isInfoOnly ? (
+        <WfSecondaryButton
+          type="button"
+          disabled={pending}
+          onClick={apply}
+          className="!px-3 !py-1.5 text-xs"
+        >
+          {pending && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+          Acknowledge
+        </WfSecondaryButton>
+      ) : (
+        <WfPrimaryButton
+          type="button"
+          disabled={pending}
+          onClick={apply}
+          className="!px-3 !py-1.5 text-xs"
+        >
+          {pending && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+          Apply
+        </WfPrimaryButton>
+      )}
+      {message && (
+        <p className="text-xs font-medium" style={{ color: "var(--wf-ok)" }}>
+          {message}
+        </p>
+      )}
       {error && (
-        <p className="text-xs text-red-400" role="alert">
+        <p
+          className="text-xs font-medium"
+          style={{ color: "var(--wf-danger)" }}
+          role="alert"
+        >
           {error}
         </p>
       )}

@@ -12,11 +12,13 @@ import {
 } from "lucide-react";
 import { AgentProfileView } from "@/components/workforce/agent-profile-view";
 import { WorkforceNav } from "@/components/workforce/workforce-nav";
+import { WfHeader } from "@/components/workforce/workforce-shell";
 import { getAgentMemoryRepository } from "@/lib/data/agent-memory-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
 import { getWorkforceRepository } from "@/lib/data/workforce-store";
 import { getAgentDefinition, isAgentType } from "@/lib/workforce/agents";
+import { getAgentStatuses } from "@/lib/workforce/pipeline/agent-status";
 import { getTenantScope } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
 import type { AgentType } from "@/types/workforce";
@@ -43,50 +45,75 @@ export default async function AgentPage({
   const scope = await getTenantScope();
   const Icon = icons[agent.type];
 
-  const [contacts, conversations, runs, memory, tasks] = await Promise.all([
-    getCrmRepository().listContacts(scope),
-    getRepository().listConversations(scope),
-    getWorkforceRepository().listRuns(scope, { agentType, limit: 10 }),
-    getAgentMemoryRepository().listMemory(scope, agentType),
-    getCrmRepository().listTasks(scope, { assignedAgentType: agentType }),
-  ]);
+  const [contacts, conversations, runs, memory, tasks, statuses] =
+    await Promise.all([
+      getCrmRepository().listContacts(scope),
+      getRepository().listConversations(scope),
+      getWorkforceRepository().listRuns(scope, { agentType, limit: 10 }),
+      getAgentMemoryRepository().listMemory(scope, agentType),
+      getCrmRepository().listTasks(scope, { assignedAgentType: agentType }),
+      getAgentStatuses(scope),
+    ]);
+
+  const live = statuses.find((s) => s.agentType === agent.type);
+  const working = live?.status === "working";
 
   return (
     <>
-      <header
-        className="shrink-0 border-b px-4 py-4 sm:px-6"
-        style={{ background: "var(--wf-panel)", borderColor: "var(--wf-line)" }}
-      >
-        <Link
-          href="/workforce"
-          className="text-xs font-semibold"
-          style={{ color: "var(--wf-accent)" }}
-        >
-          ← AI Workforce
-        </Link>
-        <div className="mt-2 flex items-start gap-3">
-          <div
-            className="rounded-2xl p-2.5"
-            style={{ background: "var(--wf-accent-soft)" }}
-          >
-            <Icon className="h-5 w-5" style={{ color: "var(--wf-accent)" }} />
-          </div>
-          <div>
-            <h2
-              className="text-lg font-bold sm:text-xl"
-              style={{ color: "var(--wf-ink)" }}
+      <WfHeader
+        title={agent.name}
+        subtitle={
+          <span className="flex flex-wrap items-center gap-2">
+            <span>{agent.title}</span>
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              style={{
+                background: working ? "var(--wf-ok-soft)" : "var(--wf-wait-soft)",
+                color: working ? "var(--wf-ok)" : "#B45309",
+              }}
             >
-              {agent.name}
-            </h2>
-            <p className="text-xs font-semibold" style={{ color: "var(--wf-accent)" }}>
-              {agent.title}
-            </p>
-            <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--wf-muted)" }}>
-              {agent.tagline} · {agent.primaryFunction}
-            </p>
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{
+                  background: working ? "var(--wf-ok)" : "var(--wf-wait)",
+                }}
+              />
+              {working ? "Working" : "Waiting"}
+            </span>
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <div
+              className="hidden h-11 w-11 items-center justify-center rounded-xl sm:flex"
+              style={{ background: "var(--wf-accent-soft)" }}
+            >
+              <Icon className="h-5 w-5" style={{ color: "var(--wf-accent)" }} />
+            </div>
+            <Link
+              href="/workforce/tasks?start=1"
+              className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-white"
+              style={{ background: "var(--wf-accent)" }}
+            >
+              + Assign goal
+            </Link>
           </div>
+        }
+      />
+      <div className="px-5 sm:px-8" style={{ background: "var(--wf-bg)" }}>
+        <div className="mx-auto max-w-5xl pb-1">
+          <Link
+            href="/workforce"
+            className="text-xs font-semibold"
+            style={{ color: "var(--wf-accent)" }}
+          >
+            ← All AI employees
+          </Link>
+          <p className="mt-1 text-sm" style={{ color: "var(--wf-muted)" }}>
+            {agent.tagline}
+          </p>
         </div>
-      </header>
+      </div>
       <WorkforceNav />
       <AgentProfileView
         agent={agent}

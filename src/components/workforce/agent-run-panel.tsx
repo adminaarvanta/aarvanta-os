@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { RunAgentButton } from "@/components/workforce/run-agent-button";
+import { WfPanel } from "@/components/workforce/workforce-shell";
 import type { AgentDefinition } from "@/types/workforce";
+
+const selectClass =
+  "mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[var(--wf-accent)]";
 
 export function AgentRunPanel({
   agent,
@@ -22,18 +26,29 @@ export function AgentRunPanel({
     (!needsContact || contactId) && (!needsConversation || conversationId);
 
   return (
-    <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-foreground">Run {agent.name}</h3>
+    <WfPanel className="space-y-4">
+      <div>
+        <h3 className="text-[15px] font-bold" style={{ color: "var(--wf-ink)" }}>
+          Run {agent.name}
+        </h3>
+        <p className="mt-0.5 text-sm" style={{ color: "var(--wf-muted)" }}>
+          {agent.primaryFunction}
+        </p>
+      </div>
 
       {(needsContact || !needsConversation) && contacts.length > 0 && (
         <div>
-          <label className="block text-xs font-medium text-muted">
+          <label
+            className="block text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--wf-muted)" }}
+          >
             Contact {needsContact ? "(required)" : "(optional)"}
           </label>
           <select
             value={contactId}
             onChange={(e) => setContactId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+            className={selectClass}
+            style={{ borderColor: "var(--wf-line)", color: "var(--wf-ink)" }}
           >
             <option value="">Select contact…</option>
             {contacts.map((c) => (
@@ -47,13 +62,17 @@ export function AgentRunPanel({
 
       {(needsConversation || needsContact) && conversations.length > 0 && (
         <div>
-          <label className="block text-xs font-medium text-muted">
+          <label
+            className="block text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--wf-muted)" }}
+          >
             Conversation {needsConversation ? "(required)" : "(optional)"}
           </label>
           <select
             value={conversationId}
             onChange={(e) => setConversationId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+            className={selectClass}
+            style={{ borderColor: "var(--wf-line)", color: "var(--wf-ink)" }}
           >
             <option value="">Select conversation…</option>
             {conversations.map((c) => (
@@ -66,7 +85,7 @@ export function AgentRunPanel({
       )}
 
       {!needsContact && !needsConversation && (
-        <p className="text-xs text-muted">
+        <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
           Runs a business-wide analysis using CRM and inbox data.
         </p>
       )}
@@ -79,10 +98,10 @@ export function AgentRunPanel({
           label={`Run ${agent.name}`}
         />
       ) : (
-        <p className="text-xs text-gold-bright">
+        <p className="text-sm font-medium" style={{ color: "var(--wf-accent)" }}>
           Select the required context above to run this agent.
         </p>
       )}
-    </section>
+    </WfPanel>
   );
 }

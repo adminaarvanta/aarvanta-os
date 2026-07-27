@@ -19,25 +19,32 @@ export function AgentProfileTabs({
   onChange: (tab: AgentProfileTab) => void;
 }) {
   return (
-    <nav
-      className="flex gap-1 overflow-x-auto border-b border-border [-webkit-overflow-scrolling:touch]"
-      aria-label="Agent profile sections"
-    >
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          onClick={() => onChange(tab.id)}
-          className={cn(
-            "whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors",
-            active === tab.id
-              ? "border-gold text-gold-bright"
-              : "border-transparent text-muted hover:text-foreground"
-          )}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </nav>
+    <div className="px-5 sm:px-8" style={{ background: "var(--wf-bg)" }}>
+      <div
+        className="mx-auto flex max-w-5xl gap-1 rounded-full border bg-white p-1"
+        style={{ borderColor: "var(--wf-line)" }}
+        role="tablist"
+        aria-label="Agent profile sections"
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={active === tab.id}
+            onClick={() => onChange(tab.id)}
+            className={cn(
+              "flex-1 rounded-full px-3 py-2 text-sm font-semibold transition"
+            )}
+            style={{
+              background: active === tab.id ? "var(--wf-accent)" : "transparent",
+              color: active === tab.id ? "#fff" : "var(--wf-muted)",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -32,32 +32,47 @@ export function AgentProfileView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <AgentProfileTabs active={tab} onChange={setTab} />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
-        {tab === "run" && (
-          <>
-            <AgentRunPanel
-              agent={agent}
-              contacts={contacts}
-              conversations={conversations}
-            />
-            <section>
-              <h3 className="mb-3 text-sm font-semibold text-foreground">
-                Recent runs
-              </h3>
-              <RunList runs={runs} />
-            </section>
-          </>
-        )}
-        {tab === "chat" && (
-          <AgentChatPanel agentType={agent.type} agentName={agent.name} />
-        )}
-        {tab === "memory" && (
-          <AgentMemoryPanel agentType={agent.type} initialMemory={memory} />
-        )}
-        {tab === "tasks" && (
-          <AgentTasksPanel tasks={tasks} agentType={agent.type} />
-        )}
+      <div className="pt-4">
+        <AgentProfileTabs active={tab} onChange={setTab} />
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
+        <div className="mx-auto max-w-5xl space-y-4">
+          {tab === "run" && (
+            <>
+              <AgentRunPanel
+                agent={agent}
+                contacts={contacts}
+                conversations={conversations}
+              />
+              <section
+                className="overflow-hidden rounded-xl border bg-white shadow-[0_1px_3px_rgba(14,21,37,0.04)]"
+                style={{ borderColor: "var(--wf-line)" }}
+              >
+                <div
+                  className="border-b px-5 py-3"
+                  style={{ borderColor: "var(--wf-line)" }}
+                >
+                  <h3
+                    className="text-sm font-bold"
+                    style={{ color: "var(--wf-ink)" }}
+                  >
+                    Recent runs
+                  </h3>
+                </div>
+                <RunList runs={runs} />
+              </section>
+            </>
+          )}
+          {tab === "chat" && (
+            <AgentChatPanel agentType={agent.type} agentName={agent.name} />
+          )}
+          {tab === "memory" && (
+            <AgentMemoryPanel agentType={agent.type} initialMemory={memory} />
+          )}
+          {tab === "tasks" && (
+            <AgentTasksPanel tasks={tasks} agentType={agent.type} />
+          )}
+        </div>
       </div>
     </div>
   );

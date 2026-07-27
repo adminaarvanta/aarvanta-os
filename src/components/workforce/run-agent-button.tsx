@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { WfPrimaryButton } from "@/components/workforce/workforce-shell";
 import { apiFetch } from "@/lib/api/client-fetch";
 import type { AgentType } from "@/types/workforce";
 
@@ -50,11 +50,11 @@ export function RunAgentButton({
 
   return (
     <div className={className}>
-      <Button
+      <WfPrimaryButton
         type="button"
         onClick={run}
         disabled={pending}
-        className="w-full gap-2 bg-gold text-black hover:bg-gold-bright sm:w-auto"
+        className="gap-2 sm:w-auto"
       >
         {pending ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -62,9 +62,13 @@ export function RunAgentButton({
           <Sparkles className="h-4 w-4" />
         )}
         {pending ? "Running…" : label}
-      </Button>
+      </WfPrimaryButton>
       {error && (
-        <p className="mt-2 text-xs text-red-400" role="alert">
+        <p
+          className="mt-2 text-xs font-medium"
+          style={{ color: "var(--wf-danger)" }}
+          role="alert"
+        >
           {error}
         </p>
       )}

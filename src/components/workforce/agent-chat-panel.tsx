@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  WfPrimaryButton,
+  WfPanel,
+} from "@/components/workforce/workforce-shell";
 import type { AgentChatMessage, AgentType } from "@/types/workforce";
 import { scrollContainerToBottom } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
@@ -28,7 +31,10 @@ export function AgentChatPanel({
   }, [agentType]);
 
   useEffect(() => {
-    scrollContainerToBottom(scrollRef.current, messages.length > 0 ? "smooth" : "auto");
+    scrollContainerToBottom(
+      scrollRef.current,
+      messages.length > 0 ? "smooth" : "auto"
+    );
   }, [messages, loading]);
 
   async function sendMessage(e: React.FormEvent) {
@@ -87,19 +93,25 @@ export function AgentChatPanel({
   }
 
   return (
-    <section className="flex h-[min(520px,60vh)] min-h-[280px] flex-col overflow-hidden rounded-xl border border-border bg-surface-elevated">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+    <WfPanel className="flex h-[min(560px,65vh)] min-h-[320px] flex-col overflow-hidden !p-0">
+      <div
+        className="flex items-center justify-between border-b px-5 py-3"
+        style={{ borderColor: "var(--wf-line)" }}
+      >
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Agent chat</h3>
-          <p className="text-xs text-muted">
-            Talk to {agentName} about your business
+          <h3 className="text-sm font-bold" style={{ color: "var(--wf-ink)" }}>
+            Chat with {agentName}
+          </h3>
+          <p className="text-xs" style={{ color: "var(--wf-muted)" }}>
+            Ask about priorities, pipeline, or next actions
           </p>
         </div>
         {messages.length > 0 && (
           <button
             type="button"
             onClick={clearChat}
-            className="inline-flex items-center gap-1 text-xs text-muted hover:text-red-300"
+            className="inline-flex items-center gap-1 text-xs font-semibold"
+            style={{ color: "var(--wf-muted)" }}
           >
             <Trash2 className="h-3.5 w-3.5" />
             Clear
@@ -110,31 +122,44 @@ export function AgentChatPanel({
       <div
         ref={scrollRef}
         data-chat-scroll
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-5"
+        style={{ background: "var(--wf-bg)" }}
       >
         {initialLoading ? (
-          <p className="text-sm text-muted">Loading conversation…</p>
+          <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
+            Loading conversation…
+          </p>
         ) : messages.length === 0 ? (
-          <p className="text-sm text-muted">
-            Ask {agentName} anything — pipeline status, priorities, recommendations.
+          <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
+            Ask {agentName} anything — pipeline status, priorities,
+            recommendations.
           </p>
         ) : (
           messages.map((msg) => (
             <div
               key={msg.id}
               className={cn(
-                "max-w-[85%] rounded-lg px-3 py-2 text-sm",
-                msg.role === "user"
-                  ? "ml-auto bg-gold/15 text-foreground ring-1 ring-gold/25"
-                  : "bg-surface-muted text-muted ring-1 ring-border"
+                "max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm",
+                msg.role === "user" ? "ml-auto text-white" : "bg-white"
               )}
+              style={
+                msg.role === "user"
+                  ? { background: "var(--wf-accent)" }
+                  : {
+                      color: "var(--wf-ink)",
+                      border: "1px solid var(--wf-line)",
+                    }
+              }
             >
               <p className="whitespace-pre-wrap">{msg.content}</p>
             </div>
           ))
         )}
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-muted">
+          <div
+            className="flex items-center gap-2 text-xs"
+            style={{ color: "var(--wf-muted)" }}
+          >
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             {agentName} is thinking…
           </div>
@@ -143,19 +168,25 @@ export function AgentChatPanel({
 
       <form
         onSubmit={sendMessage}
-        className="flex gap-2 border-t border-border p-3"
+        className="flex gap-2 border-t p-3"
+        style={{ borderColor: "var(--wf-line)" }}
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={`Message ${agentName}…`}
-          className="flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground placeholder:text-muted/60"
+          className="flex-1 rounded-full border px-4 py-2.5 text-sm outline-none focus:border-[var(--wf-accent)]"
+          style={{ borderColor: "var(--wf-line)", color: "var(--wf-ink)" }}
           disabled={loading}
         />
-        <Button type="submit" disabled={loading || !input.trim()}>
+        <WfPrimaryButton
+          type="submit"
+          disabled={loading || !input.trim()}
+          className="!rounded-full !px-4"
+        >
           <Send className="h-4 w-4" />
-        </Button>
+        </WfPrimaryButton>
       </form>
-    </section>
+    </WfPanel>
   );
 }

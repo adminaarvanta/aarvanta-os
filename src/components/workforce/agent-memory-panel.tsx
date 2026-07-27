@@ -2,17 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Brain, Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  WfPanel,
+  WfPrimaryButton,
+} from "@/components/workforce/workforce-shell";
 import type { AgentMemoryEntry, AgentType } from "@/types/workforce";
 import { formatRelative } from "@/lib/utils";
-
-const categoryColors: Record<AgentMemoryEntry["category"], string> = {
-  insight: "bg-navy/60 text-gold-bright ring-gold/30",
-  decision: "bg-accent-cyan/10 text-accent-cyan ring-accent-cyan/30",
-  preference: "bg-gold/10 text-gold-bright ring-gold/35",
-  fact: "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30",
-};
 
 export function AgentMemoryPanel({
   agentType,
@@ -62,15 +57,20 @@ export function AgentMemoryPanel({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
+    <WfPanel className="space-y-4">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-gold/15 p-2 ring-1 ring-gold/30">
-          <Brain className="h-4 w-4 text-gold" />
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-xl"
+          style={{ background: "var(--wf-accent-soft)" }}
+        >
+          <Brain className="h-4 w-4" style={{ color: "var(--wf-accent)" }} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Agent memory</h3>
-          <p className="text-xs text-muted">
-            Long-term context saved from runs, chat, and manual notes
+          <h3 className="text-sm font-bold" style={{ color: "var(--wf-ink)" }}>
+            Agent memory
+          </h3>
+          <p className="text-xs" style={{ color: "var(--wf-muted)" }}>
+            Context from runs, chat, and notes
           </p>
         </div>
       </div>
@@ -80,50 +80,72 @@ export function AgentMemoryPanel({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Add a memory for this agent…"
-          className="flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+          className="flex-1 rounded-full border px-4 py-2.5 text-sm outline-none focus:border-[var(--wf-accent)]"
+          style={{ borderColor: "var(--wf-line)", color: "var(--wf-ink)" }}
         />
-        <Button type="submit" disabled={adding || !content.trim()}>
+        <WfPrimaryButton
+          type="submit"
+          disabled={adding || !content.trim()}
+          className="!rounded-full !px-4"
+        >
           <Plus className="h-4 w-4" />
-        </Button>
+        </WfPrimaryButton>
       </form>
 
       {memory.length === 0 ? (
-        <p className="text-sm text-muted">
+        <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
           No memories yet. Run the agent or chat to build context automatically.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-2">
           {memory.map((entry) => (
             <li
               key={entry.id}
-              className="rounded-lg border border-border bg-surface-muted p-3"
+              className="rounded-xl border p-3"
+              style={{ borderColor: "var(--wf-line)", background: "var(--wf-bg)" }}
             >
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className={categoryColors[entry.category]}>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
+                  style={{
+                    background: "var(--wf-accent-soft)",
+                    color: "var(--wf-accent)",
+                  }}
+                >
                   {entry.category}
-                </Badge>
-                <Badge className="bg-background text-muted ring-border">
+                </span>
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    background: "#fff",
+                    color: "var(--wf-muted)",
+                    border: "1px solid var(--wf-line)",
+                  }}
+                >
                   {entry.source}
-                </Badge>
-                <span className="text-[10px] text-muted">
+                </span>
+                <span className="text-[10px]" style={{ color: "var(--wf-muted)" }}>
                   {formatRelative(entry.createdAt)}
                 </span>
                 {entry.source === "manual" && (
                   <button
                     type="button"
                     onClick={() => deleteEntry(entry.id)}
-                    className="ml-auto text-muted hover:text-red-300"
+                    className="ml-auto"
+                    style={{ color: "var(--wf-muted)" }}
                     aria-label="Delete memory"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
-              <p className="mt-2 text-sm text-foreground">{entry.content}</p>
+              <p className="mt-2 text-sm" style={{ color: "var(--wf-ink)" }}>
+                {entry.content}
+              </p>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </WfPanel>
   );
 }
