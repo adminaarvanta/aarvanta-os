@@ -464,8 +464,10 @@ export const SPEC_PHASES: Array<{
         id: "partner-affiliate",
         phase: "GTM",
         name: "Partner & Affiliate System",
-        status: "planned",
-        summary: "Referral links, commission tracking, payout reports.",
+        status: "partial",
+        href: "/affiliate/dashboard",
+        summary:
+          "Dual-channel affiliates, referral tracking, CPA + commission ledger, regional caps, payouts. See docs/AFFILIATE_PRD.md.",
       },
     ] as SpecModule[],
   },

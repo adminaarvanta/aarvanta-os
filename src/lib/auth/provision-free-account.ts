@@ -33,6 +33,8 @@ export type ProvisionFreeAccountInput = {
   password?: string;
   googleSub?: string;
   authProvider: MemberAuthProvider;
+  /** Affiliate referral code from cookie or form (`ref`). */
+  referralCode?: string;
 };
 
 export type ProvisionFreeAccountResult = {
@@ -117,6 +119,23 @@ export async function provisionFreeTierAccount(
       userId: member.userId,
       googleSub: input.googleSub || "",
     });
+  }
+
+  if (input.referralCode?.trim()) {
+    try {
+      const { attributeSignup } = await import("@/lib/affiliate/service");
+      await attributeSignup({
+        referralCode: input.referralCode,
+        email,
+        userId: member.userId,
+        tenantId,
+        workspaceId: workspace.id,
+        companyId,
+        country: input.country,
+      });
+    } catch (err) {
+      console.warn("[affiliate] attribution on signup failed", err);
+    }
   }
 
   return {

@@ -29,6 +29,8 @@ import {
   Video,
   Wallet,
   Workflow,
+  Handshake,
+  Gift,
 } from "lucide-react";
 
 export type PlatformModule = {
@@ -369,6 +371,24 @@ export const PLATFORM_MODULES: PlatformModule[] = [
     icon: Store,
     group: "Enterprise",
     phase: 32,
+  },
+  {
+    id: "affiliate",
+    label: "Partner & Affiliate",
+    description: "Referral links, commissions, regional caps, payouts",
+    href: "/affiliate/dashboard",
+    icon: Handshake,
+    group: "Enterprise",
+    phase: "GTM",
+  },
+  {
+    id: "referrals",
+    label: "Referrals",
+    description: "Customer affiliate opt-in and income tracking",
+    href: "/referrals",
+    icon: Gift,
+    group: "Revenue",
+    phase: "GTM",
   },
   {
     id: "regions",

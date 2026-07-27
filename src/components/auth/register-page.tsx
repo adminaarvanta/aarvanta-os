@@ -24,12 +24,15 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const safeNext = sanitizeNextPath(nextPath);
+  const referralFromUrl =
+    searchParams.get("ref") ?? searchParams.get("referralCode") ?? "";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("United Kingdom");
   const [companyName, setCompanyName] = useState("");
+  const [referralCode, setReferralCode] = useState(referralFromUrl);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "sso_failed"
@@ -52,6 +55,7 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
           phone,
           country,
           companyName: companyName.trim() || undefined,
+          referralCode: referralCode.trim() || undefined,
           next: safeNext,
         }),
       });
@@ -165,6 +169,22 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
           className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
         />
       </div>
+      {referralCode ? (
+        <div>
+          <label
+            htmlFor="referralCode"
+            className="block text-sm font-medium text-foreground"
+          >
+            Referral code
+          </label>
+          <input
+            id="referralCode"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+          />
+        </div>
+      ) : null}
 
       {error ? (
         <p className="text-sm text-red-400" role="alert">

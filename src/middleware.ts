@@ -14,9 +14,11 @@ const PUBLIC_PREFIXES = [
   "/store",
   "/p",
   "/chat",
+  "/r",
   "/api/chat",
   "/api/store",
   "/api/auth",
+  "/api/affiliate/apply",
   "/api/tenant/invitations/accept",
   "/api/webhooks",
   "/api/cron",
@@ -35,6 +37,8 @@ function isProductionMode() {
 
 function isPublicPath(pathname: string) {
   if (pathname === "/") return true;
+  // Partner marketing apply page only (dashboard/admin stay authenticated)
+  if (pathname === "/affiliate" || pathname === "/affiliate/") return true;
   return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 }
 

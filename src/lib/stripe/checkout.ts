@@ -58,6 +58,10 @@ export async function createSaasCheckoutSession(input: {
   email?: string;
   name?: string;
   stripeCustomerId?: string;
+  /** Affiliate discount percent (0–100) applied as Stripe coupon. */
+  discountPercent?: number;
+  affiliateId?: string;
+  referralCode?: string;
 }): Promise<Stripe.Checkout.Session> {
   const plan = getSaasPlan(input.planId);
   if (!plan) throw new Error(`Unknown plan: ${input.planId}`);
@@ -83,10 +87,33 @@ export async function createSaasCheckoutSession(input: {
         },
       ];
 
+  const discounts: Stripe.Checkout.SessionCreateParams.Discount[] = [];
+  if (input.discountPercent && input.discountPercent > 0) {
+    const coupon = await stripe.coupons.create({
+      percent_off: Math.min(100, Math.round(input.discountPercent)),
+      duration: "once",
+      name: `Affiliate ${input.referralCode ?? "partner"}`,
+      metadata: {
+        affiliateId: input.affiliateId ?? "",
+        referralCode: input.referralCode ?? "",
+      },
+    });
+    discounts.push({ coupon: coupon.id });
+  }
+
+  const affiliateMeta = {
+    ...(input.affiliateId ? { affiliateId: input.affiliateId } : {}),
+    ...(input.referralCode ? { referralCode: input.referralCode } : {}),
+    ...(input.discountPercent
+      ? { discountPercent: String(input.discountPercent) }
+      : {}),
+  };
+
   return stripe.checkout.sessions.create({
     mode: "subscription",
     customer,
     line_items: lineItems,
+    ...(discounts.length ? { discounts } : {}),
     success_url: successUrl("saas_plan"),
     cancel_url: cancelUrl("saas_plan"),
     client_reference_id: input.scope.tenantId,
@@ -94,12 +121,14 @@ export async function createSaasCheckoutSession(input: {
       ...scopeMeta(input.scope),
       kind: "saas_plan",
       planId: input.planId,
+      ...affiliateMeta,
     },
     subscription_data: {
       metadata: {
         ...scopeMeta(input.scope),
         kind: "saas_plan",
         planId: input.planId,
+        ...affiliateMeta,
       },
     },
   });

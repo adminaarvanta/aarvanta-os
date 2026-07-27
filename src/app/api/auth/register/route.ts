@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody } from "@/lib/api/request";
+import { AFFILIATE_COOKIE } from "@/lib/affiliate/cookie";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 import { provisionFreeTierAccount } from "@/lib/auth/provision-free-account";
 import {
@@ -25,6 +27,7 @@ const registerSchema = z.object({
     .regex(/^[+0-9()\-\s]+$/, "Enter a valid phone number"),
   country: z.string().min(2).max(80),
   companyName: z.string().max(120).optional(),
+  referralCode: z.string().max(32).optional(),
   next: z.string().optional(),
 });
 
@@ -52,6 +55,12 @@ export async function POST(req: Request) {
       );
     }
 
+    const cookieStore = await cookies();
+    const referralCode =
+      parsed.data.referralCode?.trim() ||
+      cookieStore.get(AFFILIATE_COOKIE)?.value ||
+      undefined;
+
     const result = await provisionFreeTierAccount({
       email,
       name: parsed.data.name,
@@ -60,6 +69,7 @@ export async function POST(req: Request) {
       companyName: parsed.data.companyName,
       password: parsed.data.password,
       authProvider: "password",
+      referralCode,
     });
 
     const nextPath = sanitizeNextPath(parsed.data.next ?? "/build");

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { apiError, parseJsonBody } from "@/lib/api/request";
+import { AFFILIATE_COOKIE } from "@/lib/affiliate/cookie";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 import {
   PENDING_SIGNUP_COOKIE,
@@ -28,6 +29,7 @@ const completeSchema = z.object({
   country: z.string().min(2).max(80),
   companyName: z.string().max(120).optional(),
   name: z.string().min(1).max(80).optional(),
+  referralCode: z.string().max(32).optional(),
   next: z.string().optional(),
 });
 
@@ -65,6 +67,11 @@ export async function POST(req: Request) {
       );
     }
 
+    const referralCode =
+      parsed.data.referralCode?.trim() ||
+      cookieStore.get(AFFILIATE_COOKIE)?.value ||
+      undefined;
+
     const result = await provisionFreeTierAccount({
       email: pending.email,
       name: parsed.data.name?.trim() || pending.name,
@@ -73,6 +80,7 @@ export async function POST(req: Request) {
       companyName: parsed.data.companyName,
       googleSub: pending.googleSub,
       authProvider: "google",
+      referralCode,
     });
 
     const nextPath = sanitizeNextPath(

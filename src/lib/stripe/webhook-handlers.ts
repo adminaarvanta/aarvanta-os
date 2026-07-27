@@ -247,6 +247,23 @@ export async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Se
     await completeDomainOrder(session, scope);
   } else if (kind === "saas_plan") {
     await upsertSaasSubscription(session, scope);
+    try {
+      const { recordCommissionForPaidInvoice } = await import(
+        "@/lib/affiliate/service"
+      );
+      const amount = (session.amount_total ?? 0) / 100;
+      if (amount > 0) {
+        await recordCommissionForPaidInvoice({
+          tenantId: scope.tenantId,
+          amount,
+          currency: (session.currency ?? "gbp").toUpperCase(),
+          stripeCheckoutSessionId: session.id,
+          email: session.customer_details?.email ?? undefined,
+        });
+      }
+    } catch (err) {
+      console.warn("[affiliate] commission on checkout failed", err);
+    }
   } else if (kind === "hosting") {
     await applyHostingSubscription(session, scope);
   }

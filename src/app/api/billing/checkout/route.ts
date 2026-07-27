@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import {
+  recordCommissionForPaidInvoice,
+  resolveCheckoutDiscount,
+} from "@/lib/affiliate/service";
 import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import { getStripePaymentStore } from "@/lib/data/stripe-payment-store";
 import { isDemoMode } from "@/lib/config/app-mode";
@@ -41,13 +45,31 @@ export async function POST(req: Request) {
     );
   }
 
+  const offer = await resolveCheckoutDiscount({
+    tenantId: session.scope.tenantId,
+    buyerEmail: session.email,
+    isPartnerSelfPurchase: true,
+  });
+
   if (!isStripeConfigured()) {
     if (isDemoMode()) {
+      if (offer) {
+        await recordCommissionForPaidInvoice({
+          tenantId: session.scope.tenantId,
+          amount: plan.priceMonthly * (1 - offer.discountPercent / 100),
+          currency: plan.currency,
+          email: session.email,
+          stripeCheckoutSessionId: `demo_${Date.now()}`,
+        });
+      }
       return NextResponse.json({
         demo: true,
-        message:
-          "Stripe is not configured. In demo mode, treat this as a successful checkout simulation.",
+        message: offer
+          ? `Demo checkout with ${offer.discountPercent}% affiliate discount. Commission recorded.`
+          : "Stripe is not configured. In demo mode, treat this as a successful checkout simulation.",
         planId: plan.id,
+        discountPercent: offer?.discountPercent,
+        affiliateId: offer?.affiliateId,
       });
     }
     return NextResponse.json(
@@ -66,6 +88,9 @@ export async function POST(req: Request) {
     planId: parsed.data.planId,
     email: session.email,
     name: session.name,
+    discountPercent: offer?.discountPercent,
+    affiliateId: offer?.affiliateId,
+    referralCode: offer?.referralCode,
   });
 
   const now = crmNow();
@@ -80,10 +105,22 @@ export async function POST(req: Request) {
     amount: plan.priceMonthly,
     currency: plan.currency,
     description: `Aarvanta OS ${plan.name}`,
-    metadata: { planId: plan.id },
+    metadata: {
+      planId: plan.id,
+      ...(offer
+        ? {
+            affiliateId: offer.affiliateId,
+            discountPercent: String(offer.discountPercent),
+          }
+        : {}),
+    },
     createdAt: now,
     updatedAt: now,
   });
 
-  return NextResponse.json({ url: checkout.url, sessionId: checkout.id });
+  return NextResponse.json({
+    url: checkout.url,
+    sessionId: checkout.id,
+    discountPercent: offer?.discountPercent,
+  });
 }
