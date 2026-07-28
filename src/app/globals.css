@@ -39,6 +39,21 @@ html.light {
   --radius-xl: 1rem;
   --focus-ring: rgba(168, 137, 79, 0.55);
   --dot-grid: rgba(26, 47, 89, 0.05);
+  /* Analytics chart palette — category-coded (HubSpot-style) */
+  --chart-revenue: #a8894f;
+  --chart-revenue-soft: rgba(168, 137, 79, 0.18);
+  --chart-pipeline: #1a2f59;
+  --chart-pipeline-soft: rgba(26, 47, 89, 0.14);
+  --chart-ops: #2f7f92;
+  --chart-ops-soft: rgba(47, 127, 146, 0.16);
+  --chart-ai: #2d8a6a;
+  --chart-ai-soft: rgba(45, 138, 106, 0.16);
+  --chart-won: #3d9b6e;
+  --chart-lost: #c53030;
+  --chart-open: #4a6fa5;
+  --chart-grid: rgba(26, 47, 89, 0.08);
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: #d0d9e6;
 }
 
 html.dark {
@@ -73,6 +88,20 @@ html.dark {
   --selection-fg: #ffffff;
   --focus-ring: rgba(179, 150, 93, 0.55);
   --dot-grid: rgba(110, 184, 201, 0.06);
+  --chart-revenue: #c9aa72;
+  --chart-revenue-soft: rgba(201, 170, 114, 0.22);
+  --chart-pipeline: #6eb8c9;
+  --chart-pipeline-soft: rgba(110, 184, 201, 0.18);
+  --chart-ops: #6eb8c9;
+  --chart-ops-soft: rgba(110, 184, 201, 0.16);
+  --chart-ai: #5cbf9a;
+  --chart-ai-soft: rgba(92, 191, 154, 0.18);
+  --chart-won: #5cbf9a;
+  --chart-lost: #e8a0a8;
+  --chart-open: #8aa4c8;
+  --chart-grid: rgba(110, 184, 201, 0.12);
+  --chart-tooltip-bg: #0e1522;
+  --chart-tooltip-border: #253656;
 }
 
 @theme inline {
@@ -97,6 +126,17 @@ html.dark {
   --color-dim: var(--text-dim);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-chart-revenue: var(--chart-revenue);
+  --color-chart-revenue-soft: var(--chart-revenue-soft);
+  --color-chart-pipeline: var(--chart-pipeline);
+  --color-chart-pipeline-soft: var(--chart-pipeline-soft);
+  --color-chart-ops: var(--chart-ops);
+  --color-chart-ops-soft: var(--chart-ops-soft);
+  --color-chart-ai: var(--chart-ai);
+  --color-chart-ai-soft: var(--chart-ai-soft);
+  --color-chart-won: var(--chart-won);
+  --color-chart-lost: var(--chart-lost);
+  --color-chart-open: var(--chart-open);
   --font-sans: var(--font-inter);
 }
 

@@ -1,5 +1,6 @@
 import { BarChart3 } from "lucide-react";
 import { AnalyticsClient } from "@/components/analytics/analytics-client";
+import { ModulePageShell } from "@/components/platform/module-page-shell";
 import { buildAnalyticsSnapshot } from "@/lib/analytics/build-analytics";
 import { getSessionContext } from "@/lib/tenant/context";
 
@@ -8,20 +9,13 @@ export default async function AnalyticsPage() {
   const snapshot = await buildAnalyticsSnapshot(ctx.scope, "monthly");
 
   return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
-          <BarChart3 className="h-5 w-5 text-gold" />
-          Analytics
-        </h2>
-        <p className="text-xs text-muted sm:text-sm">
-          Revenue, pipeline, projects, tasks, AI usage — daily, weekly, monthly reports.
-        </p>
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
-        <AnalyticsClient initialSnapshot={snapshot} />
-      </div>
-    </>
+    <ModulePageShell
+      icon={BarChart3}
+      title="Analytics"
+      description="Executive dashboard — revenue, pipeline, operations, and AI workforce trends."
+    >
+      <AnalyticsClient initialSnapshot={snapshot} />
+    </ModulePageShell>
   );
 }
 

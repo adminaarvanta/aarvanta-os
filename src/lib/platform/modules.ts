@@ -183,7 +183,7 @@ export const CORE_MODULES: PlatformModule[] = [
   {
     id: "analytics",
     label: "Analytics",
-    description: "Revenue, pipeline, projects, AI usage",
+    description: "Executive charts — revenue, pipeline, ops, AI",
     href: "/analytics",
     icon: BarChart3,
     group: "Core",
@@ -411,8 +411,8 @@ export const PLATFORM_MODULES: PlatformModule[] = [
   {
     id: "analytics-v2",
     label: "Analytics 2.0",
-    description: "Revenue, sales, ops, and AI workforce dashboards",
-    href: "/analytics/v2",
+    description: "Merged into Analytics — charts, finance, HR, AI workforce",
+    href: "/analytics",
     icon: BarChart3,
     group: "Intelligence",
     phase: 21,

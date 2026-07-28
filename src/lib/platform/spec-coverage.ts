@@ -150,8 +150,9 @@ export const SPEC_PHASES: Array<{
         phase: 10,
         name: "Analytics & Reporting",
         href: "/analytics",
-        status: "partial",
-        summary: "Dashboards and CSV export live. PDF/Excel export queued in demo mode.",
+        status: "complete",
+        summary:
+          "Executive dashboard with KPI sparklines, revenue/pipeline charts, funnel breakdowns, ops lists, and CSV export. PDF/Excel remain queued in demo mode.",
       },
     ] as SpecModule[],
   },
@@ -219,9 +220,10 @@ export const SPEC_PHASES: Array<{
         id: "analytics-v2",
         phase: 21,
         name: "Analytics 2.0",
-        href: "/analytics/v2",
-        status: "partial",
-        summary: "Revenue, sales, ops, and AI workforce dashboards.",
+        href: "/analytics",
+        status: "complete",
+        summary:
+          "Merged into primary Analytics OS — finance, HR, and AI extras on the chart dashboard.",
       },
       {
         id: "templates",
