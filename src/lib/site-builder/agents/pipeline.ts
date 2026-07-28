@@ -276,6 +276,7 @@ function inferCategoryFromIndustry(
   industry: string
 ): SitePreferences["categoryId"] {
   const i = industry.toLowerCase();
+  if (/(manufactur|building materials?|construction|industrial)/.test(i)) return "professional";
   if (/(retail|shop|store|ecommerce)/.test(i)) return "ecommerce";
   if (/(software|saas)/.test(i)) return "saas";
   if (/(health|clinic|dental)/.test(i)) return "healthcare";

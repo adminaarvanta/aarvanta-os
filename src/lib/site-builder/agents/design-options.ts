@@ -7,7 +7,11 @@ import {
   aiDesignOptionsResponseSchema,
   type AiDesignOptionSpec,
 } from "@/lib/site-builder/schemas";
-import { themeFromBrand } from "@/lib/site-builder/theme-presets";
+import {
+  normalizeHex,
+  resolveSiteTheme,
+  themeFromBrand,
+} from "@/lib/site-builder/theme-presets";
 import { crmNow } from "@/lib/data/crm-helpers";
 import type {
   BrandSystem,
@@ -84,11 +88,11 @@ const STORE_DIRECTIONS: DesignDirection[] = [
     ],
   },
   {
-    id: "design_store_boutique",
-    name: "Boutique Editorial",
+    id: "design_store_editorial",
+    name: "Store Editorial",
     tagline: "Quiet luxury storefront",
     description: "Centered typography, story-led about, gallery mood, refined product cards.",
-    styleTags: ["Boutique", "Editorial", "Premium"],
+    styleTags: ["Editorial", "Refined", "Premium"],
     heroVariant: "centered",
     brandOverrides: {
       style: "Minimal",
@@ -102,7 +106,7 @@ const STORE_DIRECTIONS: DesignDirection[] = [
     homeSectionTypes: [
       { type: "hero", label: "Hero", description: "Centered statement", variantId: "centered" },
       { type: "about_split", label: "Story", description: "Brand narrative" },
-      { type: "gallery", label: "Lookbook", description: "Visual mood" },
+      { type: "gallery", label: "Gallery", description: "Visual mood" },
       { type: "products", label: "Edit", description: "Curated picks", variantId: "list" },
       { type: "faq_accordion", label: "FAQ", description: "Shipping answers" },
       { type: "contact", label: "Contact", description: "Get in touch" },
@@ -192,6 +196,13 @@ function directionsFor(
   business: BusinessProfile,
   prefs: SitePreferences
 ): DesignDirection[] {
+  // Manufacturing / building-materials businesses should never land on the
+  // ecommerce "store" layouts even if ctaGoal/category looks retail-ish.
+  const industrial = /(manufactur|building materials?|construction|industrial)/i.test(
+    `${business.industry} ${business.subcategory}`
+  );
+  if (industrial) return SERVICE_DIRECTIONS;
+
   const store =
     prefs.features.includes("ecommerce") ||
     prefs.categoryId === "ecommerce" ||
@@ -200,29 +211,50 @@ function directionsFor(
   return store ? STORE_DIRECTIONS : SERVICE_DIRECTIONS;
 }
 
-const PALETTES: Array<Pick<BrandSystem, "primary" | "secondary" | "background">> = [
-  { primary: "#EA580C", secondary: "#FDBA74", background: "#140E0A" },
-  { primary: "#2563EB", secondary: "#60A5FA", background: "#0B1220" },
-  { primary: "#1A2B48", secondary: "#3D6B9F", background: "#FFFFFF" },
-  { primary: "#B8965D", secondary: "#C9AA72", background: "#040608" },
-  { primary: "#0F766E", secondary: "#5EEAD4", background: "#042F2E" },
-];
+/** Simple string hash used to derive deterministic-but-different offsets from a refresh seed. */
+function hashSeed(input: string): number {
+  let h = 0;
+  for (let i = 0; i < input.length; i++) h = (h * 31 + input.charCodeAt(i)) >>> 0;
+  return h;
+}
 
-function normalizeHex(value: string, fallback: string): string {
-  const v = value.trim();
-  if (/^#[0-9A-Fa-f]{6}$/.test(v)) return v.toUpperCase();
-  if (/^[0-9A-Fa-f]{6}$/.test(v)) return `#${v.toUpperCase()}`;
-  return fallback;
+/** Rotate an array by an amount derived from `seed` — used to vary option order on refresh. */
+function rotateBySeed<T>(arr: T[], seed?: string): T[] {
+  if (!seed || arr.length <= 1) return arr;
+  const offset = hashSeed(seed) % arr.length;
+  return [...arr.slice(offset), ...arr.slice(0, offset)];
+}
+
+/** Short, refresh-seed-derived suffix so regenerated option ids never collide with previous ones. */
+function refreshSuffix(refreshSeed?: string): string {
+  return refreshSeed ? `_r${hashSeed(refreshSeed).toString(36)}` : "";
+}
+
+/**
+ * Derive the 3 card palettes from the USER'S actual theme (custom colors or preset),
+ * never from an unrelated hard-coded list. All variants stay within the user's chosen
+ * hues; only the primary/secondary emphasis rotates between cards.
+ */
+function relatedPalettes(
+  base: Pick<BrandSystem, "primary" | "secondary" | "background">
+): Array<Pick<BrandSystem, "primary" | "secondary" | "background">> {
+  const { primary, secondary, background } = base;
+  return [
+    { primary, secondary, background },
+    { primary, secondary: primary, background },
+    { primary: secondary, secondary, background },
+  ];
 }
 
 function baseBrand(business: BusinessProfile, prefs: SitePreferences): BrandSystem {
   const pack = getFontPack(
     prefs.tone === "luxury" ? "luxury_serif" : prefs.tone === "bold" ? "tech" : "modern_sans"
   );
+  const theme = resolveSiteTheme(prefs);
   return {
-    primary: "#3867FF",
-    secondary: "#FFD166",
-    background: "#FFFFFF",
+    primary: theme.primaryColor,
+    secondary: theme.accentColor,
+    background: theme.backgroundColor,
     font: pack.previewBody,
     headingFont: pack.previewHeading,
     fontPackId: pack.id,
@@ -240,14 +272,19 @@ function baseBrand(business: BusinessProfile, prefs: SitePreferences): BrandSyst
 function applyDirectionBrand(
   base: BrandSystem,
   direction: DesignDirection,
-  paletteIndex: number
+  paletteIndex: number,
+  palettes: Array<Pick<BrandSystem, "primary" | "secondary" | "background">>
 ): BrandSystem {
-  const palette = PALETTES[paletteIndex % PALETTES.length]!;
+  const palette = palettes[paletteIndex % palettes.length]!;
   const pack = getFontPack(direction.brandOverrides.fontPackId ?? base.fontPackId);
+  // Directions only carry layout/style overrides, but strip any color fields
+  // defensively so the user's theme always wins over a design direction.
+  const { primary: _dp, secondary: _ds, background: _db, ...overridesNoColor } =
+    direction.brandOverrides;
   return {
     ...base,
     ...palette,
-    ...direction.brandOverrides,
+    ...overridesNoColor,
     font: pack.previewBody,
     headingFont: pack.previewHeading,
     fontPackId: pack.id,
@@ -264,7 +301,9 @@ function brandFromAiSpec(
   const pack = getFontPack(spec.fontPackId as SiteFontPackId);
   return {
     ...base,
-    primary: normalizeHex(spec.primary, base.primary),
+    // Anchor to the user's own brand primary — the AI is instructed to reuse it,
+    // but we never let a hallucinated color override the custom theme.
+    primary: base.primary,
     secondary: normalizeHex(spec.secondary, base.secondary),
     background: normalizeHex(spec.background, base.background),
     fontPackId: pack.id,
@@ -540,26 +579,27 @@ function buildPreview(
 async function imagesForOption(
   prefs: SitePreferences,
   business: BusinessProfile,
-  optionId: string,
   styleHint: string,
-  optionIndex = 0
+  optionIndex = 0,
+  refreshSeed?: string
 ): Promise<string[]> {
+  // Idea-first, no option/design ids in the keyword list — an id like
+  // "design_store_boutique" or "opt0" should never be able to steer the media bucket.
   const urls = await fetchCategoryImages(
     prefs.categoryId ?? "professional",
     [
+      ...prefs.businessIdea.split(/\s+/).filter(Boolean).slice(0, 6),
       business.industry,
       business.subcategory,
       prefs.businessName,
       styleHint,
-      optionId,
-      `opt${optionIndex}`,
-      ...prefs.businessIdea.split(/\s+/).filter(Boolean).slice(0, 4),
     ],
-    12
+    12,
+    { cacheBust: refreshSeed ? `${refreshSeed}-${optionIndex}` : undefined }
   );
   // Rotate so each card's hero starts on a different image even when buckets overlap.
   if (urls.length <= 1) return urls;
-  const rotate = (optionIndex * 3 + optionId.length) % urls.length;
+  const rotate = (optionIndex * 3) % urls.length;
   return [...urls.slice(rotate), ...urls.slice(0, rotate)];
 }
 
@@ -568,11 +608,14 @@ function optionFromDirection(
   business: BusinessProfile,
   direction: DesignDirection,
   paletteIndex: number,
+  palettes: Array<Pick<BrandSystem, "primary" | "secondary" | "background">>,
   images: string[],
-  seeds?: CopySeeds
+  seeds?: CopySeeds,
+  refreshSeed?: string
 ): SiteDesignOption {
   const base = baseBrand(business, prefs);
-  const brand = applyDirectionBrand(base, direction, paletteIndex);
+  const brand = applyDirectionBrand(base, direction, paletteIndex, palettes);
+  const optionId = `${direction.id}${refreshSuffix(refreshSeed)}`;
   const homeSections: SitePlanSection[] = ensureHeroFirst(
     direction.homeSectionTypes.map((s) => ({
       type: s.type,
@@ -582,9 +625,9 @@ function optionFromDirection(
     })),
     direction.heroVariant
   );
-  const blocks = fillHomeBlocks(homeSections, prefs, business, images, direction.id, seeds);
+  const blocks = fillHomeBlocks(homeSections, prefs, business, images, optionId, seeds);
   return {
-    id: direction.id,
+    id: optionId,
     name: direction.name,
     tagline: direction.tagline,
     description: direction.description,
@@ -598,20 +641,25 @@ function optionFromDirection(
 
 async function heuristicOptions(
   prefs: SitePreferences,
-  business: BusinessProfile
+  business: BusinessProfile,
+  refreshSeed?: string
 ): Promise<SiteDesignOption[]> {
-  const directions = directionsFor(business, prefs);
+  const base = baseBrand(business, prefs);
+  const palettes = relatedPalettes(base);
+  const directions = rotateBySeed(directionsFor(business, prefs), refreshSeed);
   const results: SiteDesignOption[] = [];
   for (let i = 0; i < directions.length; i++) {
     const direction = directions[i]!;
     const images = await imagesForOption(
       prefs,
       business,
-      direction.id,
       direction.brandOverrides.imageStyle ?? "Lifestyle",
-      i
+      i,
+      refreshSeed
     );
-    results.push(optionFromDirection(prefs, business, direction, i, images));
+    results.push(
+      optionFromDirection(prefs, business, direction, i, palettes, images, undefined, refreshSeed)
+    );
   }
   return results;
 }
@@ -622,7 +670,7 @@ function optionFromAiSpec(
   spec: AiDesignOptionSpec,
   images: string[],
   fallback: DesignDirection,
-  paletteIndex: number
+  refreshSeed?: string
 ): SiteDesignOption {
   const base = baseBrand(business, prefs);
   const brand = brandFromAiSpec(base, spec.brand, business);
@@ -640,12 +688,13 @@ function optionFromAiSpec(
     })),
     heroVariant
   );
-  const blocks = fillHomeBlocks(homeSections, prefs, business, images, spec.id, {
+  const optionId = `${spec.id || fallback.id}${refreshSuffix(refreshSeed)}`;
+  const blocks = fillHomeBlocks(homeSections, prefs, business, images, optionId, {
     headline: spec.headline,
     subheadline: spec.subheadline,
   });
   return {
-    id: spec.id || fallback.id,
+    id: optionId,
     name: spec.name,
     tagline: spec.tagline,
     description: spec.description,
@@ -660,22 +709,36 @@ function optionFromAiSpec(
 /**
  * Generate exactly 3 distinct homepage design directions from the user brief.
  * AI authors full specs when configured; DIRECTIONS are fallback only.
+ *
+ * Pass `refreshSeed` (e.g. Date.now()) to force a genuinely different set on
+ * "Refresh designs" — it clears the cached business profile so re-inference can
+ * react to brief/theme edits, rotates the fallback direction order, suffixes
+ * option ids, and busts the image cache so Unsplash/fallback photos change too.
  */
 export async function generateDesignOptions(
-  preferences: SitePreferences
+  preferences: SitePreferences,
+  opts?: { refreshSeed?: string; previousOptionNames?: string[] }
 ): Promise<{
   preferences: SitePreferences;
   options: SiteDesignOption[];
   usedAi: boolean;
 }> {
-  const { profile: business, usedAi: businessAi } = await runBusinessIntel(preferences);
+  const refreshSeed = opts?.refreshSeed;
+  const previousOptionNames = opts?.previousOptionNames?.filter(Boolean) ?? [];
+
+  const preferencesForRun: SitePreferences = refreshSeed
+    ? { ...preferences, businessProfile: undefined }
+    : preferences;
+
+  const { profile: business, usedAi: businessAi } = await runBusinessIntel(preferencesForRun);
   let prefs: SitePreferences = {
-    ...preferences,
+    ...preferencesForRun,
     businessProfile: business,
   };
 
-  const fallbacks = directionsFor(business, prefs);
-  let options = await heuristicOptions(prefs, business);
+  const base = baseBrand(business, prefs);
+  const fallbacks = rotateBySeed(directionsFor(business, prefs), refreshSeed);
+  let options = await heuristicOptions(prefs, business, refreshSeed);
   let usedAi = businessAi;
 
   if (isAiConfigured()) {
@@ -685,11 +748,15 @@ export async function generateDesignOptions(
 Return JSON: { options: [ { id, name, tagline, description, styleTags, heroVariant, brand, homeSections, headline, subheadline } ] }.
 
 Rules:
-- Make each option feel like a different product (different layout order, heroVariant, palette, fonts, navStyle).
+- Make each option feel like a different product (different layout order, heroVariant, fonts, navStyle) while keeping the SAME brand palette across all 3 — reuse these exact hex values for brand.primary/secondary/background in every option: primary ${base.primary}, secondary ${base.secondary}, background ${base.background}. Do not invent different colors.
 - heroVariant must be one of: fullBleed, split, centered — use each once across the 3 options.
-- brand must include: primary, secondary, background (6-digit #hex), fontPackId (editorial|modern_sans|tech|friendly|luxury_serif|clean_mono), buttonRadius, style, animation (Minimal|Subtle|Expressive), imageStyle, spacingScale (Compact|Comfortable|Airy), navStyle (pills|underline|centered|minimal|store), toneOfVoice.
+- brand must include: primary, secondary, background (6-digit #hex, matching the values above), fontPackId (editorial|modern_sans|tech|friendly|luxury_serif|clean_mono), buttonRadius, style, animation (Minimal|Subtle|Expressive), imageStyle, spacingScale (Compact|Comfortable|Airy), navStyle (pills|underline|centered|minimal|store), toneOfVoice.
 - homeSections: 4–7 sections; first must be hero; types from hero, features, products, stats, testimonials, cta_banner, about_split, gallery, logo_cloud, feature_tabs, faq_accordion, newsletter, contact, portfolio_grid.
-- Names/taglines/headline/subheadline must be specific to THIS business — not generic.
+- Names/taglines/headline/subheadline must be specific to THIS business — not generic.${
+          previousOptionNames.length
+            ? `\n- These names were already shown to the user — produce DIFFERENT names and directions this time: ${previousOptionNames.join(", ")}.`
+            : ""
+        }
 - Use ids: design_ai_a, design_ai_b, design_ai_c.`,
         user: JSON.stringify({
           businessName: prefs.businessName,
@@ -699,8 +766,9 @@ Rules:
           features: prefs.features,
           goals: prefs.keyMessages,
           business,
+          refresh: Boolean(refreshSeed),
         }),
-        temperature: 0.7,
+        temperature: refreshSeed ? 0.9 : 0.7,
       });
 
       const parsed = aiDesignOptionsResponseSchema.safeParse(raw);
@@ -713,24 +781,33 @@ Rules:
             const images = await imagesForOption(
               prefs,
               business,
-              spec.id,
               spec.brand.imageStyle,
-              i
+              i,
+              refreshSeed
             );
-            built.push(optionFromAiSpec(prefs, business, spec, images, fallback, i));
+            built.push(optionFromAiSpec(prefs, business, spec, images, fallback, refreshSeed));
           } catch {
             const images = await imagesForOption(
               prefs,
               business,
-              fallback.id,
               fallback.brandOverrides.imageStyle ?? "Lifestyle",
-              i
+              i,
+              refreshSeed
             );
             built.push(
-              optionFromDirection(prefs, business, fallback, i, images, {
-                headline: spec.headline,
-                subheadline: spec.subheadline,
-              })
+              optionFromDirection(
+                prefs,
+                business,
+                fallback,
+                i,
+                relatedPalettes(base),
+                images,
+                {
+                  headline: spec.headline,
+                  subheadline: spec.subheadline,
+                },
+                refreshSeed
+              )
             );
           }
         }

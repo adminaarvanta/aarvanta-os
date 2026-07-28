@@ -344,7 +344,7 @@ export function BuildOsClient({
     return created.job.id;
   }
 
-  async function proposeDesigns() {
+  async function proposeDesigns(refresh = false) {
     if (prompt.trim().length < 12) {
       setError("Describe your business in a sentence or two.");
       return;
@@ -354,7 +354,21 @@ export function BuildOsClient({
       setStep("name");
       return;
     }
-    const preferences = buildPreferences();
+    const previousOptionNames = refresh
+      ? designOptions.map((o) => o.name).filter(Boolean)
+      : undefined;
+    const basePreferences = buildPreferences();
+    // On refresh, drop everything that would make regeneration deterministic:
+    // cached options/selection and the cached business/brand profile.
+    const preferences: SitePreferences = refresh
+      ? {
+          ...basePreferences,
+          designOptions: undefined,
+          selectedDesignOptionId: undefined,
+          businessProfile: undefined,
+          brandSystem: undefined,
+        }
+      : basePreferences;
     setDesignsBusy(true);
     setError(null);
     try {
@@ -363,7 +377,11 @@ export function BuildOsClient({
       const res = await fetch(`/api/build/${jobId}/design-options`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify(
+          refresh
+            ? { ...preferences, refreshSeed: String(Date.now()), previousOptionNames }
+            : preferences
+        ),
       });
       if (!res.ok) {
         const body = (await res.json()) as { error?: { message?: string } };
@@ -1193,7 +1211,7 @@ export function BuildOsClient({
                     }
                   }}
                   onConfirm={() => void generate()}
-                  onRefresh={() => void proposeDesigns()}
+                  onRefresh={() => void proposeDesigns(true)}
                   onBack={() => setStep("apps")}
                   confirmLabel="Build website"
                 />

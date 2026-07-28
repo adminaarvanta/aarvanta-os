@@ -17,7 +17,11 @@ function heuristicBusiness(preferences: SitePreferences): BusinessProfile {
   let primaryGoal = "Generate Leads";
   let pricing: BusinessProfile["pricing"] = "Medium";
 
-  if (/(toy|shop|store|ecommerce|retail|product)/.test(idea)) {
+  if (/(cement|concrete|pre-?cast|construction|building materials?)/.test(idea)) {
+    industry = "Manufacturing";
+    subcategory = "Building Materials";
+    primaryGoal = "Showcase Products";
+  } else if (/(toy|shop|store|ecommerce|retail|\bproducts?\b)/.test(idea)) {
     industry = "Retail";
     subcategory = /toy/.test(idea) ? "Educational Toys" : "Online Store";
     primaryGoal = "Sell Products";

@@ -35,9 +35,12 @@ export function createSiteBuildJob(
 }
 
 /** Propose ≥3 homepage design directions for the user to choose. */
-export async function proposeDesignOptions(job: SiteBuildJob): Promise<SiteBuildJob> {
+export async function proposeDesignOptions(
+  job: SiteBuildJob,
+  opts?: { refreshSeed?: string; previousOptionNames?: string[] }
+): Promise<SiteBuildJob> {
   try {
-    const { preferences, usedAi } = await generateDesignOptions(job.preferences);
+    const { preferences, usedAi } = await generateDesignOptions(job.preferences, opts);
     return {
       ...job,
       status: "designs_ready",

@@ -58,11 +58,17 @@ export function buildContentBrief(preferences: SitePreferences): ContentBrief {
     ...entities.nouns.slice(0, 5),
     ...preferences.businessIdea.split(/\s+/).filter((w) => w.length > 3).slice(0, 4),
   ];
+  // Template keywords can carry fashion-adjacent words (e.g. "boutique", "lookbook")
+  // that don't belong to the actual business — never let those override the brief.
+  const UNSAFE_TEMPLATE_KEYWORD = /\b(boutique|lookbook|fashion|apparel|clothing)\b/i;
+  const safeTemplateKeywords = template.imageKeywords.filter(
+    (k) => !UNSAFE_TEMPLATE_KEYWORD.test(k)
+  );
   // Prefer idea nouns over generic template keywords so media buckets match the business.
   const imageKeywords = [
     ...ideaKeywords,
     preferences.businessName,
-    ...template.imageKeywords.slice(0, 1),
+    ...safeTemplateKeywords.slice(0, 1),
   ].filter(Boolean);
 
   return {

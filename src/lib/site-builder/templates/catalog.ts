@@ -59,7 +59,7 @@ const RAW_SITE_TEMPLATES: SiteTemplateDefinition[] = [
     defaultPages: ["home", "products", "about", "contact"],
     defaultFeatures: ["ecommerce", "contact_form", "newsletter", "seo_pack"],
     defaultCta: "buy",
-    imageKeywords: ["boutique", "lifestyle product", "retail store"],
+    imageKeywords: ["product display", "retail storefront", "brand packaging"],
     previewAccent: "#C45C26",
     homeExtras: [
       r("products", "Featured products", "Hero SKUs with prices"),

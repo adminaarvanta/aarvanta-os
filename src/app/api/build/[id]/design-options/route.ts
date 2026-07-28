@@ -33,9 +33,29 @@ export async function POST(req: Request, context: RouteContext) {
   const body = await parseJsonBody<unknown>(req);
   if (body instanceof NextResponse) return body;
 
+  // refreshSeed/previousOptionNames aren't part of SitePreferences — pull them out
+  // before schema validation so a "Refresh designs" request doesn't fail parsing.
+  let refreshSeed: string | undefined;
+  let previousOptionNames: string[] | undefined;
+  let preferencesBody: Record<string, unknown> | undefined;
+  if (body && typeof body === "object") {
+    const raw = { ...(body as Record<string, unknown>) };
+    if (typeof raw.refreshSeed === "string" && raw.refreshSeed.trim()) {
+      refreshSeed = raw.refreshSeed.trim();
+    }
+    if (Array.isArray(raw.previousOptionNames)) {
+      previousOptionNames = raw.previousOptionNames.filter(
+        (n): n is string => typeof n === "string" && n.trim().length > 0
+      );
+    }
+    delete raw.refreshSeed;
+    delete raw.previousOptionNames;
+    preferencesBody = raw;
+  }
+
   let working = job;
-  if (body && typeof body === "object" && Object.keys(body as object).length > 0) {
-    const parsed = sitePreferencesSchema.safeParse(body);
+  if (preferencesBody && Object.keys(preferencesBody).length > 0) {
+    const parsed = sitePreferencesSchema.safeParse(preferencesBody);
     if (!parsed.success) {
       return NextResponse.json(
         { error: { code: "VALIDATION", message: parsed.error.message } },
@@ -45,7 +65,7 @@ export async function POST(req: Request, context: RouteContext) {
     working = updateSitePreferences(job, normalizeSitePreferences(parsed.data));
   }
 
-  const next = await proposeDesignOptions(working);
+  const next = await proposeDesignOptions(working, { refreshSeed, previousOptionNames });
   await repo.save(next);
 
   if (next.status === "failed") {

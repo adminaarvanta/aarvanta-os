@@ -74,6 +74,21 @@ function inferTone(prompt: string): SiteTone {
 }
 
 /**
+ * Category prior inferred straight from the raw prompt, before any template is
+ * resolved. Catches cases like "cement precast" that would otherwise fall
+ * through to whatever the default template happens to be.
+ */
+function inferCategoryFromPrompt(prompt: string): SiteCategoryId | undefined {
+  const p = prompt.toLowerCase();
+  if (
+    /(cement|concrete|pre-?cast|construction|building materials?|industrial|manufactur)/.test(p)
+  ) {
+    return "professional";
+  }
+  return undefined;
+}
+
+/**
  * Enrich preferences from a prompt.
  * Category/template are optional priors — the ARIA pipeline can infer them.
  */
@@ -85,7 +100,8 @@ export function inferPreferencesFromPrompt(
   } = {}
 ): SitePreferences {
   const trimmed = prompt.trim();
-  const template = resolveTemplatePrior(overrides.templateId, overrides.categoryId);
+  const categoryPrior = overrides.categoryId ?? inferCategoryFromPrompt(trimmed);
+  const template = resolveTemplatePrior(overrides.templateId, categoryPrior);
 
   const siteType: SiteType = overrides.siteType ?? template.siteType;
   const themePreset: SiteThemePreset =
@@ -107,7 +123,7 @@ export function inferPreferencesFromPrompt(
     businessIdea: clip(fullIdea, BUSINESS_IDEA_MAX),
     targetAudience: overrides.targetAudience,
     countryBase: overrides.countryBase ?? "UK",
-    categoryId: overrides.categoryId ?? template.categoryId,
+    categoryId: overrides.categoryId ?? categoryPrior ?? template.categoryId,
     customCategoryLabel: overrides.customCategoryLabel,
     templateId: overrides.templateId ?? template.id,
     tone: overrides.tone ?? template.defaultTone ?? inferTone(trimmed),

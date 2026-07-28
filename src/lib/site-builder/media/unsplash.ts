@@ -22,19 +22,55 @@ function hashOffset(input: string): number {
 }
 
 /**
+ * Strip auto-generated option/template ids and unsafe fashion-adjacent words from
+ * keyword lists before they reach bucket matching or search queries. Without this,
+ * ids like "design_store_boutique" (a template/option identifier, not a business
+ * word) leak into the media search and hijack the bucket.
+ */
+export function sanitizeMediaKeywords(keywords: string[] = []): string[] {
+  return keywords
+    .filter((k): k is string => Boolean(k))
+    .map((k) => k.trim())
+    .filter(Boolean)
+    .filter((k) => !/^design_/i.test(k))
+    .filter((k) => !/^opt\d+$/i.test(k))
+    .map((k) =>
+      k
+        .replace(/\bboutique\b/gi, "")
+        .replace(/\blookbook\b/gi, "")
+        .replace(/\bfashion\b/gi, "")
+        .replace(/\bapparel\b/gi, "")
+        .trim()
+    )
+    .filter(Boolean);
+}
+
+/**
  * Map category + keywords to a media bucket so toy shops don't get shoe stock photos.
  * The old ecommerce default led with Unsplash photo-1542291026 (red Nike sneaker).
+ *
+ * Construction/industrial is checked FIRST so business ideas like "cement precast"
+ * never fall through into fashion (previously "boutique" template ids and even a
+ * bare "wear" substring could steer these into clothing imagery).
  */
 export function resolveMediaBucket(
   categoryKey: string,
   keywords: string[] = []
 ): string {
-  const blob = `${categoryKey} ${keywords.join(" ")}`.toLowerCase();
+  const safeKeywords = sanitizeMediaKeywords(keywords);
+  const blob = `${categoryKey} ${safeKeywords.join(" ")}`.toLowerCase();
 
+  if (
+    /(cement|concrete|pre-?cast|construction|building materials?|rebar|masonry|quarry|industrial|manufactur|factory)/.test(
+      blob
+    )
+  )
+    return "construction";
   if (/(shoe|sneaker|footwear|boot)/.test(blob)) return "footwear";
   if (/(toy|wooden|kids|children|play|puzzle|plush|doll)/.test(blob)) return "toys";
   if (/(food|restaurant|cafe|bakery|coffee|kitchen|dining)/.test(blob)) return "food";
-  if (/(fashion|apparel|clothing|dress|wear|boutique)/.test(blob)) return "fashion";
+  if (/\b(fashion|apparel|clothing|dresses?|menswear|womenswear|streetwear)\b/.test(blob))
+    return "fashion";
   if (/(beauty|skincare|cosmetic|makeup|spa)/.test(blob)) return "beauty";
   if (/(home|furniture|decor|interior|living)/.test(blob)) return "home";
   if (/(jewelry|jewellery|watch|accessory)/.test(blob)) return "jewelry";
@@ -72,6 +108,13 @@ const FALLBACK_IDS: Record<string, string[]> = {
     "1542291026-7eec264c27ff",
     "1460353581641-37baddab0fa2",
     "1515955657353-e5ac0f0277c0",
+  ],
+  construction: [
+    "1504307651254-35680f356dfd",
+    "1581094794329-c8112a89af12",
+    "1541888946425-d81bb19240f5",
+    "1503387762-592deb58ef4e",
+    "1589939705384-5185137a7f0f",
   ],
   fashion: [
     "1483985988355-763728e1935b",
@@ -168,25 +211,30 @@ function unsplashCdn(id: string, w = 1600): string {
 export async function fetchCategoryImages(
   categoryKey: string,
   keywords: string[],
-  count = 8
+  count = 8,
+  opts?: { cacheBust?: string }
 ): Promise<string[]> {
-  const bucket = resolveMediaBucket(categoryKey, keywords);
-  const seedKey = keywords.filter(Boolean).join(" ").trim() || bucket;
-  const cacheKey = `${bucket}:${seedKey}:${count}`;
+  const safeKeywords = sanitizeMediaKeywords(keywords);
+  const bucket = resolveMediaBucket(categoryKey, safeKeywords);
+  const seedKey = safeKeywords.join(" ").trim() || bucket;
+  const cacheBust = opts?.cacheBust?.trim() || "";
+  // cacheBust in the key means a "Refresh designs" click can never replay a
+  // previously memoized result set — without it every refresh returned identical images.
+  const cacheKey = `${bucket}:${seedKey}:${count}:${cacheBust}`;
   const cached = unsplashCache.get(cacheKey);
   if (cached) return cached;
 
   const key = process.env.UNSPLASH_ACCESS_KEY?.trim();
+  const bustOffset = cacheBust ? hashOffset(cacheBust) : 0;
   if (key) {
     try {
-      const query = encodeURIComponent(
-        keywords.filter(Boolean).slice(0, 4).join(" ") || bucket
-      );
+      const query = encodeURIComponent(safeKeywords.slice(0, 4).join(" ") || bucket);
+      const page = cacheBust ? (bustOffset % 5) + 1 : 1;
       const res = await fetch(
-        `https://api.unsplash.com/search/photos?query=${query}&per_page=${count}&orientation=landscape`,
+        `https://api.unsplash.com/search/photos?query=${query}&per_page=${count}&orientation=landscape&page=${page}`,
         {
           headers: { Authorization: `Client-ID ${key}` },
-          next: { revalidate: 3600 },
+          next: { revalidate: cacheBust ? 0 : 3600 },
         }
       );
       if (res.ok) {
@@ -207,11 +255,11 @@ export async function fetchCategoryImages(
   }
 
   const ids = FALLBACK_IDS[bucket] ?? FALLBACK_IDS.default;
-  const offset = hashOffset(seedKey) % Math.max(ids.length, 1);
+  const offset = (hashOffset(seedKey) + bustOffset) % Math.max(ids.length, 1);
   const urls = Array.from({ length: count }, (_, i) => {
     const id = ids[(offset + i) % ids.length];
     if (id && /^\d/.test(id)) return unsplashCdn(id);
-    return picsum(`${seedKey}-${i}`);
+    return picsum(`${seedKey}-${cacheBust}-${i}`);
   });
   unsplashCache.set(cacheKey, urls);
   return urls;

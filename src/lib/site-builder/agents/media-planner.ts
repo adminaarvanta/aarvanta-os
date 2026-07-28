@@ -60,12 +60,14 @@ export async function runMediaPlanner(
   const categoryId = (preferences.categoryId ??
     site.categoryId ??
     "professional") as SiteCategoryId;
+  // Idea words first so the actual business description outweighs generic
+  // industry/subcategory labels when resolving the media bucket.
   const keywords = [
+    ...preferences.businessIdea.split(/\s+/).filter(Boolean).slice(0, 8),
     business.industry,
     business.subcategory,
     brand.imageStyle,
     preferences.businessName,
-    ...preferences.businessIdea.split(/\s+/).filter(Boolean).slice(0, 8),
   ];
   const images = await fetchCategoryImages(categoryId, keywords, 24);
   const assets: SiteAssetRef[] = [];
