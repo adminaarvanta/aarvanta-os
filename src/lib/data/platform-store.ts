@@ -19,6 +19,10 @@ import {
   buildDemoHrDocuments,
   buildDemoHrEmployees,
   buildDemoHrCases,
+  buildDemoHrJobs,
+  buildDemoHrPunches,
+  buildDemoHrLeaveRequests,
+  buildDemoHrExitCases,
   buildDemoInstalledAgents,
   buildDemoKnowledgeGraphEdges,
   buildDemoKnowledgeGraphNodes,
@@ -52,6 +56,10 @@ import type {
   HrCourse,
   HrDocument,
   HrEmployee,
+  HrExitCase,
+  HrJob,
+  HrLeaveRequest,
+  HrPunch,
   InstalledAgent,
   KnowledgeGraphEdge,
   KnowledgeGraphNode,
@@ -209,6 +217,19 @@ const hrEmployeeRepository = createScopedRepository<HrEmployee>(
   "hr_employees",
   buildDemoHrEmployees
 );
+const hrJobRepository = createScopedRepository<HrJob>("hr_jobs", buildDemoHrJobs);
+const hrPunchRepository = createScopedRepository<HrPunch>(
+  "hr_punches",
+  buildDemoHrPunches
+);
+const hrLeaveRepository = createScopedRepository<HrLeaveRequest>(
+  "hr_leave_requests",
+  buildDemoHrLeaveRequests
+);
+const hrExitRepository = createScopedRepository<HrExitCase>(
+  "hr_exit_cases",
+  buildDemoHrExitCases
+);
 const hrCourseRepository = createScopedRepository<HrCourse>(
   "hr_courses",
   buildDemoHrCourses
@@ -281,6 +302,10 @@ const legalContractsStore = createCrudStore(
 );
 const hrCandidatesStore = createCrudStore(hrCandidateRepository, "candidate");
 const hrEmployeesStore = createCrudStore(hrEmployeeRepository, "employee");
+const hrJobsStore = createCrudStore(hrJobRepository, "job");
+const hrPunchesStore = createCrudStore(hrPunchRepository, "punch");
+const hrLeaveStore = createCrudStore(hrLeaveRepository, "leave");
+const hrExitStore = createCrudStore(hrExitRepository, "exit");
 const hrCoursesStore = createCrudStore(hrCourseRepository, "course");
 const hrDocumentsStore = createCrudStore(hrDocumentRepository, "hr_doc");
 const hrCasesStore = createCrudStore(hrCaseRepository, "hr_case");
@@ -476,6 +501,45 @@ export function getHrStore() {
     },
     removeEmployee(id: string, scope: TenantScope) {
       return hrEmployeesStore.remove(id, scope);
+    },
+    listJobs(scope: TenantScope) {
+      return hrJobsStore.list(scope);
+    },
+    getJob(id: string, scope: TenantScope) {
+      return hrJobsStore.get(id, scope);
+    },
+    createJob(item: CreateInput<HrJob>) {
+      return hrJobsStore.create(item);
+    },
+    setJob(item: HrJob) {
+      return hrJobsStore.set(item);
+    },
+    removeJob(id: string, scope: TenantScope) {
+      return hrJobsStore.remove(id, scope);
+    },
+    listPunches(scope: TenantScope) {
+      return hrPunchesStore.list(scope);
+    },
+    createPunch(item: CreateInput<HrPunch>) {
+      return hrPunchesStore.create(item);
+    },
+    listLeaveRequests(scope: TenantScope) {
+      return hrLeaveStore.list(scope);
+    },
+    createLeaveRequest(item: CreateInput<HrLeaveRequest>) {
+      return hrLeaveStore.create(item);
+    },
+    setLeaveRequest(item: HrLeaveRequest) {
+      return hrLeaveStore.set(item);
+    },
+    listExitCases(scope: TenantScope) {
+      return hrExitStore.list(scope);
+    },
+    createExitCase(item: CreateInput<HrExitCase>) {
+      return hrExitStore.create(item);
+    },
+    setExitCase(item: HrExitCase) {
+      return hrExitStore.set(item);
     },
     listCourses(scope: TenantScope) {
       return hrCoursesStore.list(scope);
