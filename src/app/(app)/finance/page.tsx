@@ -1,210 +1,155 @@
-import { Wallet } from "lucide-react";
-import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
-import { getFinanceStore } from "@/lib/data/platform-store";
+import { PendingLink } from "@/components/layout/navigation-provider";
+import { FinancePageHeader } from "@/components/finance/finance-nav";
+import { FinancePanel, FinanceStatStrip } from "@/components/finance/finance-ui";
+import { formatFinanceCurrency } from "@/lib/finance/format";
 import {
   buildBalanceSheet,
   buildProfitAndLoss,
-  buildTrialBalance,
 } from "@/lib/finance/reports";
+import { getFinanceStore } from "@/lib/data/platform-store";
 import { getTenantScope } from "@/lib/tenant/context";
 
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-export default async function FinancePage() {
+export default async function FinanceOverviewPage() {
   const scope = await getTenantScope();
   const store = getFinanceStore();
-  const [invoices, expenses, budgets, chartOfAccounts, journalEntries, trialBalance, pl, balanceSheet] =
+  const [invoices, expenses, budgets, journalEntries, pl, balanceSheet] =
     await Promise.all([
-    store.list(scope),
-    store.listExpenses(scope),
-    store.listBudgets(scope),
-    store.listChartOfAccounts(scope),
-    store.listJournalEntries(scope),
-    buildTrialBalance(scope),
-    buildProfitAndLoss(scope),
-    buildBalanceSheet(scope),
-  ]);
+      store.list(scope),
+      store.listExpenses(scope),
+      store.listBudgets(scope),
+      store.listJournalEntries(scope),
+      buildProfitAndLoss(scope),
+      buildBalanceSheet(scope),
+    ]);
 
   const invoiceValue = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
   const expenseValue = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const overdue = invoices.filter((i) => i.status === "overdue").length;
   const allocatedBudget = budgets.reduce((sum, budget) => sum + budget.allocated, 0);
 
   return (
-    <ModulePageShell
-      icon={Wallet}
-      title="Finance OS"
-      description="Track invoices, expenses, budgets, journal ledger, and financial reports."
-    >
-      <div className="space-y-8">
-        <StatGrid
-          items={[
-            { label: "Invoices", value: invoices.length, sub: formatCurrency(invoiceValue, "GBP") },
-            { label: "Expenses", value: expenses.length, sub: formatCurrency(expenseValue, "GBP") },
-            {
-              label: "Budget allocated",
-              value: formatCurrency(allocatedBudget, "GBP"),
-              sub: "Across departments",
-            },
-            {
-              label: "Net profit (YTD)",
-              value: formatCurrency(pl.netProfit, "GBP"),
-              sub: `Revenue ${formatCurrency(pl.revenue, "GBP")}`,
-            },
-            {
-              label: "Journal entries",
-              value: journalEntries.length,
-              sub: "Double-entry ledger",
-            },
-          ]}
-        />
+    <div className="space-y-6">
+      <FinancePageHeader
+        title="Money & ledger"
+        description="Invoices, expenses, double-entry ledger, and UK reports in one workspace."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <PendingLink
+              href="/finance/invoices"
+              className="inline-flex items-center justify-center rounded-lg bg-[color:var(--finance-accent)] px-4 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+            >
+              View invoices
+            </PendingLink>
+            <PendingLink
+              href="/finance/reports"
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-[color:var(--finance-accent)]/40 hover:bg-surface-hover"
+            >
+              Reports
+            </PendingLink>
+          </div>
+        }
+      />
 
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Invoices</h3>
-          <CardList
-            items={invoices.map((invoice) => ({
-              id: invoice.id,
-              title: `${invoice.number} · ${invoice.clientName}`,
-              body: formatCurrency(invoice.amount, invoice.currency),
-              meta: `Due ${new Date(invoice.dueDate).toLocaleDateString()}`,
-              badge: invoice.status,
-            }))}
-          />
-        </section>
+      <FinanceStatStrip
+        items={[
+          {
+            label: "Invoices",
+            value: invoices.length,
+            hint: formatFinanceCurrency(invoiceValue),
+            tone: "sky",
+          },
+          {
+            label: "Expenses",
+            value: expenses.length,
+            hint: formatFinanceCurrency(expenseValue),
+            tone: "amber",
+          },
+          {
+            label: "Net profit",
+            value: formatFinanceCurrency(pl.netProfit, pl.currency),
+            hint: `Revenue ${formatFinanceCurrency(pl.revenue, pl.currency)}`,
+            tone: pl.netProfit >= 0 ? "emerald" : "rose",
+          },
+          {
+            label: "Journal entries",
+            value: journalEntries.length,
+            hint: "Double-entry ledger",
+            tone: "indigo",
+          },
+          {
+            label: "Budgets",
+            value: formatFinanceCurrency(allocatedBudget),
+            hint: `${overdue} overdue invoices`,
+            tone: "teal",
+          },
+        ]}
+      />
 
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Expenses</h3>
-          <CardList
-            items={expenses.map((expense) => ({
-              id: expense.id,
-              title: `${expense.vendor} · ${expense.category}`,
-              body: formatCurrency(expense.amount, expense.currency),
-              meta: `Date ${new Date(expense.date).toLocaleDateString()}`,
-            }))}
-          />
-        </section>
-
-        {journalEntries.length > 0 ? (
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Journal ledger</h3>
-            <CardList
-              items={journalEntries.map((entry) => ({
-                id: entry.id,
-                title: `${entry.reference} · ${entry.description}`,
-                body: `${entry.lines.length} lines`,
-                meta: entry.date,
-                badge: entry.status,
-              }))}
-            />
-          </section>
-        ) : null}
-
-        {trialBalance.length > 0 ? (
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Trial balance</h3>
-            <CardList
-              items={trialBalance.map((row) => ({
-                id: row.accountCode,
-                title: `${row.accountCode} · ${row.accountName}`,
-                body: formatCurrency(row.balance, "GBP"),
-                meta: `Dr ${formatCurrency(row.debit, "GBP")} · Cr ${formatCurrency(row.credit, "GBP")}`,
-                badge: row.type,
-              }))}
-            />
-          </section>
-        ) : null}
-
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Profit &amp; loss</h3>
-          <CardList
-            items={[
-              {
-                id: "pl-revenue",
-                title: "Revenue",
-                body: formatCurrency(pl.revenue, pl.currency),
-              },
-              {
-                id: "pl-cogs",
-                title: "Cost of sales",
-                body: formatCurrency(pl.cogs, pl.currency),
-              },
-              {
-                id: "pl-opex",
-                title: "Operating expenses",
-                body: formatCurrency(pl.operatingExpenses, pl.currency),
-              },
-              {
-                id: "pl-net",
-                title: "Net profit",
-                body: formatCurrency(pl.netProfit, pl.currency),
-                badge: pl.netProfit >= 0 ? "profit" : "loss",
-              },
-            ]}
-          />
-        </section>
-
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Balance sheet</h3>
-          <CardList
-            items={[
-              {
-                id: "bs-assets",
-                title: "Total assets",
-                body: formatCurrency(balanceSheet.assets, balanceSheet.currency),
-              },
-              {
-                id: "bs-liabilities",
-                title: "Total liabilities",
-                body: formatCurrency(balanceSheet.liabilities, balanceSheet.currency),
-              },
-              {
-                id: "bs-equity",
-                title: "Total equity",
-                body: formatCurrency(balanceSheet.equity, balanceSheet.currency),
-                meta: `As of ${balanceSheet.asOf}`,
-              },
-            ]}
-          />
-        </section>
-
-        {chartOfAccounts.length > 0 ? (
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">
-              Chart of accounts (UK)
-            </h3>
-            <CardList
-              items={chartOfAccounts.map((account) => ({
-                id: account.id,
-                title: `${account.code} · ${account.name}`,
-                body: account.type,
-                meta: account.vatApplicable ? "VAT applicable" : "No VAT",
-                badge: account.active ? "active" : "inactive",
-              }))}
-            />
-          </section>
-        ) : null}
-
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Budgets</h3>
-          <CardList
-            items={budgets.map((budget) => ({
-              id: budget.id,
-              title: `${budget.department} · ${budget.period}`,
-              body: `${formatCurrency(budget.spent, budget.currency)} spent of ${formatCurrency(
-                budget.allocated,
-                budget.currency
-              )}`,
-              meta: `${Math.round((budget.spent / budget.allocated) * 100)}% utilized`,
-            }))}
-          />
-        </section>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <FinancePanel
+          title="Today’s focus"
+          description="Jump into the module that needs attention."
+        >
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Collect receivables</span>
+              <PendingLink
+                href="/finance/invoices"
+                className="font-medium text-[color:var(--finance-accent)] hover:underline"
+              >
+                Invoices →
+              </PendingLink>
+            </li>
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Review spend</span>
+              <PendingLink
+                href="/finance/expenses"
+                className="font-medium text-[color:var(--finance-accent)] hover:underline"
+              >
+                Expenses →
+              </PendingLink>
+            </li>
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Close the books</span>
+              <PendingLink
+                href="/finance/reports"
+                className="font-medium text-[color:var(--finance-accent)] hover:underline"
+              >
+                P&amp;L / BS →
+              </PendingLink>
+            </li>
+          </ul>
+        </FinancePanel>
+        <FinancePanel
+          title="Balance snapshot"
+          description={`As of ${balanceSheet.asOf}`}
+        >
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Assets</span>
+              <span className="font-medium text-foreground">
+                {formatFinanceCurrency(balanceSheet.assets, balanceSheet.currency)}
+              </span>
+            </li>
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Liabilities</span>
+              <span className="font-medium text-foreground">
+                {formatFinanceCurrency(
+                  balanceSheet.liabilities,
+                  balanceSheet.currency
+                )}
+              </span>
+            </li>
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Equity</span>
+              <span className="font-medium text-foreground">
+                {formatFinanceCurrency(balanceSheet.equity, balanceSheet.currency)}
+              </span>
+            </li>
+          </ul>
+        </FinancePanel>
       </div>
-    </ModulePageShell>
+    </div>
   );
 }
 

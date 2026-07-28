@@ -402,6 +402,50 @@ font {
   animation: hr-fade-up 0.35s ease-out both;
 }
 
+.finance-os {
+  --finance-accent: #0f766e;
+  --finance-accent-soft: #ccfbf1;
+  --finance-profit: #059669;
+  --finance-profit-soft: #ecfdf5;
+  --finance-loss: #dc2626;
+  --finance-loss-soft: #fef2f2;
+  --finance-amber: #d97706;
+  --finance-amber-soft: #fffbeb;
+  --finance-sky: #0284c7;
+  --finance-sky-soft: #e0f2fe;
+  --finance-indigo: #4f46e5;
+  --finance-indigo-soft: #eef2ff;
+  --finance-teal: #0d9488;
+  --finance-teal-soft: #f0fdfa;
+  --finance-panel-bg: rgba(255, 255, 255, 0.96);
+  --finance-panel-border: rgba(15, 118, 110, 0.14);
+  --finance-table-head: rgba(15, 118, 110, 0.05);
+}
+
+html.dark .finance-os {
+  --finance-accent: #2dd4bf;
+  --finance-accent-soft: rgba(45, 212, 191, 0.14);
+  --finance-profit: #34d399;
+  --finance-profit-soft: rgba(52, 211, 153, 0.12);
+  --finance-loss: #f87171;
+  --finance-loss-soft: rgba(248, 113, 113, 0.12);
+  --finance-amber: #fbbf24;
+  --finance-amber-soft: rgba(251, 191, 36, 0.12);
+  --finance-sky: #38bdf8;
+  --finance-sky-soft: rgba(56, 189, 248, 0.12);
+  --finance-indigo: #818cf8;
+  --finance-indigo-soft: rgba(129, 140, 248, 0.12);
+  --finance-teal: #2dd4bf;
+  --finance-teal-soft: rgba(45, 212, 191, 0.1);
+  --finance-panel-bg: rgba(15, 23, 42, 0.72);
+  --finance-panel-border: rgba(45, 212, 191, 0.18);
+  --finance-table-head: rgba(45, 212, 191, 0.06);
+}
+
+.finance-tab-enter {
+  animation: hr-fade-up 0.35s ease-out both;
+}
+
 .hr-fade-up {
   animation: hr-fade-up 0.4s ease-out both;
 }
