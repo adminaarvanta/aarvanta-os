@@ -18,6 +18,10 @@ import {
   buildDemoHrCourses,
   buildDemoHrDocuments,
   buildDemoHrEmployees,
+  buildDemoHrJobs,
+  buildDemoHrPunches,
+  buildDemoHrLeaveRequests,
+  buildDemoHrExitCases,
   buildDemoHrCases,
   buildDemoInstalledAgents,
   buildDemoKnowledgeGraphEdges,
@@ -52,6 +56,10 @@ import type {
   HrCourse,
   HrDocument,
   HrEmployee,
+  HrExitCase,
+  HrJob,
+  HrLeaveRequest,
+  HrPunch,
   InstalledAgent,
   KnowledgeGraphEdge,
   KnowledgeGraphNode,
@@ -221,6 +229,13 @@ const hrCaseRepository = createScopedRepository<HrCase>(
   "hr_cases",
   buildDemoHrCases
 );
+const hrJobRepository = createScopedRepository<HrJob>("hr_jobs", buildDemoHrJobs);
+const hrPunchRepository = createScopedRepository<HrPunch>("hr_punches", buildDemoHrPunches);
+const hrLeaveRepository = createScopedRepository<HrLeaveRequest>(
+  "hr_leave_requests",
+  buildDemoHrLeaveRequests
+);
+const hrExitRepository = createScopedRepository<HrExitCase>("hr_exit_cases", buildDemoHrExitCases);
 const autonomousRepository = createScopedRepository<AutonomousTask>(
   "autonomous_tasks",
   buildDemoAutonomousTasks
@@ -284,6 +299,10 @@ const hrEmployeesStore = createCrudStore(hrEmployeeRepository, "employee");
 const hrCoursesStore = createCrudStore(hrCourseRepository, "course");
 const hrDocumentsStore = createCrudStore(hrDocumentRepository, "hr_doc");
 const hrCasesStore = createCrudStore(hrCaseRepository, "hr_case");
+const hrJobsStore = createCrudStore(hrJobRepository, "job");
+const hrPunchesStore = createCrudStore(hrPunchRepository, "punch");
+const hrLeaveStore = createCrudStore(hrLeaveRepository, "leave");
+const hrExitStore = createCrudStore(hrExitRepository, "exit");
 const autonomousStore = createCrudStore(autonomousRepository, "task");
 const ssoStore = createCrudStore(ssoRepository, "sso");
 const franchiseStore = createCrudStore(franchiseRepository, "franchise");
@@ -539,6 +558,45 @@ export function getHrStore() {
     async listPendingApprovals(scope: TenantScope) {
       const cases = await hrCasesStore.list(scope);
       return cases.filter((item) => item.status === "pending_approval");
+    },
+    listJobs(scope: TenantScope) {
+      return hrJobsStore.list(scope);
+    },
+    getJob(id: string, scope: TenantScope) {
+      return hrJobsStore.get(id, scope);
+    },
+    createJob(item: CreateInput<HrJob>) {
+      return hrJobsStore.create(item);
+    },
+    setJob(item: HrJob) {
+      return hrJobsStore.set(item);
+    },
+    removeJob(id: string, scope: TenantScope) {
+      return hrJobsStore.remove(id, scope);
+    },
+    listPunches(scope: TenantScope) {
+      return hrPunchesStore.list(scope);
+    },
+    createPunch(item: CreateInput<HrPunch>) {
+      return hrPunchesStore.create(item);
+    },
+    listLeaveRequests(scope: TenantScope) {
+      return hrLeaveStore.list(scope);
+    },
+    createLeaveRequest(item: CreateInput<HrLeaveRequest>) {
+      return hrLeaveStore.create(item);
+    },
+    setLeaveRequest(item: HrLeaveRequest) {
+      return hrLeaveStore.set(item);
+    },
+    listExitCases(scope: TenantScope) {
+      return hrExitStore.list(scope);
+    },
+    createExitCase(item: CreateInput<HrExitCase>) {
+      return hrExitStore.create(item);
+    },
+    setExitCase(item: HrExitCase) {
+      return hrExitStore.set(item);
     },
   };
 }

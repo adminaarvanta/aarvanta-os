@@ -28,6 +28,8 @@ export interface OnboardingCandidate {
   signingLink?: string;
   ceoSigningLink?: string;
   archivedFiles: string[];
+  employeeId?: string;
+  atsCandidateId?: string;
   source: "os" | "sidecar";
   createdAt: string;
   updatedAt: string;
@@ -56,6 +58,5 @@ export interface OnboardingDashboard {
   stats: OnboardingStats;
   candidates: OnboardingCandidate[];
   ceoQueue: CeoCountersignItem[];
-  mode: "demo" | "sidecar";
-  sidecarConfigured: boolean;
+  mode: "native";
 }

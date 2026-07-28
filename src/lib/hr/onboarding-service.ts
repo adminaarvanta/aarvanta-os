@@ -17,7 +17,6 @@ const DEMO_CANDIDATES: OnboardingCandidate[] = [
     openedAt: "2026-07-10T14:22:00.000Z",
     candidateSignedAt: "2026-07-12T11:05:00.000Z",
     submissionId: "sub_demo_priya",
-    ceoSigningLink: "https://sign.aarvanta.co/s/demo-ceo-priya",
     archivedFiles: [],
     source: "os",
     createdAt: "2026-07-08T10:00:00.000Z",
@@ -33,7 +32,6 @@ const DEMO_CANDIDATES: OnboardingCandidate[] = [
     sentAt: "2026-07-14T08:30:00.000Z",
     openedAt: "2026-07-14T16:10:00.000Z",
     submissionId: "sub_demo_james",
-    signingLink: "https://sign.aarvanta.co/s/demo-james",
     archivedFiles: [],
     source: "os",
     createdAt: "2026-07-13T09:00:00.000Z",
@@ -90,44 +88,8 @@ function computeStats(candidates: OnboardingCandidate[]): OnboardingStats {
   };
 }
 
-function sidecarBaseUrl(): string | null {
-  const url = process.env.ONBOARDING_SIDECAR_URL?.trim();
-  return url ? url.replace(/\/$/, "") : null;
-}
-
-async function fetchSidecarDashboard(): Promise<OnboardingDashboard | null> {
-  const base = sidecarBaseUrl();
-  if (!base) return null;
-  const secret = process.env.ONBOARDING_SIDECAR_SECRET;
-  try {
-    const res = await fetch(`${base}/api/candidates`, {
-      headers: secret ? { Authorization: `Bearer ${secret}` } : undefined,
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      candidates?: OnboardingCandidate[];
-      ceoQueue?: CeoCountersignItem[];
-    };
-    const candidates = data.candidates ?? [];
-    return {
-      stats: computeStats(candidates),
-      candidates,
-      ceoQueue: data.ceoQueue ?? [],
-      mode: "sidecar",
-      sidecarConfigured: true,
-    };
-  } catch {
-    return null;
-  }
-}
-
-export async function getOnboardingDashboard(): Promise<OnboardingDashboard> {
-  const sidecar = await fetchSidecarDashboard();
-  if (sidecar) return sidecar;
-
-  const candidates = getStore();
-  const ceoQueue: CeoCountersignItem[] = candidates
+function ceoQueueFrom(candidates: OnboardingCandidate[]): CeoCountersignItem[] {
+  return candidates
     .filter((c) => c.status === "awaiting_ceo" && c.submissionId)
     .map((c) => ({
       id: c.id,
@@ -136,15 +98,16 @@ export async function getOnboardingDashboard(): Promise<OnboardingDashboard> {
       role: c.role,
       submissionId: c.submissionId!,
       candidateSignedAt: c.candidateSignedAt,
-      ceoSigningLink: c.ceoSigningLink,
     }));
+}
 
+export async function getOnboardingDashboard(): Promise<OnboardingDashboard> {
+  const candidates = getStore();
   return {
     stats: computeStats(candidates),
     candidates: structuredClone(candidates),
-    ceoQueue,
-    mode: "demo",
-    sidecarConfigured: Boolean(sidecarBaseUrl()),
+    ceoQueue: ceoQueueFrom(candidates),
+    mode: "native",
   };
 }
 
@@ -153,6 +116,8 @@ export async function createOnboardingCandidate(input: {
   email: string;
   role: string;
   startDate?: string;
+  employeeId?: string;
+  atsCandidateId?: string;
 }): Promise<OnboardingCandidate> {
   const now = new Date().toISOString();
   const candidate: OnboardingCandidate = {
@@ -163,6 +128,8 @@ export async function createOnboardingCandidate(input: {
     status: "not_sent",
     startDate: input.startDate,
     archivedFiles: [],
+    employeeId: input.employeeId,
+    atsCandidateId: input.atsCandidateId,
     source: "os",
     createdAt: now,
     updatedAt: now,
@@ -174,42 +141,38 @@ export async function createOnboardingCandidate(input: {
 export async function sendOnboardingPack(
   id: string
 ): Promise<OnboardingCandidate | null> {
-  const base = sidecarBaseUrl();
   const candidates = getStore();
   const idx = candidates.findIndex((c) => c.id === id);
   if (idx === -1) return null;
   const candidate = candidates[idx]!;
-
-  if (base) {
-    const secret = process.env.ONBOARDING_SIDECAR_SECRET;
-    try {
-      await fetch(`${base}/api/onboarding/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
-        },
-        body: JSON.stringify({
-          name: candidate.name,
-          email: candidate.email,
-          role: candidate.role,
-          startDate: candidate.startDate,
-        }),
-      });
-    } catch {
-      // Fall through to demo status update so UI stays usable.
-    }
-  }
-
   const now = new Date().toISOString();
+  const slug = candidate.name.replace(/\s+/g, "_");
   candidates[idx] = {
     ...candidate,
     status: "awaiting",
     sentAt: now,
     submissionId: candidate.submissionId ?? `sub_${crypto.randomUUID().slice(0, 8)}`,
-    signingLink:
-      candidate.signingLink ??
-      `https://sign.aarvanta.co/s/demo-${crypto.randomUUID().slice(0, 6)}`,
+    archivedFiles:
+      candidate.archivedFiles.length > 0
+        ? candidate.archivedFiles
+        : [`offer_letter_${slug}.pdf`, `nda_${slug}.pdf`],
+    updatedAt: now,
+  };
+  return structuredClone(candidates[idx]!);
+}
+
+export async function markCandidateSigned(
+  id: string
+): Promise<OnboardingCandidate | null> {
+  const candidates = getStore();
+  const idx = candidates.findIndex((c) => c.id === id);
+  if (idx === -1) return null;
+  const now = new Date().toISOString();
+  candidates[idx] = {
+    ...candidates[idx]!,
+    status: "awaiting_ceo",
+    candidateSignedAt: now,
+    openedAt: candidates[idx]!.openedAt ?? now,
     updatedAt: now,
   };
   return structuredClone(candidates[idx]!);
@@ -222,6 +185,7 @@ export async function markCeoComplete(
   const idx = candidates.findIndex((c) => c.id === id);
   if (idx === -1) return null;
   const now = new Date().toISOString();
+  const name = candidates[idx]!.name.replace(/\s+/g, "_");
   candidates[idx] = {
     ...candidates[idx]!,
     status: "completed",
@@ -230,10 +194,7 @@ export async function markCeoComplete(
     archivedFiles:
       candidates[idx]!.archivedFiles.length > 0
         ? candidates[idx]!.archivedFiles
-        : [
-            `Offer_Letter_${candidates[idx]!.name.replace(/\s+/g, "_")}.pdf`,
-            `NDA_${candidates[idx]!.name.replace(/\s+/g, "_")}.pdf`,
-          ],
+        : [`Offer_Letter_${name}.pdf`, `NDA_${name}.pdf`],
   };
   return structuredClone(candidates[idx]!);
 }

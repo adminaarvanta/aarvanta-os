@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { unauthorized, parseJsonBody } from "@/lib/api/request";
 import {
+  markCandidateSigned,
   markCeoComplete,
   sendOnboardingPack,
 } from "@/lib/hr/onboarding-service";
 import { getTenantScope } from "@/lib/tenant/context";
 
 const actionSchema = z.object({
-  action: z.enum(["send", "ceo_complete"]),
+  action: z.enum(["send", "mark_signed", "ceo_complete"]),
 });
 
 export async function POST(
@@ -33,7 +34,9 @@ export async function POST(
   const candidate =
     parsed.data.action === "send"
       ? await sendOnboardingPack(id)
-      : await markCeoComplete(id);
+      : parsed.data.action === "mark_signed"
+        ? await markCandidateSigned(id)
+        : await markCeoComplete(id);
 
   if (!candidate) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

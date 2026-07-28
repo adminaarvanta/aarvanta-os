@@ -288,7 +288,8 @@ export const SPEC_PHASES: Array<{
         name: "HR OS",
         href: "/hr",
         status: "partial",
-        summary: "ATS, employees, courses. Performance reviews and leave management planned.",
+        summary:
+          "Full lifecycle: jobs, ATS, native onboarding packs, employees, punch, attendance, leave, documents, invoices, exit.",
       },
     ] as SpecModule[],
   },

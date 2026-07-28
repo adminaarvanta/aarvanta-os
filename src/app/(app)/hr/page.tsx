@@ -1,114 +1,117 @@
-import { Landmark } from "lucide-react";
-import { HrApprovalQueue } from "@/components/hr/hr-approval-queue";
-import { HrAutomationToggle } from "@/components/hr/hr-automation-toggle";
-import { HrDocumentAgent } from "@/components/hr/hr-document-agent";
-import { HrOnboardingManager } from "@/components/hr/hr-onboarding-manager";
-import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
-import { Panel } from "@/components/ui/os/panel";
-import { SectionHeader } from "@/components/ui/os/section-header";
+import { PendingLink } from "@/components/layout/navigation-provider";
+import { HrPageHeader } from "@/components/hr/hr-nav";
+import { HrPanel, HrStatStrip } from "@/components/hr/hr-ui";
 import { getHrStore } from "@/lib/data/platform-store";
 import { ensureHrPlatformSeed } from "@/lib/hr/ensure-platform-seed";
 import { getOnboardingDashboard } from "@/lib/hr/onboarding-service";
-import { getHrWorkspaceSettings } from "@/lib/hr/settings";
 import { getTenantScope } from "@/lib/tenant/context";
 
-export default async function HrPage() {
+export default async function HrOverviewPage() {
   const scope = await getTenantScope();
   await ensureHrPlatformSeed(scope);
-  const hrStore = getHrStore();
-  const [candidates, employees, courses, documents, cases, settings, onboarding] =
+  const hr = getHrStore();
+  const [jobs, candidates, employees, punches, leave, exits, onboarding] =
     await Promise.all([
-      hrStore.list(scope),
-      hrStore.listEmployees(scope),
-      hrStore.listCourses(scope),
-      hrStore.listDocuments(scope),
-      hrStore.listCases(scope),
-      getHrWorkspaceSettings(scope.workspaceId),
+      hr.listJobs(scope),
+      hr.list(scope),
+      hr.listEmployees(scope),
+      hr.listPunches(scope),
+      hr.listLeaveRequests(scope),
+      hr.listExitCases(scope),
       getOnboardingDashboard(),
     ]);
 
-  const pending = cases.filter((item) => item.status === "pending_approval");
-  const recentSent = cases
-    .filter((item) => item.status === "sent")
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 5);
+  const openJobs = jobs.filter((j) => j.status === "open").length;
+  const activeEmployees = employees.filter((e) => e.status !== "exited").length;
+  const pendingLeave = leave.filter((l) => l.status === "pending").length;
+  const pendingOnboarding =
+    onboarding.stats.notSent + onboarding.stats.awaiting + onboarding.stats.awaitingCeo;
 
   return (
-    <ModulePageShell
-      icon={Landmark}
-      title="HR OS"
-      description="Onboarding packs, ATS, employee roster, and document automation."
-    >
-      <div className="space-y-6">
-        <HrOnboardingManager initial={onboarding} />
-
-        <HrAutomationToggle initialEnabled={settings.inboxAutomationEnabled} />
-        <HrApprovalQueue pending={pending} recentSent={recentSent} />
-
-        <StatGrid
-          items={[
-            { label: "Candidates", value: candidates.length, sub: "ATS pipeline" },
-            { label: "Employees", value: employees.length, sub: "Active roster" },
-            { label: "HR documents", value: documents.length, sub: "Generated" },
-            { label: "Open cases", value: pending.length, sub: "Awaiting review" },
-          ]}
-        />
-
-        <HrDocumentAgent
-          employees={employees}
-          candidates={candidates}
-          initialDocuments={documents}
-        />
-
-        <Panel padding="none">
-          <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
-            <SectionHeader title="People & learning" className="mb-0" />
+    <div className="space-y-6">
+      <HrPageHeader
+        title="People lifecycle"
+        description="From job post to exit documents — one colourful HR workspace."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <PendingLink
+              href="/hr/jobs"
+              className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black shadow-sm shadow-gold/20 transition-colors hover:bg-gold-bright"
+            >
+              Post a job
+            </PendingLink>
+            <PendingLink
+              href="/hr/onboarding"
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-gold/40 hover:bg-surface-hover"
+            >
+              Onboarding
+            </PendingLink>
           </div>
-          <div className="grid gap-6 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
-            <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Candidates
-              </h3>
-              <CardList
-                items={candidates.map((candidate) => ({
-                  id: candidate.id,
-                  title: candidate.name,
-                  body: candidate.role,
-                  meta: `Score ${candidate.score}`,
-                  badge: candidate.status,
-                }))}
-              />
-            </section>
-            <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Employees
-              </h3>
-              <CardList
-                items={employees.map((employee) => ({
-                  id: employee.id,
-                  title: employee.name,
-                  body: `${employee.role} · ${employee.department}`,
-                  meta: `Leave ${employee.leaveBalance}d`,
-                }))}
-              />
-            </section>
-            <section className="sm:col-span-2 lg:col-span-1">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Courses
-              </h3>
-              <CardList
-                items={courses.map((course) => ({
-                  id: course.id,
-                  title: course.title,
-                  body: `${course.durationHours}h · ${course.enrolled} enrolled`,
-                  badge: course.category,
-                }))}
-              />
-            </section>
-          </div>
-        </Panel>
+        }
+      />
+
+      <HrStatStrip
+        items={[
+          { label: "Open jobs", value: openJobs, tone: "cyan", hint: `${jobs.length} total` },
+          {
+            label: "Pipeline",
+            value: candidates.filter((c) => c.status !== "hired" && c.status !== "rejected").length,
+            tone: "gold",
+            hint: `${candidates.length} candidates`,
+          },
+          {
+            label: "Onboarding",
+            value: pendingOnboarding,
+            tone: "amber",
+            hint: `${onboarding.stats.completed} completed`,
+          },
+          {
+            label: "Headcount",
+            value: activeEmployees,
+            tone: "teal",
+            hint: `${punches.length} punches logged`,
+          },
+          {
+            label: "Leave / exit",
+            value: pendingLeave,
+            tone: "leave",
+            hint: `${exits.length} exit cases`,
+          },
+        ]}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <HrPanel title="Today’s focus" description="Jump into the module that needs attention.">
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Candidates to advance</span>
+              <PendingLink href="/hr/candidates" className="font-medium text-gold-bright hover:underline">
+                Open ATS →
+              </PendingLink>
+            </li>
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Packs waiting</span>
+              <PendingLink href="/hr/onboarding" className="font-medium text-gold-bright hover:underline">
+                Onboarding →
+              </PendingLink>
+            </li>
+            <li className="flex justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2">
+              <span className="text-muted">Clock & attendance</span>
+              <PendingLink href="/hr/punch" className="font-medium text-gold-bright hover:underline">
+                Punch →
+              </PendingLink>
+            </li>
+          </ul>
+        </HrPanel>
+        <HrPanel title="Lifecycle map" description="Hire → onboard → attend → leave → invoice → exit.">
+          <p className="text-sm leading-relaxed text-muted">
+            Use the tabs above for every HR step. Import candidates from Excel, hire into the roster,
+            send onboarding packs, track punches and leave, raise contractor invoices, and complete
+            exit with relieving and experience letters.
+          </p>
+        </HrPanel>
       </div>
-    </ModulePageShell>
+    </div>
   );
 }
 

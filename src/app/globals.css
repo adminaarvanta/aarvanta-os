@@ -362,3 +362,73 @@ font {
   height: auto;
 }
 
+.hr-os {
+  --hr-navy: #1e3a5f;
+  --hr-navy-soft: #e8eef6;
+  --hr-gold: #c9a227;
+  --hr-gold-soft: #faf3dc;
+  --hr-cyan: #0ea5b7;
+  --hr-cyan-soft: #e0f7fa;
+
+  --hr-screening: #6366f1;
+  --hr-screening-soft: #eef2ff;
+  --hr-interview: #8b5cf6;
+  --hr-interview-soft: #f3e8ff;
+  --hr-offer: #f59e0b;
+  --hr-offer-soft: #fffbeb;
+  --hr-hired: #059669;
+  --hr-hired-soft: #ecfdf5;
+  --hr-rejected: #dc2626;
+  --hr-rejected-soft: #fef2f2;
+
+  --hr-late: #e11d48;
+  --hr-late-soft: #fff1f2;
+  --hr-exit: #b44d6a;
+  --hr-exit-soft: rgba(180, 77, 106, 0.14);
+  --hr-leave: #0284c7;
+  --hr-leave-soft: #e0f2fe;
+  --hr-punch: #0891b2;
+  --hr-punch-soft: #cffafe;
+
+  --hr-bg-top: #f8fafc;
+  --hr-bg-bottom: #f1f5f9;
+  --hr-nav-bg: rgba(255, 255, 255, 0.92);
+  --hr-panel-bg: rgba(255, 255, 255, 0.96);
+  --hr-panel-border: rgba(30, 58, 95, 0.12);
+  --hr-table-head: rgba(30, 58, 95, 0.04);
+}
+
+.hr-tab-enter {
+  animation: hr-fade-up 0.35s ease-out both;
+}
+
+.hr-fade-up {
+  animation: hr-fade-up 0.4s ease-out both;
+}
+
+.hr-punch-success {
+  animation: hr-punch-pop 0.45s ease-out;
+}
+
+@keyframes hr-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hr-punch-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

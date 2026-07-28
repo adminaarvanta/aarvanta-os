@@ -13,6 +13,10 @@ import type {
   HrCourse,
   HrDocument,
   HrEmployee,
+  HrExitCase,
+  HrJob,
+  HrLeaveRequest,
+  HrPunch,
   InstalledAgent,
   KnowledgeGraphEdge,
   KnowledgeGraphNode,
@@ -654,6 +658,8 @@ export function buildDemoHrCandidates(): HrCandidate[] {
       score: 88,
       status: "interview",
       email: "aisha.khan@example.com",
+      jobId: "job_sae",
+      source: "manual",
       resumeSummary:
         "7 years in B2B SaaS sales with strong enterprise closing track record.",
     },
@@ -665,6 +671,8 @@ export function buildDemoHrCandidates(): HrCandidate[] {
       score: 81,
       status: "screening",
       email: "rohan.patel@example.com",
+      jobId: "job_csm",
+      source: "excel",
       resumeSummary:
         "Scaled onboarding and renewals for mid-market accounts in fintech.",
     },
@@ -683,6 +691,7 @@ export function buildDemoHrEmployees(): HrEmployee[] {
       leaveBalance: 18,
       email: "sarah.chen@example.com",
       annualSalaryGbp: 52_000,
+      status: "active",
     },
     {
       ...DEMO_TENANT,
@@ -694,8 +703,88 @@ export function buildDemoHrEmployees(): HrEmployee[] {
       leaveBalance: 12,
       email: "john.mathew@example.com",
       annualSalaryGbp: 44_000,
+      status: "active",
     },
   ];
+}
+
+export function buildDemoHrJobs(): HrJob[] {
+  const now = "2026-07-01T10:00:00.000Z";
+  return [
+    {
+      ...DEMO_TENANT,
+      id: "job_sae",
+      title: "Senior Account Executive",
+      department: "Sales",
+      requirements:
+        "5+ years B2B SaaS sales, UK market experience, strong pipeline discipline.",
+      status: "open",
+      postedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      ...DEMO_TENANT,
+      id: "job_csm",
+      title: "Customer Success Manager",
+      department: "Customer Success",
+      requirements:
+        "Onboarding, renewals, and QBR ownership for mid-market accounts.",
+      status: "open",
+      postedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+}
+
+export function buildDemoHrPunches(): HrPunch[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return [
+    {
+      ...DEMO_TENANT,
+      id: "punch_sarah_in",
+      employeeId: "employee_sarah",
+      employeeName: "Sarah Chen",
+      type: "in",
+      at: `${today}T09:02:00.000Z`,
+      source: "manual",
+      createdAt: `${today}T09:02:00.000Z`,
+    },
+    {
+      ...DEMO_TENANT,
+      id: "punch_john_in",
+      employeeId: "employee_john",
+      employeeName: "John Mathew",
+      type: "in",
+      at: `${today}T08:55:00.000Z`,
+      source: "admin",
+      createdAt: `${today}T08:55:00.000Z`,
+    },
+  ];
+}
+
+export function buildDemoHrLeaveRequests(): HrLeaveRequest[] {
+  return [
+    {
+      ...DEMO_TENANT,
+      id: "leave_john_1",
+      employeeId: "employee_john",
+      employeeName: "John Mathew",
+      leaveType: "annual",
+      startDate: "2026-08-10",
+      endDate: "2026-08-12",
+      days: 3,
+      reason: "Family travel",
+      status: "pending",
+      createdAt: "2026-07-20T10:00:00.000Z",
+      updatedAt: "2026-07-20T10:00:00.000Z",
+    },
+  ];
+}
+
+export function buildDemoHrExitCases(): HrExitCase[] {
+  return [];
 }
 
 export function buildDemoHrCourses(): HrCourse[] {

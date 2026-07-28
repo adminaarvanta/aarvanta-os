@@ -1,13 +1,18 @@
 import { getHrStore } from "@/lib/data/platform-store";
-import { buildDemoHrCandidates, buildDemoHrEmployees } from "@/lib/data/platform-demo-seed";
+import {
+  buildDemoHrCandidates,
+  buildDemoHrEmployees,
+  buildDemoHrJobs,
+} from "@/lib/data/platform-demo-seed";
 import type { TenantScope } from "@/types/communication";
 
 /** Seed HR roster for workspaces that have no employees yet (e.g. production bootstrap). */
 export async function ensureHrPlatformSeed(scope: TenantScope): Promise<void> {
   const hrStore = getHrStore();
-  const [employees, candidates] = await Promise.all([
+  const [employees, candidates, jobs] = await Promise.all([
     hrStore.listEmployees(scope),
     hrStore.list(scope),
+    hrStore.listJobs(scope),
   ]);
 
   if (employees.length === 0) {
@@ -20,6 +25,8 @@ export async function ensureHrPlatformSeed(scope: TenantScope): Promise<void> {
         startDate: template.startDate,
         leaveBalance: template.leaveBalance,
         email: template.email,
+        status: template.status ?? "active",
+        annualSalaryGbp: template.annualSalaryGbp,
       });
     }
   }
@@ -34,6 +41,24 @@ export async function ensureHrPlatformSeed(scope: TenantScope): Promise<void> {
         status: template.status,
         email: template.email,
         resumeSummary: template.resumeSummary,
+        jobId: template.jobId,
+        source: template.source,
+        phone: template.phone,
+      });
+    }
+  }
+
+  if (jobs.length === 0) {
+    for (const template of buildDemoHrJobs()) {
+      await hrStore.createJob({
+        ...scope,
+        title: template.title,
+        department: template.department,
+        requirements: template.requirements,
+        status: template.status,
+        postedAt: template.postedAt,
+        createdAt: template.createdAt,
+        updatedAt: template.updatedAt,
       });
     }
   }

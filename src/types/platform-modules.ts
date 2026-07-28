@@ -239,14 +239,42 @@ export interface ChartOfAccount extends TenantScope {
 }
 
 // ─── HR OS (Module 29) ──────────────────────────────────────────────
+export type HrCandidateStatus =
+  | "applied"
+  | "screening"
+  | "interview"
+  | "offer"
+  | "hired"
+  | "rejected";
+
+export type HrCandidateSource = "manual" | "excel" | "sheets";
+
+export type HrEmployeeStatus = "active" | "on_leave" | "exited";
+
+export type HrJobStatus = "draft" | "open" | "closed";
+
+export interface HrJob extends TenantScope {
+  id: string;
+  title: string;
+  department: string;
+  requirements: string;
+  status: HrJobStatus;
+  postedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface HrCandidate extends TenantScope {
   id: string;
   name: string;
   role: string;
   score: number;
-  status: "applied" | "screening" | "interview" | "offer" | "hired" | "rejected";
+  status: HrCandidateStatus;
   resumeSummary: string;
   email?: string;
+  jobId?: string;
+  source?: HrCandidateSource;
+  phone?: string;
 }
 
 export interface HrEmployee extends TenantScope {
@@ -259,9 +287,57 @@ export interface HrEmployee extends TenantScope {
   email?: string;
   /** Annual salary in GBP for payroll engine (M2). */
   annualSalaryGbp?: number;
+  status?: HrEmployeeStatus;
+  endDate?: string;
+  candidateId?: string;
+}
+
+export type HrPunchType = "in" | "out";
+
+export interface HrPunch extends TenantScope {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: HrPunchType;
+  at: string;
+  source: "manual" | "admin";
+  createdAt: string;
+}
+
+export type HrLeaveType = "annual" | "sick" | "unpaid" | "other";
+export type HrLeaveStatus = "pending" | "approved" | "rejected";
+
+export interface HrLeaveRequest extends TenantScope {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  leaveType: HrLeaveType;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: HrLeaveStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type HrExitStatus = "open" | "docs_pending" | "completed";
+
+export interface HrExitCase extends TenantScope {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  lastDay: string;
+  reason: string;
+  status: HrExitStatus;
+  relievingDocId?: string;
+  experienceDocId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface HrCourse extends TenantScope {
+
   id: string;
   title: string;
   category: string;
