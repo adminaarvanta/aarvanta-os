@@ -28,6 +28,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const listings = await searchDomainListingsAsync(parsed.data);
-  return NextResponse.json({ listings });
+  const result = await searchDomainListingsAsync(parsed.data);
+  return NextResponse.json(result);
 }

@@ -63,16 +63,22 @@ function candidateDomains(input: {
   countryBase: string;
   query?: string;
 }): Array<{ domain: string; tld: string }> {
-  const slug = slugifyBrand(input.businessName);
+  const tlds = defaultTlds(input.countryBase);
+  const q = input.query?.trim().toLowerCase();
 
-  if (input.query?.trim()) {
-    const parsed = parseDomainQuery(input.query);
+  if (q) {
+    const parsed = parseDomainQuery(q);
     if (parsed) {
       return [{ domain: `${parsed.label}${parsed.tld}`, tld: parsed.tld }];
     }
+    const label = q.replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "");
+    if (label) {
+      return tlds.map((tld) => ({ domain: `${label}${tld}`, tld }));
+    }
   }
 
-  return defaultTlds(input.countryBase).map((tld) => ({
+  const slug = slugifyBrand(input.businessName);
+  return tlds.map((tld) => ({
     domain: `${slug}${tld}`,
     tld,
   }));

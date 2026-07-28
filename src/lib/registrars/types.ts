@@ -56,4 +56,12 @@ export type DomainRegistrar = {
   checkAvailability(domains: string[]): Promise<DomainAvailabilityResult[]>;
   getPrice(domain: string, years?: number): Promise<DomainPriceResult>;
   registerDomain(input: RegisterDomainInput): Promise<RegisterDomainResult>;
+  /**
+   * Keyword / suggestion search (name.com `domains:search`).
+   * Optional — callers fall back to checkAvailability on generated candidates.
+   */
+  searchByKeyword?(
+    keyword: string,
+    options?: { tldFilter?: string[]; timeoutMs?: number }
+  ): Promise<DomainAvailabilityResult[]>;
 };

@@ -76,28 +76,7 @@ export class NameComClient implements DomainRegistrar {
       );
 
       for (const row of data.results ?? []) {
-        const domain = (row.domainName ?? "").toLowerCase();
-        if (!domain) continue;
-
-        const isPremium = Boolean(row.premium);
-        const purchasable =
-          Boolean(row.purchasable) &&
-          (row.purchaseType ?? "registration") === "registration" &&
-          (this.config.allowPremium || !isPremium);
-
-        byDomain.set(domain, {
-          domain,
-          available: purchasable,
-          wholesalePriceUsd:
-            typeof row.purchasePrice === "number" ? row.purchasePrice : undefined,
-          isPremium,
-          reason: purchasable
-            ? undefined
-            : row.reason ||
-              (isPremium && !this.config.allowPremium
-                ? "Premium domains disabled"
-                : "Unavailable"),
-        });
+        this.mapSearchRow(row, byDomain);
       }
     }
 
@@ -110,6 +89,74 @@ export class NameComClient implements DomainRegistrar {
           reason: "No result from name.com",
         }
       );
+    });
+  }
+
+  /**
+   * Keyword search → purchasable suggestions with wholesale pricing.
+   * @see https://docs.name.com/api/v1/reference/domains/search
+   */
+  async searchByKeyword(
+    keyword: string,
+    options?: { tldFilter?: string[]; timeoutMs?: number }
+  ): Promise<DomainAvailabilityResult[]> {
+    const cleaned = keyword.trim().toLowerCase();
+    if (!cleaned) return [];
+
+    const tldFilter = (options?.tldFilter ?? [])
+      .map((t) => t.replace(/^\./, "").toLowerCase())
+      .filter(Boolean)
+      .slice(0, 50);
+
+    const timeout = Math.min(
+      12_000,
+      Math.max(500, options?.timeoutMs ?? 5_000)
+    );
+
+    const data = await this.requestJson<NameComSearchResponse>(
+      "POST",
+      "/core/v1/domains:search",
+      {
+        keyword: cleaned,
+        timeout,
+        purchaseType: "registration",
+        ...(tldFilter.length ? { tldFilter } : {}),
+      }
+    );
+
+    const byDomain = new Map<string, DomainAvailabilityResult>();
+    for (const row of data.results ?? []) {
+      this.mapSearchRow(row, byDomain);
+    }
+
+    return Array.from(byDomain.values());
+  }
+
+  private mapSearchRow(
+    row: NameComSearchResult,
+    byDomain: Map<string, DomainAvailabilityResult>
+  ) {
+    const domain = (row.domainName ?? "").toLowerCase();
+    if (!domain) return;
+
+    const isPremium = Boolean(row.premium);
+    const purchasable =
+      Boolean(row.purchasable) &&
+      (row.purchaseType ?? "registration") === "registration" &&
+      (this.config.allowPremium || !isPremium);
+
+    byDomain.set(domain, {
+      domain,
+      available: purchasable,
+      wholesalePriceUsd:
+        typeof row.purchasePrice === "number" ? row.purchasePrice : undefined,
+      isPremium,
+      reason: purchasable
+        ? undefined
+        : row.reason ||
+          (isPremium && !this.config.allowPremium
+            ? "Premium domains disabled"
+            : "Unavailable"),
     });
   }
 

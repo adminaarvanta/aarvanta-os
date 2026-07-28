@@ -34,6 +34,9 @@ export function DomainPurchasePanel({
     domain.status === "external" ? "existing" : "buy"
   );
   const [listings, setListings] = useState<SiteDomainListing[]>([]);
+  const [source, setSource] = useState<"namecom" | "opensrs" | "demo" | null>(
+    null
+  );
   const [query, setQuery] = useState("");
   const [existingInput, setExistingInput] = useState(domain.selectedDomain ?? "");
   const [busy, setBusy] = useState(false);
@@ -65,8 +68,12 @@ export function DomainPurchasePanel({
         setError("Could not search domains.");
         return;
       }
-      const data = (await res.json()) as { listings: SiteDomainListing[] };
+      const data = (await res.json()) as {
+        listings: SiteDomainListing[];
+        source?: "namecom" | "opensrs" | "demo";
+      };
       setListings(data.listings);
+      setSource(data.source ?? null);
     } finally {
       setBusy(false);
     }
@@ -209,10 +216,21 @@ export function DomainPurchasePanel({
       {tab === "buy" && (
         <div className="flex items-start gap-2 rounded-lg border border-gold/30 bg-primary-soft p-3">
           <Globe className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-          <p className="text-xs text-muted">
-            Buy through Aarvanta and DNS is configured automatically when you publish — no
-            registrar dashboard work.
-          </p>
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs text-muted">
+              Buy through Aarvanta and DNS is configured automatically when you publish — no
+              registrar dashboard work.
+            </p>
+            {source === "namecom" ? (
+              <p className="text-[11px] font-medium text-gold">
+                Live availability &amp; pricing from name.com
+              </p>
+            ) : source === "demo" ? (
+              <p className="text-[11px] font-medium text-amber-200/90">
+                Demo catalog — name.com is not connected on this environment
+              </p>
+            ) : null}
+          </div>
         </div>
       )}
 
@@ -372,13 +390,29 @@ export function DomainPurchasePanel({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search e.g. mybrand.co.uk"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void searchDomains();
+                }
+              }}
+              placeholder="Search a name, e.g. mybrand or mybrand.co.uk"
               className="min-w-0 flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
             />
             <Button type="button" variant="secondary" onClick={() => void searchDomains()} disabled={busy}>
               <Search className="h-4 w-4" />
             </Button>
           </div>
+
+          {busy && listings.length === 0 ? (
+            <p className="text-xs text-muted">Searching name.com…</p>
+          ) : null}
+
+          {!busy && listings.length === 0 ? (
+            <p className="text-xs text-muted">
+              No domains found — try a different name.
+            </p>
+          ) : null}
 
           <ul className="space-y-2">
             {listings.map((listing) => {
