@@ -82,6 +82,8 @@ export const siteReferenceScreenshotSchema = z.object({
   uploadedAt: z.string(),
 });
 
+export const siteBrandLogoSchema = siteReferenceScreenshotSchema;
+
 export const siteDomainPurchaseSchema = z.object({
   status: z.enum(["none", "selected", "purchased", "external"]).default("none"),
   selectedDomain: z.string().max(120).optional(),
@@ -146,6 +148,7 @@ export const brandSystemSchema = z.object({
   toneOfVoice: z.string().min(1).max(120),
   googleFontsUrl: z.string().max(500).optional(),
   navStyle: z.enum(["pills", "underline", "centered", "minimal", "store"]).optional(),
+  logoUrl: z.string().max(2_500_000).optional(),
 });
 
 export const pagePlanCandidateSchema = z.object({
@@ -261,6 +264,7 @@ export const sitePreferencesSchema = z.object({
   keyMessages: z.string().max(500).optional(),
   customPrompt: z.string().max(CUSTOM_PROMPT_MAX).optional(),
   refineInstructions: z.string().max(2000).optional(),
+  brandLogo: siteBrandLogoSchema.optional(),
   referenceUrl: z.union([z.string().url(), z.literal("")]).optional(),
   referenceScreenshots: z.array(siteReferenceScreenshotSchema).max(3).optional(),
   deployment: siteDeploymentConfigSchema,

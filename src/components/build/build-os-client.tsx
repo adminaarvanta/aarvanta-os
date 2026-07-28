@@ -6,12 +6,11 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
-  Clock3,
   ImagePlus,
   Loader2,
   Sparkles,
-  Trash2,
 } from "lucide-react";
+import { BuildHome } from "@/components/build/build-home";
 import { BuildStudioLayout } from "@/components/build/build-studio-layout";
 import {
   BUILD_WIZARD_STEPS,
@@ -20,7 +19,6 @@ import {
 } from "@/components/build/build-wizard-rail";
 import { DesignOptionsPicker } from "@/components/build/design-options-picker";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
-import { HostingCheckoutPanel } from "@/components/build/hosting-checkout-panel";
 import { ThemeStylePanel } from "@/components/build/theme-style-panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +34,7 @@ import {
 } from "@/lib/site-builder/theme-presets";
 import type {
   AwsEc2InstanceType,
+  SiteBrandLogo,
   SiteCustomTheme,
   SiteDesignOption,
   SiteDomainPurchase,
@@ -50,6 +49,7 @@ import { cn } from "@/lib/utils";
 
 const MAX_SCREENSHOTS = 3;
 const MAX_SCREENSHOT_BYTES = 1_500_000;
+const MAX_LOGO_BYTES = 1_000_000;
 
 const GOAL_OPTIONS = [
   "Sell more products online",
@@ -80,19 +80,6 @@ const TONE_VIBES: Array<{ id: SiteTone; label: string }> = [
   { id: "luxury", label: "Premium" },
 ];
 
-function formatDraftTime(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return "Recently";
-  }
-}
-
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
@@ -105,10 +92,15 @@ export function BuildOsClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobParam = searchParams.get("job");
+  const isNewCompose = searchParams.get("new") === "1";
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const jobRef = useRef<import("@/types/site-builder").SiteBuildJob | null>(null);
   const hydratedRef = useRef(false);
 
+  const [view, setView] = useState<"home" | "compose">(
+    jobParam || isNewCompose ? "compose" : "home"
+  );
   const [step, setStep] = useState<BuildWizardStepId>("about");
   const [prompt, setPrompt] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -124,8 +116,10 @@ export function BuildOsClient({
     defaultCustomThemeFromPreset("gold_navy")
   );
   const [screenshots, setScreenshots] = useState<SiteReferenceScreenshot[]>([]);
+  const [brandLogo, setBrandLogo] = useState<SiteBrandLogo | null>(null);
   const [designOptions, setDesignOptions] = useState<SiteDesignOption[]>([]);
   const [selectedDesignOptionId, setSelectedDesignOptionId] = useState<string | null>(null);
+  const [hasLocalDraft, setHasLocalDraft] = useState(false);
 
   const [job, setJob] = useState<import("@/types/site-builder").SiteBuildJob | null>(null);
   const [recentJobs, setRecentJobs] = useState<import("@/types/site-builder").SiteBuildJob[]>(
@@ -165,6 +159,7 @@ export function BuildOsClient({
 
   const hydrateFromJob = useCallback((next: import("@/types/site-builder").SiteBuildJob) => {
     setJob(next);
+    setView("compose");
     setUsedAi(next.usedAi ?? false);
     setPrompt(next.preferences.customPrompt ?? next.preferences.businessIdea);
     setBusinessName(next.preferences.businessName ?? "");
@@ -179,6 +174,24 @@ export function BuildOsClient({
         defaultCustomThemeFromPreset(
           next.preferences.themePreset === "custom" ? "gold_navy" : next.preferences.themePreset
         )
+    );
+    setBrandLogo(
+      next.preferences.brandLogo ??
+        (next.preferences.brandSystem?.logoUrl
+          ? {
+              id: "logo_from_brand",
+              name: "logo",
+              dataUrl: next.preferences.brandSystem.logoUrl,
+              uploadedAt: next.updatedAt,
+            }
+          : next.generatedSite?.assets?.find((a) => a.kind === "logo")
+            ? {
+                id: "logo_from_asset",
+                name: "logo",
+                dataUrl: next.generatedSite.assets.find((a) => a.kind === "logo")!.url,
+                uploadedAt: next.updatedAt,
+              }
+            : null)
     );
     const fromKeys = next.preferences.keyMessages
       ?.split("|")
@@ -218,29 +231,32 @@ export function BuildOsClient({
     hydratedRef.current = true;
     void (async () => {
       await refreshJobList();
+      const cache = readComposeDraftCache();
+      setHasLocalDraft(Boolean(cache?.prompt && cache.prompt.trim().length >= 12));
+
       if (jobParam) {
+        setView("compose");
         await loadJob(jobParam);
         return;
       }
-      const cache = readComposeDraftCache();
-      if (cache?.prompt) {
-        setPrompt(cache.prompt);
-        setBusinessName(cache.businessName ?? "");
-        setAudience(cache.audience ?? "");
-        setGoals(cache.goals?.length ? cache.goals : ["Sell more products online"]);
-        setThemePreset(cache.themePreset);
-        setCustomTheme(cache.customTheme);
-        setScreenshots(cache.screenshots ?? []);
-        setSelectedDesignOptionId(cache.selectedDesignOptionId ?? null);
-        setStep(cache.step ?? "about");
-        if (cache.jobId) await loadJob(cache.jobId);
+
+      if (isNewCompose) {
+        setView("compose");
+        setStep("about");
+        return;
       }
+
+      // Default: Build OS home (do not auto-enter wizard from cache).
+      setView("home");
     })();
-  }, [jobParam, loadJob, refreshJobList]);
+  }, [jobParam, isNewCompose, loadJob, refreshJobList]);
 
   useEffect(() => {
     if (!hydratedRef.current) return;
-    if (jobParam && jobParam !== jobRef.current?.id) void loadJob(jobParam);
+    if (jobParam && jobParam !== jobRef.current?.id) {
+      setView("compose");
+      void loadJob(jobParam);
+    }
   }, [jobParam, loadJob]);
 
   const buildPreferences = useCallback(
@@ -258,6 +274,7 @@ export function BuildOsClient({
         refineInstructions: refine || undefined,
         keyMessages: goals.join(" | "),
         referenceScreenshots: screenshots,
+        brandLogo: brandLogo ?? undefined,
         designOptions: designOptions.length ? designOptions : undefined,
         selectedDesignOptionId: selectedDesignOptionId ?? undefined,
         deployment: jobRef.current?.preferences.deployment,
@@ -274,6 +291,7 @@ export function BuildOsClient({
       themePreset,
       customTheme,
       screenshots,
+      brandLogo,
       goals,
       designOptions,
       selectedDesignOptionId,
@@ -292,6 +310,7 @@ export function BuildOsClient({
         themePreset,
         customTheme,
         screenshots,
+        brandLogo,
         selectedDesignOptionId,
         savedAt: new Date().toISOString(),
       });
@@ -305,6 +324,7 @@ export function BuildOsClient({
       themePreset,
       customTheme,
       screenshots,
+      brandLogo,
       selectedDesignOptionId,
     ]
   );
@@ -418,6 +438,28 @@ export function BuildOsClient({
     setStatusMessage(null);
     setStep("generate");
     setGenProgress({ stage: "business", percent: 0, message: "Starting…" });
+    // Optimistic chat bubble so the prompt never "disappears" mid-request.
+    if (isRefine && extraPrompt?.trim()) {
+      const optimisticId = `local_${Date.now()}`;
+      setJob((prev) =>
+        prev
+          ? {
+              ...prev,
+              refineChat: [
+                ...(prev.refineChat ?? []),
+                {
+                  id: optimisticId,
+                  role: "user" as const,
+                  content: extraPrompt.trim(),
+                  createdAt: new Date().toISOString(),
+                  applied: true,
+                  status: "pending" as const,
+                },
+              ],
+            }
+          : prev
+      );
+    }
     try {
       const jobId = await ensureJob(preferences);
       if (!jobId) return;
@@ -493,8 +535,8 @@ export function BuildOsClient({
         setSelectedDesignOptionId(
           finalJob.preferences.selectedDesignOptionId ?? selectedDesignOptionId
         );
-        setRefineInput("");
         if (isRefine) {
+          setRefineInput("");
           setStatusMessage("Site updated with your changes.");
         }
         syncLocalCache(finalJob.id, "generate");
@@ -665,6 +707,7 @@ export function BuildOsClient({
 
   function startOver() {
     clearComposeDraftCache();
+    setHasLocalDraft(false);
     setJob(null);
     setPrompt("");
     setBusinessName("");
@@ -675,6 +718,7 @@ export function BuildOsClient({
     setDesignOptions([]);
     setSelectedDesignOptionId(null);
     setScreenshots([]);
+    setBrandLogo(null);
     setRefineInput("");
     setError(null);
     setStatusMessage(null);
@@ -682,21 +726,100 @@ export function BuildOsClient({
     setStudioRightTab("assistant");
     setGenProgress(null);
     setStep("about");
+    setView("compose");
+    router.replace("/build?new=1");
+  }
+
+  function goHome() {
+    setView("home");
+    setError(null);
+    setStatusMessage(null);
+    setGenProgress(null);
     router.replace("/build");
+    void refreshJobList();
+    const cache = readComposeDraftCache();
+    setHasLocalDraft(Boolean(cache?.prompt && cache.prompt.trim().length >= 12));
+  }
+
+  function resumeLocalDraft() {
+    const cache = readComposeDraftCache();
+    if (!cache?.prompt) return;
+    setView("compose");
+    setPrompt(cache.prompt);
+    setBusinessName(cache.businessName ?? "");
+    setAudience(cache.audience ?? "");
+    setGoals(cache.goals?.length ? cache.goals : ["Sell more products online"]);
+    setThemePreset(cache.themePreset);
+    setCustomTheme(cache.customTheme);
+    setScreenshots(cache.screenshots ?? []);
+    setBrandLogo(cache.brandLogo ?? null);
+    setSelectedDesignOptionId(cache.selectedDesignOptionId ?? null);
+    setStep(cache.step ?? "about");
+    router.replace(cache.jobId ? `/build?job=${cache.jobId}` : "/build?new=1");
+    if (cache.jobId) void loadJob(cache.jobId);
   }
 
   async function discardJob(id: string) {
     await fetch(`/api/build/${id}`, { method: "DELETE" });
-    if (job?.id === id) startOver();
+    if (job?.id === id) {
+      clearComposeDraftCache();
+      setJob(null);
+      goHome();
+    }
     void refreshJobList();
   }
 
+  async function onLogoFile(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > MAX_LOGO_BYTES) {
+      setError("Logo must be a PNG, JPG, or WebP under 1MB.");
+      return;
+    }
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("read failed"));
+      reader.readAsDataURL(file);
+    });
+    setBrandLogo({
+      id: `logo_${Date.now()}`,
+      name: file.name,
+      dataUrl,
+      uploadedAt: new Date().toISOString(),
+    });
+    setError(null);
+  }
+
   const draftJobs = recentJobs.filter(
-    (j) => j.status === "draft" || j.status === "designs_ready" || !j.generatedSite
+    (j) => !j.generatedSite && j.status !== "failed"
   );
   const generatedJobs = recentJobs.filter((j) => Boolean(j.generatedSite));
   const sectionCount =
     job?.generatedSite?.pages.reduce((n, p) => n + p.blocks.length, 0) ?? 0;
+
+  /* ---- Build OS home ---- */
+  if (view === "home" && step !== "generate") {
+    return (
+      <div className="min-h-0 flex-1 overflow-y-auto bg-background">
+        {error ? (
+          <p className="border-b border-border px-4 py-2 text-xs text-red-400">{error}</p>
+        ) : null}
+        <BuildHome
+          drafts={draftJobs}
+          generated={generatedJobs}
+          hasLocalDraft={hasLocalDraft}
+          onCreateNew={startOver}
+          onResumeLocal={resumeLocalDraft}
+          onOpenJob={(item) => {
+            hydrateFromJob(item);
+            router.replace(`/build?job=${item.id}`);
+          }}
+          onDeleteJob={(id) => void discardJob(id)}
+        />
+      </div>
+    );
+  }
 
   /* ---- Generate / studio ---- */
   if (step === "generate") {
@@ -742,6 +865,9 @@ export function BuildOsClient({
             >
               Preview <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
             </Button>
+            <Button type="button" size="sm" onClick={goHome} variant="secondary">
+              All sites
+            </Button>
             <Button type="button" size="sm" onClick={startOver} variant="secondary">
               New site
             </Button>
@@ -778,6 +904,7 @@ export function BuildOsClient({
           refineInput={refineInput}
           onRefineInput={setRefineInput}
           onRefine={() => void generate(refineInput)}
+          refineChat={job?.refineChat ?? []}
           onConnectDomain={() => {
             setStep("domain");
             syncLocalCache(job?.id, "domain");
@@ -792,18 +919,6 @@ export function BuildOsClient({
           statusMessage={statusMessage}
           rightTab={studioRightTab}
           onRightTabChange={setStudioRightTab}
-          hostingSlot={
-            job ? (
-              <HostingCheckoutPanel
-                instanceType={job.preferences.deployment.ec2.instanceType}
-                buildJobId={job.id}
-                domain={job.preferences.deployment.domain.selectedDomain}
-                onInstanceTypeChange={(instanceType) =>
-                  void patchDeployment({ instanceType })
-                }
-              />
-            ) : null
-          }
         />
       </div>
     );
@@ -815,6 +930,7 @@ export function BuildOsClient({
       <BuildWizardRail
         step={step}
         completed={completed}
+        onHome={goHome}
         onSelect={(id) => {
           const order = BUILD_WIZARD_STEPS.map((s) => s.id);
           const target = order.indexOf(id);
@@ -832,59 +948,19 @@ export function BuildOsClient({
 
           {step === "about" && (
             <div className="animate-fade-up space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
-                  About Your Site
-                </h2>
-                <p className="mt-2 text-sm text-muted">
-                  Tell us what your website is all about — AI will understand the business.
-                </p>
-              </div>
-
-              {(draftJobs.length > 0 || generatedJobs.length > 0) && (
-                <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4">
-                  <div className="flex items-center gap-2">
-                    <Clock3 className="h-3.5 w-3.5 text-gold" />
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-dim">
-                      Continue where you left off
-                    </p>
-                  </div>
-                  <ul className="mt-3 space-y-2">
-                    {[...draftJobs, ...generatedJobs]
-                      .filter((item, i, a) => a.findIndex((j) => j.id === item.id) === i)
-                      .slice(0, 4)
-                      .map((item) => (
-                        <li
-                          key={item.id}
-                          className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2"
-                        >
-                          <button
-                            type="button"
-                            className="min-w-0 flex-1 text-left"
-                            onClick={() => {
-                              hydrateFromJob(item);
-                              router.replace(`/build?job=${item.id}`);
-                            }}
-                          >
-                            <p className="truncate text-sm font-medium text-foreground">
-                              {item.preferences.businessName}
-                            </p>
-                            <p className="text-[10px] text-dim">
-                              {formatDraftTime(item.updatedAt)}
-                            </p>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void discardJob(item.id)}
-                            className="rounded-lg p-1.5 text-dim hover:text-foreground"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+                    About Your Site
+                  </h2>
+                  <p className="mt-2 text-sm text-muted">
+                    Tell us what your website is all about — AI will understand the business.
+                  </p>
                 </div>
-              )}
+                <Button type="button" variant="secondary" size="sm" onClick={goHome}>
+                  All sites
+                </Button>
+              </div>
 
               <textarea
                 value={prompt}
@@ -944,7 +1020,7 @@ export function BuildOsClient({
               <div>
                 <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">Site Name</h2>
                 <p className="mt-2 text-sm text-muted">
-                  Name your site — AI will shape logo style, fonts, and brand vibe.
+                  Name your site, upload your logo, and set brand colours.
                 </p>
               </div>
               <div className="grid gap-5 lg:grid-cols-[1.2fr_0.9fr]">
@@ -955,6 +1031,62 @@ export function BuildOsClient({
                     placeholder="e.g. Toy Haven"
                     className="w-full rounded-2xl border border-border bg-surface-elevated px-4 py-3 text-lg text-foreground outline-none placeholder:text-dim focus:border-gold/40"
                   />
+                  <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-dim">
+                      Product logo
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      Optional — shown in the site header. PNG, JPG, or WebP up to 1MB.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      {brandLogo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={brandLogo.dataUrl}
+                          alt={brandLogo.name}
+                          className="h-14 w-14 rounded-xl border border-border bg-white object-contain p-1"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold text-black"
+                          style={{ background: customTheme.accentColor }}
+                        >
+                          {(businessName.trim() || "A").slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => logoInputRef.current?.click()}
+                        >
+                          <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
+                          {brandLogo ? "Replace logo" : "Upload logo"}
+                        </Button>
+                        {brandLogo ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setBrandLogo(null)}
+                          >
+                            Remove
+                          </Button>
+                        ) : null}
+                      </div>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          void onLogoFile(e.target.files);
+                          e.target.value = "";
+                        }}
+                      />
+                    </div>
+                  </div>
                   <div className="rounded-2xl border border-border bg-surface-elevated p-4">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-dim">
                       Audience
@@ -995,18 +1127,28 @@ export function BuildOsClient({
                     Brand preview
                   </p>
                   <div className="mt-4 flex items-center gap-3">
-                    <div
-                      className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-black"
-                      style={{ background: customTheme.accentColor }}
-                    >
-                      {(businessName.trim() || "A").slice(0, 1).toUpperCase()}
-                    </div>
+                    {brandLogo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={brandLogo.dataUrl}
+                        alt=""
+                        className="h-14 w-14 rounded-2xl border border-border bg-white object-contain p-1"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-black"
+                        style={{ background: customTheme.accentColor }}
+                      >
+                        {(businessName.trim() || "A").slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="truncate text-base font-semibold text-foreground">
                         {businessName.trim() || "Your brand"}
                       </p>
                       <p className="text-xs text-muted">
-                        {TONE_VIBES.find((v) => v.id === tone)?.label ?? "Friendly"} · DM Sans
+                        {TONE_VIBES.find((v) => v.id === tone)?.label ?? "Friendly"} · header logo
+                        {brandLogo ? " ready" : " uses initials until you upload"}
                       </p>
                     </div>
                   </div>
@@ -1249,22 +1391,6 @@ export function BuildOsClient({
                   onDomainChange={applyDomainChange}
                 />
               </div>
-              {job ? (
-                <div className="rounded-2xl border border-border bg-surface-elevated p-4">
-                  <p className="text-sm font-semibold text-foreground">Hosting</p>
-                  <p className="mt-1 mb-3 text-xs text-muted">
-                    Subscribe to Aarvanta Hosting. Payments run through Stripe Checkout.
-                  </p>
-                  <HostingCheckoutPanel
-                    instanceType={job.preferences.deployment.ec2.instanceType}
-                    buildJobId={job.id}
-                    domain={job.preferences.deployment.domain.selectedDomain}
-                    onInstanceTypeChange={(instanceType) =>
-                      void patchDeployment({ instanceType })
-                    }
-                  />
-                </div>
-              ) : null}
               <div className="flex justify-between">
                 <Button
                   type="button"

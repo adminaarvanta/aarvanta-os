@@ -98,18 +98,46 @@ export function GeneratedSitePreview({
   if (!activePage) return null;
 
   const brandMark = (
-    <div className={navStyle === "centered" ? "text-center" : "min-w-0"}>
-      <p
-        className="truncate text-sm font-semibold tracking-tight"
-        style={{ fontFamily: theme.headingFont, color: ink.text }}
-      >
-        {site.siteName}
-      </p>
-      {site.tagline ? (
-        <p className="hidden truncate text-[10px] uppercase tracking-[0.14em] @[420px]:block" style={{ color: ink.muted }}>
-          {site.tagline}
-        </p>
+    <div
+      className={
+        navStyle === "centered"
+          ? "flex flex-col items-center text-center"
+          : "flex min-w-0 items-center gap-2.5"
+      }
+    >
+      {site.brand?.logoUrl ||
+      site.assets?.find((a) => a.kind === "logo")?.url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={
+            site.brand?.logoUrl ||
+            site.assets?.find((a) => a.kind === "logo")?.url ||
+            ""
+          }
+          alt={site.siteName}
+          className="h-8 w-8 shrink-0 rounded-lg object-contain"
+          style={{
+            backgroundColor: ink.surface,
+            border: `1px solid ${ink.border}`,
+          }}
+        />
       ) : null}
+      <div className="min-w-0">
+        <p
+          className="truncate text-sm font-semibold tracking-tight"
+          style={{ fontFamily: theme.headingFont, color: ink.text }}
+        >
+          {site.siteName}
+        </p>
+        {site.tagline ? (
+          <p
+            className="hidden truncate text-[10px] uppercase tracking-[0.14em] @[420px]:block"
+            style={{ color: ink.muted }}
+          >
+            {site.tagline}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 

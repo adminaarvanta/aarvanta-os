@@ -1,5 +1,11 @@
 import type { BrandSystem, GeneratedSite, SitePlanTheme } from "@/types/site-builder";
+import {
+  isCopyRefine,
+  isThemeRefine,
+} from "@/lib/site-builder/refine-history";
 import { normalizeHex } from "@/lib/site-builder/theme-presets";
+
+export { isThemeRefine } from "@/lib/site-builder/refine-history";
 
 const NAMED_PALETTES: Record<
   string,
@@ -38,25 +44,10 @@ function extractNamedPalette(text: string) {
       return NAMED_PALETTES[name]!;
     }
   }
-  // softer matches
   if (/green(?:er)?|forest|mint/.test(lower)) return NAMED_PALETTES.green;
   if (/blu(?:e|ish)|ocean|sky/.test(lower)) return NAMED_PALETTES.blue;
   if (/purpl|lilac|lavender/.test(lower)) return NAMED_PALETTES.purple;
   return undefined;
-}
-
-export function isThemeRefine(refineInstructions?: string): boolean {
-  if (!refineInstructions?.trim()) return false;
-  const lower = refineInstructions.toLowerCase();
-  return (
-    /theme|palett|brand\s*colou?r|primary\s*colou?r|accent|background\s*colou?r|#([0-9a-f]{6})\b/.test(
-      lower
-    ) ||
-    /\b(make|use|change|switch|set).{0,40}\b(green|blue|red|purple|orange|teal|pink|gold|navy|dark)\b/.test(
-      lower
-    ) ||
-    /\b(greener|bluer|warmer|cooler)\b/.test(lower)
-  );
 }
 
 /** Apply color/theme instructions onto a brand system. */
@@ -77,7 +68,6 @@ export function applyBrandRefine(
 
   if (hex) {
     primary = hex;
-    // Keep secondary related unless named palette also present
     if (!named) {
       secondary = brand.secondary;
     }
@@ -88,7 +78,6 @@ export function applyBrandRefine(
     if (named.background) background = named.background;
   }
 
-  // Explicit channel hints
   if (/accent|secondary/.test(lower) && hex && !named) {
     secondary = hex;
     primary = brand.primary;
@@ -124,7 +113,7 @@ function themeFromPartialBrand(
 
 /**
  * Apply common refine phrases without AI so studio updates always reflect.
- * Supports copy edits and theme/color changes.
+ * Supports copy edits and theme/color changes across home (and simple page) heroes.
  */
 export function applyRefineHeuristics(
   site: GeneratedSite,
@@ -148,15 +137,26 @@ export function applyRefineHeuristics(
     refine.match(/["“']([^"”']{3,120})["”']/)?.[1]?.trim() ?? undefined;
 
   const lower = refine.toLowerCase();
-  const themeish = isThemeRefine(refine);
+  const themeish = isThemeRefine(refine) && !isCopyRefine(refine);
   const wantsHeadline =
     !themeish &&
-    (/headline|title|hero\s*text|main\s*heading/.test(lower) ||
+    (/headline|title|hero\s*text|main\s*heading|change\s+the\s+(hero\s+)?(text|copy)/.test(
+      lower
+    ) ||
       (!/cta|button|subhead|sub-?headline|tagline/.test(lower) && Boolean(quoted)));
-  const wantsSub = !themeish && /subhead|sub-?headline|tagline|supporting/.test(lower);
+  const wantsSub =
+    !themeish && /subhead|sub-?headline|tagline|supporting/.test(lower);
   const wantsCta =
     !themeish &&
-    /\bcta\b|call to action|button\s*label|shop now|get started/.test(lower);
+    /\bcta\b|call to action|button\s*label|shop now|get started|button\s*text/.test(
+      lower
+    );
+
+  // Free-form “change X to Y” without quotes — take text after “to”
+  const toPhrase =
+    refine.match(
+      /(?:headline|title|subhead(?:line)?|tagline|cta|button)\s+(?:to|as|:)\s*[“"']?([^"”'\n]{2,90})/i
+    )?.[1]?.trim() ?? undefined;
 
   if (!wantsHeadline && !wantsSub && !wantsCta) {
     return {
@@ -166,14 +166,15 @@ export function applyRefineHeuristics(
     };
   }
 
-  const patch = quoted ?? refine.slice(0, 90);
+  const patch = (quoted ?? toPhrase ?? refine.replace(/^.*?:\s*/, "").slice(0, 90)).trim();
 
   const pages = next.pages.map((page) => {
-    if (page.slug !== "home" && page.slug !== "") return page;
+    // Prefer home, but also patch the first hero found if home missing
     return {
       ...page,
       blocks: page.blocks.map((block) => {
         if (block.type !== "hero") return block;
+        if (page.slug !== "home" && page.slug !== "") return block;
         const props = { ...block.props };
         if (wantsHeadline && patch) props.headline = patch;
         if (wantsSub && patch) props.subheadline = patch;

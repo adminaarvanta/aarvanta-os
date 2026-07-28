@@ -147,6 +147,9 @@ export type SiteReferenceScreenshot = {
   uploadedAt: string;
 };
 
+/** Brand / product logo uploaded in Build OS (same shape as inspiration screenshots). */
+export type SiteBrandLogo = SiteReferenceScreenshot;
+
 /**
  * Domain attachment modes:
  * - purchase via Aarvanta (`selected` / `purchased`)
@@ -241,6 +244,8 @@ export type BrandSystem = {
   googleFontsUrl?: string;
   /** Site chrome / header treatment. */
   navStyle?: "pills" | "underline" | "centered" | "minimal" | "store";
+  /** Product / brand logo URL (data URL or https). */
+  logoUrl?: string;
 };
 
 /** Page candidate with confidence — only include=true pages are generated. */
@@ -326,6 +331,8 @@ export type SitePreferences = {
   customPrompt?: string;
   /** Studio refine request — applied on regenerate without re-inferring the brief. */
   refineInstructions?: string;
+  /** Optional product / brand logo for the site header. */
+  brandLogo?: SiteBrandLogo;
   referenceUrl?: string;
   referenceScreenshots?: SiteReferenceScreenshot[];
   deployment: SiteDeploymentConfig;
@@ -453,6 +460,19 @@ export type SiteBuildJobStatus =
   | "generated"
   | "failed";
 
+/** Append-only AI Assistant transcript for studio refine turns. */
+export type SiteRefineTurn = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+  /** True when this user turn triggered a generate/refine run. */
+  applied?: boolean;
+  /** GeneratedSite.version after a successful apply. */
+  resultVersion?: number;
+  status?: "pending" | "applied" | "failed";
+};
+
 export type SiteBuildJob = TenantScope & {
   id: string;
   status: SiteBuildJobStatus;
@@ -463,6 +483,8 @@ export type SiteBuildJob = TenantScope & {
   shareToken?: string;
   /** Live generation progress for streaming UI. */
   progress?: SiteGenerationProgress;
+  /** Persisted AI Assistant refine transcript (survives refresh). */
+  refineChat?: SiteRefineTurn[];
   usedAi?: boolean;
   error?: string;
   approvedAt?: string;

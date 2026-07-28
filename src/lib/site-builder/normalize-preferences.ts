@@ -29,6 +29,7 @@ export function normalizeSitePreferences(
     designOptions: data.designOptions as SitePreferences["designOptions"],
     selectedDesignOptionId: data.selectedDesignOptionId,
     refineInstructions: data.refineInstructions,
+    brandLogo: data.brandLogo,
     deployment: {
       hostingProvider: "aws_ec2",
       domain: {

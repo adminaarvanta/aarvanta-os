@@ -7,7 +7,7 @@ import {
   Smartphone,
   Tablet,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GenerationMagicSlides } from "@/components/build/generation-magic-slides";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import type {
   GeneratedSite,
   SiteGenerationProgress,
   SiteGenerationStage,
+  SiteRefineTurn,
 } from "@/types/site-builder";
 import { cn } from "@/lib/utils";
 
@@ -55,13 +56,13 @@ export function BuildStudioLayout({
   refineInput,
   onRefineInput,
   onRefine,
+  refineChat = [],
   onConnectDomain,
   onPublish,
   onInviteHint,
   siteName,
   domainLabel,
   featureCount = 0,
-  hostingSlot,
   statusMessage,
   rightTab: controlledRightTab,
   onRightTabChange,
@@ -75,13 +76,13 @@ export function BuildStudioLayout({
   refineInput: string;
   onRefineInput: (v: string) => void;
   onRefine: () => void;
+  refineChat?: SiteRefineTurn[];
   onConnectDomain?: () => void;
   onPublish?: () => void;
   onInviteHint?: () => void;
   siteName: string;
   domainLabel?: string;
   featureCount?: number;
-  hostingSlot?: ReactNode;
   statusMessage?: string | null;
   rightTab?: "assistant" | "website";
   onRightTabChange?: (tab: "assistant" | "website") => void;
@@ -94,6 +95,11 @@ export function BuildStudioLayout({
   const setRightTab = onRightTabChange ?? setInternalRightTab;
   const done = Boolean(site) && !busy;
   const showMagic = busy && !site;
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [refineChat?.length, refineInput, statusMessage, busy]);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
@@ -242,22 +248,62 @@ export function BuildStudioLayout({
             <div className="flex-1 space-y-3 overflow-y-auto text-sm">
               <div className="rounded-xl bg-surface-muted px-3 py-2 text-muted">
                 Try “make the theme green”, “use blue buttons”, or “change the headline to …”.
+                Your prompts are saved with this site.
               </div>
-              {refineInput.trim() ? (
-                <div className="ml-6 rounded-xl bg-gold/15 px-3 py-2 text-foreground">
+              {refineChat.map((turn) =>
+                turn.role === "user" ? (
+                  <div
+                    key={turn.id}
+                    className="ml-6 rounded-xl bg-gold/15 px-3 py-2 text-foreground"
+                  >
+                    <p>{turn.content}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-wide text-dim">
+                      {turn.status === "pending"
+                        ? "Applying…"
+                        : turn.status === "failed"
+                          ? "Failed"
+                          : "Saved"}
+                      {turn.createdAt
+                        ? ` · ${new Date(turn.createdAt).toLocaleString()}`
+                        : ""}
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    key={turn.id}
+                    className={cn(
+                      "rounded-xl border px-3 py-2 text-xs",
+                      turn.status === "failed"
+                        ? "border-danger/30 bg-danger/10 text-danger"
+                        : "border-success/30 bg-success/10 text-success"
+                    )}
+                  >
+                    {turn.content}
+                  </div>
+                )
+              )}
+              {refineInput.trim() &&
+              !refineChat.some(
+                (t) =>
+                  t.role === "user" &&
+                  t.status === "pending" &&
+                  t.content === refineInput.trim()
+              ) ? (
+                <div className="ml-6 rounded-xl border border-dashed border-gold/40 bg-gold/5 px-3 py-2 text-foreground">
                   {refineInput}
                 </div>
               ) : null}
-              {statusMessage ? (
+              {statusMessage && !refineChat.some((t) => t.content === statusMessage) ? (
                 <div className="rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
                   {statusMessage}
                 </div>
               ) : null}
-              {done ? (
+              {done && refineChat.length === 0 ? (
                 <div className="rounded-xl border border-border bg-surface px-3 py-2 text-xs text-muted">
-                  Changes apply across pages via the AI pipeline.
+                  Ask for theme, headline, or CTA changes — each request stays in this history.
                 </div>
               ) : null}
+              <div ref={chatEndRef} />
             </div>
             <textarea
               value={refineInput}
@@ -337,14 +383,6 @@ export function BuildStudioLayout({
                 </li>
               </ul>
             </div>
-            {hostingSlot ? (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-dim">
-                  Hosting
-                </p>
-                {hostingSlot}
-              </div>
-            ) : null}
           </div>
         )}
       </section>

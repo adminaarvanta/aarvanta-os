@@ -11,8 +11,15 @@ import {
   includedPageSlugs,
   runPagePlanner,
 } from "@/lib/site-builder/agents/page-planner";
+import { isAiConfigured } from "@/lib/ai/config";
+import { completeJson } from "@/lib/ai/provider";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import { applyBrandRefine, applyRefineHeuristics } from "@/lib/site-builder/apply-refine";
+import {
+  isCopyRefine,
+  isImageRefine,
+  isStructuralRefine,
+} from "@/lib/site-builder/refine-history";
 import { ensureShareToken } from "@/lib/site-builder/share-token";
 import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
 import { themeFromBrand } from "@/lib/site-builder/theme-presets";
@@ -70,6 +77,9 @@ export async function runGenerationPipeline(
 ): Promise<PipelineResult> {
   let preferences = { ...job.preferences };
   let usedAi = false;
+  const priorSite = job.generatedSite;
+  const refineText = preferences.refineInstructions?.trim();
+  const isRefinePass = Boolean(refineText && priorSite);
 
   const emit = async (
     stage: SiteGenerationStage,
@@ -79,6 +89,191 @@ export async function runGenerationPipeline(
   ) => {
     await onProgress?.({ stage, percent, message, partial });
   };
+
+  // Fast path: theme / copy refine on an existing site — keep layout + images.
+  if (
+    isRefinePass &&
+    priorSite &&
+    refineText &&
+    !isStructuralRefine(refineText) &&
+    !isImageRefine(refineText)
+  ) {
+    await emit("brand", 20, "Applying your changes…", { site: priorSite });
+
+    let brand: BrandSystem;
+    if (preferences.brandSystem) {
+      brand = preferences.brandSystem;
+    } else if (priorSite.brand) {
+      brand = priorSite.brand;
+    } else {
+      const business =
+        preferences.businessProfile ??
+        (await runBusinessIntel(preferences)).profile;
+      brand = (await runBrandIntel(preferences, business)).brand;
+      usedAi = true;
+    }
+    brand = applyBrandRefine(brand, refineText);
+    if (preferences.brandLogo?.dataUrl) {
+      brand = { ...brand, logoUrl: preferences.brandLogo.dataUrl };
+    }
+    const theme = themeFromBrand(brand, "custom");
+    preferences = {
+      ...preferences,
+      brandSystem: brand,
+      themePreset: "custom",
+      customTheme: {
+        primaryColor: brand.primary,
+        accentColor: brand.secondary,
+        backgroundColor: brand.background,
+        fontPackId: brand.fontPackId,
+      },
+      designOptions: preferences.designOptions?.map((option) =>
+        option.id === preferences.selectedDesignOptionId
+          ? { ...option, brand }
+          : option
+      ),
+    };
+
+    await emit("content", 55, "Updating copy & theme…", {
+      brand,
+      site: priorSite,
+    });
+
+    let site: GeneratedSite = {
+      ...priorSite,
+      brand,
+      theme,
+      business: preferences.businessProfile ?? priorSite.business,
+    };
+    if (preferences.brandLogo?.dataUrl) {
+      site = {
+        ...site,
+        assets: [
+          {
+            id: "asset_brand_logo",
+            kind: "logo",
+            url: preferences.brandLogo.dataUrl,
+            alt: `${preferences.businessName} logo`,
+          },
+          ...(site.assets ?? []).filter((a) => a.kind !== "logo"),
+        ],
+      };
+    }
+    site = applyRefineHeuristics(site, refineText);
+
+    // Light AI hero refresh for copy-oriented prompts (does not rebuild the site).
+    if (isAiConfigured() && isCopyRefine(refineText)) {
+      try {
+        const home = site.pages.find((p) => p.slug === "home" || p.slug === "");
+        const hero = home?.blocks.find((b) => b.type === "hero");
+        if (hero && home) {
+          const heroCopy = await completeJson<{
+            headline?: string;
+            subheadline?: string;
+            cta?: string;
+          }>({
+            system: `Update homepage hero copy to satisfy the change request. Return JSON with headline, subheadline, cta. Keep brand voice. Apply exactly: ${refineText}`,
+            user: JSON.stringify({
+              businessName: preferences.businessName,
+              idea: preferences.businessIdea,
+              current: {
+                headline: hero.props.headline,
+                subheadline: hero.props.subheadline,
+                cta: hero.props.cta,
+              },
+            }),
+            temperature: 0.5,
+          });
+          usedAi = true;
+          site = {
+            ...site,
+            pages: site.pages.map((page) =>
+              page.slug === home.slug
+                ? {
+                    ...page,
+                    blocks: page.blocks.map((block) =>
+                      block.id === hero.id
+                        ? {
+                            ...block,
+                            props: {
+                              ...block.props,
+                              ...(heroCopy.headline
+                                ? { headline: heroCopy.headline }
+                                : {}),
+                              ...(heroCopy.subheadline
+                                ? { subheadline: heroCopy.subheadline }
+                                : {}),
+                              ...(heroCopy.cta ? { cta: heroCopy.cta } : {}),
+                            },
+                          }
+                        : block
+                    ),
+                  }
+                : page
+            ),
+          };
+          site = applyRefineHeuristics(site, refineText);
+        }
+      } catch {
+        /* heuristics already applied */
+      }
+    }
+
+    site = {
+      ...site,
+      brand,
+      theme,
+      generatedAt: crmNow(),
+      version: (priorSite.version ?? 1) + 1,
+    };
+
+    await emit("done", 100, "Updates applied", { brand, site });
+
+    const plan: SitePlan =
+      job.plan ??
+      ({
+        siteName: site.siteName,
+        slug: site.slug,
+        summary: site.tagline ?? site.siteName,
+        theme,
+        navigation: site.navigation,
+        pages: site.pages.map((p) => ({
+          slug: p.slug,
+          title: p.title,
+          purpose: p.title,
+          sections: p.blocks.map((b) => ({
+            type: String(b.type),
+            label: String(b.type),
+            description: "",
+            variantId: b.variantId,
+          })),
+        })),
+        deployment: {
+          hostingProvider: "aws_ec2" as const,
+          domain: preferences.deployment.domain,
+          ec2: preferences.deployment.ec2,
+          previewUrl: `https://${site.slug}.sites.aarvanta.cloud`,
+          deployNotes: [],
+        },
+        business: site.business,
+        brand,
+        version: 1,
+      } satisfies SitePlan);
+
+    const updatedJob: SiteBuildJob = ensureShareToken({
+      ...job,
+      status: "generated",
+      preferences,
+      plan,
+      generatedSite: site,
+      progress: progress("done", 100, "Updates applied"),
+      usedAi,
+      error: undefined,
+      updatedAt: crmNow(),
+    });
+
+    return { job: updatedJob, plan, site, preferences, usedAi };
+  }
 
   await emit("business", 8, "Understanding your business…");
   const businessResult = await runBusinessIntel(preferences);
@@ -108,6 +303,9 @@ export async function runGenerationPipeline(
   }
   // Studio refine can override colours without changing layout.
   brand = applyBrandRefine(brand, preferences.refineInstructions);
+  if (preferences.brandLogo?.dataUrl) {
+    brand = { ...brand, logoUrl: preferences.brandLogo.dataUrl };
+  }
   preferences = {
     ...preferences,
     brandSystem: brand,
@@ -219,11 +417,14 @@ export async function runGenerationPipeline(
   });
 
   await emit("media", 88, "Selecting imagery…");
+  const preserveImages =
+    isRefinePass && Boolean(priorSite) && !isImageRefine(refineText);
   const mediaResult = await runMediaPlanner(
     copyResult.site,
     preferences,
     businessResult.profile,
-    brand
+    brand,
+    { preserveImages, previousSite: priorSite }
   );
 
   let site: GeneratedSite = {
@@ -233,9 +434,26 @@ export async function runGenerationPipeline(
     brand,
     categoryId: preferences.categoryId,
     templateId: preferences.templateId,
-    version: 1,
+    version: isRefinePass ? (priorSite?.version ?? 1) + 1 : 1,
     generatedAt: crmNow(),
   };
+
+  if (preferences.brandLogo?.dataUrl) {
+    const logoAsset = {
+      id: "asset_brand_logo",
+      kind: "logo" as const,
+      url: preferences.brandLogo.dataUrl,
+      alt: `${preferences.businessName} logo`,
+    };
+    site = {
+      ...site,
+      brand: { ...brand, logoUrl: preferences.brandLogo.dataUrl },
+      assets: [
+        logoAsset,
+        ...(site.assets ?? []).filter((a) => a.kind !== "logo"),
+      ],
+    };
+  }
 
   if (selectedDesign) {
     site = alignHomeToSelectedDesign(site, selectedDesign);
@@ -246,7 +464,7 @@ export async function runGenerationPipeline(
     brand,
     theme,
     generatedAt: crmNow(),
-    version: (site.version ?? 1) + (preferences.refineInstructions ? 1 : 0),
+    version: site.version ?? 1,
   };
 
   await emit("done", 100, "Website ready", {

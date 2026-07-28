@@ -1,11 +1,12 @@
 import type {
+  SiteBrandLogo,
   SiteCustomTheme,
   SiteReferenceScreenshot,
   SiteThemePreset,
 } from "@/types/site-builder";
 import type { BuildWizardStepId } from "@/components/build/build-wizard-rail";
 
-const STORAGE_KEY = "aarvanta.build.composeDraft.v4";
+const STORAGE_KEY = "aarvanta.build.composeDraft.v5";
 
 export type ComposeStep = BuildWizardStepId;
 
@@ -19,6 +20,7 @@ export type ComposeDraftCache = {
   themePreset: SiteThemePreset;
   customTheme: SiteCustomTheme;
   screenshots: SiteReferenceScreenshot[];
+  brandLogo?: SiteBrandLogo | null;
   selectedDesignOptionId?: string | null;
   savedAt: string;
 };

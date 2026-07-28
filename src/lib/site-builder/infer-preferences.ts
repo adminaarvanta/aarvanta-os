@@ -140,6 +140,7 @@ export function inferPreferencesFromPrompt(
     refineInstructions: overrides.refineInstructions,
     referenceUrl: overrides.referenceUrl,
     referenceScreenshots: overrides.referenceScreenshots ?? [],
+    brandLogo: overrides.brandLogo,
     businessProfile: overrides.businessProfile,
     brandSystem: overrides.brandSystem,
     pageCandidates: overrides.pageCandidates,

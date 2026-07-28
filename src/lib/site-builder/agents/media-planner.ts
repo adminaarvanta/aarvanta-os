@@ -49,14 +49,80 @@ function planForBlock(
 
 /**
  * Media planner — attaches image plans and resolves URLs via Unsplash/picsum.
- * Always rewrites nested product/gallery image URLs from the industry-matched pool.
+ * When preserveImages is true (typical studio refine), keep existing URLs so
+ * theme/copy edits do not reshuffle unrelated stock photos.
  */
 export async function runMediaPlanner(
   site: GeneratedSite,
   preferences: SitePreferences,
   business: BusinessProfile,
-  brand: BrandSystem
+  brand: BrandSystem,
+  opts?: { preserveImages?: boolean; previousSite?: GeneratedSite }
 ): Promise<{ site: GeneratedSite; assets: SiteAssetRef[] }> {
+  const preserve = Boolean(opts?.preserveImages && opts.previousSite);
+  if (preserve && opts?.previousSite) {
+    // Carry forward prior media while updating brand/business metadata.
+    const prevAssets = opts.previousSite.assets ?? [];
+    return {
+      site: {
+        ...site,
+        pages: site.pages.map((page) => {
+          const prevPage = opts.previousSite!.pages.find((p) => p.slug === page.slug);
+          if (!prevPage) return page;
+          return {
+            ...page,
+            blocks: page.blocks.map((block, i) => {
+              const prevBlock =
+                prevPage.blocks.find((b) => b.id === block.id) ?? prevPage.blocks[i];
+              if (!prevBlock) return block;
+              const props = { ...block.props };
+              if (typeof prevBlock.props.imageUrl === "string") {
+                props.imageUrl = prevBlock.props.imageUrl;
+              }
+              if (
+                block.type === "products" &&
+                Array.isArray(props.products) &&
+                Array.isArray(prevBlock.props.products)
+              ) {
+                const prevProducts = prevBlock.props.products as Array<
+                  Record<string, unknown>
+                >;
+                props.products = (props.products as Array<Record<string, unknown>>).map(
+                  (product, idx) => ({
+                    ...product,
+                    imageUrl: prevProducts[idx]?.imageUrl ?? product.imageUrl,
+                  })
+                );
+              }
+              if (
+                (block.type === "gallery" || block.type === "portfolio_grid") &&
+                Array.isArray(props.items) &&
+                Array.isArray(prevBlock.props.items)
+              ) {
+                const prevItems = prevBlock.props.items as Array<Record<string, unknown>>;
+                props.items = (props.items as Array<Record<string, unknown>>).map(
+                  (item, idx) => ({
+                    ...item,
+                    imageUrl: prevItems[idx]?.imageUrl ?? item.imageUrl,
+                  })
+                );
+              }
+              return {
+                ...block,
+                imagePlan: prevBlock.imagePlan ?? block.imagePlan,
+                props,
+              };
+            }),
+          };
+        }),
+        assets: prevAssets,
+        brand,
+        business,
+      },
+      assets: prevAssets,
+    };
+  }
+
   const categoryId = (preferences.categoryId ??
     site.categoryId ??
     "professional") as SiteCategoryId;
@@ -64,6 +130,9 @@ export async function runMediaPlanner(
   // industry/subcategory labels when resolving the media bucket.
   const keywords = [
     ...preferences.businessIdea.split(/\s+/).filter(Boolean).slice(0, 8),
+    ...(preferences.refineInstructions
+      ? preferences.refineInstructions.split(/\s+/).filter((w) => w.length > 2).slice(0, 6)
+      : []),
     business.industry,
     business.subcategory,
     brand.imageStyle,

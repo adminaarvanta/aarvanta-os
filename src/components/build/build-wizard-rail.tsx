@@ -30,21 +30,35 @@ export function BuildWizardRail({
   step,
   completed,
   onSelect,
+  onHome,
 }: {
   step: BuildWizardStepId;
   completed: Set<BuildWizardStepId>;
   onSelect: (id: BuildWizardStepId) => void;
+  onHome?: () => void;
 }) {
   const currentIdx = BUILD_WIZARD_STEPS.findIndex((s) => s.id === step);
 
   return (
     <aside className="flex w-full shrink-0 flex-col border-b border-border bg-surface-elevated md:w-[240px] md:border-b-0 md:border-r">
       <div className="border-b border-border-subtle px-4 py-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">
-          Build OS
-        </p>
-        <h1 className="mt-1 text-lg font-semibold text-foreground">Create your website</h1>
-        <p className="mt-1 text-xs text-muted">AI-powered site studio</p>
+        {onHome ? (
+          <button type="button" onClick={onHome} className="text-left hover:opacity-90">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">
+              Build OS
+            </p>
+            <h1 className="mt-1 text-lg font-semibold text-foreground">All sites</h1>
+            <p className="mt-1 text-xs text-muted">Back to drafts &amp; sites</p>
+          </button>
+        ) : (
+          <>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">
+              Build OS
+            </p>
+            <h1 className="mt-1 text-lg font-semibold text-foreground">Create your website</h1>
+            <p className="mt-1 text-xs text-muted">AI-powered site studio</p>
+          </>
+        )}
       </div>
 
       <nav className="flex gap-1 overflow-x-auto px-2 py-3 md:flex-1 md:flex-col md:overflow-y-auto md:px-3">

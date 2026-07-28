@@ -142,11 +142,21 @@ export function approveSitePlan(job: SiteBuildJob): SiteBuildJob {
   };
 }
 
-/** Wipe plan/site — used before a full regenerate. */
+/** Update preferences. Set preserveGenerated to keep the live site during refine. */
 export function updateSitePreferences(
   job: SiteBuildJob,
-  preferences: SitePreferences
+  preferences: SitePreferences,
+  opts?: { preserveGenerated?: boolean }
 ): SiteBuildJob {
+  if (opts?.preserveGenerated) {
+    return {
+      ...job,
+      preferences,
+      status: job.generatedSite ? "generated" : "draft",
+      error: undefined,
+      updatedAt: crmNow(),
+    };
+  }
   return {
     ...job,
     preferences,
