@@ -14,7 +14,7 @@ export default async function AffiliateDashboardPage() {
   let showAdmin = false;
   try {
     const session = await getSessionContext();
-    showAdmin = isAffiliatePlatformAdmin(session.email);
+    showAdmin = isAffiliatePlatformAdmin(session.email, session.role);
     const affiliate =
       (await affiliateStore.getAffiliateByUserId(session.userId)) ??
       (await affiliateStore.getAffiliateByEmail(session.email));

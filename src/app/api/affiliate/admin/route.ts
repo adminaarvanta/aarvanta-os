@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 
 async function requireAdmin() {
   const session = await getSessionContext();
-  if (!isAffiliatePlatformAdmin(session.email)) {
+  if (!isAffiliatePlatformAdmin(session.email, session.role)) {
     throw new Error("Forbidden");
   }
   return session;
