@@ -129,7 +129,7 @@ export const CORE_MODULES: PlatformModule[] = [
   {
     id: "workflows",
     label: "Workflows",
-    description: "Trigger → agent → approval → action",
+    description: "BDM playbooks — outreach, follow-ups, meetings, handoffs",
     href: "/workflows",
     icon: Workflow,
     group: "Core",

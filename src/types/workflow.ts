@@ -1,5 +1,6 @@
 import type { TenantScope } from "@/types/communication";
 import type { AgentType } from "@/types/workforce";
+import type { ContactTag } from "@/types/crm";
 
 export type WorkflowTriggerType =
   | "manual"
@@ -20,10 +21,18 @@ export type WorkflowRunStatus =
   | "failed"
   | "awaiting_approval";
 
+/** BDM-useful actions — outreach, CRM updates, tasks, meetings. */
 export type WorkflowActionType =
   | "create_task"
   | "create_activity"
-  | "alert";
+  | "alert"
+  | "tag_contact"
+  | "update_lead_score"
+  | "move_deal_stage"
+  | "send_whatsapp"
+  | "send_email"
+  | "book_meeting"
+  | "draft_outreach";
 
 export interface WorkflowTrigger {
   type: WorkflowTriggerType;
@@ -85,6 +94,9 @@ export interface WorkflowRunContext {
   leadScore?: number;
   dealValue?: number;
   notes?: string;
+  /** Last AI / draft outreach body for later send steps */
+  draftMessage?: string;
+  draftSubject?: string;
 }
 
 export type ConditionField = "leadScore" | "dealValue";
@@ -98,6 +110,8 @@ export interface ConditionStepConfig {
 
 export interface AgentStepConfig {
   agentType: AgentType;
+  /** When true, apply suggested CRM actions from the agent (default true for BDM). */
+  applyActions?: boolean;
 }
 
 export interface ApprovalStepConfig {
@@ -111,9 +125,34 @@ export interface ActionStepConfig {
   priority?: "low" | "medium" | "high";
   activityType?: "call" | "meeting" | "note";
   alertMessage?: string;
+  /** tag_contact */
+  tag?: ContactTag;
+  /** update_lead_score */
+  leadScore?: number;
+  /** move_deal_stage — match by stage name */
+  stageName?: string;
+  /** send_whatsapp / send_email / draft_outreach */
+  messageTemplate?: string;
+  emailSubject?: string;
+  /** book_meeting */
+  meetingTitle?: string;
+  meetingNotes?: string;
 }
 
 export interface DelayStepConfig {
   label: string;
   minutes: number;
 }
+
+export const WORKFLOW_ACTION_LABELS: Record<WorkflowActionType, string> = {
+  create_task: "Create follow-up task",
+  create_activity: "Log CRM activity",
+  alert: "Notify / alert",
+  tag_contact: "Tag contact",
+  update_lead_score: "Set lead score",
+  move_deal_stage: "Move deal stage",
+  send_whatsapp: "Send WhatsApp",
+  send_email: "Send email",
+  book_meeting: "Book meeting (log + task)",
+  draft_outreach: "Draft outreach message",
+};

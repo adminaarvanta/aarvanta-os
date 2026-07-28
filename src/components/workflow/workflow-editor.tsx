@@ -16,29 +16,34 @@ import { Button } from "@/components/ui/button";
 import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
 import type {
   Workflow,
+  WorkflowActionType,
   WorkflowStep,
   WorkflowStepType,
   WorkflowTriggerType,
 } from "@/types/workflow";
+import { WORKFLOW_ACTION_LABELS } from "@/types/workflow";
 import { cn } from "@/lib/utils";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold";
 
 const TRIGGER_OPTIONS: Array<{ type: WorkflowTriggerType; label: string }> = [
-  { type: "manual", label: "Manual run" },
+  { type: "manual", label: "I run it (pick a contact/deal)" },
   { type: "crm_lead_scored", label: "When a lead is scored" },
   { type: "deal_updated", label: "When a deal is updated" },
-  { type: "schedule", label: "On a schedule" },
 ];
 
 const STEP_TYPES: Array<{ type: WorkflowStepType; label: string }> = [
-  { type: "condition", label: "Filter / condition" },
-  { type: "agent", label: "AI agent" },
-  { type: "approval", label: "Human approval" },
-  { type: "action", label: "Action (task / activity / alert)" },
-  { type: "delay", label: "Delay" },
+  { type: "condition", label: "Only if…" },
+  { type: "agent", label: "AI Sales assist" },
+  { type: "action", label: "Do something" },
+  { type: "approval", label: "Ask me to approve" },
+  { type: "delay", label: "Wait (noted)" },
 ];
+
+const ACTION_OPTIONS = Object.entries(WORKFLOW_ACTION_LABELS) as Array<
+  [WorkflowActionType, string]
+>;
 
 const stepIcons: Record<WorkflowStepType, typeof Zap> = {
   condition: GitBranch,
@@ -53,14 +58,14 @@ function defaultConfig(type: WorkflowStepType): Record<string, unknown> {
     case "condition":
       return { field: "leadScore", operator: "gte", value: 70 };
     case "agent":
-      return { agentType: "sales_manager" };
+      return { agentType: "sales_manager", applyActions: true };
     case "approval":
-      return { message: "Approve to continue this automation." };
+      return { message: "Approve to continue this BDM play." };
     case "action":
       return {
         actionType: "create_task",
-        title: "Follow up",
-        priority: "medium",
+        title: "Follow up prospect",
+        priority: "high",
       };
     case "delay":
       return { label: "Wait", minutes: 60 };
@@ -112,7 +117,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     setBusy(true);
     setMessage(null);
     try {
-      const trigger = TRIGGER_OPTIONS.find((t) => t.type === triggerType)!;
+      const trigger =
+        TRIGGER_OPTIONS.find((t) => t.type === triggerType) ??
+        TRIGGER_OPTIONS[0]!;
       const res = await fetch(`/api/workflows/${workflow.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -136,24 +143,36 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     }
   }
 
+  const actionType = String(selected?.config.actionType ?? "create_task");
+
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-4 rounded-xl border border-border bg-surface-elevated p-5">
+        <p className="text-xs text-muted">
+          Build a simple BDM playbook: trigger → checks → outreach / CRM work →
+          optional approval.
+        </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             className={inputClass}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Workflow name"
+            placeholder="Playbook name"
           />
           <select
             className={inputClass}
-            value={triggerType}
-            onChange={(e) => setTriggerType(e.target.value as WorkflowTriggerType)}
+            value={
+              TRIGGER_OPTIONS.some((t) => t.type === triggerType)
+                ? triggerType
+                : "manual"
+            }
+            onChange={(e) =>
+              setTriggerType(e.target.value as WorkflowTriggerType)
+            }
           >
             {TRIGGER_OPTIONS.map((opt) => (
               <option key={opt.type} value={opt.type}>
-                Trigger: {opt.label}
+                {opt.label}
               </option>
             ))}
           </select>
@@ -163,19 +182,23 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description (optional)"
+          placeholder="What should this BDM play achieve?"
         />
 
         <div className="flex flex-col items-center gap-2">
           <div className="w-full max-w-lg rounded-lg border border-gold/40 bg-gold/10 px-4 py-3 text-center text-sm text-gold-bright">
-            {TRIGGER_OPTIONS.find((t) => t.type === triggerType)?.label}
+            {TRIGGER_OPTIONS.find((t) => t.type === triggerType)?.label ??
+              "Manual run"}
           </div>
 
           {steps.map((step) => {
             const Icon = stepIcons[step.type];
             const active = step.id === selectedStepId;
             return (
-              <div key={step.id} className="flex w-full max-w-lg flex-col items-center gap-2">
+              <div
+                key={step.id}
+                className="flex w-full max-w-lg flex-col items-center gap-2"
+              >
                 <ArrowDown className="h-4 w-4 text-border" aria-hidden />
                 <button
                   type="button"
@@ -229,14 +252,19 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" size="sm" disabled={busy} onClick={() => void save()}>
-            {busy ? "Saving…" : "Save workflow"}
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy}
+            onClick={() => void save()}
+          >
+            {busy ? "Saving…" : "Save playbook"}
           </Button>
           {message && <p className="text-xs text-muted">{message}</p>}
         </div>
       </div>
 
-      <aside className="rounded-xl border border-border bg-surface-elevated p-5 space-y-3">
+      <aside className="space-y-3 rounded-xl border border-border bg-surface-elevated p-5">
         <h3 className="text-sm font-semibold text-foreground">Step settings</h3>
         {!selected ? (
           <p className="text-xs text-muted">Select a step to configure it.</p>
@@ -245,7 +273,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             <input
               className={inputClass}
               value={selected.label}
-              onChange={(e) => updateStep(selected.id, { label: e.target.value })}
+              onChange={(e) =>
+                updateStep(selected.id, { label: e.target.value })
+              }
               placeholder="Step label"
             />
 
@@ -298,7 +328,11 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                 value={String(selected.config.agentType ?? "sales_manager")}
                 onChange={(e) =>
                   updateStep(selected.id, {
-                    config: { ...selected.config, agentType: e.target.value },
+                    config: {
+                      ...selected.config,
+                      agentType: e.target.value,
+                      applyActions: true,
+                    },
                   })
                 }
               >
@@ -327,51 +361,143 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               <div className="space-y-2">
                 <select
                   className={inputClass}
-                  value={String(selected.config.actionType ?? "create_task")}
-                  onChange={(e) =>
-                    updateStep(selected.id, {
-                      config: { ...selected.config, actionType: e.target.value },
-                    })
-                  }
-                >
-                  <option value="create_task">Create CRM task</option>
-                  <option value="create_activity">Log activity</option>
-                  <option value="alert">Alert / notify</option>
-                </select>
-                <input
-                  className={inputClass}
-                  placeholder="Title / message"
-                  value={String(
-                    selected.config.title ?? selected.config.alertMessage ?? ""
-                  )}
+                  value={actionType}
                   onChange={(e) =>
                     updateStep(selected.id, {
                       config: {
                         ...selected.config,
-                        title: e.target.value,
-                        alertMessage: e.target.value,
+                        actionType: e.target.value,
                       },
                     })
                   }
-                />
+                >
+                  {ACTION_OPTIONS.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+
+                {(actionType === "create_task" ||
+                  actionType === "create_activity" ||
+                  actionType === "alert" ||
+                  actionType === "book_meeting") && (
+                  <input
+                    className={inputClass}
+                    placeholder="Title / message"
+                    value={String(
+                      selected.config.title ??
+                        selected.config.meetingTitle ??
+                        selected.config.alertMessage ??
+                        ""
+                    )}
+                    onChange={(e) =>
+                      updateStep(selected.id, {
+                        config: {
+                          ...selected.config,
+                          title: e.target.value,
+                          meetingTitle: e.target.value,
+                          alertMessage: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                )}
+
+                {actionType === "tag_contact" && (
+                  <select
+                    className={inputClass}
+                    value={String(selected.config.tag ?? "follow_up")}
+                    onChange={(e) =>
+                      updateStep(selected.id, {
+                        config: { ...selected.config, tag: e.target.value },
+                      })
+                    }
+                  >
+                    <option value="hot_lead">hot_lead</option>
+                    <option value="prospect">prospect</option>
+                    <option value="follow_up">follow_up</option>
+                    <option value="vip">vip</option>
+                    <option value="customer">customer</option>
+                    <option value="partner">partner</option>
+                  </select>
+                )}
+
+                {actionType === "update_lead_score" && (
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={Number(selected.config.leadScore ?? 70)}
+                    onChange={(e) =>
+                      updateStep(selected.id, {
+                        config: {
+                          ...selected.config,
+                          leadScore: Number(e.target.value) || 0,
+                        },
+                      })
+                    }
+                  />
+                )}
+
+                {actionType === "move_deal_stage" && (
+                  <input
+                    className={inputClass}
+                    placeholder="Stage name (e.g. Proposal)"
+                    value={String(selected.config.stageName ?? "Proposal")}
+                    onChange={(e) =>
+                      updateStep(selected.id, {
+                        config: {
+                          ...selected.config,
+                          stageName: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                )}
+
+                {(actionType === "send_whatsapp" ||
+                  actionType === "send_email" ||
+                  actionType === "draft_outreach") && (
+                  <>
+                    {actionType === "send_email" ? (
+                      <input
+                        className={inputClass}
+                        placeholder="Email subject"
+                        value={String(selected.config.emailSubject ?? "")}
+                        onChange={(e) =>
+                          updateStep(selected.id, {
+                            config: {
+                              ...selected.config,
+                              emailSubject: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                    ) : null}
+                    <textarea
+                      className={inputClass}
+                      rows={4}
+                      placeholder="Message — use {{name}}, {{score}}"
+                      value={String(selected.config.messageTemplate ?? "")}
+                      onChange={(e) =>
+                        updateStep(selected.id, {
+                          config: {
+                            ...selected.config,
+                            messageTemplate: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </>
+                )}
               </div>
             )}
 
             {selected.type === "delay" && (
-              <input
-                type="number"
-                min={1}
-                className={inputClass}
-                value={Number(selected.config.minutes ?? 60)}
-                onChange={(e) =>
-                  updateStep(selected.id, {
-                    config: {
-                      ...selected.config,
-                      minutes: Number(e.target.value) || 1,
-                    },
-                  })
-                }
-              />
+              <p className="text-xs text-muted">
+                Delays are noted in the run log; create a follow-up task for real
+                timing until scheduled waits ship.
+              </p>
             )}
           </>
         )}

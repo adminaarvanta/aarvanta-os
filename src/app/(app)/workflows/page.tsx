@@ -20,7 +20,8 @@ export default async function WorkflowsPage() {
           Workflows
         </h2>
         <p className="text-xs text-muted sm:text-sm">
-          Zapier-style automations — templates, editable steps, CRM triggers, and test runs.
+          BDM playbooks — qualify leads, outreach, follow-ups, meetings, and deal
+          handoffs in a simple step list.
         </p>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">

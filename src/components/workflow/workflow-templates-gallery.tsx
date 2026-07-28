@@ -46,9 +46,9 @@ export function WorkflowTemplatesGallery({ templates }: { templates: Template[] 
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-semibold text-foreground">Template gallery</h3>
+        <h3 className="text-sm font-semibold text-foreground">BDM playbooks</h3>
         <p className="mt-1 text-xs text-muted">
-          One-click install like Zapier — then customize the trigger and steps.
+          One-click install — then customize messages, stages, and approvals.
         </p>
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
@@ -87,7 +87,7 @@ export function WorkflowTemplatesGallery({ templates }: { templates: Template[] 
               disabled={busyId !== null}
               onClick={() => void install(template.templateId ?? "")}
             >
-              {busyId === template.templateId ? "Installing…" : "Use template"}
+              {busyId === template.templateId ? "Installing…" : "Use this playbook"}
             </Button>
           </li>
         ))}

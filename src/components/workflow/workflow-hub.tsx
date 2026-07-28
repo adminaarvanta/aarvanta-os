@@ -24,16 +24,28 @@ export function WorkflowHub({
   runs: WorkflowRun[];
   templates: Template[];
 }) {
-  const [tab, setTab] = useState<Tab>("automations");
+  const [tab, setTab] = useState<Tab>("templates");
 
   const tabs: Array<{ id: Tab; label: string }> = [
-    { id: "automations", label: `My automations (${workflows.length})` },
-    { id: "templates", label: `Templates (${templates.length})` },
+    { id: "templates", label: `BDM playbooks (${templates.length})` },
+    { id: "automations", label: `My plays (${workflows.length})` },
     { id: "runs", label: `Run history (${runs.length})` },
   ];
 
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-border bg-surface-elevated p-4 text-sm text-muted">
+        <p className="font-medium text-foreground">How it works</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>Install a BDM playbook (or describe one in plain English).</li>
+          <li>It runs on a lead score / deal update, or when you click Test run.</li>
+          <li>
+            Steps do real work: WhatsApp/email, CRM tags &amp; stages, tasks,
+            meetings, AI assist, approvals.
+          </li>
+        </ol>
+      </div>
+
       <WorkflowBuilder />
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-2">
@@ -54,8 +66,8 @@ export function WorkflowHub({
         ))}
       </div>
 
-      {tab === "automations" && <WorkflowList workflows={workflows} />}
       {tab === "templates" && <WorkflowTemplatesGallery templates={templates} />}
+      {tab === "automations" && <WorkflowList workflows={workflows} />}
       {tab === "runs" && <WorkflowRunList runs={runs} />}
     </div>
   );

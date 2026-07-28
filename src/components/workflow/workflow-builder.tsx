@@ -40,17 +40,17 @@ export function WorkflowBuilder() {
     <div className="rounded-xl border border-border bg-surface-muted p-4 sm:p-5">
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-gold" />
-        <h3 className="text-sm font-semibold text-foreground">AI Workflow Builder</h3>
+        <h3 className="text-sm font-semibold text-foreground">Describe a BDM play</h3>
       </div>
       <p className="mt-1 text-xs text-muted">
-        Describe an automation in plain English — we generate a trigger + steps you can edit
-        (Zapier-style). Or install a template below.
+        Example: “When a lead scores hot, send WhatsApp and create a follow-up
+        task” — then edit steps.
       </p>
       <form onSubmit={handleGenerate} className="mt-4 flex flex-col gap-3 sm:flex-row">
         <input
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
-          placeholder="e.g. When a deal closes, notify ops and create onboarding tasks"
+          placeholder="e.g. WhatsApp intro to a new prospect, then book a discovery call"
           className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold"
         />
         <button
@@ -58,7 +58,7 @@ export function WorkflowBuilder() {
           disabled={loading || !intent.trim()}
           className="shrink-0 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-black hover:bg-gold-bright disabled:opacity-50"
         >
-          {loading ? "Generating…" : "Generate workflow"}
+          {loading ? "Building…" : "Build playbook"}
         </button>
       </form>
       {error ? (

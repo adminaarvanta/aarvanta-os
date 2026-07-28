@@ -68,7 +68,7 @@ export const SPEC_PHASES: Array<{
         href: "/workflows",
         status: "partial",
         summary:
-          "Trigger → condition → agent → approval → action. AI workflow generation from natural language.",
+          "BDM playbooks: lead score/deal triggers, WhatsApp/email outreach, CRM tags & stages, tasks, meetings, AI assist, approvals.",
       },
       {
         id: "founder",

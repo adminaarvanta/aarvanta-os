@@ -55,7 +55,7 @@ export function buildProvisioningPlan(
 ): LaunchProvisioningPlan {
   const profile = getIndustryProfile(industryProfileId);
   return {
-    workflows: profile?.defaultWorkflows ?? ["lead_nurturing", "customer_onboarding"],
+    workflows: profile?.defaultWorkflows ?? ["hot_lead_chase", "first_outreach_whatsapp"],
     crmPipeline: true,
     financeBudget: true,
     financeChartOfAccounts: countryBase.toUpperCase() === "UK" || countryBase.toUpperCase() === "GB",
