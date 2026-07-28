@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -21,21 +20,16 @@ export default async function BuildPreviewPage({ params }: PageProps) {
   if (!job?.generatedSite) notFound();
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-3 border-b border-border bg-surface px-4 py-3 sm:px-6">
-        <Link
-          href={`/build?job=${id}`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Build OS
-        </Link>
-      </div>
-      <div className="flex-1 overflow-y-auto bg-background">
-        <Suspense fallback={null}>
-          <GeneratedSitePreview site={job.generatedSite} />
-        </Suspense>
-      </div>
+    <div className="relative min-h-[100dvh]">
+      <Link
+        href={`/build?job=${id}`}
+        className="fixed bottom-4 left-4 z-50 rounded-full border border-white/20 bg-black/55 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur hover:bg-black/70"
+      >
+        ← Build OS
+      </Link>
+      <Suspense fallback={null}>
+        <GeneratedSitePreview site={job.generatedSite} fullscreen />
+      </Suspense>
     </div>
   );
 }

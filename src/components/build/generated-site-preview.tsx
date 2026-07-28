@@ -17,6 +17,7 @@ export function GeneratedSitePreview({
   className,
   interactive = true,
   thumbnail = false,
+  fullscreen = false,
 }: {
   site: GeneratedSite;
   className?: string;
@@ -24,6 +25,8 @@ export function GeneratedSitePreview({
   interactive?: boolean;
   /** Compact chrome for design picker thumbnails. */
   thumbnail?: boolean;
+  /** Full-bleed preview without OS/card chrome. */
+  fullscreen?: boolean;
 }) {
   const [activeSlug, setActiveSlug] = useState(site.pages[0]?.slug ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -216,9 +219,11 @@ export function GeneratedSitePreview({
 
   return (
     <div
-      className={`site-preview @container w-full min-w-0 overflow-x-hidden overflow-y-auto rounded-2xl border border-border shadow-xl ${
-        !interactive ? "pointer-events-none select-none" : ""
-      } ${className ?? ""}`}
+      className={`site-preview @container w-full min-w-0 overflow-x-hidden overflow-y-auto ${
+        fullscreen
+          ? "min-h-[100dvh] rounded-none border-0 shadow-none"
+          : "rounded-2xl border border-border shadow-xl"
+      } ${!interactive ? "pointer-events-none select-none" : ""} ${className ?? ""}`}
       style={
         {
           backgroundColor: theme.backgroundColor,
