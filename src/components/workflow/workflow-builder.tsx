@@ -3,6 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
+import {
+  FlowPanel,
+  FlowPrimaryButton,
+  flowInputClass,
+} from "@/components/workflow/workflow-shell";
 
 export function WorkflowBuilder() {
   const router = useRouter();
@@ -37,35 +42,59 @@ export function WorkflowBuilder() {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface-muted p-4 sm:p-5">
+    <FlowPanel
+      className="!p-5"
+      style={{
+        background:
+          "linear-gradient(135deg, var(--flow-accent-soft) 0%, #FFFFFF 55%, var(--flow-cyan-soft) 100%)",
+      }}
+    >
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-gold" />
-        <h3 className="text-sm font-semibold text-foreground">Describe a BDM play</h3>
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-lg"
+          style={{ background: "var(--flow-accent)", color: "#fff" }}
+        >
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--flow-ink)" }}
+        >
+          Describe a BDM play
+        </h3>
       </div>
-      <p className="mt-1 text-xs text-muted">
+      <p className="mt-2 text-xs" style={{ color: "var(--flow-muted)" }}>
         Example: “When a lead scores hot, send WhatsApp and create a follow-up
         task” — then edit steps.
       </p>
-      <form onSubmit={handleGenerate} className="mt-4 flex flex-col gap-3 sm:flex-row">
+      <form
+        onSubmit={handleGenerate}
+        className="mt-4 flex flex-col gap-3 sm:flex-row"
+      >
         <input
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
           placeholder="e.g. WhatsApp intro to a new prospect, then book a discovery call"
-          className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold"
+          className={flowInputClass}
+          style={{ borderColor: "var(--flow-line)", color: "var(--flow-ink)" }}
         />
-        <button
+        <FlowPrimaryButton
           type="submit"
           disabled={loading || !intent.trim()}
-          className="shrink-0 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-black hover:bg-gold-bright disabled:opacity-50"
+          className="shrink-0"
         >
           {loading ? "Building…" : "Build playbook"}
-        </button>
+        </FlowPrimaryButton>
       </form>
       {error ? (
-        <p className="mt-2 text-xs text-red-400" role="alert">
+        <p
+          className="mt-2 text-xs"
+          role="alert"
+          style={{ color: "var(--flow-danger)" }}
+        >
           {error}
         </p>
       ) : null}
-    </div>
+    </FlowPanel>
   );
 }

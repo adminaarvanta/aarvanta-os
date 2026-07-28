@@ -12,7 +12,6 @@ import {
   Trash2,
   Zap,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
 import type {
   Workflow,
@@ -23,9 +22,11 @@ import type {
 } from "@/types/workflow";
 import { WORKFLOW_ACTION_LABELS } from "@/types/workflow";
 import { cn } from "@/lib/utils";
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold";
+import {
+  FlowPanel,
+  FlowPrimaryButton,
+  flowInputClass,
+} from "@/components/workflow/workflow-shell";
 
 const TRIGGER_OPTIONS: Array<{ type: WorkflowTriggerType; label: string }> = [
   { type: "manual", label: "I run it (pick a contact/deal)" },
@@ -33,12 +34,42 @@ const TRIGGER_OPTIONS: Array<{ type: WorkflowTriggerType; label: string }> = [
   { type: "deal_updated", label: "When a deal is updated" },
 ];
 
-const STEP_TYPES: Array<{ type: WorkflowStepType; label: string }> = [
-  { type: "condition", label: "Only if…" },
-  { type: "agent", label: "AI Sales assist" },
-  { type: "action", label: "Do something" },
-  { type: "approval", label: "Ask me to approve" },
-  { type: "delay", label: "Wait (noted)" },
+const STEP_TYPES: Array<{
+  type: WorkflowStepType;
+  label: string;
+  soft: string;
+  fg: string;
+}> = [
+  {
+    type: "condition",
+    label: "Only if…",
+    soft: "var(--flow-cyan-soft)",
+    fg: "var(--flow-cyan)",
+  },
+  {
+    type: "agent",
+    label: "AI Sales assist",
+    soft: "var(--flow-accent-soft)",
+    fg: "var(--flow-accent)",
+  },
+  {
+    type: "action",
+    label: "Do something",
+    soft: "var(--flow-emerald-soft)",
+    fg: "var(--flow-emerald)",
+  },
+  {
+    type: "approval",
+    label: "Ask me to approve",
+    soft: "var(--flow-rose-soft)",
+    fg: "var(--flow-rose)",
+  },
+  {
+    type: "delay",
+    label: "Wait (noted)",
+    soft: "var(--flow-amber-soft)",
+    fg: "var(--flow-amber)",
+  },
 ];
 
 const ACTION_OPTIONS = Object.entries(WORKFLOW_ACTION_LABELS) as Array<
@@ -51,6 +82,14 @@ const stepIcons: Record<WorkflowStepType, typeof Zap> = {
   approval: ShieldCheck,
   action: Zap,
   delay: Clock,
+};
+
+const stepColors: Record<WorkflowStepType, { soft: string; fg: string }> = {
+  condition: { soft: "var(--flow-cyan-soft)", fg: "var(--flow-cyan)" },
+  agent: { soft: "var(--flow-accent-soft)", fg: "var(--flow-accent)" },
+  action: { soft: "var(--flow-emerald-soft)", fg: "var(--flow-emerald)" },
+  approval: { soft: "var(--flow-rose-soft)", fg: "var(--flow-rose)" },
+  delay: { soft: "var(--flow-amber-soft)", fg: "var(--flow-amber)" },
 };
 
 function defaultConfig(type: WorkflowStepType): Record<string, unknown> {
@@ -144,23 +183,29 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   }
 
   const actionType = String(selected?.config.actionType ?? "create_task");
+  const inputStyle = {
+    borderColor: "var(--flow-line)",
+    color: "var(--flow-ink)",
+  };
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-4 rounded-xl border border-border bg-surface-elevated p-5">
-        <p className="text-xs text-muted">
+      <FlowPanel className="space-y-4">
+        <p className="text-xs" style={{ color: "var(--flow-muted)" }}>
           Build a simple BDM playbook: trigger → checks → outreach / CRM work →
           optional approval.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <input
-            className={inputClass}
+            className={flowInputClass}
+            style={inputStyle}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Playbook name"
           />
           <select
-            className={inputClass}
+            className={flowInputClass}
+            style={inputStyle}
             value={
               TRIGGER_OPTIONS.some((t) => t.type === triggerType)
                 ? triggerType
@@ -178,7 +223,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           </select>
         </div>
         <textarea
-          className={inputClass}
+          className={flowInputClass}
+          style={inputStyle}
           rows={2}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -186,42 +232,67 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         />
 
         <div className="flex flex-col items-center gap-2">
-          <div className="w-full max-w-lg rounded-lg border border-gold/40 bg-gold/10 px-4 py-3 text-center text-sm text-gold-bright">
+          <div
+            className="w-full max-w-lg rounded-xl px-4 py-3 text-center text-sm font-semibold"
+            style={{
+              background: "var(--flow-accent-soft)",
+              color: "var(--flow-accent)",
+            }}
+          >
             {TRIGGER_OPTIONS.find((t) => t.type === triggerType)?.label ??
               "Manual run"}
           </div>
 
           {steps.map((step) => {
             const Icon = stepIcons[step.type];
+            const colors = stepColors[step.type];
             const active = step.id === selectedStepId;
             return (
               <div
                 key={step.id}
                 className="flex w-full max-w-lg flex-col items-center gap-2"
               >
-                <ArrowDown className="h-4 w-4 text-border" aria-hidden />
+                <ArrowDown
+                  className="h-4 w-4"
+                  style={{ color: "var(--flow-line)" }}
+                  aria-hidden
+                />
                 <button
                   type="button"
                   onClick={() => setSelectedStepId(step.id)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg border px-4 py-3 text-left transition-colors",
-                    active
-                      ? "border-gold bg-gold/10"
-                      : "border-border bg-surface-muted hover:border-gold/40"
+                    "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition",
+                    active ? "shadow-sm" : "hover:bg-[#F8F9FC]"
                   )}
+                  style={{
+                    borderColor: active ? colors.fg : "var(--flow-line)",
+                    background: active ? colors.soft : "white",
+                  }}
                 >
-                  <Icon className="h-4 w-4 shrink-0 text-gold" />
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: colors.soft, color: colors.fg }}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase tracking-wide text-muted">
+                    <p
+                      className="text-[10px] font-semibold uppercase tracking-wide"
+                      style={{ color: colors.fg }}
+                    >
                       {step.type}
                     </p>
-                    <p className="truncate text-sm font-medium text-foreground">
+                    <p
+                      className="truncate text-sm font-medium"
+                      style={{ color: "var(--flow-ink)" }}
+                    >
                       {step.label}
                     </p>
                   </div>
                   <button
                     type="button"
-                    className="rounded p-1 text-muted hover:text-danger"
+                    className="rounded-lg p-1.5 transition hover:bg-white/80"
+                    style={{ color: "var(--flow-muted)" }}
                     onClick={(e) => {
                       e.stopPropagation();
                       removeStep(step.id);
@@ -238,40 +309,51 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
 
         <div className="flex flex-wrap gap-2">
           {STEP_TYPES.map((opt) => (
-            <Button
+            <button
               key={opt.type}
               type="button"
-              size="sm"
-              variant="secondary"
               onClick={() => addStep(opt.type)}
+              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition hover:opacity-90"
+              style={{ background: opt.soft, color: opt.fg }}
             >
-              <Plus className="mr-1 h-3.5 w-3.5" />
+              <Plus className="h-3.5 w-3.5" />
               {opt.label}
-            </Button>
+            </button>
           ))}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button
+          <FlowPrimaryButton
             type="button"
-            size="sm"
             disabled={busy}
             onClick={() => void save()}
           >
             {busy ? "Saving…" : "Save playbook"}
-          </Button>
-          {message && <p className="text-xs text-muted">{message}</p>}
+          </FlowPrimaryButton>
+          {message && (
+            <p className="text-xs" style={{ color: "var(--flow-muted)" }}>
+              {message}
+            </p>
+          )}
         </div>
-      </div>
+      </FlowPanel>
 
-      <aside className="space-y-3 rounded-xl border border-border bg-surface-elevated p-5">
-        <h3 className="text-sm font-semibold text-foreground">Step settings</h3>
+      <FlowPanel className="space-y-3 h-fit">
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--flow-ink)" }}
+        >
+          Step settings
+        </h3>
         {!selected ? (
-          <p className="text-xs text-muted">Select a step to configure it.</p>
+          <p className="text-xs" style={{ color: "var(--flow-muted)" }}>
+            Select a step to configure it.
+          </p>
         ) : (
           <>
             <input
-              className={inputClass}
+              className={flowInputClass}
+              style={inputStyle}
               value={selected.label}
               onChange={(e) =>
                 updateStep(selected.id, { label: e.target.value })
@@ -282,7 +364,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             {selected.type === "condition" && (
               <div className="space-y-2">
                 <select
-                  className={inputClass}
+                  className={flowInputClass}
+                  style={inputStyle}
                   value={String(selected.config.field ?? "leadScore")}
                   onChange={(e) =>
                     updateStep(selected.id, {
@@ -294,7 +377,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   <option value="dealValue">Deal value</option>
                 </select>
                 <select
-                  className={inputClass}
+                  className={flowInputClass}
+                  style={inputStyle}
                   value={String(selected.config.operator ?? "gte")}
                   onChange={(e) =>
                     updateStep(selected.id, {
@@ -308,7 +392,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                 </select>
                 <input
                   type="number"
-                  className={inputClass}
+                  className={flowInputClass}
+                  style={inputStyle}
                   value={Number(selected.config.value ?? 0)}
                   onChange={(e) =>
                     updateStep(selected.id, {
@@ -324,7 +409,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
 
             {selected.type === "agent" && (
               <select
-                className={inputClass}
+                className={flowInputClass}
+                style={inputStyle}
                 value={String(selected.config.agentType ?? "sales_manager")}
                 onChange={(e) =>
                   updateStep(selected.id, {
@@ -346,7 +432,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
 
             {selected.type === "approval" && (
               <textarea
-                className={inputClass}
+                className={flowInputClass}
+                style={inputStyle}
                 rows={3}
                 value={String(selected.config.message ?? "")}
                 onChange={(e) =>
@@ -360,7 +447,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             {selected.type === "action" && (
               <div className="space-y-2">
                 <select
-                  className={inputClass}
+                  className={flowInputClass}
+                  style={inputStyle}
                   value={actionType}
                   onChange={(e) =>
                     updateStep(selected.id, {
@@ -383,7 +471,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   actionType === "alert" ||
                   actionType === "book_meeting") && (
                   <input
-                    className={inputClass}
+                    className={flowInputClass}
+                    style={inputStyle}
                     placeholder="Title / message"
                     value={String(
                       selected.config.title ??
@@ -406,7 +495,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
 
                 {actionType === "tag_contact" && (
                   <select
-                    className={inputClass}
+                    className={flowInputClass}
+                    style={inputStyle}
                     value={String(selected.config.tag ?? "follow_up")}
                     onChange={(e) =>
                       updateStep(selected.id, {
@@ -426,7 +516,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                 {actionType === "update_lead_score" && (
                   <input
                     type="number"
-                    className={inputClass}
+                    className={flowInputClass}
+                    style={inputStyle}
                     value={Number(selected.config.leadScore ?? 70)}
                     onChange={(e) =>
                       updateStep(selected.id, {
@@ -441,7 +532,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
 
                 {actionType === "move_deal_stage" && (
                   <input
-                    className={inputClass}
+                    className={flowInputClass}
+                    style={inputStyle}
                     placeholder="Stage name (e.g. Proposal)"
                     value={String(selected.config.stageName ?? "Proposal")}
                     onChange={(e) =>
@@ -461,7 +553,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   <>
                     {actionType === "send_email" ? (
                       <input
-                        className={inputClass}
+                        className={flowInputClass}
+                        style={inputStyle}
                         placeholder="Email subject"
                         value={String(selected.config.emailSubject ?? "")}
                         onChange={(e) =>
@@ -475,7 +568,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                       />
                     ) : null}
                     <textarea
-                      className={inputClass}
+                      className={flowInputClass}
+                      style={inputStyle}
                       rows={4}
                       placeholder="Message — use {{name}}, {{score}}"
                       value={String(selected.config.messageTemplate ?? "")}
@@ -494,14 +588,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             )}
 
             {selected.type === "delay" && (
-              <p className="text-xs text-muted">
+              <p className="text-xs" style={{ color: "var(--flow-muted)" }}>
                 Delays are noted in the run log; create a follow-up task for real
                 timing until scheduled waits ship.
               </p>
             )}
           </>
         )}
-      </aside>
+      </FlowPanel>
     </div>
   );
 }

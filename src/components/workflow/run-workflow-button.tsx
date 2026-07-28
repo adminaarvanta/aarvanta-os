@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Loader2, Play } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { FlowPrimaryButton } from "@/components/workflow/workflow-shell";
 
 export function RunWorkflowButton({
   workflowId,
@@ -50,15 +50,24 @@ export function RunWorkflowButton({
 
   return (
     <div className="inline-flex flex-col items-start gap-1">
-      <Button type="button" onClick={() => void run()} disabled={loading}>
+      <FlowPrimaryButton
+        type="button"
+        onClick={() => void run()}
+        disabled={loading}
+        className="!px-4 !py-2"
+      >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <Play className="h-4 w-4" />
         )}
         {label}
-      </Button>
-      {error && <p className="text-[10px] text-danger">{error}</p>}
+      </FlowPrimaryButton>
+      {error && (
+        <p className="text-[10px]" style={{ color: "var(--flow-danger)" }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

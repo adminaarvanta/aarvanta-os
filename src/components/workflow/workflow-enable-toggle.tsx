@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import type { Workflow } from "@/types/workflow";
 
 export function WorkflowEnableToggle({ workflow }: { workflow: Workflow }) {
@@ -34,11 +33,11 @@ export function WorkflowEnableToggle({ workflow }: { workflow: Workflow }) {
       type="button"
       onClick={() => void toggle()}
       disabled={busy}
-      className={
-        enabled
-          ? "rounded-full bg-accent-cyan/15 px-3 py-1 text-xs font-medium text-accent-cyan ring-1 ring-accent-cyan/30"
-          : "rounded-full bg-danger/15 px-3 py-1 text-xs font-medium text-danger ring-1 ring-danger/40"
-      }
+      className="rounded-full px-3 py-1 text-xs font-semibold transition"
+      style={{
+        background: enabled ? "var(--flow-ok-soft)" : "var(--flow-danger-soft)",
+        color: enabled ? "var(--flow-ok)" : "var(--flow-danger)",
+      }}
       title="Toggle automation on/off"
     >
       {busy ? "…" : enabled ? "On" : "Off"}
@@ -65,15 +64,14 @@ export function DeleteWorkflowButton({ workflowId }: { workflowId: string }) {
   }
 
   return (
-    <Button
+    <button
       type="button"
-      size="sm"
-      variant="ghost"
-      className="text-danger"
       disabled={busy}
       onClick={() => void onDelete()}
+      className="rounded-full px-4 py-2 text-sm font-semibold transition hover:opacity-80 disabled:opacity-50"
+      style={{ color: "var(--flow-danger)" }}
     >
       {busy ? "Deleting…" : "Delete"}
-    </Button>
+    </button>
   );
 }

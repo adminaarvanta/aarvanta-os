@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold";
+import {
+  FlowPanel,
+  FlowPrimaryButton,
+  flowInputClass,
+} from "@/components/workflow/workflow-shell";
 
 export function WorkflowTestRunPanel({
   workflowId,
@@ -63,17 +64,28 @@ export function WorkflowTestRunPanel({
     }
   }
 
+  const inputStyle = {
+    borderColor: "var(--flow-line)",
+    color: "var(--flow-ink)",
+  };
+
   return (
-    <div className="rounded-xl border border-border bg-surface-elevated p-5 space-y-3">
+    <FlowPanel className="space-y-3">
       <div>
-        <h3 className="text-sm font-semibold text-foreground">Test run</h3>
-        <p className="mt-1 text-xs text-muted">
-          Pick sample CRM context (like Zapier’s test), then execute the automation.
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--flow-ink)" }}
+        >
+          Test run
+        </h3>
+        <p className="mt-1 text-xs" style={{ color: "var(--flow-muted)" }}>
+          Pick sample CRM context, then execute the playbook.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <select
-          className={inputClass}
+          className={flowInputClass}
+          style={inputStyle}
           value={contactId}
           onChange={(e) => setContactId(e.target.value)}
         >
@@ -86,7 +98,8 @@ export function WorkflowTestRunPanel({
           ))}
         </select>
         <select
-          className={inputClass}
+          className={flowInputClass}
+          style={inputStyle}
           value={dealId}
           onChange={(e) => setDealId(e.target.value)}
         >
@@ -99,16 +112,25 @@ export function WorkflowTestRunPanel({
         </select>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" size="sm" disabled={busy} onClick={() => void run()}>
+        <FlowPrimaryButton
+          type="button"
+          disabled={busy}
+          onClick={() => void run()}
+          className="!px-4 !py-2"
+        >
           {busy ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Play className="mr-1.5 h-3.5 w-3.5" />
+            <Play className="h-3.5 w-3.5" />
           )}
           {busy ? "Running…" : "Test run"}
-        </Button>
-        {error && <p className="text-xs text-danger">{error}</p>}
+        </FlowPrimaryButton>
+        {error && (
+          <p className="text-xs" style={{ color: "var(--flow-danger)" }}>
+            {error}
+          </p>
+        )}
       </div>
-    </div>
+    </FlowPanel>
   );
 }

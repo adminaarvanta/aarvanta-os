@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowDown,
   Bot,
@@ -8,7 +7,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { Workflow, WorkflowStep } from "@/types/workflow";
-import { cn } from "@/lib/utils";
+import { FlowChip, FlowPanel } from "@/components/workflow/workflow-shell";
 
 const stepIcons: Record<WorkflowStep["type"], typeof Zap> = {
   condition: GitBranch,
@@ -18,43 +17,53 @@ const stepIcons: Record<WorkflowStep["type"], typeof Zap> = {
   delay: Clock,
 };
 
-const stepColors: Record<WorkflowStep["type"], string> = {
-  condition: "border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan",
-  agent: "border-gold/40 bg-gold/10 text-gold-bright",
-  approval: "border-gold/35 bg-gold/10 text-gold-bright",
-  action: "border-accent-cyan/30 bg-accent-cyan/15 text-accent-cyan",
-  delay: "border-border bg-surface-muted text-muted",
+const stepColors: Record<WorkflowStep["type"], { soft: string; fg: string }> = {
+  condition: { soft: "var(--flow-cyan-soft)", fg: "var(--flow-cyan)" },
+  agent: { soft: "var(--flow-accent-soft)", fg: "var(--flow-accent)" },
+  action: { soft: "var(--flow-emerald-soft)", fg: "var(--flow-emerald)" },
+  approval: { soft: "var(--flow-rose-soft)", fg: "var(--flow-rose)" },
+  delay: { soft: "var(--flow-amber-soft)", fg: "var(--flow-amber)" },
 };
 
 export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
   return (
-    <div className="rounded-xl border border-border bg-surface-elevated p-5">
+    <FlowPanel>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-surface-muted px-3 py-1 text-xs text-muted ring-1 ring-border">
-          Trigger: {workflow.trigger.label}
-        </span>
-        {!workflow.enabled && (
-          <span className="rounded-full bg-danger/15 px-3 py-1 text-xs text-danger">
-            Disabled
-          </span>
-        )}
+        <FlowChip tone="cyan">Trigger: {workflow.trigger.label}</FlowChip>
+        {!workflow.enabled && <FlowChip tone="danger">Disabled</FlowChip>}
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <div className="w-full max-w-md rounded-lg border border-border bg-surface-muted px-4 py-3 text-center text-sm text-foreground">
+        <div
+          className="w-full max-w-md rounded-xl px-4 py-3 text-center text-sm font-semibold"
+          style={{
+            background: "var(--flow-accent-soft)",
+            color: "var(--flow-accent)",
+          }}
+        >
           {workflow.trigger.label}
         </div>
 
         {workflow.steps.map((step, index) => {
           const Icon = stepIcons[step.type];
+          const colors = stepColors[step.type];
           return (
-            <div key={step.id} className="flex w-full max-w-md flex-col items-center gap-2">
-              <ArrowDown className="h-4 w-4 text-border" aria-hidden />
+            <div
+              key={step.id}
+              className="flex w-full max-w-md flex-col items-center gap-2"
+            >
+              <ArrowDown
+                className="h-4 w-4"
+                style={{ color: "var(--flow-line)" }}
+                aria-hidden
+              />
               <div
-                className={cn(
-                  "w-full rounded-lg border px-4 py-3",
-                  stepColors[step.type]
-                )}
+                className="w-full rounded-xl border px-4 py-3"
+                style={{
+                  borderColor: colors.fg,
+                  background: colors.soft,
+                  color: colors.fg,
+                }}
               >
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4 shrink-0" />
@@ -62,15 +71,22 @@ export function WorkflowFlowDiagram({ workflow }: { workflow: Workflow }) {
                     <p className="text-[10px] uppercase tracking-wide opacity-70">
                       {step.type}
                     </p>
-                    <p className="text-sm font-medium">{step.label}</p>
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: "var(--flow-ink)" }}
+                    >
+                      {step.label}
+                    </p>
                   </div>
-                  <span className="ml-auto text-[10px] opacity-60">#{index + 1}</span>
+                  <span className="ml-auto text-[10px] opacity-60">
+                    #{index + 1}
+                  </span>
                 </div>
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </FlowPanel>
   );
 }

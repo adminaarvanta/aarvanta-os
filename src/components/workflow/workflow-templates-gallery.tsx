@@ -2,15 +2,57 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutTemplate } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  Calendar,
+  FileCheck,
+  GitBranch,
+  MessageCircle,
+  Target,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  FlowChip,
+  FlowPanel,
+  FlowPrimaryButton,
+  tagTone,
+} from "@/components/workflow/workflow-shell";
 import type { Workflow } from "@/types/workflow";
 
 type Template = Omit<
   Workflow,
   "id" | "createdAt" | "updatedAt" | "tenantId" | "workspaceId" | "companyId"
 >;
+
+const PLAYBOOK_VISUAL: Record<
+  string,
+  { icon: LucideIcon; soft: string; fg: string }
+> = {
+  hot_lead_chase: {
+    icon: Target,
+    soft: "var(--flow-rose-soft)",
+    fg: "var(--flow-rose)",
+  },
+  first_outreach_whatsapp: {
+    icon: MessageCircle,
+    soft: "var(--flow-emerald-soft)",
+    fg: "var(--flow-emerald)",
+  },
+  book_discovery: {
+    icon: Calendar,
+    soft: "var(--flow-amber-soft)",
+    fg: "var(--flow-amber)",
+  },
+  deal_followup: {
+    icon: GitBranch,
+    soft: "var(--flow-cyan-soft)",
+    fg: "var(--flow-cyan)",
+  },
+  proposal_handoff: {
+    icon: FileCheck,
+    soft: "var(--flow-accent-soft)",
+    fg: "var(--flow-accent)",
+  },
+};
 
 export function WorkflowTemplatesGallery({ templates }: { templates: Template[] }) {
   const router = useRouter();
@@ -46,51 +88,77 @@ export function WorkflowTemplatesGallery({ templates }: { templates: Template[] 
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-semibold text-foreground">BDM playbooks</h3>
-        <p className="mt-1 text-xs text-muted">
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--flow-ink)" }}
+        >
+          BDM playbooks
+        </h3>
+        <p className="mt-1 text-xs" style={{ color: "var(--flow-muted)" }}>
           One-click install — then customize messages, stages, and approvals.
         </p>
       </div>
-      {error && <p className="text-xs text-danger">{error}</p>}
-      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {templates.map((template) => (
-          <li
-            key={template.templateId ?? template.name}
-            className="flex flex-col rounded-xl border border-border bg-surface-elevated p-5"
-          >
-            <div className="mb-3 flex items-start gap-2">
-              <LayoutTemplate className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-              <div>
-                <p className="font-semibold text-foreground">{template.name}</p>
-                {template.description && (
-                  <p className="mt-1 text-xs text-muted">{template.description}</p>
-                )}
-              </div>
-            </div>
-            <div className="mb-4 flex flex-wrap gap-1">
-              <Badge className="bg-surface-muted text-muted ring-border">
-                {template.trigger.label}
-              </Badge>
-              <Badge className="bg-surface-muted text-muted ring-border">
-                {template.steps.length} steps
-              </Badge>
-              {template.tags.map((tag) => (
-                <Badge key={tag} className="bg-surface-muted text-muted ring-border">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              className="mt-auto"
-              disabled={busyId !== null}
-              onClick={() => void install(template.templateId ?? "")}
-            >
-              {busyId === template.templateId ? "Installing…" : "Use this playbook"}
-            </Button>
-          </li>
-        ))}
+      {error && (
+        <p className="text-xs" style={{ color: "var(--flow-danger)" }}>
+          {error}
+        </p>
+      )}
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {templates.map((template) => {
+          const visual =
+            PLAYBOOK_VISUAL[template.templateId ?? ""] ??
+            PLAYBOOK_VISUAL.hot_lead_chase!;
+          const Icon = visual.icon;
+          return (
+            <li key={template.templateId ?? template.name}>
+              <FlowPanel className="flex h-full flex-col !p-5">
+                <div className="mb-3 flex items-start gap-3">
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: visual.soft, color: visual.fg }}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p
+                      className="font-semibold"
+                      style={{ color: "var(--flow-ink)" }}
+                    >
+                      {template.name}
+                    </p>
+                    {template.description ? (
+                      <p
+                        className="mt-1 text-xs leading-relaxed"
+                        style={{ color: "var(--flow-muted)" }}
+                      >
+                        {template.description}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  <FlowChip tone="cyan">{template.trigger.label}</FlowChip>
+                  <FlowChip tone="muted">{template.steps.length} steps</FlowChip>
+                  {template.tags.map((tag) => (
+                    <FlowChip key={tag} tone={tagTone(tag)}>
+                      {tag}
+                    </FlowChip>
+                  ))}
+                </div>
+                <FlowPrimaryButton
+                  type="button"
+                  className="mt-auto w-full sm:w-auto"
+                  disabled={busyId !== null}
+                  onClick={() => void install(template.templateId ?? "")}
+                >
+                  {busyId === template.templateId
+                    ? "Installing…"
+                    : "Use this playbook"}
+                </FlowPrimaryButton>
+              </FlowPanel>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

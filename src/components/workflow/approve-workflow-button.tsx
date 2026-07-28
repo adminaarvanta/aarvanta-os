@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  FlowPanel,
+  FlowPrimaryButton,
+} from "@/components/workflow/workflow-shell";
 import type { WorkflowRun } from "@/types/workflow";
 
 export function ApproveWorkflowButton({ run }: { run: WorkflowRun }) {
@@ -26,19 +29,35 @@ export function ApproveWorkflowButton({ run }: { run: WorkflowRun }) {
   }
 
   return (
-    <div className="rounded-xl border border-gold/35 bg-gold/10 p-4">
-      <p className="text-sm font-medium text-gold-bright">Approval required</p>
-      <p className="mt-1 text-xs text-gold-bright/80">
+    <FlowPanel
+      style={{
+        background: "var(--flow-amber-soft)",
+        borderColor: "#FCD34D",
+      }}
+    >
+      <p
+        className="text-sm font-semibold"
+        style={{ color: "var(--flow-amber)" }}
+      >
+        Approval required
+      </p>
+      <p className="mt-1 text-xs" style={{ color: "var(--flow-ink)" }}>
         {run.pendingApproval?.message}
       </p>
-      <Button type="button" className="mt-3" onClick={approve} disabled={loading}>
+      <FlowPrimaryButton
+        type="button"
+        className="mt-3"
+        onClick={approve}
+        disabled={loading}
+        style={{ background: "var(--flow-amber)" }}
+      >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <CheckCircle2 className="h-4 w-4" />
         )}
         Approve &amp; continue
-      </Button>
-    </div>
+      </FlowPrimaryButton>
+    </FlowPanel>
   );
 }

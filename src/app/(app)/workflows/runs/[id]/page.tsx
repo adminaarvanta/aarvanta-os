@@ -1,17 +1,33 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApproveWorkflowButton } from "@/components/workflow/approve-workflow-button";
+import { WorkflowNav } from "@/components/workflow/workflow-nav";
+import {
+  FlowChip,
+  FlowHeader,
+  FlowPanel,
+} from "@/components/workflow/workflow-shell";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { getTenantScope } from "@/lib/tenant/context";
-import { Badge } from "@/components/ui/badge";
 import { formatRelative } from "@/lib/utils";
+import type { WorkflowRun } from "@/types/workflow";
 
-const statusColors = {
-  running: "bg-gold/10 text-gold-bright ring-gold/35",
-  completed: "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30",
-  failed: "bg-danger/15 text-danger ring-danger/45",
-  awaiting_approval: "bg-navy/60 text-gold-bright ring-gold/30",
-} as const;
+const statusTone: Record<
+  WorkflowRun["status"],
+  "wait" | "ok" | "danger" | "amber"
+> = {
+  running: "wait",
+  completed: "ok",
+  failed: "danger",
+  awaiting_approval: "amber",
+};
+
+const logTone = (status: string): "ok" | "danger" | "wait" | "muted" => {
+  if (status === "completed" || status === "success") return "ok";
+  if (status === "failed" || status === "error") return "danger";
+  if (status === "awaiting_approval" || status === "skipped") return "wait";
+  return "muted";
+};
 
 export default async function WorkflowRunPage({
   params,
@@ -25,83 +41,122 @@ export default async function WorkflowRunPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <Link
-          href={`/workflows/${run.workflowId}`}
-          className="text-xs text-gold hover:underline"
-        >
-          ← {run.workflowName}
-        </Link>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold text-foreground sm:text-xl">
-            Workflow run
-          </h2>
-          <Badge className={statusColors[run.status]}>{run.status.replace("_", " ")}</Badge>
-        </div>
-        <p className="text-xs text-muted">
-          {formatRelative(run.createdAt)}
-          {run.context.contactName ? ` · ${run.context.contactName}` : ""}
-        </p>
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
-        <ApproveWorkflowButton run={run} />
-
-        {run.error && (
-          <div className="rounded-xl border border-danger/45 bg-danger/15 p-4 text-sm text-red-300">
-            {run.error}
+      <FlowHeader
+        title="Workflow run"
+        subtitle={
+          <div className="space-y-1.5">
+            <Link
+              href={`/workflows/${run.workflowId}`}
+              className="text-xs font-medium hover:underline"
+              style={{ color: "var(--flow-accent)" }}
+            >
+              ← {run.workflowName}
+            </Link>
+            <p>
+              {formatRelative(run.createdAt)}
+              {run.context.contactName ? ` · ${run.context.contactName}` : ""}
+            </p>
           </div>
-        )}
+        }
+        actions={
+          <FlowChip tone={statusTone[run.status]}>
+            {run.status.replace("_", " ")}
+          </FlowChip>
+        }
+      />
+      <WorkflowNav />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
+        <div className="mx-auto max-w-5xl space-y-6">
+          <ApproveWorkflowButton run={run} />
 
-        <section className="rounded-xl border border-border bg-surface-elevated p-5">
-          <h3 className="text-sm font-semibold text-foreground">Context</h3>
-          <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-            {run.context.contactName && (
-              <>
-                <dt className="text-muted">Contact</dt>
-                <dd>{run.context.contactName}</dd>
-              </>
-            )}
-            {run.context.leadScore !== undefined && (
-              <>
-                <dt className="text-muted">Lead score</dt>
-                <dd>{run.context.leadScore}</dd>
-              </>
-            )}
-            {run.context.dealValue !== undefined && (
-              <>
-                <dt className="text-muted">Deal value</dt>
-                <dd>£{run.context.dealValue.toLocaleString()}</dd>
-              </>
-            )}
-          </dl>
-        </section>
-
-        <section className="rounded-xl border border-border bg-surface-elevated p-5">
-          <h3 className="text-sm font-semibold text-foreground">Step log</h3>
-          <ul className="mt-4 space-y-3">
-            {run.stepLogs.map((log) => (
-              <li
-                key={`${log.stepId}-${log.at}`}
-                className="rounded-lg border border-border bg-surface-muted p-3"
+          {run.error ? (
+            <FlowPanel
+              style={{
+                background: "var(--flow-danger-soft)",
+                borderColor: "#FCA5A5",
+              }}
+            >
+              <p
+                className="text-sm"
+                style={{ color: "var(--flow-danger)" }}
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium text-foreground">{log.stepLabel}</p>
-                  <Badge className="bg-background text-muted ring-border">
-                    {log.stepType}
-                  </Badge>
-                  <Badge className="bg-background text-muted ring-border">
-                    {log.status}
-                  </Badge>
-                </div>
-                {log.output && (
-                  <p className="mt-2 text-xs text-muted whitespace-pre-wrap">
-                    {log.output}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
+                {run.error}
+              </p>
+            </FlowPanel>
+          ) : null}
+
+          <FlowPanel>
+            <h3
+              className="text-sm font-semibold"
+              style={{ color: "var(--flow-ink)" }}
+            >
+              Context
+            </h3>
+            <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+              {run.context.contactName ? (
+                <>
+                  <dt style={{ color: "var(--flow-muted)" }}>Contact</dt>
+                  <dd style={{ color: "var(--flow-ink)" }}>
+                    {run.context.contactName}
+                  </dd>
+                </>
+              ) : null}
+              {run.context.leadScore !== undefined ? (
+                <>
+                  <dt style={{ color: "var(--flow-muted)" }}>Lead score</dt>
+                  <dd style={{ color: "var(--flow-ink)" }}>
+                    {run.context.leadScore}
+                  </dd>
+                </>
+              ) : null}
+              {run.context.dealValue !== undefined ? (
+                <>
+                  <dt style={{ color: "var(--flow-muted)" }}>Deal value</dt>
+                  <dd style={{ color: "var(--flow-ink)" }}>
+                    £{run.context.dealValue.toLocaleString()}
+                  </dd>
+                </>
+              ) : null}
+            </dl>
+          </FlowPanel>
+
+          <FlowPanel>
+            <h3
+              className="text-sm font-semibold"
+              style={{ color: "var(--flow-ink)" }}
+            >
+              Step log
+            </h3>
+            <ul className="mt-4 space-y-3">
+              {run.stepLogs.map((log) => (
+                <li
+                  key={`${log.stepId}-${log.at}`}
+                  className="rounded-xl border p-3"
+                  style={{ borderColor: "var(--flow-line)", background: "#F8F9FC" }}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: "var(--flow-ink)" }}
+                    >
+                      {log.stepLabel}
+                    </p>
+                    <FlowChip tone="muted">{log.stepType}</FlowChip>
+                    <FlowChip tone={logTone(log.status)}>{log.status}</FlowChip>
+                  </div>
+                  {log.output ? (
+                    <p
+                      className="mt-2 text-xs whitespace-pre-wrap"
+                      style={{ color: "var(--flow-muted)" }}
+                    >
+                      {log.output}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </FlowPanel>
+        </div>
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { Workflow } from "lucide-react";
+import { FlowHeader } from "@/components/workflow/workflow-shell";
 import { WorkflowHub } from "@/components/workflow/workflow-hub";
 import { WORKFLOW_TEMPLATES } from "@/lib/data/workflow-demo-seed";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
@@ -13,25 +13,17 @@ export default async function WorkflowsPage() {
   ]);
 
   return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
-          <Workflow className="h-5 w-5 text-gold" />
-          Workflows
-        </h2>
-        <p className="text-xs text-muted sm:text-sm">
-          BDM playbooks — qualify leads, outreach, follow-ups, meetings, and deal
-          handoffs in a simple step list.
-        </p>
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
-        <WorkflowHub
-          workflows={workflows}
-          runs={runs}
-          templates={WORKFLOW_TEMPLATES}
+    <WorkflowHub
+      workflows={workflows}
+      runs={runs}
+      templates={WORKFLOW_TEMPLATES}
+      header={
+        <FlowHeader
+          title="Workflows"
+          subtitle="BDM playbooks — outreach, follow-ups, meetings, and handoffs"
         />
-      </div>
-    </>
+      }
+    />
   );
 }
 

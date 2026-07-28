@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import {
+  FlowChip,
+  FlowPanel,
+  tagTone,
+} from "@/components/workflow/workflow-shell";
 import { RunWorkflowButton } from "@/components/workflow/run-workflow-button";
 import { WorkflowEnableToggle } from "@/components/workflow/workflow-enable-toggle";
 import type { Workflow } from "@/types/workflow";
@@ -10,61 +14,72 @@ import { formatRelative } from "@/lib/utils";
 export function WorkflowList({ workflows }: { workflows: Workflow[] }) {
   if (!workflows.length) {
     return (
-      <p className="text-sm text-muted">
-        No automations yet. Install a template or describe a workflow to create one.
-      </p>
+      <FlowPanel>
+        <p className="text-sm" style={{ color: "var(--flow-muted)" }}>
+          No plays yet. Install a playbook or describe one to create your first
+          automation.
+        </p>
+      </FlowPanel>
     );
   }
 
   return (
-    <ul className="grid gap-4 lg:grid-cols-2">
+    <ul className="grid gap-4 sm:grid-cols-2">
       {workflows.map((workflow) => (
-        <li
-          key={workflow.id}
-          className="rounded-xl border border-border bg-surface-elevated p-5"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+        <li key={workflow.id}>
+          <FlowPanel className="flex h-full flex-col !p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <Link
+                  href={`/workflows/${workflow.id}`}
+                  className="font-semibold transition hover:opacity-80"
+                  style={{ color: "var(--flow-ink)" }}
+                >
+                  {workflow.name}
+                </Link>
+                {workflow.description ? (
+                  <p
+                    className="mt-1 text-xs leading-relaxed"
+                    style={{ color: "var(--flow-muted)" }}
+                  >
+                    {workflow.description}
+                  </p>
+                ) : null}
+              </div>
+              <WorkflowEnableToggle workflow={workflow} />
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <FlowChip tone="cyan">{workflow.trigger.label}</FlowChip>
+              <FlowChip tone="muted">{workflow.steps.length} steps</FlowChip>
+              {workflow.tags.map((tag) => (
+                <FlowChip key={tag} tone={tagTone(tag)}>
+                  {tag}
+                </FlowChip>
+              ))}
+            </div>
+
+            <p
+              className="mt-3 text-[10px]"
+              style={{ color: "var(--flow-muted)" }}
+            >
+              Updated {formatRelative(workflow.updatedAt)}
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <RunWorkflowButton workflowId={workflow.id} label="Run" />
               <Link
                 href={`/workflows/${workflow.id}`}
-                className="font-semibold text-foreground hover:text-gold-bright"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition hover:bg-black/[0.03]"
+                style={{
+                  borderColor: "var(--flow-accent)",
+                  color: "var(--flow-accent)",
+                }}
               >
-                {workflow.name}
+                Edit
               </Link>
-              {workflow.description && (
-                <p className="mt-1 text-xs text-muted">{workflow.description}</p>
-              )}
             </div>
-            <WorkflowEnableToggle workflow={workflow} />
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-1">
-            <Badge className="bg-surface-muted text-muted ring-border">
-              {workflow.trigger.label}
-            </Badge>
-            <Badge className="bg-surface-muted text-muted ring-border">
-              {workflow.steps.length} steps
-            </Badge>
-            {workflow.tags.map((tag) => (
-              <Badge key={tag} className="bg-surface-muted text-muted ring-border">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-
-          <p className="mt-3 text-[10px] text-muted">
-            Updated {formatRelative(workflow.updatedAt)}
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <RunWorkflowButton workflowId={workflow.id} label="Run" />
-            <Link
-              href={`/workflows/${workflow.id}`}
-              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm text-muted hover:border-gold/40 hover:text-foreground"
-            >
-              Edit
-            </Link>
-          </div>
+          </FlowPanel>
         </li>
       ))}
     </ul>

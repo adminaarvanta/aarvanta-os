@@ -5,8 +5,14 @@ import {
   WorkflowEnableToggle,
 } from "@/components/workflow/workflow-enable-toggle";
 import { WorkflowEditor } from "@/components/workflow/workflow-editor";
+import { WorkflowNav } from "@/components/workflow/workflow-nav";
 import { WorkflowRunList } from "@/components/workflow/workflow-run-list";
 import { WorkflowTestRunPanel } from "@/components/workflow/workflow-test-run-panel";
+import {
+  FlowChip,
+  FlowHeader,
+  FlowPanel,
+} from "@/components/workflow/workflow-shell";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -33,50 +39,68 @@ export default async function WorkflowDetailPage({
 
   return (
     <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <Link href="/workflows" className="text-xs text-gold hover:underline">
-          ← Workflows
-        </Link>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
-              {workflow.name}
-            </h2>
-            {workflow.description && (
-              <p className="text-xs text-muted sm:text-sm">{workflow.description}</p>
-            )}
-            <p className="mt-1 text-[10px] text-muted">
-              Trigger: {workflow.trigger.label} · {workflow.steps.length} steps
-            </p>
+      <FlowHeader
+        title={workflow.name}
+        subtitle={
+          <div className="space-y-1.5">
+            <Link
+              href="/workflows"
+              className="text-xs font-medium hover:underline"
+              style={{ color: "var(--flow-accent)" }}
+            >
+              ← Playbooks
+            </Link>
+            {workflow.description ? (
+              <p style={{ color: "var(--flow-muted)" }}>{workflow.description}</p>
+            ) : null}
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              <FlowChip tone="cyan">{workflow.trigger.label}</FlowChip>
+              <FlowChip tone="muted">{workflow.steps.length} steps</FlowChip>
+            </div>
           </div>
+        }
+        actions={
           <div className="flex flex-wrap items-center gap-2">
             <WorkflowEnableToggle workflow={workflow} />
             <DeleteWorkflowButton workflowId={workflow.id} />
           </div>
+        }
+      />
+      <WorkflowNav />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
+        <div className="mx-auto max-w-5xl space-y-6">
+          <WorkflowEditor workflow={workflow} />
+
+          <WorkflowTestRunPanel
+            workflowId={workflow.id}
+            contacts={contacts.map((c) => ({
+              id: c.id,
+              name: contactDisplayName(c),
+              leadScore: c.leadScore,
+            }))}
+            deals={deals.map((d) => ({
+              id: d.id,
+              title: d.title,
+              value: d.value,
+              contactId: d.contactId,
+            }))}
+          />
+
+          <FlowPanel className="!p-0 overflow-hidden">
+            <div
+              className="border-b px-5 py-4"
+              style={{ borderColor: "var(--flow-line)" }}
+            >
+              <h3
+                className="text-sm font-semibold"
+                style={{ color: "var(--flow-ink)" }}
+              >
+                Run history
+              </h3>
+            </div>
+            <WorkflowRunList runs={runs} />
+          </FlowPanel>
         </div>
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
-        <WorkflowEditor workflow={workflow} />
-
-        <WorkflowTestRunPanel
-          workflowId={workflow.id}
-          contacts={contacts.map((c) => ({
-            id: c.id,
-            name: contactDisplayName(c),
-            leadScore: c.leadScore,
-          }))}
-          deals={deals.map((d) => ({
-            id: d.id,
-            title: d.title,
-            value: d.value,
-            contactId: d.contactId,
-          }))}
-        />
-
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Run history</h3>
-          <WorkflowRunList runs={runs} />
-        </section>
       </div>
     </>
   );
