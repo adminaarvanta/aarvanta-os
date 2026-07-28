@@ -124,6 +124,8 @@ export default async function AgentPage({
         conversations={conversations.map((c) => ({
           id: c.id,
           name: c.contact.name,
+          contactId: c.contact.id,
+          lastActivityAt: c.lastActivityAt,
         }))}
         runs={runs}
         memory={memory}

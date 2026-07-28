@@ -8,22 +8,43 @@ import type { AgentDefinition } from "@/types/workforce";
 const selectClass =
   "mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[var(--wf-accent)]";
 
+type ContactOption = { id: string; name: string };
+type ConversationOption = {
+  id: string;
+  name: string;
+  contactId: string;
+  lastActivityAt?: string;
+};
+
+function conversationForContact(
+  contactId: string,
+  conversations: ConversationOption[]
+): ConversationOption | undefined {
+  const matches = conversations.filter((c) => c.contactId === contactId);
+  if (!matches.length) return undefined;
+  return [...matches].sort((a, b) => {
+    const aAt = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
+    const bAt = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
+    return bAt - aAt;
+  })[0];
+}
+
 export function AgentRunPanel({
   agent,
   contacts,
   conversations,
 }: {
   agent: AgentDefinition;
-  contacts: { id: string; name: string }[];
-  conversations: { id: string; name: string }[];
+  contacts: ContactOption[];
+  conversations: ConversationOption[];
 }) {
   const [contactId, setContactId] = useState("");
-  const [conversationId, setConversationId] = useState("");
 
   const needsContact = agent.requiresContact;
-  const needsConversation = agent.requiresConversation;
-  const canRun =
-    (!needsContact || contactId) && (!needsConversation || conversationId);
+  const linkedConversation = contactId
+    ? conversationForContact(contactId, conversations)
+    : undefined;
+  const canRun = !needsContact || Boolean(contactId);
 
   return (
     <WfPanel className="space-y-4">
@@ -36,7 +57,7 @@ export function AgentRunPanel({
         </p>
       </div>
 
-      {(needsContact || !needsConversation) && contacts.length > 0 && (
+      {contacts.length > 0 ? (
         <div>
           <label
             className="block text-xs font-semibold uppercase tracking-wide"
@@ -57,49 +78,32 @@ export function AgentRunPanel({
               </option>
             ))}
           </select>
+          {contactId ? (
+            <p className="mt-1.5 text-xs" style={{ color: "var(--wf-muted)" }}>
+              {linkedConversation
+                ? "Inbox thread for this contact will be included automatically."
+                : "No inbox thread found for this contact — running on CRM context only."}
+            </p>
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      {(needsConversation || needsContact) && conversations.length > 0 && (
-        <div>
-          <label
-            className="block text-xs font-semibold uppercase tracking-wide"
-            style={{ color: "var(--wf-muted)" }}
-          >
-            Conversation {needsConversation ? "(required)" : "(optional)"}
-          </label>
-          <select
-            value={conversationId}
-            onChange={(e) => setConversationId(e.target.value)}
-            className={selectClass}
-            style={{ borderColor: "var(--wf-line)", color: "var(--wf-ink)" }}
-          >
-            <option value="">Select conversation…</option>
-            {conversations.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {!needsContact && !needsConversation && (
+      {!needsContact && !contactId ? (
         <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
           Runs a business-wide analysis using CRM and inbox data.
         </p>
-      )}
+      ) : null}
 
       {canRun ? (
         <RunAgentButton
           agentType={agent.type}
           contactId={contactId || undefined}
-          conversationId={conversationId || undefined}
+          conversationId={linkedConversation?.id}
           label={`Run ${agent.name}`}
         />
       ) : (
         <p className="text-sm font-medium" style={{ color: "var(--wf-accent)" }}>
-          Select the required context above to run this agent.
+          Select a contact to run this agent.
         </p>
       )}
     </WfPanel>

@@ -66,9 +66,23 @@ export async function buildWorkforceContext(
 
   const contactId = input.contactId ?? assignedTask?.contactId;
   const contact = contactId ? await crm.getContact(contactId, scope) : null;
-  const conversation = input.conversationId
+
+  let conversation = input.conversationId
     ? await inbox.getConversation(input.conversationId, scope)
     : null;
+
+  // If a contact is selected without an explicit thread, use that contact's
+  // most recent inbox conversation — never another contact's thread.
+  if (!conversation && contactId) {
+    const forContact = conversations
+      .filter((c) => c.contact.id === contactId)
+      .sort(
+        (a, b) =>
+          new Date(b.lastActivityAt).getTime() -
+          new Date(a.lastActivityAt).getTime()
+      );
+    conversation = forContact[0] ?? null;
+  }
 
   const deal = assignedTask?.dealId
     ? deals.find((d) => d.id === assignedTask.dealId) ?? null

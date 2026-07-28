@@ -23,7 +23,12 @@ export function AgentProfileView({
 }: {
   agent: AgentDefinition;
   contacts: { id: string; name: string }[];
-  conversations: { id: string; name: string }[];
+  conversations: {
+    id: string;
+    name: string;
+    contactId: string;
+    lastActivityAt?: string;
+  }[];
   runs: AgentRun[];
   memory: AgentMemoryEntry[];
   tasks: CrmTask[];
