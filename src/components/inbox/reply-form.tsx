@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { CHANNEL_LABELS } from "@/lib/constants";
 import { apiFetch } from "@/lib/api/client-fetch";
-import type { Channel, ContactRef } from "@/types/communication";
+import type { Channel, ContactRef, Conversation } from "@/types/communication";
 
 const ALL_CHANNELS = Object.keys(CHANNEL_LABELS) as Channel[];
 
@@ -30,12 +30,15 @@ export function ReplyForm({
   contact,
   channels,
   forcedChannel,
+  onConversationUpdate,
 }: {
   conversationId: string;
   contact: ContactRef;
   channels: Channel[];
   /** Lock reply to one channel (WhatsApp OS / Voice OS). */
   forcedChannel?: Channel;
+  /** Apply API conversation payload so the timeline updates even when demo memory is per-instance. */
+  onConversationUpdate?: (conversation: Conversation) => void;
 }) {
   const router = useRouter();
   const [content, setContent] = useState("");
@@ -62,7 +65,8 @@ export function ReplyForm({
       setWarning(null);
 
       const result = await apiFetch<{
-        conversation?: unknown;
+        conversation?: Conversation;
+        delivery?: "simulated" | "live";
         warning?: { message?: string };
       }>(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
@@ -82,8 +86,16 @@ export function ReplyForm({
         return;
       }
 
+      if (result.data.conversation) {
+        onConversationUpdate?.(result.data.conversation);
+      }
+
       if (result.data.warning?.message) {
         setWarning(result.data.warning.message);
+      } else if (result.data.delivery === "simulated") {
+        setWarning(
+          `Test mode: message saved in the timeline (not delivered via ${CHANNEL_LABELS[activeChannel]}).`
+        );
       }
 
       setContent("");
@@ -157,7 +169,9 @@ export function ReplyForm({
       </div>
       {warning && (
         <p className="text-xs text-gold-bright" role="status">
-          Saved to inbox, but delivery failed: {warning}
+          {warning.startsWith("Test mode")
+            ? warning
+            : `Saved to inbox, but delivery failed: ${warning}`}
         </p>
       )}
       {error && (

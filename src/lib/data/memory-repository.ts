@@ -29,10 +29,24 @@ import type {
   TimelineNote,
 } from "@/types/communication";
 
-let conversations: Conversation[] = structuredClone(DEMO_CONVERSATIONS);
+/**
+ * Share one in-memory store across Next.js RSC and route-handler module
+ * graphs in `next dev`. Without this, sends via API never appear after
+ * `router.refresh()` because each layer held a separate singleton.
+ */
+const globalStore = globalThis as typeof globalThis & {
+  __aarvantaConversations?: Conversation[];
+};
+
+function getConversations(): Conversation[] {
+  if (!globalStore.__aarvantaConversations) {
+    globalStore.__aarvantaConversations = structuredClone(DEMO_CONVERSATIONS);
+  }
+  return globalStore.__aarvantaConversations;
+}
 
 function findIndex(id: string, scope: TenantScope) {
-  return conversations.findIndex((c) => c.id === id && inScope(c, scope));
+  return getConversations().findIndex((c) => c.id === id && inScope(c, scope));
 }
 
 async function finishInbound(conv: Conversation, scope: TenantScope) {
@@ -42,7 +56,7 @@ async function finishInbound(conv: Conversation, scope: TenantScope) {
 
 export const memoryRepository: ConversationRepository = {
   async listConversations(scope) {
-    return conversations
+    return getConversations()
       .filter((c) => inScope(c, scope))
       .sort(
         (a, b) =>
@@ -53,18 +67,18 @@ export const memoryRepository: ConversationRepository = {
   },
 
   async getConversation(id, scope) {
-    const found = conversations.find((c) => c.id === id && inScope(c, scope));
+    const found = getConversations().find((c) => c.id === id && inScope(c, scope));
     return found ? structuredClone(found) : null;
   },
 
   async getConversationById(id) {
-    const found = conversations.find((c) => c.id === id);
+    const found = getConversations().find((c) => c.id === id);
     return found ? structuredClone(found) : null;
   },
 
   async findConversationByPhone(phone, scope) {
     const normalized = normalizePhone(phone);
-    const found = conversations.find(
+    const found = getConversations().find(
       (c) =>
         inScope(c, scope) &&
         c.contact.phone &&
@@ -75,7 +89,7 @@ export const memoryRepository: ConversationRepository = {
 
   async findConversationByEmail(email, scope) {
     const normalized = normalizeEmail(email);
-    const matches = conversations.filter(
+    const matches = getConversations().filter(
       (c) =>
         inScope(c, scope) &&
         c.contact.email &&
@@ -90,7 +104,7 @@ export const memoryRepository: ConversationRepository = {
   },
 
   async findConversationByChatSession(sessionId, scope) {
-    const found = conversations.find(
+    const found = getConversations().find(
       (c) => inScope(c, scope) && c.contact.chatSessionId === sessionId
     );
     return found ? structuredClone(found) : null;
@@ -106,23 +120,23 @@ export const memoryRepository: ConversationRepository = {
     if (existing) {
       const idx = findIndex(existing.id, scope);
       if (idx === -1) return structuredClone(existing);
-      const nextChannels = withChannel(conversations[idx].channels, input.channel);
+      const nextChannels = withChannel(getConversations()[idx].channels, input.channel);
       const name =
         input.contactName?.trim() &&
-        conversations[idx].contact.name === conversations[idx].contact.phone
+        getConversations()[idx].contact.name === getConversations()[idx].contact.phone
           ? input.contactName.trim()
-          : conversations[idx].contact.name;
-      conversations[idx] = {
-        ...conversations[idx],
+          : getConversations()[idx].contact.name;
+      getConversations()[idx] = {
+        ...getConversations()[idx],
         channels: nextChannels,
         contact: {
-          ...conversations[idx].contact,
+          ...getConversations()[idx].contact,
           name,
-          phone: conversations[idx].contact.phone ?? input.phone,
+          phone: getConversations()[idx].contact.phone ?? input.phone,
         },
         updatedAt: now,
       };
-      return structuredClone(conversations[idx]);
+      return structuredClone(getConversations()[idx]);
     }
 
     const conversation = createConversation(
@@ -135,29 +149,29 @@ export const memoryRepository: ConversationRepository = {
       input.channel,
       []
     );
-    conversations.push(conversation);
+    getConversations().push(conversation);
     return structuredClone(conversation);
   },
 
   async addMessage(conversationId, input, scope, author) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
-    conversations[idx] = appendOutboundMessage(conversations[idx], input, author);
-    return structuredClone(conversations[idx]);
+    getConversations()[idx] = appendOutboundMessage(getConversations()[idx], input, author);
+    return structuredClone(getConversations()[idx]);
   },
 
   async addOutboundEmail(conversationId, input, scope, author) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
-    conversations[idx] = appendOutboundEmail(conversations[idx], input, author);
-    return structuredClone(conversations[idx]);
+    getConversations()[idx] = appendOutboundEmail(getConversations()[idx], input, author);
+    return structuredClone(getConversations()[idx]);
   },
 
   async addOutboundCall(conversationId, input, scope, author) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
-    conversations[idx] = appendOutboundCall(conversations[idx], input, author);
-    return structuredClone(conversations[idx]);
+    getConversations()[idx] = appendOutboundCall(getConversations()[idx], input, author);
+    return structuredClone(getConversations()[idx]);
   },
 
   async addInboundMessage(input, scope) {
@@ -178,12 +192,12 @@ export const memoryRepository: ConversationRepository = {
 
     if (existing) {
       const idx = findIndex(existing.id, scope);
-      conversations[idx] = appendInboundMessage(conversations[idx], {
+      getConversations()[idx] = appendInboundMessage(getConversations()[idx], {
         channel: input.channel,
         content: input.content,
         authorName: input.contactName ?? input.phone,
       });
-      return finishInbound(conversations[idx], scope);
+      return finishInbound(getConversations()[idx], scope);
     }
 
     const conversation = createConversation(
@@ -196,13 +210,13 @@ export const memoryRepository: ConversationRepository = {
       input.channel,
       [message]
     );
-    conversations.push(conversation);
+    getConversations().push(conversation);
     return finishInbound(conversation, scope);
   },
 
   async addInboundEmail(input, scope) {
     const normalizedEmail = normalizeEmail(input.email);
-    const items = conversations.filter((c) => inScope(c, scope));
+    const items = getConversations().filter((c) => inScope(c, scope));
     const existing = findConversationForInboundEmail(items, {
       fromEmail: normalizedEmail,
       subject: input.subject,
@@ -221,8 +235,8 @@ export const memoryRepository: ConversationRepository = {
 
     if (existing) {
       const idx = findIndex(existing.id, scope);
-      conversations[idx] = appendInboundEmail(conversations[idx], emailPayload);
-      return finishInbound(conversations[idx], scope);
+      getConversations()[idx] = appendInboundEmail(getConversations()[idx], emailPayload);
+      return finishInbound(getConversations()[idx], scope);
     }
 
     const now = new Date().toISOString();
@@ -248,7 +262,7 @@ export const memoryRepository: ConversationRepository = {
         },
       ]
     );
-    conversations.push(conversation);
+    getConversations().push(conversation);
     return finishInbound(conversation, scope);
   },
 
@@ -260,7 +274,7 @@ export const memoryRepository: ConversationRepository = {
 
     if (existing) {
       const idx = findIndex(existing.id, scope);
-      conversations[idx] = appendInboundCall(conversations[idx], {
+      getConversations()[idx] = appendInboundCall(getConversations()[idx], {
         durationSeconds: input.durationSeconds,
         summary: input.summary,
         recordingUrl: input.recordingUrl,
@@ -268,7 +282,7 @@ export const memoryRepository: ConversationRepository = {
         callSid: input.callSid,
         authorName: input.contactName ?? input.phone,
       });
-      return finishInbound(conversations[idx], scope);
+      return finishInbound(getConversations()[idx], scope);
     }
 
     const now = new Date().toISOString();
@@ -295,15 +309,15 @@ export const memoryRepository: ConversationRepository = {
         },
       ]
     );
-    conversations.push(conversation);
+    getConversations().push(conversation);
     return finishInbound(conversation, scope);
   },
 
   async attachCallRecording(conversationId, input, scope) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
-    conversations[idx] = attachCallRecording(conversations[idx], input);
-    return structuredClone(conversations[idx]);
+    getConversations()[idx] = attachCallRecording(getConversations()[idx], input);
+    return structuredClone(getConversations()[idx]);
   },
 
   async addInboundChat(input, scope) {
@@ -314,12 +328,12 @@ export const memoryRepository: ConversationRepository = {
 
     if (existing) {
       const idx = findIndex(existing.id, scope);
-      conversations[idx] = appendInboundMessage(conversations[idx], {
+      getConversations()[idx] = appendInboundMessage(getConversations()[idx], {
         channel: "website_chat",
         content: input.content,
         authorName: input.visitorName ?? "Website visitor",
       });
-      return finishInbound(conversations[idx], scope);
+      return finishInbound(getConversations()[idx], scope);
     }
 
     const now = new Date().toISOString();
@@ -343,7 +357,7 @@ export const memoryRepository: ConversationRepository = {
         },
       ]
     );
-    conversations.push(conversation);
+    getConversations().push(conversation);
     return finishInbound(conversation, scope);
   },
 
@@ -362,7 +376,7 @@ export const memoryRepository: ConversationRepository = {
       authorId: author?.id,
     };
 
-    const conv = conversations[idx];
+    const conv = getConversations()[idx];
     conv.timeline.push(note);
     conv.lastActivityAt = now;
     conv.updatedAt = now;
@@ -372,48 +386,48 @@ export const memoryRepository: ConversationRepository = {
   async setTags(conversationId, tags, scope) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
-    conversations[idx].tags = tags;
-    conversations[idx].updatedAt = new Date().toISOString();
-    return structuredClone(conversations[idx]);
+    getConversations()[idx].tags = tags;
+    getConversations()[idx].updatedAt = new Date().toISOString();
+    return structuredClone(getConversations()[idx]);
   },
 
   async updateAiInsights(conversationId, data, scope) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
     const now = new Date().toISOString();
-    conversations[idx].aiSummary = data.aiSummary;
-    conversations[idx].sentiment = data.sentiment;
+    getConversations()[idx].aiSummary = data.aiSummary;
+    getConversations()[idx].sentiment = data.sentiment;
     if (data.aiIntent !== undefined) {
-      conversations[idx].aiIntent = data.aiIntent;
+      getConversations()[idx].aiIntent = data.aiIntent;
     }
     if (data.aiQualificationScore !== undefined) {
-      conversations[idx].aiQualificationScore = data.aiQualificationScore;
+      getConversations()[idx].aiQualificationScore = data.aiQualificationScore;
     }
-    conversations[idx].aiSummaryUpdatedAt = now;
-    conversations[idx].updatedAt = now;
-    return structuredClone(conversations[idx]);
+    getConversations()[idx].aiSummaryUpdatedAt = now;
+    getConversations()[idx].updatedAt = now;
+    return structuredClone(getConversations()[idx]);
   },
 
   async updateIdentity(conversationId, identity, scope) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
-    conversations[idx].identity = identity;
-    conversations[idx].updatedAt = new Date().toISOString();
-    return structuredClone(conversations[idx]);
+    getConversations()[idx].identity = identity;
+    getConversations()[idx].updatedAt = new Date().toISOString();
+    return structuredClone(getConversations()[idx]);
   },
 
   async markAsRead(conversationId, scope) {
     const idx = findIndex(conversationId, scope);
     if (idx === -1) return null;
-    if (conversations[idx].unreadCount === 0) {
-      return structuredClone(conversations[idx]);
+    if (getConversations()[idx].unreadCount === 0) {
+      return structuredClone(getConversations()[idx]);
     }
-    conversations[idx].unreadCount = 0;
-    conversations[idx].updatedAt = new Date().toISOString();
-    return structuredClone(conversations[idx]);
+    getConversations()[idx].unreadCount = 0;
+    getConversations()[idx].updatedAt = new Date().toISOString();
+    return structuredClone(getConversations()[idx]);
   },
 };
 
 export function resetDemoData() {
-  conversations = structuredClone(DEMO_CONVERSATIONS);
+  globalStore.__aarvantaConversations = structuredClone(DEMO_CONVERSATIONS);
 }

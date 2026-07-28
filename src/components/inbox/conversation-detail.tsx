@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { AiInsightsPanel } from "@/components/inbox/ai-insights-panel";
 import { IdentityPanel } from "@/components/inbox/identity-panel";
 import { IdentityBadge } from "@/components/inbox/identity-badge";
@@ -10,7 +13,7 @@ import { TagPicker } from "@/components/inbox/tag-picker";
 import { Badge } from "@/components/ui/badge";
 import { CHANNEL_LABELS } from "@/lib/constants";
 import type { AiRuntimeStatus } from "@/lib/ai/config";
-import type { Conversation } from "@/types/communication";
+import type { Channel, Conversation } from "@/types/communication";
 import type { HrCase } from "@/types/hr-case";
 
 function ConversationSidebar({
@@ -55,7 +58,7 @@ function ConversationSidebar({
 }
 
 export function ConversationDetail({
-  conversation,
+  conversation: initialConversation,
   aiStatus,
   hrCases = [],
   forcedChannel,
@@ -63,8 +66,14 @@ export function ConversationDetail({
   conversation: Conversation;
   aiStatus: AiRuntimeStatus;
   hrCases?: HrCase[];
-  forcedChannel?: import("@/types/communication").Channel;
+  forcedChannel?: Channel;
 }) {
+  const [conversation, setConversation] = useState(initialConversation);
+
+  useEffect(() => {
+    setConversation(initialConversation);
+  }, [initialConversation]);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
       <MarkReadOnView conversationId={conversation.id} />
@@ -124,6 +133,7 @@ export function ConversationDetail({
           contact={conversation.contact}
           channels={conversation.channels}
           forcedChannel={forcedChannel}
+          onConversationUpdate={setConversation}
         />
       </section>
 

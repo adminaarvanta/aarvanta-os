@@ -8,6 +8,7 @@ import { ConversationList } from "@/components/inbox/conversation-list";
 import { OpenConversationLink } from "@/components/inbox/open-conversation-link";
 import { VoiceConfigPanel } from "@/components/voice/voice-config-panel";
 import { Badge } from "@/components/ui/badge";
+import { getChannelStatus } from "@/lib/channels/config";
 import { conversationsForChannel } from "@/lib/channels/filter-conversations";
 import { CHANNEL_LABELS } from "@/lib/constants";
 import { getAiRuntimeStatus } from "@/lib/ai/config";
@@ -51,6 +52,7 @@ export async function ChannelOsListPage({
   const conversations = conversationsForChannel(all, config.channel);
   const first = conversations[0];
   const Icon = os === "whatsapp" ? MessageCircle : Phone;
+  const channelStatus = getChannelStatus(config.channel);
 
   return (
     <>
@@ -78,6 +80,15 @@ export async function ChannelOsListPage({
             />
           </div>
         </div>
+        {channelStatus === "simulate" ? (
+          <p
+            className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+            role="status"
+          >
+            Test mode — messages are saved in WhatsApp OS but not sent to Meta.
+            No WhatsApp API credentials required.
+          </p>
+        ) : null}
         {os === "voice" ? (
           <div className="mt-4">
             <VoiceConfigPanel />
@@ -151,6 +162,7 @@ export async function ChannelOsDetailPage({
   const conversations = conversationsForChannel(all, config.channel);
   const hrCases = await getHrStore().listCasesByConversation(id, activeScope);
   const aiStatus = getAiRuntimeStatus();
+  const channelStatus = getChannelStatus(config.channel);
 
   return (
     <>
@@ -182,6 +194,11 @@ export async function ChannelOsDetailPage({
           <p className="hidden text-xs text-muted sm:block">
             {config.title} · timeline · notes · tags · identity · AI
           </p>
+          {channelStatus === "simulate" ? (
+            <p className="mt-1 text-[11px] text-amber-200/90" role="status">
+              Test mode — replies appear here; not delivered to Meta.
+            </p>
+          ) : null}
         </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">

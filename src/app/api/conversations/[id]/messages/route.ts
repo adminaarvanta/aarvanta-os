@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { deliverOutbound } from "@/lib/channels/deliver";
+import { getChannelStatus } from "@/lib/channels/config";
 import {
   conversationHasEmailThread,
   formatEmailReplySubject,
@@ -134,7 +135,11 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({ conversation });
+    return NextResponse.json({
+      conversation,
+      delivery:
+        getChannelStatus(channel) === "simulate" ? "simulated" : "live",
+    });
   } catch (error) {
     console.error(`[messages:send] conversation=${id}`, error);
     return NextResponse.json(
