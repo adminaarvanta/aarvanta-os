@@ -4,6 +4,7 @@ import { recordMutationEvent } from "@/lib/api/mutation-events";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getField, parseDelimitedSheet, type SheetRow } from "@/lib/crm/sheet-parse";
+import { fetchGoogleSheetCsv } from "@/lib/integrations/google-sheets";
 import type {
   CreateCompanyInput,
   CreateContactInput,
@@ -122,6 +123,7 @@ export async function POST(req: Request) {
 
   const form = await req.formData();
   const file = form.get("file");
+  const sheetUrl = String(form.get("sheetUrl") ?? "").trim();
   const entityRaw = String(form.get("entity") ?? "contacts");
   const updateOnDuplicate = String(form.get("updateOnDuplicate") ?? "true") !== "false";
 
@@ -130,18 +132,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid import options" }, { status: 400 });
   }
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Missing file" }, { status: 400 });
+  let rows: SheetRow[] = [];
+  let sourceLabel = "file";
+
+  if (sheetUrl) {
+    try {
+      const { csv } = await fetchGoogleSheetCsv(sheetUrl);
+      rows = parseDelimitedSheet(csv).rows;
+      sourceLabel = "google_sheets";
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Failed to fetch Google Sheet",
+        },
+        { status: 400 }
+      );
+    }
+  } else if (file instanceof File) {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+      rows = rowsFromWorkbook(await file.arrayBuffer());
+    } else {
+      const text = await file.text();
+      rows = parseDelimitedSheet(text).rows;
+    }
+  } else {
+    return NextResponse.json(
+      { error: "Upload a file or paste a Google Sheet link" },
+      { status: 400 }
+    );
   }
 
-  const name = file.name.toLowerCase();
-  let rows: SheetRow[] = [];
-  if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-    rows = rowsFromWorkbook(await file.arrayBuffer());
-  } else {
-    const text = await file.text();
-    rows = parseDelimitedSheet(text).rows;
-  }
   if (rows.length === 0) {
     return NextResponse.json({ error: "No data rows found" }, { status: 400 });
   }
@@ -690,6 +714,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     entity: meta.data.entity,
+    source: sourceLabel,
     created,
     updated,
     skipped,

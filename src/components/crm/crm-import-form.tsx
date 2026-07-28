@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Download, Upload } from "lucide-react";
+import { Download, Link2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   CRM_IMPORT_COLUMNS,
@@ -23,26 +23,32 @@ export function CrmImportForm({ entity }: { entity: CrmImportEntity }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [sheetUrl, setSheetUrl] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) return;
+    if (!file && !sheetUrl.trim()) return;
     setBusy(true);
     setError(null);
     setResult(null);
     try {
       const body = new FormData();
-      body.append("file", file);
       body.append("entity", entity);
       body.append("updateOnDuplicate", "true");
+      if (sheetUrl.trim()) {
+        body.append("sheetUrl", sheetUrl.trim());
+      } else if (file) {
+        body.append("file", file);
+      }
       const res = await fetch("/api/crm/import", { method: "POST", body });
       const data = (await res.json()) as {
         error?: string;
         created?: number;
         updated?: number;
         skipped?: number;
+        source?: string;
         errors?: string[];
       };
       if (!res.ok) {
@@ -53,10 +59,13 @@ export function CrmImportForm({ entity }: { entity: CrmImportEntity }) {
         data.errors && data.errors.length > 0
           ? ` First issues: ${data.errors.slice(0, 2).join("; ")}`
           : "";
+      const via =
+        data.source === "google_sheets" ? " via Google Sheets" : "";
       setResult(
-        `Created ${data.created ?? 0}, updated ${data.updated ?? 0}, skipped ${data.skipped ?? 0}.${errHint}`
+        `Created ${data.created ?? 0}, updated ${data.updated ?? 0}, skipped ${data.skipped ?? 0}${via}.${errHint}`
       );
       setFile(null);
+      setSheetUrl("");
       router.refresh();
     } catch {
       setError("Network error during import");
@@ -69,12 +78,13 @@ export function CrmImportForm({ entity }: { entity: CrmImportEntity }) {
     return (
       <Button type="button" size="sm" variant="secondary" onClick={() => setOpen(true)}>
         <Upload className="mr-1.5 h-3.5 w-3.5" />
-        Import Excel / CSV
+        Import Excel / Sheets
       </Button>
     );
   }
 
   const sample = CRM_IMPORT_COLUMNS[entity].description;
+  const canSubmit = Boolean(file) || Boolean(sheetUrl.trim());
 
   return (
     <form
@@ -88,8 +98,8 @@ export function CrmImportForm({ entity }: { entity: CrmImportEntity }) {
           </p>
           <p className="mt-1 text-xs text-muted">{sample}</p>
           <p className="mt-1 text-xs text-muted">
-            Download the Excel template, fill your rows, then upload. Duplicates are
-            updated when a match is found.
+            Upload Excel/CSV, or link a Google Sheet shared as Anyone with the link
+            → Viewer. Duplicates update when a match is found.
           </p>
         </div>
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
@@ -112,12 +122,35 @@ export function CrmImportForm({ entity }: { entity: CrmImportEntity }) {
       <input
         type="file"
         accept=".csv,.tsv,.txt,.xlsx,.xls"
-        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          setFile(e.target.files?.[0] ?? null);
+          if (e.target.files?.[0]) setSheetUrl("");
+        }}
         className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-gold/15 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gold-bright"
       />
+      <div className="relative">
+        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted">
+          <Link2 className="h-3.5 w-3.5" />
+          Or link Google Sheet
+        </div>
+        <input
+          type="url"
+          value={sheetUrl}
+          onChange={(e) => {
+            setSheetUrl(e.target.value);
+            if (e.target.value.trim()) setFile(null);
+          }}
+          placeholder="https://docs.google.com/spreadsheets/d/…"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold"
+        />
+      </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" size="sm" disabled={busy || !file}>
-          {busy ? "Importing…" : "Upload & import"}
+        <Button type="submit" size="sm" disabled={busy || !canSubmit}>
+          {busy
+            ? "Importing…"
+            : sheetUrl.trim()
+              ? "Import from Google Sheets"
+              : "Upload & import"}
         </Button>
         {error && <p className="text-xs text-danger">{error}</p>}
         {result && <p className="text-xs text-success">{result}</p>}

@@ -148,6 +148,8 @@ export function HrCandidatesClient({
   const [jobId, setJobId] = useState(jobs[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [sheetUrl, setSheetUrl] = useState("");
+  const [showSheet, setShowSheet] = useState(false);
 
   async function refreshList() {
     const res = await fetch("/api/hr/candidates");
@@ -204,12 +206,41 @@ export function HrCandidatesClient({
       const form = new FormData();
       form.append("file", file);
       const res = await fetch("/api/hr/candidates/import", { method: "POST", body: form });
+      const data = (await res.json()) as { imported?: number; error?: string };
       if (!res.ok) {
-        setMessage("Import failed");
+        setMessage(typeof data.error === "string" ? data.error : "Import failed");
         return;
       }
-      const data = (await res.json()) as { imported: number };
-      setMessage(`Imported ${data.imported} candidates from spreadsheet.`);
+      setMessage(`Imported ${data.imported ?? 0} candidates from spreadsheet.`);
+      await refreshList();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function importSheet(e: React.FormEvent) {
+    e.preventDefault();
+    if (!sheetUrl.trim()) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const form = new FormData();
+      form.append("sheetUrl", sheetUrl.trim());
+      const res = await fetch("/api/hr/candidates/import", { method: "POST", body: form });
+      const data = (await res.json()) as {
+        imported?: number;
+        error?: string;
+        source?: string;
+      };
+      if (!res.ok) {
+        setMessage(typeof data.error === "string" ? data.error : "Sheet import failed");
+        return;
+      }
+      setMessage(
+        `Imported ${data.imported ?? 0} candidates from Google Sheets.`
+      );
+      setSheetUrl("");
+      setShowSheet(false);
       await refreshList();
     } finally {
       setBusy(false);
@@ -222,9 +253,9 @@ export function HrCandidatesClient({
     <div className="space-y-5">
       <HrPageHeader
         title="Candidates"
-        description="ATS pipeline with Excel import. Hire creates an employee + onboarding case."
+        description="ATS pipeline with Excel or Google Sheets import. Hire creates an employee + onboarding case."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               ref={fileRef}
               type="file"
@@ -238,12 +269,40 @@ export function HrCandidatesClient({
             <Button variant="secondary" disabled={busy} onClick={() => fileRef.current?.click()}>
               Import Excel
             </Button>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => setShowSheet((v) => !v)}
+            >
+              Link Google Sheet
+            </Button>
           </div>
         }
       />
       {message ? <p className="text-sm text-[color:var(--hr-hired)]">{message}</p> : null}
 
-      <HrPanel title="Add candidate" description="Or sync from a spreadsheet (Name, Email, Role, Status).">
+      {showSheet ? (
+        <HrPanel
+          title="Google Sheets"
+          description="Paste a sheet link shared as Anyone with the link → Viewer. Columns: Name, Email, Role, Status."
+        >
+          <form onSubmit={importSheet} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              type="url"
+              value={sheetUrl}
+              onChange={(e) => setSheetUrl(e.target.value)}
+              placeholder="https://docs.google.com/spreadsheets/d/…"
+              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+              required
+            />
+            <Button type="submit" disabled={busy || !sheetUrl.trim()}>
+              {busy ? "Importing…" : "Import sheet"}
+            </Button>
+          </form>
+        </HrPanel>
+      ) : null}
+
+      <HrPanel title="Add candidate" description="Or sync from Excel / Google Sheets (Name, Email, Role, Status).">
         <form onSubmit={addCandidate} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input
             className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
@@ -282,9 +341,6 @@ export function HrCandidatesClient({
             Add to pipeline
           </Button>
         </form>
-        <p className="mt-3 text-xs text-muted">
-          Google Sheets: paste export as .xlsx/.csv for Phase 1, or connect Sheet ID later in settings.
-        </p>
       </HrPanel>
 
       <HrDataTable

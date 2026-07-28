@@ -41,24 +41,16 @@ function mapStatus(raw: string): HrCandidateStatus {
   return STATUS_MAP[key] ?? "applied";
 }
 
-/** Parse Excel/CSV buffer into candidate rows (Name, Email, Role, Status). */
-export function parseHrCandidateWorkbook(buffer: ArrayBuffer): ImportedCandidateRow[] {
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) return [];
-  const sheet = workbook.Sheets[sheetName];
-  if (!sheet) return [];
-  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    defval: "",
-  });
-
+function rowsFromSheetJson(
+  json: Record<string, unknown>[],
+  source: HrCandidateSource
+): ImportedCandidateRow[] {
   const rows: ImportedCandidateRow[] = [];
   for (const raw of json) {
     const name = cell(raw, ["name", "full name", "candidate", "candidate name"]);
     if (!name) continue;
     const email = cell(raw, ["email", "email id", "email address"]) || undefined;
-    const role =
-      cell(raw, ["role", "position", "job", "title"]) || "General";
+    const role = cell(raw, ["role", "position", "job", "title"]) || "General";
     const status = mapStatus(
       cell(raw, ["status", "onboarding status", "pipeline", "stage"])
     );
@@ -69,10 +61,42 @@ export function parseHrCandidateWorkbook(buffer: ArrayBuffer): ImportedCandidate
       role,
       status,
       score: 70,
-      resumeSummary: `Imported from spreadsheet (${role}).`,
-      source: "excel",
+      resumeSummary:
+        source === "sheets"
+          ? `Imported from Google Sheets (${role}).`
+          : `Imported from spreadsheet (${role}).`,
+      source,
       phone,
     });
   }
   return rows;
+}
+
+/** Parse Excel/CSV buffer into candidate rows (Name, Email, Role, Status). */
+export function parseHrCandidateWorkbook(buffer: ArrayBuffer): ImportedCandidateRow[] {
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) return [];
+  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+    defval: "",
+  });
+  return rowsFromSheetJson(json, "excel");
+}
+
+/** Parse CSV text (e.g. Google Sheets export) into candidate rows. */
+export function parseHrCandidateCsv(
+  csv: string,
+  source: HrCandidateSource = "sheets"
+): ImportedCandidateRow[] {
+  const workbook = XLSX.read(csv, { type: "string" });
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) return [];
+  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+    defval: "",
+  });
+  return rowsFromSheetJson(json, source);
 }
