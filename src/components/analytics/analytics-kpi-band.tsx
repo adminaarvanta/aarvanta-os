@@ -4,67 +4,55 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import type { AnalyticsSnapshot } from "@/types/analytics";
 
-type KpiTone = "revenue" | "pipeline" | "ops" | "ai" | "won" | "finance";
+type KpiTone = "revenue" | "pipeline" | "ai" | "finance";
 
 const TONE_STYLES: Record<
   KpiTone,
-  { border: string; wash: string; stroke: string; fill: string }
+  { border: string; wash: string; label: string; stroke: string }
 > = {
   revenue: {
     border: "border-l-chart-revenue",
     wash: "bg-chart-revenue-soft",
+    label: "text-chart-revenue",
     stroke: "var(--chart-revenue)",
-    fill: "var(--chart-revenue-soft)",
   },
   pipeline: {
     border: "border-l-chart-pipeline",
     wash: "bg-chart-pipeline-soft",
+    label: "text-chart-pipeline",
     stroke: "var(--chart-pipeline)",
-    fill: "var(--chart-pipeline-soft)",
-  },
-  ops: {
-    border: "border-l-chart-ops",
-    wash: "bg-chart-ops-soft",
-    stroke: "var(--chart-ops)",
-    fill: "var(--chart-ops-soft)",
   },
   ai: {
     border: "border-l-chart-ai",
     wash: "bg-chart-ai-soft",
+    label: "text-chart-ai",
     stroke: "var(--chart-ai)",
-    fill: "var(--chart-ai-soft)",
-  },
-  won: {
-    border: "border-l-chart-won",
-    wash: "bg-chart-ai-soft",
-    stroke: "var(--chart-won)",
-    fill: "var(--chart-ai-soft)",
   },
   finance: {
-    border: "border-l-gold",
-    wash: "bg-primary-soft",
-    stroke: "var(--gold)",
-    fill: "var(--primary-soft)",
+    border: "border-l-chart-ops",
+    wash: "bg-chart-ops-soft",
+    label: "text-chart-ops",
+    stroke: "var(--chart-ops)",
   },
 };
 
 function Sparkline({ data, stroke, fillId }: { data: number[]; stroke: string; fillId: string }) {
   const chartData = data.map((v, i) => ({ i, v }));
   return (
-    <div className="h-10 w-full">
+    <div className="h-14 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={stroke} stopOpacity={0.35} />
-              <stop offset="100%" stopColor={stroke} stopOpacity={0} />
+              <stop offset="0%" stopColor={stroke} stopOpacity={0.55} />
+              <stop offset="100%" stopColor={stroke} stopOpacity={0.05} />
             </linearGradient>
           </defs>
           <Area
             type="monotone"
             dataKey="v"
             stroke={stroke}
-            strokeWidth={1.5}
+            strokeWidth={2.5}
             fill={`url(#${fillId})`}
             isAnimationActive={false}
             dot={false}
@@ -97,34 +85,42 @@ function KpiCard({
   const styles = TONE_STYLES[tone];
   const body = (
     <div
-      className={`rounded-xl border border-border border-l-4 ${styles.border} ${styles.wash} p-4 transition-colors hover:bg-surface-hover`}
+      className={`flex h-full min-h-[148px] flex-col justify-between rounded-xl border border-border border-l-[6px] ${styles.border} ${styles.wash} p-5 transition-colors hover:brightness-[0.98] dark:hover:brightness-110`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted">{label}</p>
-          <p className="mt-1 truncate text-2xl font-semibold text-foreground">{value}</p>
-          {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
-          {change != null && (
-            <p
-              className={`mt-1 text-xs font-medium ${
-                change >= 0 ? "text-chart-ai" : "text-danger"
-              }`}
-            >
-              {change >= 0 ? "+" : ""}
-              {change}% vs prior
-            </p>
-          )}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className={`text-xs font-semibold uppercase tracking-wide ${styles.label}`}>
+            {label}
+          </p>
+          <p className="mt-1.5 truncate text-3xl font-semibold tracking-tight text-foreground">
+            {value}
+          </p>
+          <p className="mt-1 min-h-[1rem] text-xs text-muted">{sub ?? "\u00a0"}</p>
         </div>
-        <div className="w-20 shrink-0 self-end">
+        <div className="w-28 shrink-0 self-start pt-1">
           <Sparkline data={spark} stroke={styles.stroke} fillId={sparkId} />
         </div>
       </div>
+      <p
+        className={`mt-3 min-h-[1.25rem] text-sm font-semibold ${
+          change == null
+            ? "text-transparent"
+            : change >= 0
+              ? "text-chart-ai"
+              : "text-danger"
+        }`}
+      >
+        {change != null ? `${change >= 0 ? "+" : ""}${change}% vs prior` : "—"}
+      </p>
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40">
+      <Link
+        href={href}
+        className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40"
+      >
         {body}
       </Link>
     );
@@ -141,7 +137,7 @@ export function AnalyticsKpiBand({ snapshot }: { snapshot: AnalyticsSnapshot }) 
     }).format(n);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiCard
         label="Revenue"
         value={fmt(snapshot.revenue.total)}
@@ -160,24 +156,6 @@ export function AnalyticsKpiBand({ snapshot }: { snapshot: AnalyticsSnapshot }) 
         spark={snapshot.sparklines.pipeline}
         sparkId="spark-pipe"
         href="/crm"
-      />
-      <KpiCard
-        label="Won deals"
-        value={String(snapshot.revenue.wonDeals)}
-        tone="won"
-        spark={snapshot.sparklines.wonDeals}
-        sparkId="spark-won"
-        href="/crm"
-      />
-      <KpiCard
-        label="Open tasks"
-        value={String(snapshot.tasks.open)}
-        sub={`${snapshot.projects.overdueTasks} project overdue`}
-        change={snapshot.tasks.changePct}
-        tone="ops"
-        spark={snapshot.sparklines.openTasks}
-        sparkId="spark-tasks"
-        href="/crm/tasks"
       />
       <KpiCard
         label="Agent runs"
