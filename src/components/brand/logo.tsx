@@ -6,8 +6,14 @@ import { useThemeMode } from "@/components/theme/theme-provider";
 import { brand } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-/** Full wordmark aspect (globe + AARVANTA + BUSINESS OS). */
+/** Full product mark is near-square; keep aspect 1 so CSS never crops. */
 const FULL_LOGO_ASPECT = 1;
+
+/**
+ * Bump when mark assets change so browsers/CDN drop stale cropped PNGs.
+ * Marks include transparent padding so the full circle fits in object-contain.
+ */
+const LOGO_ASSET_VERSION = "4";
 
 const DISPLAY_HEIGHT = {
   header: 56,
@@ -15,21 +21,15 @@ const DISPLAY_HEIGHT = {
   md: 72,
   lg: 96,
   xl: 140,
-  /** Sidebar brand mark — fills most of the rail header */
+  /** Expanded sidebar wordmark */
   sidebar: 112,
-  /** Collapsed rail / mobile header — must fit inside ~40–48px */
-  rail: 36,
+  /** Collapsed rail / mobile header icon — matches h-11/w-11 chrome slots */
+  rail: 44,
 } as const;
 
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
 export type BrandLogoVariant = "full" | "icon";
 
-/**
- * Canonical product logos (true alpha).
- * - light* → for light UI surfaces
- * - dark* → for dark UI surfaces
- * Icon uses square mark crops so collapsed/mobile slots never clip the globe.
- */
 const LOGO_PATHS = {
   dark: {
     full: "/aarvanta-logo-dark-clear.png",
@@ -40,6 +40,10 @@ const LOGO_PATHS = {
     icon: "/aarvanta-logo-mark-light-clear.png",
   },
 } as const;
+
+function logoSrc(path: string) {
+  return `${path}?v=${LOGO_ASSET_VERSION}`;
+}
 
 export function BrandLogo({
   className,
@@ -54,36 +58,81 @@ export function BrandLogo({
   size?: BrandLogoSize;
   variant?: BrandLogoVariant;
   fullWidth?: boolean;
-  /** Force logo variant for a known surface; defaults to active theme. */
   mode?: "dark" | "light";
 }) {
   const { resolved: contextResolved } = useThemeMode();
   const themeMode = mode ?? contextResolved;
   const displayHeight = DISPLAY_HEIGHT[size];
-  const src = LOGO_PATHS[themeMode][variant];
+  const src = logoSrc(LOGO_PATHS[themeMode][variant]);
   const isIcon = variant === "icon";
-  const box = displayHeight;
-  const intrinsic = isIcon
-    ? { width: box * 2, height: box * 2 }
-    : {
-        width: Math.round(displayHeight * 2 * FULL_LOGO_ASPECT),
-        height: displayHeight * 2,
-      };
+
+  /** Fixed square slot for icon — image always contained, never cropped. */
+  if (isIcon && !fullWidth) {
+    const image = (
+      <Image
+        src={src}
+        alt={brand.fullName}
+        width={512}
+        height={512}
+        quality={100}
+        unoptimized
+        priority
+        className={cn("!bg-transparent object-contain", className)}
+        style={{
+          // Slight inset so outer nodes/arcs never meet a clipping edge.
+          width: "100%",
+          height: "100%",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          objectFit: "contain",
+          objectPosition: "center",
+          backgroundColor: "transparent",
+        }}
+      />
+    );
+
+    const box = (
+      <span
+        className="relative inline-flex shrink-0 items-center justify-center overflow-visible bg-transparent p-0.5"
+        style={{
+          width: displayHeight,
+          height: displayHeight,
+          backgroundColor: "transparent",
+        }}
+      >
+        {image}
+      </span>
+    );
+
+    if (href) {
+      return (
+        <Link
+          href={href}
+          className="inline-flex shrink-0 items-center justify-center bg-transparent"
+          aria-label={brand.fullName}
+        >
+          {box}
+        </Link>
+      );
+    }
+    return box;
+  }
+
+  const intrinsicHeight = displayHeight * 2;
+  const intrinsicWidth = Math.round(intrinsicHeight * FULL_LOGO_ASPECT);
 
   const image = (
     <Image
       src={src}
       alt={brand.fullName}
-      width={intrinsic.width}
-      height={intrinsic.height}
+      width={intrinsicWidth}
+      height={intrinsicHeight}
       quality={100}
       unoptimized
       priority
       className={cn(
         "!bg-transparent object-contain",
-        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : null,
-        !fullWidth && isIcon && "h-full w-full",
-        !fullWidth && !isIcon && "h-auto w-auto",
+        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : "h-auto w-auto",
         className
       )}
       style={
@@ -96,19 +145,12 @@ export function BrandLogo({
                 maxWidth: 236,
                 backgroundColor: "transparent",
               }
-            : isIcon
-              ? {
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  backgroundColor: "transparent",
-                }
-              : {
-                  height: displayHeight,
-                  width: "auto",
-                  maxWidth: displayHeight * FULL_LOGO_ASPECT,
-                  backgroundColor: "transparent",
-                }
+            : {
+                height: displayHeight,
+                width: "auto",
+                maxWidth: displayHeight * FULL_LOGO_ASPECT,
+                backgroundColor: "transparent",
+              }
       }
     />
   );
@@ -119,17 +161,6 @@ export function BrandLogo({
         "inline-flex shrink-0 items-center justify-center bg-transparent",
         fullWidth && "block w-full"
       )}
-      style={
-        !fullWidth && isIcon
-          ? {
-              width: box,
-              height: box,
-              padding: Math.max(2, Math.round(box * 0.08)),
-              boxSizing: "border-box",
-              backgroundColor: "transparent",
-            }
-          : { backgroundColor: "transparent" }
-      }
     >
       {image}
     </span>

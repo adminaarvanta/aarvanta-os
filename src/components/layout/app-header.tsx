@@ -75,10 +75,10 @@ export function AppHeader() {
   }, [mobileMoreOpen]);
 
   return (
-    <header className="relative z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:h-16 sm:gap-3 sm:px-6">
+    <header className="relative z-10 flex h-14 shrink-0 items-center gap-2.5 border-b border-border bg-surface px-3 sm:h-16 sm:gap-3 sm:px-6">
       <Link
         href="/dashboard"
-        className="flex h-10 w-10 shrink-0 items-center justify-center md:hidden"
+        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-visible md:hidden"
         aria-label="Aarvanta Business OS"
       >
         <BrandLogo variant="icon" size="rail" />
