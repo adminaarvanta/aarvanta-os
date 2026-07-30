@@ -67,7 +67,7 @@ export function AppSidebar({
           className={cn(
             "flex shrink-0 items-center border-b border-border-subtle",
             collapsed
-              ? "flex-col justify-center gap-1.5 px-1.5 py-2.5"
+              ? "flex-col justify-center gap-2 px-3 py-3"
               : "h-[120px] justify-center px-2 py-2"
           )}
         >
@@ -75,20 +75,14 @@ export function AppSidebar({
             href={SIDEBAR_BRAND.href}
             className={cn(
               "flex items-center justify-center rounded-lg transition-colors hover:bg-surface-muted",
-              collapsed
-                ? "h-11 w-full max-w-[56px] shrink-0 px-0.5"
-                : "max-w-full"
+              collapsed ? "h-10 w-10 shrink-0" : "max-w-full"
             )}
             aria-label={SIDEBAR_BRAND.title}
           >
             <BrandLogo
-              size={collapsed ? "sm" : "sidebar"}
+              size={collapsed ? "rail" : "sidebar"}
               variant={collapsed ? "icon" : "full"}
-              className={
-                collapsed
-                  ? "!h-9 !w-auto max-h-9 max-w-full"
-                  : "max-h-[112px] max-w-full"
-              }
+              className={collapsed ? undefined : "max-h-[112px] max-w-full"}
             />
           </Link>
           <button
