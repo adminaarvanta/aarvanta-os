@@ -32,6 +32,7 @@ export function PlanAwareMain({ children }: { children: React.ReactNode }) {
 
   const lowCredits =
     plan &&
+    !plan.isSuperAdmin &&
     plan.creditsPercent !== null &&
     plan.creditsPercent >= 85 &&
     !locked;

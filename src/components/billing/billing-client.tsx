@@ -145,9 +145,15 @@ export function BillingClient({
           <p className="text-sm text-foreground">
             Current plan:{" "}
             <span className="font-semibold text-gold-bright">
-              {entitlements.planName}
+              {entitlements.isSuperAdmin
+                ? "Super Admin (full access)"
+                : entitlements.planName}
             </span>
-            <span className="text-muted"> · period {period}</span>
+            {!entitlements.isSuperAdmin ? (
+              <span className="text-muted"> · period {period}</span>
+            ) : (
+              <span className="text-muted"> · plan gates bypassed</span>
+            )}
           </p>
           <p className="mt-1 text-xs text-muted">
             Payments via Stripe ·{" "}

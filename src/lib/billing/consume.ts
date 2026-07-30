@@ -24,6 +24,7 @@ export async function requireFeature(
   minAccess: FeatureAccess = "lite"
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
+  if (entitlements.isSuperAdmin) return entitlements;
   const actual = featureAccess(entitlements, key);
   if (actual === "none") {
     throw new PlanEntitlementError(
@@ -60,6 +61,7 @@ export async function requireFeature(
 
 export async function requirePublishLive(scope: TenantScope): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
+  if (entitlements.isSuperAdmin) return entitlements;
   if (!entitlements.features.publishLiveBusiness) {
     throw new PlanEntitlementError(
       "FEATURE_LOCKED",
@@ -79,6 +81,7 @@ export async function consumeCredits(
   multiplier = 1
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
+  if (entitlements.isSuperAdmin) return entitlements;
   const cost = creditsForAction(actionId) * multiplier;
   if (cost <= 0) return entitlements;
 
@@ -103,9 +106,11 @@ export async function consumeVoiceMinutes(
   minutes: number
 ): Promise<Entitlements> {
   if (minutes <= 0) return resolveEntitlements(scope);
-  await requireFeature(scope, "voiceAi", "lite");
   const entitlements = await resolveEntitlements(scope);
-  const remaining = remainingForMetric(entitlements, "voice_minutes");
+  if (entitlements.isSuperAdmin) return entitlements;
+  await requireFeature(scope, "voiceAi", "lite");
+  const fresh = await resolveEntitlements(scope);
+  const remaining = remainingForMetric(fresh, "voice_minutes");
   if (remaining !== "unlimited" && remaining < minutes) {
     throw new PlanEntitlementError(
       "PLAN_LIMIT",
@@ -113,7 +118,7 @@ export async function consumeVoiceMinutes(
       {
         metric: "voice_minutes",
         feature: "voiceAi",
-        upgradeHint: suggestUpgrade(entitlements.planId),
+        upgradeHint: suggestUpgrade(fresh.planId),
       }
     );
   }
@@ -126,37 +131,41 @@ export async function requireVoiceCapacity(
   scope: TenantScope,
   minutesNeeded = 1
 ): Promise<Entitlements> {
-  await requireFeature(scope, "voiceAi", "lite");
   const entitlements = await resolveEntitlements(scope);
-  const remaining = remainingForMetric(entitlements, "voice_minutes");
+  if (entitlements.isSuperAdmin) return entitlements;
+  await requireFeature(scope, "voiceAi", "lite");
+  const fresh = await resolveEntitlements(scope);
+  const remaining = remainingForMetric(fresh, "voice_minutes");
   if (remaining !== "unlimited" && remaining < minutesNeeded) {
     throw new PlanEntitlementError(
       "PLAN_LIMIT",
-      `No AI voice minutes remaining on ${entitlements.plan.name}.`,
+      `No AI voice minutes remaining on ${fresh.plan.name}.`,
       {
         metric: "voice_minutes",
         feature: "voiceAi",
-        upgradeHint: suggestUpgrade(entitlements.planId),
+        upgradeHint: suggestUpgrade(fresh.planId),
       }
     );
   }
-  return entitlements;
+  return fresh;
 }
 
 export async function consumeWhatsAppConversation(
   scope: TenantScope
 ): Promise<Entitlements> {
-  await requireFeature(scope, "whatsappChannel", "lite");
   const entitlements = await resolveEntitlements(scope);
-  const remaining = remainingForMetric(entitlements, "whatsapp_conversations");
+  if (entitlements.isSuperAdmin) return entitlements;
+  await requireFeature(scope, "whatsappChannel", "lite");
+  const fresh = await resolveEntitlements(scope);
+  const remaining = remainingForMetric(fresh, "whatsapp_conversations");
   if (remaining !== "unlimited" && remaining < 1) {
     throw new PlanEntitlementError(
       "PLAN_LIMIT",
-      `WhatsApp conversation allowance used up on ${entitlements.plan.name}.`,
+      `WhatsApp conversation allowance used up on ${fresh.plan.name}.`,
       {
         metric: "whatsapp_conversations",
         feature: "whatsappChannel",
-        upgradeHint: suggestUpgrade(entitlements.planId),
+        upgradeHint: suggestUpgrade(fresh.planId),
       }
     );
   }
@@ -168,17 +177,19 @@ export async function consumeEmailSend(
   scope: TenantScope,
   count = 1
 ): Promise<Entitlements> {
-  await requireFeature(scope, "emailChannel", "lite");
   const entitlements = await resolveEntitlements(scope);
-  const remaining = remainingForMetric(entitlements, "emails");
+  if (entitlements.isSuperAdmin) return entitlements;
+  await requireFeature(scope, "emailChannel", "lite");
+  const fresh = await resolveEntitlements(scope);
+  const remaining = remainingForMetric(fresh, "emails");
   if (remaining !== "unlimited" && remaining < count) {
     throw new PlanEntitlementError(
       "PLAN_LIMIT",
-      `Email allowance exceeded on ${entitlements.plan.name}.`,
+      `Email allowance exceeded on ${fresh.plan.name}.`,
       {
         metric: "emails",
         feature: "emailChannel",
-        upgradeHint: suggestUpgrade(entitlements.planId),
+        upgradeHint: suggestUpgrade(fresh.planId),
       }
     );
   }
@@ -190,18 +201,20 @@ export async function requireAiEmployeeSlot(
   scope: TenantScope,
   activeCount: number
 ): Promise<Entitlements> {
-  const entitlements = await requireFeature(scope, "aiWorkforce", "explore");
-  const limit = entitlements.limits.aiEmployees;
+  const entitlements = await resolveEntitlements(scope);
+  if (entitlements.isSuperAdmin) return entitlements;
+  const gated = await requireFeature(scope, "aiWorkforce", "explore");
+  const limit = gated.limits.aiEmployees;
   if (limit !== "unlimited" && activeCount > limit) {
     throw new PlanEntitlementError(
       "PLAN_LIMIT",
-      `AI Employee limit reached (${limit} on ${entitlements.plan.name}).`,
+      `AI Employee limit reached (${limit} on ${gated.plan.name}).`,
       {
         metric: "ai_employees",
         feature: "aiWorkforce",
-        upgradeHint: suggestUpgrade(entitlements.planId),
+        upgradeHint: suggestUpgrade(gated.planId),
       }
     );
   }
-  return entitlements;
+  return gated;
 }

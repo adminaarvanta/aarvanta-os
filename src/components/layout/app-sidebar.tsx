@@ -225,7 +225,9 @@ export function AppSidebar({
                   className="mb-2 flex items-center justify-between rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-xs transition-colors hover:border-gold/40"
                 >
                   <span className="text-muted">Plan</span>
-                  <span className="font-semibold text-gold-bright">{plan.planName}</span>
+                  <span className="font-semibold text-gold-bright">
+                    {plan.isSuperAdmin ? "Super Admin" : plan.planName}
+                  </span>
                 </Link>
               ) : null}
               <div className="mb-2 flex items-center justify-center px-2 text-muted">

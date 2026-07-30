@@ -7,6 +7,7 @@ import {
   type PublicPlanId,
 } from "@/lib/billing/plan-catalog";
 import type { PlanFeatureKey } from "@/lib/billing/module-access";
+import { isCurrentUserSuperAdmin } from "@/lib/billing/super-admin";
 import { getPeriodUsage } from "@/lib/billing/usage-store";
 import { getBillingStore } from "@/lib/data/platform-store";
 import type { TenantScope } from "@/types/communication";
@@ -22,6 +23,8 @@ export type Entitlements = {
   features: PlanFeatureMatrix;
   usage: UsageSnapshot;
   period: string;
+  /** Platform root user — full product, no plan gates. */
+  isSuperAdmin: boolean;
 };
 
 function isUsableSubscription(sub: Subscription): boolean {
@@ -32,9 +35,42 @@ function isUsableSubscription(sub: Subscription): boolean {
   );
 }
 
+function emptyUsage(): UsageSnapshot {
+  return {
+    ai_credits: 0,
+    voice_minutes: 0,
+    whatsapp_conversations: 0,
+    emails: 0,
+    seats: 0,
+    storage_mb: 0,
+  };
+}
+
 export async function resolveEntitlements(
   scope: TenantScope
 ): Promise<Entitlements> {
+  const { currentUsagePeriod } = await import("@/lib/billing/usage-store");
+  const period = currentUsagePeriod();
+  const superAdmin = await isCurrentUserSuperAdmin();
+
+  if (superAdmin) {
+    const plan = getPlan("enterprise")!;
+    return {
+      planId: "enterprise",
+      plan: {
+        ...plan,
+        name: "Super Admin",
+        tagline: "Full platform access for the root Aarvanta operator.",
+      },
+      subscription: null,
+      limits: plan.limits,
+      features: plan.features,
+      usage: emptyUsage(),
+      period,
+      isSuperAdmin: true,
+    };
+  }
+
   const store = getBillingStore();
   const subscriptions = await store.list(scope);
   const paid = subscriptions
@@ -46,8 +82,6 @@ export async function resolveEntitlements(
 
   const planId: PublicPlanId = paid?.planId ?? "free";
   const plan = getPlan(planId) ?? getPlan("free")!;
-  const { currentUsagePeriod } = await import("@/lib/billing/usage-store");
-  const period = currentUsagePeriod();
   const usage = await getPeriodUsage(scope, period);
 
   return {
@@ -58,6 +92,7 @@ export async function resolveEntitlements(
     features: plan.features,
     usage,
     period,
+    isSuperAdmin: false,
   };
 }
 
@@ -79,6 +114,7 @@ export function remainingForMetric(
   entitlements: Entitlements,
   metric: UsageMetric
 ): number | "unlimited" {
+  if (entitlements.isSuperAdmin) return "unlimited";
   const map: Partial<Record<UsageMetric, keyof PlanLimits>> = {
     ai_credits: "aiCredits",
     voice_minutes: "voiceMinutes",
@@ -100,6 +136,7 @@ export function usagePercent(
   entitlements: Entitlements,
   metric: UsageMetric
 ): number | null {
+  if (entitlements.isSuperAdmin) return null;
   const remaining = remainingForMetric(entitlements, metric);
   if (remaining === "unlimited") return null;
   const map: Partial<Record<UsageMetric, keyof PlanLimits>> = {
@@ -134,6 +171,7 @@ export type EntitlementsClient = {
   period: string;
   creditsRemaining: number | "unlimited";
   creditsPercent: number | null;
+  isSuperAdmin: boolean;
 };
 
 export function toClientEntitlements(e: Entitlements): EntitlementsClient {
@@ -147,5 +185,6 @@ export function toClientEntitlements(e: Entitlements): EntitlementsClient {
     period: e.period,
     creditsRemaining: remainingForMetric(e, "ai_credits"),
     creditsPercent: usagePercent(e, "ai_credits"),
+    isSuperAdmin: e.isSuperAdmin,
   };
 }
