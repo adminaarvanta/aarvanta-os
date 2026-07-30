@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -77,14 +76,16 @@ export function AffiliateApplyForm() {
           <code className="rounded bg-surface-muted px-1.5 py-0.5 text-foreground">
             {done.code}
           </code>{" "}
-          activates after admin approval.
+          activates after Aarvanta approves your application.
         </p>
-        <Link
-          href="/affiliate/dashboard"
-          className="mt-4 inline-block text-gold hover:underline"
-        >
-          Go to affiliate dashboard →
-        </Link>
+        <p className="mt-3 text-muted">
+          After approval, we email you a link to create your password. Then sign
+          in and open your affiliate dashboard.
+        </p>
+        <p className="mt-3 text-xs text-muted">
+          Already have an Aarvanta account? Sign in after approval and open{" "}
+          <span className="text-foreground">/affiliate/dashboard</span>.
+        </p>
       </div>
     );
   }

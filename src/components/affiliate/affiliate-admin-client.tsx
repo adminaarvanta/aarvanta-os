@@ -21,6 +21,7 @@ type AdminPayload = {
 export function AffiliateAdminClient() {
   const [data, setData] = useState<AdminPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -44,16 +45,41 @@ export function AffiliateAdminClient() {
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
     setError(null);
+    setInfo(null);
     try {
       const res = await fetch("/api/affiliate/admin", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const json = (await res.json()) as { error?: { message?: string } };
+      const json = (await res.json()) as {
+        error?: { message?: string };
+        activation?: {
+          needed: boolean;
+          emailSent: boolean;
+          activationUrl?: string;
+          reason?: string;
+        };
+      };
       if (!res.ok) {
         setError(json.error?.message ?? "Action failed.");
         return;
+      }
+      if (json.activation) {
+        const a = json.activation;
+        if (!a.needed) {
+          setInfo(
+            a.emailSent
+              ? "Approved — partner already has a login; notice email sent."
+              : `Approved — partner already has a login.${a.activationUrl ? ` Dashboard: ${a.activationUrl}` : ""}`
+          );
+        } else if (a.emailSent) {
+          setInfo("Approved — activation email sent so they can create a password.");
+        } else {
+          setInfo(
+            `Approved — email not sent (${a.reason ?? "unknown"}). Activation link: ${a.activationUrl ?? "n/a"}`
+          );
+        }
       }
       await load();
     } finally {
@@ -93,6 +119,11 @@ export function AffiliateAdminClient() {
           {error}
         </p>
       ) : null}
+      {info ? (
+        <p className="text-sm text-success" role="status">
+          {info}
+        </p>
+      ) : null}
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">
@@ -111,6 +142,7 @@ export function AffiliateAdminClient() {
                 <p className="text-xs text-muted">
                   {a.profile.email} · {a.source} · {a.profile.regionCode} ·{" "}
                   {a.status}
+                  {a.activationToken ? " · awaiting password" : ""}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -127,6 +159,21 @@ export function AffiliateAdminClient() {
                     }
                   >
                     Approve
+                  </Button>
+                ) : null}
+                {a.status === "active" && a.activationToken ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() =>
+                      void patch({
+                        action: "resend_activation",
+                        affiliateId: a.id,
+                      })
+                    }
+                  >
+                    Resend activation
                   </Button>
                 ) : null}
                 <Button
@@ -148,7 +195,6 @@ export function AffiliateAdminClient() {
           ))}
         </ul>
       </section>
-
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">
           Regional rate / cap matrix

@@ -49,6 +49,10 @@ export interface Affiliate {
   profile: AffiliateProfile;
   /** When set, earnings/discounts use this card (must be ≤ region max). */
   rateCardOverrideId?: string;
+  /** One-time set-password token after admin approval (external partners). */
+  activationToken?: string;
+  activationExpiresAt?: string;
+  activationSentAt?: string;
   createdAt: string;
   updatedAt: string;
   approvedAt?: string;
@@ -149,6 +153,7 @@ export type AffiliateAuditAction =
   | "affiliate_approve"
   | "affiliate_reject"
   | "affiliate_suspend"
+  | "affiliate_activation_sent"
   | "rate_card_upsert"
   | "earning_approve"
   | "earning_clawback"

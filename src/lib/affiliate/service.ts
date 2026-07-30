@@ -494,20 +494,32 @@ export async function requestPayout(input: {
   return { payout };
 }
 
+export type AffiliateApprovalResult = {
+  affiliate: Affiliate;
+  activation?: {
+    needed: boolean;
+    emailSent: boolean;
+    activationUrl?: string;
+    reason?: string;
+  };
+};
+
 export async function adminSetAffiliateStatus(input: {
   affiliateId: string;
   status: "active" | "suspended" | "rejected";
   actorEmail: string;
-}) {
+}): Promise<AffiliateApprovalResult> {
   const affiliate = await affiliateStore.getAffiliate(input.affiliateId);
   if (!affiliate) throw new Error("Affiliate not found.");
   const now = crmNow();
-  const updated = await affiliateStore.saveAffiliate({
+
+  let updated = await affiliateStore.saveAffiliate({
     ...affiliate,
     status: input.status,
     updatedAt: now,
     approvedAt: input.status === "active" ? now : affiliate.approvedAt,
   });
+
   await affiliateStore.createAuditLog({
     action:
       input.status === "active"
@@ -520,7 +532,159 @@ export async function adminSetAffiliateStatus(input: {
     resourceId: affiliate.id,
     detail: `Status → ${input.status}`,
   });
-  return updated;
+
+  if (input.status !== "active") {
+    return { affiliate: updated };
+  }
+
+  const activation = await ensurePartnerLoginAccess({
+    affiliate: updated,
+    actorEmail: input.actorEmail,
+  });
+  updated =
+    (await affiliateStore.getAffiliate(updated.id)) ?? activation.affiliate;
+
+  return { affiliate: updated, activation: activation.meta };
+}
+
+/** Resend set-password email for an approved partner who has not set a password. */
+export async function resendAffiliateActivation(input: {
+  affiliateId: string;
+  actorEmail: string;
+}): Promise<AffiliateApprovalResult> {
+  const affiliate = await affiliateStore.getAffiliate(input.affiliateId);
+  if (!affiliate) throw new Error("Affiliate not found.");
+  if (affiliate.status !== "active") {
+    throw new Error("Affiliate must be active before sending activation.");
+  }
+
+  const { getUserCredentials } = await import("@/lib/auth/user-credentials");
+  const creds = await getUserCredentials(affiliate.profile.email);
+  if (creds) {
+    throw new Error("This partner already has a login. Ask them to sign in.");
+  }
+
+  const activation = await ensurePartnerLoginAccess({
+    affiliate,
+    actorEmail: input.actorEmail,
+    forceNewToken: true,
+  });
+  const updated =
+    (await affiliateStore.getAffiliate(affiliate.id)) ?? activation.affiliate;
+  return { affiliate: updated, activation: activation.meta };
+}
+
+async function ensurePartnerLoginAccess(input: {
+  affiliate: Affiliate;
+  actorEmail: string;
+  forceNewToken?: boolean;
+}): Promise<{
+  affiliate: Affiliate;
+  meta: NonNullable<AffiliateApprovalResult["activation"]>;
+}> {
+  const {
+    provisionPartnerAccountWithoutPassword,
+    mintAffiliateActivationToken,
+    affiliateActivationExpiry,
+  } = await import("@/lib/affiliate/provision-partner-account");
+  const {
+    sendAffiliateActivationEmail,
+    sendAffiliateApprovedNoticeEmail,
+  } = await import("@/lib/affiliate/send-activation-email");
+  const { getUserCredentials } = await import("@/lib/auth/user-credentials");
+  const { getTenantRepository } = await import("@/lib/data/tenant-store");
+
+  let affiliate = input.affiliate;
+  const email = affiliate.profile.email.trim().toLowerCase();
+  const existingCreds = await getUserCredentials(email);
+
+  if (existingCreds) {
+    const memberships = await getTenantRepository().listMembershipsForUser(
+      existingCreds.userId
+    );
+    const membership = memberships[0];
+    affiliate = await affiliateStore.saveAffiliate({
+      ...affiliate,
+      userId: existingCreds.userId,
+      tenantId: membership?.tenantId ?? affiliate.tenantId,
+      activationToken: undefined,
+      activationExpiresAt: undefined,
+      updatedAt: crmNow(),
+    });
+    const notice = await sendAffiliateApprovedNoticeEmail({
+      email,
+      name: affiliate.profile.name,
+    });
+    return {
+      affiliate,
+      meta: {
+        needed: false,
+        emailSent: notice.sent,
+        activationUrl: notice.url,
+        reason: notice.sent ? undefined : notice.reason,
+      },
+    };
+  }
+
+  if (!affiliate.userId || !affiliate.tenantId) {
+    const provisioned = await provisionPartnerAccountWithoutPassword({
+      email,
+      name: affiliate.profile.name,
+      country: affiliate.profile.country,
+      companyName: affiliate.profile.company,
+      phone: affiliate.profile.phone,
+    });
+    affiliate = await affiliateStore.saveAffiliate({
+      ...affiliate,
+      userId: provisioned.userId,
+      tenantId: provisioned.organizationId,
+      updatedAt: crmNow(),
+    });
+  }
+
+  const token =
+    input.forceNewToken || !affiliate.activationToken
+      ? mintAffiliateActivationToken()
+      : affiliate.activationToken;
+  const expiresAt =
+    input.forceNewToken || !affiliate.activationExpiresAt
+      ? affiliateActivationExpiry()
+      : affiliate.activationExpiresAt;
+
+  affiliate = await affiliateStore.saveAffiliate({
+    ...affiliate,
+    activationToken: token,
+    activationExpiresAt: expiresAt,
+    activationSentAt: crmNow(),
+    updatedAt: crmNow(),
+  });
+
+  const emailResult = await sendAffiliateActivationEmail({
+    email,
+    name: affiliate.profile.name,
+    token,
+    expiresAt,
+  });
+
+  await affiliateStore.createAuditLog({
+    action: "affiliate_activation_sent",
+    actorEmail: input.actorEmail,
+    resourceType: "affiliate",
+    resourceId: affiliate.id,
+    detail: emailResult.sent
+      ? "Activation email sent"
+      : `Activation link prepared (${emailResult.reason})`,
+  });
+
+  return {
+    affiliate,
+    meta: {
+      needed: true,
+      emailSent: emailResult.sent,
+      activationUrl: emailResult.url,
+      reason: emailResult.sent ? undefined : emailResult.reason,
+    },
+  };
 }
 
 export async function adminUpsertRateCard(

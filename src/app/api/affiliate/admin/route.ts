@@ -9,6 +9,7 @@ import {
   adminUpdatePayout,
   adminUpsertRateCard,
   approveMaturedEarnings,
+  resendAffiliateActivation,
 } from "@/lib/affiliate/service";
 import { affiliateStore } from "@/lib/data/affiliate-store";
 import { getSessionContext } from "@/lib/tenant/context";
@@ -93,6 +94,10 @@ const patchSchema = z.discriminatedUnion("action", [
     action: z.literal("clawback_earning"),
     earningId: z.string(),
   }),
+  z.object({
+    action: z.literal("resend_activation"),
+    affiliateId: z.string(),
+  }),
 ]);
 
 export async function PATCH(req: Request) {
@@ -121,12 +126,19 @@ export async function PATCH(req: Request) {
   try {
     const data = parsed.data;
     if (data.action === "set_status") {
-      const affiliate = await adminSetAffiliateStatus({
+      const result = await adminSetAffiliateStatus({
         affiliateId: data.affiliateId,
         status: data.status,
         actorEmail: session.email,
       });
-      return NextResponse.json({ affiliate });
+      return NextResponse.json(result);
+    }
+    if (data.action === "resend_activation") {
+      const result = await resendAffiliateActivation({
+        affiliateId: data.affiliateId,
+        actorEmail: session.email,
+      });
+      return NextResponse.json(result);
     }
     if (data.action === "upsert_rate_card") {
       const rateCard = await adminUpsertRateCard(

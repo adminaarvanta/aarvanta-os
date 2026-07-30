@@ -84,6 +84,7 @@ Aarvanta needs a controlled growth channel where partners and customers can refe
 | Surface | Path |
 |---------|------|
 | Public apply / marketing | `/affiliate` |
+| Partner activation (set password) | `/affiliate/activate/{token}` |
 | Click redirect | `/r/{code}` → `/register?ref={code}` |
 | Affiliate dashboard | `/affiliate/dashboard` |
 | In-app customer referrals | `/referrals` |
@@ -124,12 +125,13 @@ Affiliates cannot exceed region max; admin may assign a per-affiliate override �
 |--------|------|---------|
 | POST | `/api/affiliate/apply` | External partner application |
 | PUT | `/api/affiliate/apply` | Customer in-app referral opt-in |
+| GET/POST | `/api/affiliate/activate` | Validate activation token / set password + session |
 | GET/PATCH | `/api/affiliate/me` | Profile, dashboard summary |
 | POST | `/api/affiliate/me` | Request payout |
-| GET/PATCH | `/api/affiliate/admin` | Admin list / approve / caps / payouts / clawback |
+| GET/PATCH | `/api/affiliate/admin` | Admin list / approve / resend activation / caps / payouts / clawback |
 | GET | `/r/[code]` | Record click + set cookie + redirect to register |
 
-Registration accepts optional `referralCode` / `ref` cookie (`aarvanta_aff`). Checkout applies regional discount and stamps `affiliateId` into Stripe metadata; webhook creates commission earnings.
+**Partner login:** Admin approve provisions a free owner workspace (if needed) and emails `/affiliate/activate/{token}`. Partners who already have credentials are linked and notified without a set-password step. Registration accepts optional `referralCode` / `ref` cookie (`aarvanta_aff`). Checkout applies regional discount and stamps `affiliateId` into Stripe metadata; webhook creates commission earnings.
 
 ---
 
@@ -144,13 +146,15 @@ AFFILIATE_ADMIN_EMAILS=ops@aarvanta.com,finance@aarvanta.com
 
 ## 11. Verify checklist
 
-1. Open `/affiliate`, apply as partner → status `pending`
-2. As admin (`AFFILIATE_ADMIN_EMAILS` or demo), approve affiliate at `/affiliate/admin`
-3. Visit `/r/{code}` → lands on register with `ref`; cookie `aarvanta_aff` set
-4. Complete free signup → attribution + CPA earning (`pending`)
-5. Billing checkout with attribution → discount metadata + commission on Stripe paid webhook (or demo checkout simulation)
-6. Affiliate requests payout when approved balance ≥ regional minimum; admin marks paid
-7. Opt in at `/referrals` as an existing customer → same dashboard engine
+1. Open `/affiliate`, apply as partner → status `pending` (no password yet)
+2. As admin (`AFFILIATE_ADMIN_EMAILS`, owner/admin, or demo), approve at `/affiliate/admin`
+3. System provisions a free partner workspace (if no login) and emails `/affiliate/activate/{token}` to create a password (demo logs the URL)
+4. Partner sets password → signed in → `/affiliate/dashboard`
+5. Visit `/r/{code}` → lands on register with `ref`; cookie `aarvanta_aff` set
+6. Complete free signup → attribution + CPA earning (`pending`)
+7. Billing checkout with attribution → discount metadata + commission on Stripe paid webhook (or demo checkout simulation)
+8. Affiliate requests payout when approved balance ≥ regional minimum; admin marks paid
+9. Opt in at `/referrals` as an existing customer → same dashboard engine (already logged in)
 
 ---
 

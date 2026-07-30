@@ -144,6 +144,12 @@ export const affiliateStore = {
     const all = await listAll<Affiliate>("affiliates");
     return all.find((a) => a.userId === userId) ?? null;
   },
+  async getAffiliateByActivationToken(token: string) {
+    const key = token.trim();
+    if (!key) return null;
+    const all = await listAll<Affiliate>("affiliates");
+    return all.find((a) => a.activationToken === key) ?? null;
+  },
   async saveAffiliate(item: Affiliate) {
     return saveDoc("affiliates", item);
   },
