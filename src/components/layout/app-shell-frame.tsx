@@ -54,7 +54,7 @@ export function AppShellFrame({
           whatsappUnread={whatsappUnread}
           voiceUnread={voiceUnread}
         />
-        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
           {!hideHeader ? <AppHeader /> : null}
           {children}
         </main>

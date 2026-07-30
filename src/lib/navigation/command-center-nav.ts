@@ -3,12 +3,14 @@ import {
   Briefcase,
   Brain,
   Globe2,
+  Handshake,
   Kanban,
   Landmark,
   LayoutDashboard,
   LayoutGrid,
   MessageCircle,
   Phone,
+  Settings,
   Sparkles,
   Wallet,
   Workflow,
@@ -187,15 +189,21 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
   },
 ];
 
-/** Mobile bottom bar — keep lean; deeper tools via sidebar shortcuts on desktop */
+/** Primary mobile bottom tabs — max 4 + More sheet (see MobileNav). */
 export const MOBILE_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle, badgeKey: "whatsapp" },
-  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice" },
+  { href: "/whatsapp", label: "Chats", icon: MessageCircle, badgeKey: "whatsapp" },
   { href: "/crm", label: "CRM", icon: Briefcase },
   { href: "/workforce", label: "AI", icon: Sparkles },
+];
+
+/** Extra destinations opened from the mobile More sheet. */
+export const MOBILE_NAV_MORE: CommandNavItem[] = [
+  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice" },
   { href: "/projects", label: "Projects", icon: Kanban },
   { href: "/knowledge", label: "Knowledge", icon: Brain },
+  { href: "/referrals", label: "Referrals", icon: Handshake },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export const SIDEBAR_BRAND = {

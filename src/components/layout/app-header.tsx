@@ -2,15 +2,17 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
   ChevronDown,
-  Plus,
-  UserPlus,
+  EllipsisVertical,
   FileText,
-  Workflow,
-  Target,
   Handshake,
+  Plus,
+  Target,
+  UserPlus,
+  Workflow,
+  X,
 } from "lucide-react";
 
 const GlobalSearch = dynamic(
@@ -61,9 +63,19 @@ const quickActions = [
 
 export function AppHeader() {
   const [quickOpen, setQuickOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMoreOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileMoreOpen]);
 
   return (
-    <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
+    <header className="relative z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:h-16 sm:gap-3 sm:px-6">
       <Link
         href="/dashboard"
         className="shrink-0 md:hidden"
@@ -71,30 +83,48 @@ export function AppHeader() {
       >
         <BrandLogo variant="icon" size="sm" />
       </Link>
+
       <div className="min-w-0 flex-1">
-        <GlobalSearch className="w-full max-w-xl" placeholder="Search across OS…" />
+        <GlobalSearch
+          className="w-full max-w-xl"
+          placeholder="Search…"
+        />
       </div>
 
-      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
         <NotificationsMenu />
 
-        <ThemeToggle />
+        {/* Desktop utilities — full row */}
+        <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
+          <LanguageSwitcher />
+          <Suspense fallback={null}>
+            <HelpMenu />
+          </Suspense>
+        </div>
 
-        <LanguageSwitcher />
-
-        <Suspense fallback={null}>
-          <HelpMenu />
-        </Suspense>
+        {/* Mobile: collapse theme / language / help into one menu */}
+        <button
+          type="button"
+          onClick={() => setMobileMoreOpen(true)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-foreground md:hidden"
+          aria-label="More options"
+          aria-expanded={mobileMoreOpen}
+        >
+          <EllipsisVertical className="h-5 w-5" />
+        </button>
 
         <div className="relative">
           <button
             type="button"
             onClick={() => setQuickOpen((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl bg-gold px-3 py-2.5 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-gold-bright sm:px-4"
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-gold px-2.5 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-gold-bright sm:gap-2 sm:px-4"
+            aria-label="Quick actions"
+            aria-expanded={quickOpen}
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Quick Action</span>
-            <ChevronDown className="h-4 w-4 opacity-80" />
+            <ChevronDown className="hidden h-4 w-4 opacity-80 sm:block" />
           </button>
 
           {quickOpen && (
@@ -125,6 +155,57 @@ export function AppHeader() {
           )}
         </div>
       </div>
+
+      {mobileMoreOpen ? (
+        <div
+          className="fixed inset-0 z-[70] md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Header options"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/55"
+            aria-label="Close options"
+            onClick={() => setMobileMoreOpen(false)}
+          />
+          <div className="absolute inset-x-0 top-0 border-b border-border bg-surface-elevated px-4 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-foreground">Options</p>
+              <button
+                type="button"
+                onClick={() => setMobileMoreOpen(false)}
+                className="rounded-lg p-2 text-muted hover:bg-surface-hover hover:text-foreground"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  Theme
+                </p>
+                <ThemeToggle />
+              </div>
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  Language
+                </p>
+                <LanguageSwitcher />
+              </div>
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  Help
+                </p>
+                <Suspense fallback={null}>
+                  <HelpMenu />
+                </Suspense>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }
