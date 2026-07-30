@@ -558,10 +558,9 @@ export async function resendAffiliateActivation(input: {
     throw new Error("Affiliate must be active before sending activation.");
   }
 
-  const { getUserCredentials } = await import("@/lib/auth/user-credentials");
-  const creds = await getUserCredentials(affiliate.profile.email);
-  if (creds) {
-    throw new Error("This partner already has a login. Ask them to sign in.");
+  const { hasUserPassword } = await import("@/lib/auth/user-credentials");
+  if (await hasUserPassword(affiliate.profile.email)) {
+    throw new Error("This partner already has a password. Ask them to sign in.");
   }
 
   const activation = await ensurePartnerLoginAccess({
@@ -572,6 +571,21 @@ export async function resendAffiliateActivation(input: {
   const updated =
     (await affiliateStore.getAffiliate(affiliate.id)) ?? activation.affiliate;
   return { affiliate: updated, activation: activation.meta };
+}
+
+async function membershipEmailMatches(
+  userId: string,
+  email: string
+): Promise<{ ok: boolean; tenantId?: string }> {
+  const { getTenantRepository } = await import("@/lib/data/tenant-store");
+  const memberships =
+    await getTenantRepository().listMembershipsForUser(userId);
+  const key = email.trim().toLowerCase();
+  const match = memberships.find(
+    (m) => m.email.trim().toLowerCase() === key
+  );
+  if (!match) return { ok: false };
+  return { ok: true, tenantId: match.tenantId };
 }
 
 async function ensurePartnerLoginAccess(input: {
@@ -591,21 +605,26 @@ async function ensurePartnerLoginAccess(input: {
     sendAffiliateActivationEmail,
     sendAffiliateApprovedNoticeEmail,
   } = await import("@/lib/affiliate/send-activation-email");
-  const { getUserCredentials } = await import("@/lib/auth/user-credentials");
+  const {
+    getUserCredentials,
+    hasUserPassword,
+  } = await import("@/lib/auth/user-credentials");
   const { getTenantRepository } = await import("@/lib/data/tenant-store");
 
   let affiliate = input.affiliate;
   const email = affiliate.profile.email.trim().toLowerCase();
-  const existingCreds = await getUserCredentials(email);
 
-  if (existingCreds) {
-    const memberships = await getTenantRepository().listMembershipsForUser(
-      existingCreds.userId
-    );
+  // Only skip set-password when they can already sign in with a password.
+  // Google-only / empty credential records still need an activation link.
+  if (await hasUserPassword(email)) {
+    const existingCreds = await getUserCredentials(email);
+    const memberships = existingCreds
+      ? await getTenantRepository().listMembershipsForUser(existingCreds.userId)
+      : [];
     const membership = memberships[0];
     affiliate = await affiliateStore.saveAffiliate({
       ...affiliate,
-      userId: existingCreds.userId,
+      userId: existingCreds?.userId ?? affiliate.userId,
       tenantId: membership?.tenantId ?? affiliate.tenantId,
       activationToken: undefined,
       activationExpiresAt: undefined,
@@ -624,6 +643,38 @@ async function ensurePartnerLoginAccess(input: {
         reason: notice.sent ? undefined : notice.reason,
       },
     };
+  }
+
+  // Drop a wrongly attached userId (e.g. admin session linked on apply).
+  if (affiliate.userId) {
+    const linked = await membershipEmailMatches(affiliate.userId, email);
+    if (!linked.ok) {
+      affiliate = await affiliateStore.saveAffiliate({
+        ...affiliate,
+        userId: undefined,
+        tenantId: undefined,
+        updatedAt: crmNow(),
+      });
+    } else if (!affiliate.tenantId && linked.tenantId) {
+      affiliate = await affiliateStore.saveAffiliate({
+        ...affiliate,
+        tenantId: linked.tenantId,
+        updatedAt: crmNow(),
+      });
+    }
+  }
+
+  if (!affiliate.userId || !affiliate.tenantId) {
+    const existingCreds = await getUserCredentials(email);
+    if (existingCreds?.userId) {
+      const linked = await membershipEmailMatches(existingCreds.userId, email);
+      affiliate = await affiliateStore.saveAffiliate({
+        ...affiliate,
+        userId: existingCreds.userId,
+        tenantId: linked.tenantId ?? affiliate.tenantId,
+        updatedAt: crmNow(),
+      });
+    }
   }
 
   if (!affiliate.userId || !affiliate.tenantId) {

@@ -47,8 +47,17 @@ export async function GET() {
       affiliateStore.listAuditLogs(),
     ]);
 
+  const { hasUserPassword } = await import("@/lib/auth/user-credentials");
+  const affiliatesWithFlags = await Promise.all(
+    affiliates.map(async (a) => {
+      const needsPasswordSetup =
+        a.status === "active" && !(await hasUserPassword(a.profile.email));
+      return { ...a, needsPasswordSetup };
+    })
+  );
+
   return NextResponse.json({
-    affiliates,
+    affiliates: affiliatesWithFlags,
     rateCards,
     earnings,
     payouts,

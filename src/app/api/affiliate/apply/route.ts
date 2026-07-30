@@ -37,8 +37,15 @@ export async function POST(req: Request) {
   let tenantId: string | undefined;
   try {
     const session = await getSessionContext();
-    userId = session.userId;
-    tenantId = session.scope.tenantId;
+    // Only link the session account when the applicant email matches —
+    // otherwise an admin testing apply would steal the partner's userId.
+    if (
+      session.email.trim().toLowerCase() ===
+      parsed.data.email.trim().toLowerCase()
+    ) {
+      userId = session.userId;
+      tenantId = session.scope.tenantId;
+    }
   } catch {
     /* anonymous apply */
   }

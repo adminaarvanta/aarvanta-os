@@ -6,7 +6,7 @@ import {
   getSessionCookieOptions,
   SESSION_COOKIE,
 } from "@/lib/auth/session";
-import { upsertUserPassword, getUserCredentials } from "@/lib/auth/user-credentials";
+import { upsertUserPassword, hasUserPassword } from "@/lib/auth/user-credentials";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { affiliateStore } from "@/lib/data/affiliate-store";
 import { getTenantRepository } from "@/lib/data/tenant-store";
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   }
 
   const email = affiliate.profile.email.trim().toLowerCase();
-  if (await getUserCredentials(email)) {
+  if (await hasUserPassword(email)) {
     return apiError(
       "ALREADY_ACTIVE",
       "A password is already set. Please sign in.",

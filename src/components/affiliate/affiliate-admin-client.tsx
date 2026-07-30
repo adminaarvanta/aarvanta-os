@@ -10,8 +10,10 @@ import type {
   AffiliateRateCard,
 } from "@/types/affiliate";
 
+type AdminAffiliate = Affiliate & { needsPasswordSetup?: boolean };
+
 type AdminPayload = {
-  affiliates: Affiliate[];
+  affiliates: AdminAffiliate[];
   rateCards: AffiliateRateCard[];
   earnings: AffiliateEarning[];
   payouts: AffiliatePayoutRequest[];
@@ -22,6 +24,7 @@ export function AffiliateAdminClient() {
   const [data, setData] = useState<AdminPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [activationUrl, setActivationUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -46,6 +49,7 @@ export function AffiliateAdminClient() {
     setBusy(true);
     setError(null);
     setInfo(null);
+    setActivationUrl(null);
     try {
       const res = await fetch("/api/affiliate/admin", {
         method: "PATCH",
@@ -70,15 +74,19 @@ export function AffiliateAdminClient() {
         if (!a.needed) {
           setInfo(
             a.emailSent
-              ? "Approved — partner already has a login; notice email sent."
-              : `Approved — partner already has a login.${a.activationUrl ? ` Dashboard: ${a.activationUrl}` : ""}`
+              ? "Approved — partner already has a password; notice email sent."
+              : `Approved — partner already has a password.${a.activationUrl ? ` Dashboard: ${a.activationUrl}` : ""}`
           );
         } else if (a.emailSent) {
-          setInfo("Approved — activation email sent so they can create a password.");
+          setInfo(
+            "Set-password email sent. You can also copy the activation link below."
+          );
+          setActivationUrl(a.activationUrl ?? null);
         } else {
           setInfo(
-            `Approved — email not sent (${a.reason ?? "unknown"}). Activation link: ${a.activationUrl ?? "n/a"}`
+            `Set-password email not sent (${a.reason ?? "unknown"}). Copy the activation link below and share it with the partner.`
           );
+          setActivationUrl(a.activationUrl ?? null);
         }
       }
       await load();
@@ -124,6 +132,25 @@ export function AffiliateAdminClient() {
           {info}
         </p>
       ) : null}
+      {activationUrl ? (
+        <div className="rounded-xl border border-border bg-surface-muted p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            Activation link (set password)
+          </p>
+          <p className="mt-1 break-all font-mono text-xs text-foreground">
+            {activationUrl}
+          </p>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="mt-2"
+            type="button"
+            onClick={() => void navigator.clipboard.writeText(activationUrl)}
+          >
+            Copy link
+          </Button>
+        </div>
+      ) : null}
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">
@@ -142,7 +169,7 @@ export function AffiliateAdminClient() {
                 <p className="text-xs text-muted">
                   {a.profile.email} · {a.source} · {a.profile.regionCode} ·{" "}
                   {a.status}
-                  {a.activationToken ? " · awaiting password" : ""}
+                  {a.needsPasswordSetup ? " · awaiting password" : ""}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -161,7 +188,7 @@ export function AffiliateAdminClient() {
                     Approve
                   </Button>
                 ) : null}
-                {a.status === "active" && a.activationToken ? (
+                {a.needsPasswordSetup ? (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -173,7 +200,7 @@ export function AffiliateAdminClient() {
                       })
                     }
                   >
-                    Resend activation
+                    Send password link
                   </Button>
                 ) : null}
                 <Button
