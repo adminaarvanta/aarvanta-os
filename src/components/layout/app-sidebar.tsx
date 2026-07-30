@@ -67,13 +67,15 @@ export function AppSidebar({
     <>
       <aside
         className={cn(
-          "relative z-20 hidden h-full shrink-0 flex-col overflow-x-hidden border-r border-border-subtle bg-surface transition-[width] duration-200 md:flex",
+          "relative z-20 hidden h-full shrink-0 flex-col border-r border-border-subtle bg-surface transition-[width] duration-200 md:flex",
+          // Keep overflow visible in the brand header so the mark never clips;
+          // nav scrolls separately below.
           collapsed ? "w-[72px]" : "w-[260px]"
         )}
       >
         <div
           className={cn(
-            "flex shrink-0 items-center border-b border-border-subtle",
+            "flex shrink-0 items-center overflow-visible border-b border-border-subtle",
             collapsed
               ? "flex-col justify-center gap-2 px-3 py-3"
               : "h-[120px] justify-center px-2 py-2"
@@ -82,8 +84,8 @@ export function AppSidebar({
           <Link
             href={SIDEBAR_BRAND.href}
             className={cn(
-              "flex items-center justify-center rounded-lg transition-colors hover:bg-surface-muted",
-              collapsed ? "h-10 w-10 shrink-0" : "max-w-full"
+              "flex shrink-0 items-center justify-center overflow-visible rounded-lg transition-colors hover:bg-surface-muted",
+              collapsed ? "h-11 w-11" : "max-w-full"
             )}
             aria-label={SIDEBAR_BRAND.title}
           >
@@ -111,7 +113,7 @@ export function AppSidebar({
           </button>
         </div>
 
-        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
+        <nav className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 py-3">
           <ul className="space-y-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;
