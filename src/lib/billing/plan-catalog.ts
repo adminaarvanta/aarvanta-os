@@ -417,7 +417,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
     priceMonthly: null,
     priceAnnual: null,
     currency: "GBP",
-    cta: "Contact sales",
+    cta: "Contact us",
     bestFor: "Large organisations with SSO, SLA, and committed usage",
     limits: {
       users: "unlimited",

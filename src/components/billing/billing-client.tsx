@@ -271,7 +271,7 @@ export function BillingClient({
                       href="/contact"
                       className="inline-flex w-full items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground hover:border-gold/40"
                     >
-                      Contact sales
+                      Contact us
                     </Link>
                   ) : (
                     <Button

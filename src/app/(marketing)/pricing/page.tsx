@@ -13,7 +13,7 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <div className="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         {PRICING_TIERS.map((tier) => (
           <article
             key={tier.id}
@@ -63,14 +63,6 @@ export default function PricingPage() {
           </article>
         ))}
       </div>
-
-      <p className="mt-10 text-center text-sm text-muted">
-        Need SSO, committed usage, or full white-label?{" "}
-        <Link href="/contact" className="text-gold hover:underline">
-          Talk to us about Enterprise
-        </Link>
-        .
-      </p>
     </div>
   );
 }
