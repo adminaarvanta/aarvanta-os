@@ -1,4 +1,5 @@
 import { crmNow } from "@/lib/data/crm-helpers";
+import { getBillingPlanSummaries } from "@/lib/billing/plan-catalog";
 import { DEMO_TENANT } from "@/lib/tenant/demo-context";
 import type {
   AuditLogEntry,
@@ -43,101 +44,17 @@ function isoDaysFromNow(days: number) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 }
 
-export const BILLING_PLANS: BillingPlan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    priceMonthly: 49,
-    currency: "GBP",
-    features: ["1 workspace", "5 users", "Basic automations", "Email support"],
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    priceMonthly: 149,
-    currency: "GBP",
-    features: [
-      "3 workspaces",
-      "25 users",
-      "Advanced automations",
-      "CRM + portal bundle",
-    ],
-  },
-  {
-    id: "scale",
-    name: "Scale",
-    priceMonthly: 399,
-    currency: "GBP",
-    features: [
-      "10 workspaces",
-      "Unlimited users",
-      "Dedicated success manager",
-      "SSO + governance",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    priceMonthly: 999,
-    currency: "GBP",
-    features: [
-      "Global regions",
-      "Custom SLAs",
-      "Private marketplace",
-      "White-glove onboarding",
-    ],
-  },
-];
+/** Paid plans — sourced from `plan-catalog` (Free is marketing-only). */
+export const BILLING_PLANS: BillingPlan[] = getBillingPlanSummaries();
 
+/** No paid subscription = Free plan (acquisition default). */
 export function buildDemoSubscriptions(): Subscription[] {
-  return [
-    {
-      ...DEMO_TENANT,
-      id: "sub_demo_growth",
-      planId: "growth",
-      status: "active",
-      stripeCustomerId: "cus_demo_aarvanta",
-      currentPeriodEnd: isoDaysFromNow(21),
-      createdAt: now,
-    },
-  ];
+  return [];
 }
 
+/** Start meters at zero for the current period — no dummy usage. */
 export function buildDemoUsageRecords(): UsageRecord[] {
-  return [
-    {
-      ...DEMO_TENANT,
-      id: "usage_agent_runs_may",
-      metric: "agent_runs",
-      quantity: 1240,
-      period: "2026-05",
-      createdAt: now,
-    },
-    {
-      ...DEMO_TENANT,
-      id: "usage_api_calls_may",
-      metric: "api_calls",
-      quantity: 48210,
-      period: "2026-05",
-      createdAt: now,
-    },
-    {
-      ...DEMO_TENANT,
-      id: "usage_storage_may",
-      metric: "storage_mb",
-      quantity: 7230,
-      period: "2026-05",
-      createdAt: now,
-    },
-    {
-      ...DEMO_TENANT,
-      id: "usage_seats_may",
-      metric: "seats",
-      quantity: 18,
-      period: "2026-05",
-      createdAt: now,
-    },
-  ];
+  return [];
 }
 
 export function buildDemoWritingDrafts(): WritingDraft[] {

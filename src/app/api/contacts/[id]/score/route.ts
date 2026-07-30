@@ -28,6 +28,16 @@ export async function POST(
     repo.listActivities(scope, { contactId: id }),
   ]);
 
+  try {
+    const { consumeCredits } = await import("@/lib/billing/consume");
+    await consumeCredits(scope, "lead_score");
+  } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
+    throw error;
+  }
+
   const { score, reason } = await generateLeadScore({
     contact,
     deals: deals.filter((d) => d.contactId === id),

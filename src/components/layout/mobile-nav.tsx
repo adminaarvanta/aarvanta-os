@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { LogOut, MoreHorizontal, X } from "lucide-react";
+import { Lock, LogOut, MoreHorizontal, X } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import {
   MOBILE_NAV,
   MOBILE_NAV_MORE,
 } from "@/lib/navigation/command-center-nav";
 import { cn } from "@/lib/utils";
+import { isNavHrefLocked, usePlan } from "@/components/billing/plan-context";
+import { PremiumBadge } from "@/components/billing/plan-ui";
 
 function tourNavId(href: string) {
   return href.replace(/^\//, "").replace(/\//g, "-") || "home";
@@ -23,8 +25,12 @@ function isMobileActive(pathname: string, href: string) {
 export function MobileNav({ production }: { production: boolean }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const plan = usePlan();
+  // Keep all primary tabs visible; locked ones show a lock icon.
+  const primary = MOBILE_NAV.slice(0, 4);
+  const moreItems = MOBILE_NAV_MORE;
 
-  const moreActive = MOBILE_NAV_MORE.some((item) =>
+  const moreActive = moreItems.some((item) =>
     isMobileActive(pathname, item.href)
   );
 
@@ -49,22 +55,33 @@ export function MobileNav({ production }: { production: boolean }) {
         aria-label="Main navigation"
       >
         <div className="mx-auto grid max-w-lg grid-cols-5 items-stretch gap-0 px-1 pt-1">
-          {MOBILE_NAV.map((item) => {
+          {primary.map((item) => {
             const Icon = item.icon;
-            const active = isMobileActive(pathname, item.href);
+            const locked = isNavHrefLocked(plan, item.href);
+            const active = !locked && isMobileActive(pathname, item.href);
+            const href = locked
+              ? `/billing?upgrade=${item.href.replace(/^\//, "")}`
+              : item.href;
             return (
               <PendingLink
                 key={item.href}
-                href={item.href}
+                href={href}
                 data-demo-tour={`mobile-nav-${tourNavId(item.href)}`}
                 pendingClassName="opacity-60"
+                title={locked ? `${item.label} — upgrade to unlock` : item.label}
                 className={cn(
-                  "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium leading-none transition-colors",
-                  active ? "text-primary" : "text-muted"
+                  "relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium leading-none transition-colors",
+                  locked ? "text-muted" : active ? "text-primary" : "text-muted"
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" aria-hidden />
                 <span className="max-w-full truncate">{item.label}</span>
+                {locked ? (
+                  <Lock
+                    className="absolute right-1 top-1 h-2.5 w-2.5 text-gold"
+                    aria-hidden
+                  />
+                ) : null}
               </PendingLink>
             );
           })}
@@ -115,25 +132,32 @@ export function MobileNav({ production }: { production: boolean }) {
               </button>
             </div>
             <ul className="divide-y divide-border-subtle px-2 py-1">
-              {MOBILE_NAV_MORE.map((item) => {
+              {moreItems.map((item) => {
                 const Icon = item.icon;
-                const active = isMobileActive(pathname, item.href);
+                const locked = isNavHrefLocked(plan, item.href);
+                const active = !locked && isMobileActive(pathname, item.href);
+                const href = locked
+                  ? `/billing?upgrade=${item.href.replace(/^\//, "")}`
+                  : item.href;
                 return (
                   <li key={item.href}>
                     <PendingLink
-                      href={item.href}
+                      href={href}
                       data-demo-tour={`mobile-nav-${tourNavId(item.href)}`}
                       onClick={() => setMoreOpen(false)}
                       pendingClassName="opacity-60"
                       className={cn(
                         "flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
-                        active
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-surface-hover"
+                        locked
+                          ? "text-muted hover:bg-gold/10"
+                          : active
+                            ? "bg-primary/10 text-primary"
+                            : "text-foreground hover:bg-surface-hover"
                       )}
                     >
                       <Icon className="h-5 w-5 shrink-0 text-gold" aria-hidden />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {locked ? <PremiumBadge /> : null}
                     </PendingLink>
                   </li>
                 );

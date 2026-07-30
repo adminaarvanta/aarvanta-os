@@ -53,6 +53,14 @@ export async function POST(req: Request) {
 
   if (!isStripeConfigured()) {
     if (isDemoMode()) {
+      const { upsertLocalSubscription } = await import(
+        "@/lib/billing/upsert-local-subscription"
+      );
+      await upsertLocalSubscription({
+        scope: session.scope,
+        planId: parsed.data.planId,
+        stripeCustomerId: `cus_demo_${session.scope.tenantId}`,
+      });
       if (offer) {
         await recordCommissionForPaidInvoice({
           tenantId: session.scope.tenantId,
@@ -65,8 +73,8 @@ export async function POST(req: Request) {
       return NextResponse.json({
         demo: true,
         message: offer
-          ? `Demo checkout with ${offer.discountPercent}% affiliate discount. Commission recorded.`
-          : "Stripe is not configured. In demo mode, treat this as a successful checkout simulation.",
+          ? `Activated ${plan.name} with ${offer.discountPercent}% affiliate discount.`
+          : `Activated ${plan.name} plan (demo mode).`,
         planId: plan.id,
         discountPercent: offer?.discountPercent,
         affiliateId: offer?.affiliateId,

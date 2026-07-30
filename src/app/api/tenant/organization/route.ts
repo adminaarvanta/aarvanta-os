@@ -6,7 +6,7 @@ import { getSessionContext, requirePermission } from "@/lib/tenant/context";
 
 const patchSchema = z.object({
   name: z.string().min(1).optional(),
-  plan: z.enum(["free", "starter", "growth", "enterprise"]).optional(),
+  plan: z.enum(["free", "starter", "growth", "scale", "enterprise"]).optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -24,6 +24,15 @@ export async function PATCH(req: Request) {
     const updated = await repo.updateOrganization(ctx.scope.tenantId, parsed.data);
     if (!updated) {
       return apiError("NOT_FOUND", "Organization not found", 404);
+    }
+    if (parsed.data.plan) {
+      const { upsertLocalSubscription } = await import(
+        "@/lib/billing/upsert-local-subscription"
+      );
+      await upsertLocalSubscription({
+        scope: ctx.scope,
+        planId: parsed.data.plan,
+      });
     }
     return NextResponse.json(updated);
   } catch (error) {

@@ -69,6 +69,10 @@ export async function POST(
   );
 
   try {
+    const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");
+    await requireFeature(scope, "aiWorkforce", "explore");
+    await consumeCredits(scope, "ai_chat");
+
     const [context, memory, history] = await Promise.all([
       buildWorkforceContext(scope, {
         contactId: parsed.data.contactId,
@@ -97,6 +101,10 @@ export async function POST(
 
     return NextResponse.json({ message: assistantMessage });
   } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
+
     const message =
       error instanceof AiNotConfiguredError ||
       error instanceof AiRequestError ||

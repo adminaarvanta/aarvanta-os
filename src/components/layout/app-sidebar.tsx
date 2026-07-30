@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, LogOut, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
+import { ChevronRight, Lock, LogOut, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
 import { BrandLogo } from "@/components/brand/logo";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { AllToolsPanel } from "@/components/layout/all-tools-panel";
@@ -15,6 +15,8 @@ import {
 } from "@/lib/navigation/command-center-nav";
 import { cn } from "@/lib/utils";
 import type { Organization, Workspace } from "@/types/tenant";
+import { usePlan, isNavHrefLocked, isNavHrefVisible } from "@/components/billing/plan-context";
+import { PremiumBadge } from "@/components/billing/plan-ui";
 
 function isActive(pathname: string, href: string) {
   if (href === "#all-tools") return false;
@@ -54,6 +56,12 @@ export function AppSidebar({
   const pathname = usePathname();
   const [toolsOpen, setToolsOpen] = useState(false);
   const { collapsed, toggle } = useSidebarCollapse();
+  const plan = usePlan();
+  // Main tabs always visible — locked ones show a Pro badge.
+  const navItems = COMMAND_CENTER_NAV;
+  const shortcuts = SIDEBAR_SHORTCUTS.filter((item) =>
+    isNavHrefVisible(plan, item.href)
+  );
 
   return (
     <>
@@ -105,15 +113,19 @@ export function AppSidebar({
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
           <ul className="space-y-0.5">
-            {COMMAND_CENTER_NAV.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(pathname, item.href);
+              const locked = isNavHrefLocked(plan, item.href);
               const badge =
-                item.badgeKey === "whatsapp" && whatsappUnread > 0
+                !locked && item.badgeKey === "whatsapp" && whatsappUnread > 0
                   ? whatsappUnread
-                  : item.badgeKey === "voice" && voiceUnread > 0
+                  : !locked && item.badgeKey === "voice" && voiceUnread > 0
                     ? voiceUnread
                     : null;
+              const href = locked
+                ? `/billing?upgrade=${item.href.replace(/^\//, "")}`
+                : item.href;
 
               if (item.href === "#all-tools") {
                 return (
@@ -137,28 +149,38 @@ export function AppSidebar({
               return (
                 <li key={item.href}>
                   <PendingLink
-                    href={item.href}
+                    href={href}
                     data-demo-tour={`nav-${tourNavId(item.href)}`}
                     pendingClassName="opacity-70"
-                    title={item.label}
+                    title={locked ? `${item.label} — upgrade to unlock` : item.label}
                     className={cn(
                       "relative flex items-center rounded-lg text-sm font-medium transition-colors",
                       collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
-                      active
-                        ? "bg-gold/15 text-gold-bright before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-gold"
-                        : "text-muted hover:bg-surface-hover hover:text-foreground"
+                      locked && "text-muted/80 hover:bg-gold/10 hover:text-foreground",
+                      !locked &&
+                        active &&
+                        "bg-gold/15 text-gold-bright before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-gold",
+                      !locked &&
+                        !active &&
+                        "text-muted hover:bg-surface-hover hover:text-foreground"
                     )}
                   >
                     <Icon className="h-[18px] w-[18px] shrink-0" />
                     {!collapsed ? (
                       <>
                         <span className="flex-1 truncate">{item.label}</span>
-                        {badge !== null && (
+                        {locked ? (
+                          <PremiumBadge />
+                        ) : badge !== null ? (
                           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-semibold text-black">
                             {badge > 99 ? "99+" : badge}
                           </span>
-                        )}
+                        ) : null}
                       </>
+                    ) : locked ? (
+                      <span className="absolute right-1 top-1 text-gold">
+                        <Lock className="h-3 w-3" aria-hidden />
+                      </span>
                     ) : badge !== null ? (
                       <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-gold" />
                     ) : null}
@@ -174,7 +196,7 @@ export function AppSidebar({
                 Shortcuts
               </p>
               <ul className="space-y-0.5">
-                {SIDEBAR_SHORTCUTS.map((item) => (
+                {shortcuts.map((item) => (
                   <li key={item.id}>
                     <PendingLink
                       href={item.href}
@@ -197,6 +219,15 @@ export function AppSidebar({
         <div className="shrink-0 border-t border-border-subtle p-2">
           {!collapsed ? (
             <>
+              {plan ? (
+                <Link
+                  href="/billing"
+                  className="mb-2 flex items-center justify-between rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-xs transition-colors hover:border-gold/40"
+                >
+                  <span className="text-muted">Plan</span>
+                  <span className="font-semibold text-gold-bright">{plan.planName}</span>
+                </Link>
+              ) : null}
               <div className="mb-2 flex items-center justify-center px-2 text-muted">
                 <PendingLink
                   href="/settings"

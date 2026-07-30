@@ -157,9 +157,13 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
     throw new Error(`${ctx.channel} is not configured. Set provider env vars or CHANNELS_SIMULATE=true.`);
   }
 
+  const scope = getWebhookTenantScope();
+
   switch (ctx.channel) {
     case "whatsapp": {
       if (!ctx.contact.phone) throw new Error("Contact has no phone for WhatsApp.");
+      const { consumeWhatsAppConversation } = await import("@/lib/billing/consume");
+      await consumeWhatsAppConversation(scope);
       await sendWhatsAppMessage(ctx.contact.phone, ctx.content);
       return;
     }
@@ -170,6 +174,8 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
     }
     case "email": {
       if (!ctx.contact.email) throw new Error("Contact has no email address.");
+      const { consumeEmailSend } = await import("@/lib/billing/consume");
+      await consumeEmailSend(scope, 1);
       const subject = ctx.subject?.trim() || "Message from Aarvanta";
       await sendGmailEmail({
         to: ctx.contact.email,
@@ -183,6 +189,8 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
     }
     case "voice": {
       if (!ctx.contact.phone) throw new Error("Contact has no phone for voice.");
+      const { requireVoiceCapacity } = await import("@/lib/billing/consume");
+      await requireVoiceCapacity(scope, 1);
       await initiateTwilioVoiceCall(ctx.contact.phone, ctx.content, {
         conversationId: ctx.conversationId,
         direction: ctx.voiceDirection ?? "outbound",

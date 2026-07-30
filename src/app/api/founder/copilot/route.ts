@@ -43,6 +43,16 @@ export async function POST(req: Request) {
   const context = await buildFounderCopilotContext(scope);
   const history = await chatRepo.listMessages(scope, 20);
 
+  try {
+    const { consumeCredits } = await import("@/lib/billing/consume");
+    await consumeCredits(scope, "ai_chat");
+  } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
+    throw error;
+  }
+
   if (parsed.data.briefing) {
     const briefing = await generateDailyBriefing(context);
     const message = await chatRepo.addMessage(

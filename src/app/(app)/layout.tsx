@@ -5,6 +5,7 @@ import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext } from "@/lib/tenant/context";
 import { ROLE_LABELS } from "@/types/tenant";
+import type { EntitlementsClient } from "@/lib/billing/entitlements";
 
 export default async function AppLayout({
   children,
@@ -18,6 +19,7 @@ export default async function AppLayout({
   let userRole = "Owner";
   let whatsappUnread = 0;
   let voiceUnread = 0;
+  let entitlements: EntitlementsClient | null = null;
 
   try {
     const ctx = await getSessionContext();
@@ -42,8 +44,33 @@ export default async function AppLayout({
     voiceUnread = unreadForChannel(conversations, "voice");
     const { hydrateWorkspaceSettingsCache } = await import("@/lib/hr/settings");
     await hydrateWorkspaceSettingsCache(bootstrapped.workspace.id);
+
+    const { resolveEntitlements, toClientEntitlements } = await import(
+      "@/lib/billing/entitlements"
+    );
+    entitlements = toClientEntitlements(await resolveEntitlements(ctx.scope));
   } catch {
-    /* tenant context unavailable */
+    const { getPlan } = await import("@/lib/billing/plan-catalog");
+    const free = getPlan("free")!;
+    entitlements = {
+      planId: "free",
+      planName: free.name,
+      priceMonthly: 0,
+      features: free.features,
+      limits: free.limits,
+      usage: {
+        ai_credits: 0,
+        voice_minutes: 0,
+        whatsapp_conversations: 0,
+        emails: 0,
+        seats: 0,
+        storage_mb: 0,
+      },
+      period: new Date().toISOString().slice(0, 7),
+      creditsRemaining:
+        typeof free.limits.aiCredits === "number" ? free.limits.aiCredits : 0,
+      creditsPercent: 0,
+    };
   }
 
   return (
@@ -54,8 +81,11 @@ export default async function AppLayout({
       userRole={userRole}
       whatsappUnread={whatsappUnread}
       voiceUnread={voiceUnread}
+      entitlements={entitlements}
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+        {children}
+      </div>
     </AppShell>
   );
 }

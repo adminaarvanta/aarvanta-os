@@ -71,6 +71,10 @@ export async function POST(req: Request) {
   );
 
   try {
+    const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");
+    await requireFeature(scope, "aiWorkforce", "lite");
+    await consumeCredits(scope, "ai_employee_run");
+
     const context = await buildWorkforceContext(scope, {
       contactId: parsed.data.contactId,
       conversationId: parsed.data.conversationId,
@@ -102,6 +106,21 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ run: completed }, { status: 201 });
   } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) {
+      await repo.updateRun(
+        run.id,
+        {
+          status: "failed",
+          error: error instanceof Error ? error.message : "Plan limit",
+          completedAt: crmNow(),
+        },
+        scope
+      );
+      return planRes;
+    }
+
     const message =
       error instanceof AiNotConfiguredError ||
       error instanceof AiRequestError ||

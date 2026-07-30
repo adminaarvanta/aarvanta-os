@@ -39,6 +39,20 @@ export async function POST(
     return NextResponse.json({ error: "Workflow is disabled" }, { status: 400 });
   }
 
+  try {
+    const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");
+    await requireFeature(scope, "workflows", "lite");
+    const agentSteps = workflow.steps.filter((s) => s.type === "agent").length;
+    if (agentSteps > 0) {
+      await consumeCredits(scope, "workflow_ai_step", agentSteps);
+    }
+  } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
+    throw error;
+  }
+
   let context = defaultDemoContext(workflow.templateId);
   try {
     const body = await req.json();

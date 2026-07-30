@@ -55,6 +55,16 @@ export async function POST(req: Request) {
     );
   }
 
+  try {
+    const { requirePublishLive } = await import("@/lib/billing/consume");
+    await requirePublishLive(session.scope);
+  } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
+    throw error;
+  }
+
   if (!isStripeConfigured()) {
     if (isDemoMode()) {
       return NextResponse.json({

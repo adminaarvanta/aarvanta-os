@@ -11,7 +11,7 @@ export interface Organization {
   id: string;
   name: string;
   slug: string;
-  plan: "free" | "starter" | "growth" | "enterprise";
+  plan: "free" | "starter" | "growth" | "scale" | "enterprise";
   createdAt: string;
   updatedAt: string;
 }

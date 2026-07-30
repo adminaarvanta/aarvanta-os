@@ -35,6 +35,11 @@ export async function POST(req: Request) {
       return apiError("VALIDATION_ERROR", "Invalid draft payload", 400);
     }
 
+    const { consumeCredits } = await import("@/lib/billing/consume");
+    const tariff =
+      parsed.data.type === "blog" ? "generate_blog" : "ai_chat";
+    await consumeCredits(scope, tariff);
+
     const content = await generateWritingDraft({
       type: parsed.data.type,
       title: parsed.data.title,
@@ -51,6 +56,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ draft }, { status: 201 });
   } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
     const message = error instanceof Error ? error.message : "Create failed";
     return apiError("WRITING_ERROR", message, message === "Unauthorized" ? 401 : 500);
   }

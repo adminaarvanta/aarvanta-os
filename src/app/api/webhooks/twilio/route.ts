@@ -155,6 +155,20 @@ export async function POST(req: Request) {
     }
 
     await markWebhookProcessed("twilio_voice", eventKey, scope);
+
+    if (call.status === "completed" && call.durationSeconds > 0) {
+      try {
+        const minutes = Math.max(1, Math.ceil(call.durationSeconds / 60));
+        const { incrementUsage } = await import("@/lib/billing/usage-store");
+        await incrementUsage(scope, "voice_minutes", minutes);
+      } catch (error) {
+        console.warn(
+          "[billing] voice minute consume failed",
+          error instanceof Error ? error.message : error
+        );
+      }
+    }
+
     return NextResponse.json({
       received: true,
       processed: 1,

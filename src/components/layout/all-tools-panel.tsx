@@ -5,6 +5,8 @@ import { Search, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { WorkspaceSwitcher } from "@/components/tenant/workspace-switcher";
+import { PremiumBadge } from "@/components/billing/plan-ui";
+import { isModuleLocked, usePlan } from "@/components/billing/plan-context";
 import {
   filterTools,
   getAllToolsModules,
@@ -27,28 +29,34 @@ function ToolLink({
   module,
   pathname,
   onNavigate,
+  locked,
 }: {
-  module: { href: string; label: string; icon: LucideIcon };
+  module: { id: string; href: string; label: string; icon: LucideIcon };
   pathname: string;
   onNavigate?: () => void;
+  locked?: boolean;
 }) {
   const Icon = module.icon;
   const active = isActive(pathname, module.href);
+  const href = locked ? `/billing?upgrade=${module.id}` : module.href;
 
   return (
     <PendingLink
-      href={module.href}
+      href={href}
       onClick={onNavigate}
       pendingClassName="opacity-60"
       className={cn(
         "flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors",
-        active
-          ? "bg-primary-soft text-primary"
-          : "text-muted hover:bg-surface-hover hover:text-foreground"
+        locked
+          ? "text-muted/80 hover:bg-gold/10 hover:text-foreground"
+          : active
+            ? "bg-primary-soft text-primary"
+            : "text-muted hover:bg-surface-hover hover:text-foreground"
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate">{module.label}</span>
+      <span className="min-w-0 flex-1 truncate">{module.label}</span>
+      {locked ? <PremiumBadge /> : null}
     </PendingLink>
   );
 }
@@ -72,6 +80,7 @@ export function AllToolsPanel({
 }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const plan = usePlan();
   const allModules = useMemo(() => getAllToolsModules(), []);
   const filtered = useMemo(() => filterTools(allModules, query), [allModules, query]);
   const frequent = useMemo(() => getFrequentTools(allModules), [allModules]);
@@ -112,7 +121,14 @@ export function AllToolsPanel({
         }`}
       >
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
-          <h2 className="text-sm font-semibold text-foreground">All tools</h2>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">All tools</h2>
+            {plan ? (
+              <p className="text-[11px] text-muted">
+                On {plan.planName} — locked tools show a Pro badge
+              </p>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -122,66 +138,69 @@ export function AllToolsPanel({
           </button>
         </div>
 
-        <div className="border-b border-border-subtle px-4 py-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dim" />
+        {tenant ? (
+          <div className="border-b border-border-subtle px-4 py-2">
+            <WorkspaceSwitcher
+              organization={tenant.organization}
+              workspace={tenant.workspace}
+              workspaces={tenant.workspaces}
+            />
+          </div>
+        ) : null}
+
+        <div className="border-b border-border-subtle px-4 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-2.5 py-1.5">
+            <Search className="h-4 w-4 text-muted" />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search modules…"
-              className="w-full rounded-lg border border-border bg-surface-muted py-2 pl-9 pr-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+              placeholder="Search tools…"
+              className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted"
             />
           </div>
-          {tenant && (
-            <div className="mt-3">
-              <WorkspaceSwitcher
-                organization={tenant.organization}
-                workspace={tenant.workspace}
-                workspaces={tenant.workspaces}
-              />
-            </div>
-          )}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          {!query && (
-            <section className="mb-6">
-              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-dim">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          {!query ? (
+            <div className="mb-6">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-dim">
                 Frequent
-              </h3>
-              <div className="grid gap-1">
-                {frequent.map((mod) => (
+              </p>
+              <div className="grid gap-0.5 sm:grid-cols-2">
+                {frequent.map((module) => (
                   <ToolLink
-                    key={mod.id}
-                    module={mod}
+                    key={module.id}
+                    module={module}
                     pathname={pathname}
                     onNavigate={onClose}
+                    locked={isModuleLocked(plan, module.id)}
                   />
                 ))}
               </div>
-            </section>
-          )}
+            </div>
+          ) : null}
 
-          {TOOL_GROUP_ORDER.map((groupKey) => {
-            const items = grouped[groupKey];
-            if (!items?.length) return null;
+          {TOOL_GROUP_ORDER.map((group) => {
+            const tools = grouped[group];
+            if (!tools?.length) return null;
             return (
-              <section key={groupKey} className="mb-6">
-                <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-dim">
-                  {TOOL_GROUP_LABELS[groupKey] ?? groupKey}
-                </h3>
-                <div className="grid gap-1">
-                  {items.map((mod) => (
+              <div key={group} className="mb-6">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-dim">
+                  {TOOL_GROUP_LABELS[group] ?? group}
+                </p>
+                <div className="grid gap-0.5 sm:grid-cols-2">
+                  {tools.map((module) => (
                     <ToolLink
-                      key={mod.id}
-                      module={mod}
+                      key={module.id}
+                      module={module}
                       pathname={pathname}
                       onNavigate={onClose}
+                      locked={isModuleLocked(plan, module.id)}
                     />
                   ))}
                 </div>
-              </section>
+              </div>
             );
           })}
         </div>

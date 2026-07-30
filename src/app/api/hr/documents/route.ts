@@ -63,6 +63,17 @@ export async function POST(req: Request) {
   const org = await getTenantRepository().getOrganization(ctx.scope.tenantId);
   const companyName = org?.name ?? "Your Company";
 
+  try {
+    const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");
+    await requireFeature(ctx.scope, "hr", "lite");
+    await consumeCredits(ctx.scope, "hr_legal_draft");
+  } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
+    throw error;
+  }
+
   const content = await generateHrDocument({
     type: parsed.data.type,
     title: parsed.data.title,

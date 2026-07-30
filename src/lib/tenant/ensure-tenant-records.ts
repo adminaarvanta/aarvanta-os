@@ -22,7 +22,7 @@ export async function ensureTenantRecords(
       id: scope.tenantId,
       name: getCompanyLegalName(),
       slug: slugFromId(scope.tenantId),
-      plan: "growth",
+      plan: "free",
       createdAt: now,
       updatedAt: now,
     });

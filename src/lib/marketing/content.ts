@@ -1,69 +1,37 @@
-export const PRICING_TIERS = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "£99",
-    period: "/month",
-    description: "Deploy your first AI employees and unify core operations.",
-    features: [
-      "AI Workforce",
-      "CRM & lead scoring",
-      "Project management",
-      "Knowledge Hub",
-      "Unified inbox",
-    ],
-    cta: "Start free trial",
+import { PLAN_CATALOG } from "@/lib/billing/plan-catalog";
+
+export const PRICING_TIERS = PLAN_CATALOG.filter((p) => p.id !== "enterprise").map(
+  (plan) => ({
+    id: plan.id,
+    name: plan.name,
+    price:
+      plan.priceMonthly === 0
+        ? "£0"
+        : plan.priceMonthly === null
+          ? "Custom"
+          : `£${plan.priceMonthly}`,
+    period: plan.priceMonthly === 0 || plan.priceMonthly === null ? "" : "/month",
+    description: plan.tagline,
+    features: plan.highlights,
+    cta: plan.cta,
+    highlighted: Boolean(plan.highlighted),
+  })
+);
+
+/** Keep Enterprise on the marketing grid as a fourth/fifth card. */
+export const PRICING_TIERS_WITH_ENTERPRISE = [
+  ...PRICING_TIERS,
+  ...PLAN_CATALOG.filter((p) => p.id === "enterprise").map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    price: "Custom",
+    period: "",
+    description: plan.tagline,
+    features: plan.highlights,
+    cta: plan.cta,
     highlighted: false,
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    price: "£299",
-    period: "/month",
-    description: "Scale revenue with automation and advanced AI across the funnel.",
-    features: [
-      "Everything in Starter",
-      "Workflow automation",
-      "WhatsApp channel",
-      "Advanced AI models",
-      "Proposals & client portal",
-    ],
-    cta: "Start free trial",
-    highlighted: true,
-  },
-  {
-    id: "business",
-    name: "Business",
-    price: "£699",
-    period: "/month",
-    description: "Voice, teams, and analytics for high-velocity sales orgs.",
-    features: [
-      "Everything in Growth",
-      "AI voice calling",
-      "Team collaboration",
-      "Advanced analytics",
-      "Finance OS & billing",
-    ],
-    cta: "Contact sales",
-    highlighted: false,
-  },
-  {
-    id: "white-label",
-    name: "White Label",
-    price: "£1,999+",
-    period: "/month",
-    description: "Agency and partner model with custom branding.",
-    features: [
-      "Everything in Business",
-      "Custom branding",
-      "Partner & affiliate tools",
-      "Multi-workspace RBAC",
-      "Dedicated success manager",
-    ],
-    cta: "Talk to us",
-    highlighted: false,
-  },
-] as const;
+  })),
+];
 
 export const COMPANY = {
   name: "Aarvanta Limited",

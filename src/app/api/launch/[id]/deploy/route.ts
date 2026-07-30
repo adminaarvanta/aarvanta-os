@@ -31,10 +31,15 @@ export async function POST(_req: Request, { params }: RouteParams) {
   }
 
   try {
+    const { requirePublishLive } = await import("@/lib/billing/consume");
+    await requirePublishLive(scope);
     const result = await deployLaunchSession(session, scope);
     await getLaunchRepository().save(result.session);
     return NextResponse.json(result);
   } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
     const message = error instanceof Error ? error.message : "Deployment failed";
     return NextResponse.json(
       { error: { code: "DEPLOY_FAILED", message } },

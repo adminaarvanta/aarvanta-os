@@ -2,6 +2,7 @@ import type { TenantScope } from "@/types/communication";
 
 // ─── Billing (Module 11) ───────────────────────────────────────────
 export type BillingPlanId = "starter" | "growth" | "scale" | "enterprise";
+export type PublicPlanId = "free" | BillingPlanId;
 
 export interface BillingPlan {
   id: BillingPlanId;
@@ -13,7 +14,8 @@ export interface BillingPlan {
 
 export interface Subscription extends TenantScope {
   id: string;
-  planId: BillingPlanId;
+  /** Paid plan id, or "free" when explicitly recorded. No row = Free. */
+  planId: PublicPlanId;
   status: "active" | "trialing" | "past_due" | "canceled";
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
@@ -22,12 +24,22 @@ export interface Subscription extends TenantScope {
   createdAt: string;
 }
 
+export type UsageMetric =
+  | "ai_credits"
+  | "voice_minutes"
+  | "whatsapp_conversations"
+  | "emails"
+  | "seats"
+  | "storage_mb";
+
 export interface UsageRecord extends TenantScope {
   id: string;
-  metric: "agent_runs" | "api_calls" | "storage_mb" | "seats";
+  metric: UsageMetric;
   quantity: number;
+  /** Billing period key, e.g. "2026-07". */
   period: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 // ─── Writing Studio (Module 13) ────────────────────────────────────

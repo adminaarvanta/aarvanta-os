@@ -40,6 +40,18 @@ export async function refreshConversationAiInsights(
   const conversation = await repo.getConversation(conversationId, scope);
   if (!conversation) return;
 
+  try {
+    const { consumeCredits } = await import("@/lib/billing/consume");
+    await consumeCredits(scope, "conversation_summary");
+  } catch (error) {
+    const { isPlanEntitlementError } = await import("@/lib/billing/errors");
+    if (isPlanEntitlementError(error)) {
+      console.info(`[billing] skip AI summary: ${error.message}`);
+      return;
+    }
+    throw error;
+  }
+
   const insights = await generateConversationInsights(conversation);
 
   await repo.updateAiInsights(

@@ -101,6 +101,12 @@ export async function POST(req: Request, context: RouteContext) {
       };
 
       try {
+        const { consumeCredits } = await import("@/lib/billing/consume");
+        const siteType = working.preferences.siteType;
+        const tariff =
+          siteType === "landing" ? "generate_landing" : "generate_website";
+        await consumeCredits(scope, tariff);
+
         send({
           type: "progress",
           stage: "business",
@@ -188,6 +194,7 @@ export async function POST(req: Request, context: RouteContext) {
           usedAi: saved.usedAi ?? false,
         });
       } catch (error) {
+        const { isPlanEntitlementError } = await import("@/lib/billing/errors");
         const message =
           error instanceof Error ? error.message : "Generation failed.";
         let failed: SiteBuildJob = {
@@ -205,7 +212,14 @@ export async function POST(req: Request, context: RouteContext) {
           });
         }
         await repo.save(failed);
-        send({ type: "error", message, job: failed });
+        send({
+          type: "error",
+          message,
+          job: failed,
+          ...(isPlanEntitlementError(error)
+            ? { code: error.code, upgradeHint: error.upgradeHint }
+            : {}),
+        });
       } finally {
         controller.close();
       }

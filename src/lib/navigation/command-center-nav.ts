@@ -22,6 +22,18 @@ export type CommandNavItem = {
   label: string;
   icon: LucideIcon;
   badgeKey?: "whatsapp" | "voice";
+  /** Plan feature key; omit for always-visible items. */
+  featureKey?:
+    | "crm"
+    | "whatsappChannel"
+    | "voiceAi"
+    | "aiWorkforce"
+    | "projects"
+    | "workflows"
+    | "hr"
+    | "finance"
+    | "analytics"
+    | "ungated";
 };
 
 export type OperatingSystemItem = {
@@ -32,21 +44,22 @@ export type OperatingSystemItem = {
   dotClass: string;
   iconClass: string;
   description?: string;
+  featureKey?: CommandNavItem["featureKey"];
 };
 
 /** Primary sidebar navigation — Command Center design */
 export const COMMAND_CENTER_NAV: CommandNavItem[] = [
-  { href: "/dashboard", label: "Command Center", icon: LayoutDashboard },
-  { href: "/whatsapp", label: "WhatsApp OS", icon: MessageCircle, badgeKey: "whatsapp" },
-  { href: "/voice", label: "Voice OS", icon: Phone, badgeKey: "voice" },
-  { href: "/crm", label: "CRM", icon: Briefcase },
-  { href: "/workforce", label: "AI Workforce", icon: Sparkles },
-  { href: "/projects", label: "Projects", icon: Kanban },
-  { href: "/workflows", label: "Workflows", icon: Workflow },
-  { href: "/hr", label: "HR", icon: Landmark },
-  { href: "/finance", label: "Finance", icon: Wallet },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "#all-tools", label: "All Tools", icon: LayoutGrid },
+  { href: "/dashboard", label: "Command Center", icon: LayoutDashboard, featureKey: "ungated" },
+  { href: "/whatsapp", label: "WhatsApp OS", icon: MessageCircle, badgeKey: "whatsapp", featureKey: "whatsappChannel" },
+  { href: "/voice", label: "Voice OS", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
+  { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
+  { href: "/workforce", label: "AI Workforce", icon: Sparkles, featureKey: "aiWorkforce" },
+  { href: "/projects", label: "Projects", icon: Kanban, featureKey: "projects" },
+  { href: "/workflows", label: "Workflows", icon: Workflow, featureKey: "workflows" },
+  { href: "/hr", label: "HR", icon: Landmark, featureKey: "hr" },
+  { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
+  { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
+  { href: "#all-tools", label: "All Tools", icon: LayoutGrid, featureKey: "ungated" },
 ];
 
 /**
@@ -60,6 +73,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "Capture and qualify new leads",
     dotClass: "bg-gold",
     iconClass: "text-gold bg-gold/10",
+    featureKey: "crm",
   },
   {
     id: "build",
@@ -68,6 +82,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "Create and publish websites",
     dotClass: "bg-accent-cyan",
     iconClass: "text-accent-cyan bg-accent-cyan/10",
+    featureKey: "ungated",
   },
   {
     id: "knowledge",
@@ -76,6 +91,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "Docs, FAQs, and company brain",
     dotClass: "bg-primary-bright",
     iconClass: "text-primary-bright bg-primary-soft",
+    featureKey: "ungated",
   },
   {
     id: "organization",
@@ -84,6 +100,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "Hierarchy & user roles",
     dotClass: "bg-gold",
     iconClass: "text-gold bg-gold/10",
+    featureKey: "ungated",
   },
   {
     id: "team",
@@ -92,6 +109,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "People and collaboration",
     dotClass: "bg-success",
     iconClass: "text-success bg-success/10",
+    featureKey: "ungated",
   },
   {
     id: "referrals",
@@ -100,6 +118,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "Earn with affiliate links & payouts",
     dotClass: "bg-gold",
     iconClass: "text-gold bg-gold/10",
+    featureKey: "ungated",
   },
   {
     id: "affiliate",
@@ -108,6 +127,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "Apply as an external affiliate partner",
     dotClass: "bg-accent-cyan",
     iconClass: "text-accent-cyan bg-accent-cyan/10",
+    featureKey: "ungated",
   },
 ];
 
@@ -191,19 +211,20 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
 
 /** Primary mobile bottom tabs — max 4 + More sheet (see MobileNav). */
 export const MOBILE_NAV: CommandNavItem[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/whatsapp", label: "Chats", icon: MessageCircle, badgeKey: "whatsapp" },
-  { href: "/crm", label: "CRM", icon: Briefcase },
-  { href: "/workforce", label: "AI", icon: Sparkles },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
+  { href: "/whatsapp", label: "Chats", icon: MessageCircle, badgeKey: "whatsapp", featureKey: "whatsappChannel" },
+  { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
+  { href: "/workforce", label: "AI", icon: Sparkles, featureKey: "aiWorkforce" },
 ];
 
 /** Extra destinations opened from the mobile More sheet. */
 export const MOBILE_NAV_MORE: CommandNavItem[] = [
-  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice" },
-  { href: "/projects", label: "Projects", icon: Kanban },
-  { href: "/knowledge", label: "Knowledge", icon: Brain },
-  { href: "/referrals", label: "Referrals", icon: Handshake },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
+  { href: "/projects", label: "Projects", icon: Kanban, featureKey: "projects" },
+  { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
+  { href: "/referrals", label: "Referrals", icon: Handshake, featureKey: "ungated" },
+  { href: "/settings", label: "Settings", icon: Settings, featureKey: "ungated" },
+  { href: "/billing", label: "Billing", icon: Wallet, featureKey: "ungated" },
 ];
 
 export const SIDEBAR_BRAND = {

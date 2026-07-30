@@ -35,6 +35,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing file upload" }, { status: 400 });
     }
 
+    const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");
+    await requireFeature(scope, "knowledgeHub", "explore");
+    await consumeCredits(scope, "knowledge_embed");
+
     const fileType = validateUpload(file);
     const text = await extractTextFromFile(file);
     const title =
@@ -50,6 +54,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ document }, { status: 201 });
   } catch (error) {
+    const { handlePlanError } = await import("@/lib/billing/api-guard");
+    const planRes = handlePlanError(error);
+    if (planRes) return planRes;
     return NextResponse.json(
       {
         error: {

@@ -8,12 +8,12 @@ export default function PricingPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-foreground sm:text-4xl">Pricing</h1>
         <p className="mt-3 text-sm text-muted">
-          Simple plans that scale with your AI workforce. 14-day free trial on
-          paid tiers.
+          Start free to build and explore. Upgrade when you launch — annual
+          billing saves two months.
         </p>
       </div>
 
-      <div className="mt-12 grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {PRICING_TIERS.map((tier) => (
           <article
             key={tier.id}
@@ -45,11 +45,11 @@ export default function PricingPage() {
             </ul>
             <Link
               href={
-                tier.id === "white-label"
+                tier.id === "enterprise"
                   ? "/contact"
-                  : tier.id === "growth"
-                    ? "/dashboard?help=live"
-                    : "/dashboard"
+                  : tier.id === "free"
+                    ? "/dashboard"
+                    : "/billing"
               }
               className={cn(
                 "mt-6 block rounded-lg py-2.5 text-center text-sm font-semibold",
@@ -63,6 +63,14 @@ export default function PricingPage() {
           </article>
         ))}
       </div>
+
+      <p className="mt-10 text-center text-sm text-muted">
+        Need SSO, committed usage, or full white-label?{" "}
+        <Link href="/contact" className="text-gold hover:underline">
+          Talk to us about Enterprise
+        </Link>
+        .
+      </p>
     </div>
   );
 }

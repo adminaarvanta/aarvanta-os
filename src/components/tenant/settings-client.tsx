@@ -347,8 +347,9 @@ export function SettingsClient({
                 className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
               >
                 <option value="free">Free</option>
-                <option value="starter">Starter</option>
+                <option value="starter">Launch</option>
                 <option value="growth">Growth</option>
+                <option value="scale">Scale</option>
                 <option value="enterprise">Enterprise</option>
               </select>
             </div>
