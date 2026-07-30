@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 
 /** Full wordmark aspect (globe + AARVANTA + BUSINESS OS). */
 const FULL_LOGO_ASPECT = 1;
+/** Icon mark aspect from aarvanta-logo-icon-*-clear.png */
+const ICON_LOGO_ASPECT = 412 / 311;
 
 const DISPLAY_HEIGHT = {
   header: 56,
@@ -22,7 +24,11 @@ const DISPLAY_HEIGHT = {
 export type BrandLogoSize = keyof typeof DISPLAY_HEIGHT;
 export type BrandLogoVariant = "full" | "icon";
 
-/** *-clear assets have true alpha (no baked black plate). */
+/**
+ * Canonical product logos (true alpha).
+ * - light* → for light UI surfaces
+ * - dark* → for dark UI surfaces
+ */
 const LOGO_PATHS = {
   dark: {
     full: "/aarvanta-logo-dark-clear.png",
@@ -47,18 +53,18 @@ export function BrandLogo({
   size?: BrandLogoSize;
   variant?: BrandLogoVariant;
   fullWidth?: boolean;
+  /** Force logo variant for a known surface; defaults to active theme. */
   mode?: "dark" | "light";
 }) {
   const { resolved: contextResolved } = useThemeMode();
   const themeMode = mode ?? contextResolved;
   const displayHeight = DISPLAY_HEIGHT[size];
   const src = LOGO_PATHS[themeMode][variant];
-  /** Icon asset is landscape (~4:3); keep layout box square and contain. */
   const iconBox = displayHeight;
   const intrinsicHeight = displayHeight * 2;
   const intrinsicWidth =
     variant === "icon"
-      ? Math.round(intrinsicHeight * (412 / 311))
+      ? Math.round(intrinsicHeight * ICON_LOGO_ASPECT)
       : Math.round(intrinsicHeight * FULL_LOGO_ASPECT);
 
   const image = (
@@ -71,13 +77,8 @@ export function BrandLogo({
       unoptimized
       priority
       className={cn(
-        // Never paint a plate behind the mark — sidebar surface must show through
         "!bg-transparent object-contain",
-        // On dark UI, treat pure black pixels as transparent against the surface
-        themeMode === "dark" && "mix-blend-lighten",
-        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : null,
-        !fullWidth && variant === "icon" && "h-auto w-auto",
-        !fullWidth && variant === "full" && "h-auto w-auto",
+        fullWidth ? "mx-auto h-auto w-full max-w-[280px]" : "h-auto w-auto",
         className
       )}
       style={
@@ -93,9 +94,9 @@ export function BrandLogo({
             : variant === "icon"
               ? {
                   height: iconBox,
-                  width: iconBox,
+                  width: "auto",
                   maxHeight: iconBox,
-                  maxWidth: iconBox,
+                  maxWidth: Math.round(iconBox * ICON_LOGO_ASPECT),
                   objectFit: "contain",
                   backgroundColor: "transparent",
                 }
@@ -115,7 +116,6 @@ export function BrandLogo({
         "inline-flex shrink-0 items-center justify-center bg-transparent",
         fullWidth && "block w-full"
       )}
-      style={{ backgroundColor: "transparent" }}
     >
       {image}
     </span>
@@ -129,7 +129,6 @@ export function BrandLogo({
           "bg-transparent",
           fullWidth ? "block w-full" : "inline-flex shrink-0 items-center"
         )}
-        style={{ backgroundColor: "transparent" }}
         aria-label={brand.fullName}
       >
         {wrapped}

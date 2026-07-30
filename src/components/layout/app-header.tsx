@@ -78,10 +78,14 @@ export function AppHeader() {
     <header className="relative z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:h-16 sm:gap-3 sm:px-6">
       <Link
         href="/dashboard"
-        className="shrink-0 md:hidden"
+        className="flex h-10 max-w-[52px] shrink-0 items-center justify-center md:hidden"
         aria-label="Aarvanta Business OS"
       >
-        <BrandLogo variant="icon" size="sm" />
+        <BrandLogo
+          variant="icon"
+          size="sm"
+          className="!h-9 !w-auto max-h-9 max-w-full"
+        />
       </Link>
 
       <div className="min-w-0 flex-1">

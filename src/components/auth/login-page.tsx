@@ -119,8 +119,8 @@ export function LoginPageShell({ nextPath }: { nextPath: string }) {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-black px-4 py-8">
       <div className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-lg shadow-gold/5 sm:p-10">
-        <div className="flex justify-center px-2">
-          <BrandLogo size="xl" fullWidth mode="dark" />
+        <div className="flex min-h-[140px] items-center justify-center px-2">
+          <BrandLogo size="xl" fullWidth />
         </div>
         <p className="mt-4 text-center text-sm text-muted">
           Sign in to access your business operating system.
