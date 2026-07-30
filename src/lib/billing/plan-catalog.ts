@@ -208,7 +208,7 @@ const exploreCore = {
   projects: "full" as const,
   knowledgeHub: "explore" as const,
   finance: "explore" as const,
-  hr: "explore" as const,
+  hr: "none" as const,
   payroll: "none" as const,
   clientPortal: "none" as const,
   employeePortal: "none" as const,
@@ -252,8 +252,8 @@ export const PLAN_CATALOG: PlanDefinition[] = [
     exclusions: [
       "No custom domain go-live / SSL publish",
       "No WhatsApp or AI voice calling",
-      "No API, portals, payroll, or white-label",
-      "Finance & HR in explore/demo data only",
+      "No HR, API, portals, payroll, or white-label",
+      "Finance in explore/demo data only",
     ],
   },
   {
