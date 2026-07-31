@@ -21,7 +21,7 @@ import os
 import re
 from typing import Any
 from urllib import request as urlrequest
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -40,22 +40,30 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
 VOICE_RELAY_WSS_URL = os.getenv("VOICE_RELAY_WSS_URL", "").strip()
 AARVANTA_CALLBACK_URL = os.getenv("AARVANTA_VOICE_CALLBACK_URL", "").strip()
 AARVANTA_CALLBACK_SECRET = os.getenv("VOICE_RELAY_CALLBACK_SECRET", "").strip()
+AARVANTA_CONTEXT_URL = os.getenv("AARVANTA_VOICE_CONTEXT_URL", "").strip()
 
 DEFAULT_SYSTEM = (
-    "You are Aarvanta's phone receptionist. Speak like a real person on a short call.\n"
+    "You are a warm, capable phone receptionist for the business. "
+    "Speak like a helpful human on a real phone call — natural pacing, not a script.\n"
     "Rules:\n"
-    "- Reply in ONE short sentence (max two if asked a direct question).\n"
-    "- Do not list features, pitch products, or give long explanations unless asked.\n"
-    "- Do not invent pricing, contracts, or legal promises.\n"
+    "- Answer the caller's question fully in 2–4 spoken sentences when they ask for detail.\n"
+    "- Use light conversational cues (e.g. 'Sure —', 'Happy to help') when it feels natural.\n"
+    "- Be clear and helpful; invite the next question when it fits.\n"
+    "- Do not invent pricing, contracts, legal promises, or facts not in your briefing or company knowledge.\n"
+    "- If you don't know, say you'll have a teammate follow up — don't guess.\n"
     "- Never say you are an AI unless asked.\n"
     "- If the caller says they are done, the test is complete, goodbye, or thanks that's all: "
-    "reply with a brief goodbye only (e.g. 'Got it — goodbye.')."
+    "reply with a brief warm goodbye only (e.g. 'Sounds good — take care, goodbye.')."
 )
 SYSTEM_PROMPT = os.getenv("VOICE_AGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM).strip()
 VERIFY_SIGNATURES = os.getenv("VOICE_RELAY_VERIFY_SIGNATURES", "true").lower() != "false"
-MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "70"))
+MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "160"))
+MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "480"))
+REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.65"))
+CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
+SERVICE_VERSION = "1.3.0"
 
-app = FastAPI(title="Aarvanta Voice Relay", version="1.2.0")
+app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Phrases that mean: hang up after a short goodbye
@@ -117,6 +125,16 @@ def resolve_handshake_url(websocket: WebSocket) -> str:
     return f"{scheme}://{host}{path}"
 
 
+def resolve_context_url() -> str:
+    if AARVANTA_CONTEXT_URL:
+        return AARVANTA_CONTEXT_URL.rstrip("/")
+    if AARVANTA_CALLBACK_URL and "/api/webhooks/voice-relay" in AARVANTA_CALLBACK_URL:
+        return AARVANTA_CALLBACK_URL.replace(
+            "/api/webhooks/voice-relay", "/api/voice/context"
+        ).rstrip("/")
+    return ""
+
+
 async def send_text(ws: WebSocket, token: str, *, last: bool) -> None:
     await ws.send_json({"type": "text", "token": token, "last": last, "interruptible": True})
 
@@ -126,30 +144,90 @@ async def end_session(ws: WebSocket, handoff: str = "completed") -> None:
 
 
 OUTBOUND_OPENING_INSTRUCTION = (
-    "(The person just answered the phone. Open the call now: greet them and say "
-    "why you are calling in ONE short, natural sentence based on your call briefing. "
-    "Never read the briefing text aloud word-for-word.)"
+    "(The person just answered the phone. Open the call now: greet them warmly and "
+    "say why you are calling in one natural beat based on your call briefing — "
+    "about one or two short sentences. Never read the briefing text aloud word-for-word.)"
 )
 
 
-def build_system_prompt(params: dict[str, Any]) -> str:
+def fetch_voice_context(params: dict[str, Any], session: dict[str, Any]) -> dict[str, str]:
+    """Pull Knowledge Hub digest from Aarvanta OS. Fail soft on timeout/errors."""
+    url = resolve_context_url()
+    if not url or not AARVANTA_CALLBACK_SECRET:
+        return {}
+
+    payload = {
+        "conversationId": (params.get("conversationId") or "").strip() or None,
+        "direction": (params.get("direction") or "").strip() or None,
+        "topic": (params.get("goal") or params.get("context") or "").strip() or None,
+        "from": session.get("from"),
+        "to": session.get("to"),
+    }
+    data = json.dumps({k: v for k, v in payload.items() if v}).encode("utf-8")
+    req = urlrequest.Request(
+        url,
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "X-Voice-Relay-Secret": AARVANTA_CALLBACK_SECRET,
+        },
+        method="POST",
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=CONTEXT_FETCH_TIMEOUT) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+            if not isinstance(body, dict):
+                return {}
+            return {
+                "businessName": str(body.get("businessName") or "").strip(),
+                "knowledgeDigest": str(body.get("knowledgeDigest") or "").strip(),
+            }
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+        log.warning("voice context fetch failed: %s", exc)
+        return {}
+
+
+def build_system_prompt(
+    params: dict[str, Any],
+    *,
+    business_name: str = "",
+    knowledge_digest: str = "",
+) -> str:
     parts = [SYSTEM_PROMPT]
+    name = business_name.strip() or (params.get("businessName") or "").strip()
+    if name:
+        parts.append(
+            f"You represent {name}. Introduce yourself as calling from {name} when it fits."
+        )
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
-        parts.append("Inbound call: answer briefly, ask what they need, stay short.")
+        parts.append(
+            "Inbound call: greet warmly, understand what they need, answer clearly, "
+            "then invite the next question."
+        )
     elif direction == "outbound":
-        parts.append("Outbound call: state why you called in one short line, then listen.")
+        parts.append(
+            "Outbound call: explain why you called in a natural opening, then listen "
+            "and help — do not rush them."
+        )
     language = (params.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
         parts.append(
-            f"Respond in the language for locale '{language}'. Keep replies short and natural for a phone call."
+            f"Respond in the language for locale '{language}'. "
+            "Keep replies natural and clear for a phone call."
         )
     goal = (params.get("goal") or params.get("context") or "").strip()
     if goal:
         parts.append(
             "Call briefing from the operator — this is CONTEXT about the topic and "
             "purpose of the call. Use it to guide the conversation. NEVER read it "
-            f"aloud word-for-word:\n{goal[:600]}"
+            f"aloud word-for-word:\n{goal[:1000]}"
+        )
+    if knowledge_digest:
+        parts.append(
+            "Company knowledge (use ONLY these facts when answering product/company "
+            "questions; if something isn't covered, say a teammate will follow up):\n"
+            f"{knowledge_digest[:2000]}"
         )
     return "\n\n".join(parts)
 
@@ -157,7 +235,7 @@ def build_system_prompt(params: dict[str, Any]) -> str:
 async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str, user_text: str) -> str:
     history.append({"role": "user", "content": user_text})
     if not openai_client:
-        reply = "Thanks for calling Aarvanta. Please try again later."
+        reply = "Thanks for calling. Please try again later."
         history.append({"role": "assistant", "content": reply})
         await send_text(ws, reply, last=True)
         return reply
@@ -167,7 +245,7 @@ async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str
         model=OPENAI_MODEL,
         messages=messages,  # type: ignore[arg-type]
         max_tokens=MAX_REPLY_TOKENS,
-        temperature=0.35,
+        temperature=REPLY_TEMPERATURE,
         stream=True,
     )
 
@@ -185,8 +263,8 @@ async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str
 
     reply = "".join(full).strip() or "Sorry — could you repeat that?"
     # Hard-cap spoken length if model still overshoots
-    if len(reply) > 220:
-        cut = reply[:220]
+    if len(reply) > MAX_REPLY_CHARS:
+        cut = reply[:MAX_REPLY_CHARS]
         end = max(cut.rfind("."), cut.rfind("!"), cut.rfind("?"))
         reply = (cut[: end + 1] if end > 40 else cut.rsplit(" ", 1)[0]) + ""
     await send_text(ws, buffer if buffer else " ", last=True)
@@ -197,7 +275,7 @@ async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str
 
 
 async def say_goodbye_and_hangup(ws: WebSocket, transcript: list[dict[str, str]]) -> None:
-    goodbye = "Got it. Goodbye."
+    goodbye = "Sounds good. Take care — goodbye."
     await send_text(ws, goodbye, last=True)
     transcript.append({"role": "assistant", "content": goodbye})
     # Brief pause so ElevenLabs can start speaking before Twilio tears down
@@ -240,12 +318,15 @@ async def health() -> JSONResponse:
         {
             "status": "ok",
             "service": "aarvanta-voice-relay",
-            "version": "1.2.0",
+            "version": SERVICE_VERSION,
             "openai": bool(OPENAI_API_KEY),
             "signatureVerification": VERIFY_SIGNATURES and bool(TWILIO_AUTH_TOKEN),
             "wssUrlConfigured": bool(VOICE_RELAY_WSS_URL),
             "callbackConfigured": bool(AARVANTA_CALLBACK_URL and AARVANTA_CALLBACK_SECRET),
+            "contextConfigured": bool(resolve_context_url() and AARVANTA_CALLBACK_SECRET),
             "maxReplyTokens": MAX_REPLY_TOKENS,
+            "maxReplyChars": MAX_REPLY_CHARS,
+            "temperature": REPLY_TEMPERATURE,
         }
     )
 
@@ -298,12 +379,21 @@ async def conversation_relay(websocket: WebSocket) -> None:
                 }
                 if not params.get("direction") and msg.get("direction"):
                     params["direction"] = str(msg.get("direction")).lower()
-                system = build_system_prompt(params)
+
+                context = await asyncio.to_thread(fetch_voice_context, params, session)
+                business_name = context.get("businessName") or (params.get("businessName") or "")
+                knowledge_digest = context.get("knowledgeDigest") or ""
+                system = build_system_prompt(
+                    params,
+                    business_name=business_name,
+                    knowledge_digest=knowledge_digest,
+                )
                 log.info(
-                    "setup callSid=%s from=%s direction=%s",
+                    "setup callSid=%s from=%s direction=%s knowledge=%s",
                     session.get("callSid"),
                     session.get("from"),
                     params.get("direction"),
+                    "yes" if knowledge_digest else "no",
                 )
                 # Outbound calls have no TwiML welcomeGreeting — the AI opens
                 # the call itself with a line generated from the briefing.
@@ -319,7 +409,8 @@ async def conversation_relay(websocket: WebSocket) -> None:
                         transcript.append({"role": "assistant", "content": opening})
                     except Exception as exc:  # noqa: BLE001
                         log.exception("opening line failed: %s", exc)
-                        fallback = "Hi, this is Aarvanta. Do you have a moment?"
+                        brand = business_name or "Aarvanta"
+                        fallback = f"Hi, this is {brand}. Do you have a moment?"
                         await send_text(websocket, fallback, last=True)
                         transcript.append({"role": "assistant", "content": fallback})
                 continue

@@ -25,20 +25,21 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
 /** Curated Twilio ConversationRelay voices. */
 export const VOICE_CATALOG: VoiceCatalogEntry[] = [
   {
-    id: "UgBBYS2sOqTuMpoF3BR0-flash_v2_5-0.95_0.65_0.8",
-    label: "ElevenLabs — Mark (default)",
-    provider: "ElevenLabs",
-    languages: ["en-US", "en-GB"],
-  },
-  {
     id: "EXAVITQu4vr4xnSDxMaL",
-    label: "ElevenLabs — Sarah",
+    label: "ElevenLabs — Sarah (default)",
     provider: "ElevenLabs",
     languages: ["en-US", "en-GB"],
   },
   {
     id: "21m00Tcm4TlvDq8ikWAM",
     label: "ElevenLabs — Rachel",
+    provider: "ElevenLabs",
+    languages: ["en-US", "en-GB"],
+  },
+  {
+    // flash_v2_5 is lower latency but flatter / more robotic than Sarah/Rachel
+    id: "UgBBYS2sOqTuMpoF3BR0-flash_v2_5-0.95_0.65_0.8",
+    label: "ElevenLabs — Mark (fast)",
     provider: "ElevenLabs",
     languages: ["en-US", "en-GB"],
   },

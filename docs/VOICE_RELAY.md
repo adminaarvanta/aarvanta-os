@@ -31,6 +31,22 @@ TWILIO_AUTH_TOKEN=...          # same as Vercel
 VOICE_RELAY_WSS_URL=wss://YOUR-HOST/voice-relay/ws   # must match nginx + Vercel exactly
 AARVANTA_VOICE_CALLBACK_URL=https://os.aarvanta.co/api/webhooks/voice-relay
 VOICE_RELAY_CALLBACK_SECRET=generate-a-long-random-string
+# Optional — defaults to …/api/voice/context derived from callback URL
+# AARVANTA_VOICE_CONTEXT_URL=https://os.aarvanta.co/api/voice/context
+
+# Reply naturalness (defaults shown)
+VOICE_RELAY_MAX_TOKENS=160
+VOICE_RELAY_MAX_CHARS=480
+VOICE_RELAY_TEMPERATURE=0.65
+```
+
+After pulling code that updates `services/voice-relay/app.py`:
+```bash
+# On EC2
+sudo bash services/voice-relay/deploy/install-on-ec2.sh   # or rsync + pip install
+sudo systemctl restart voice-relay
+curl https://YOUR-HOST/voice-relay/health
+# Expect version >= 1.3.0, maxReplyTokens 160, contextConfigured true
 ```
 
 Add nginx (path proxy or `voice.aarvanta.co`) from `deploy/nginx-voice-relay.conf`, then:
@@ -43,6 +59,10 @@ curl https://YOUR-HOST/voice-relay/health
 ```bash
 VOICE_RELAY_WSS_URL=wss://YOUR-HOST/voice-relay/ws
 VOICE_RELAY_CALLBACK_SECRET=same-as-ec2
+# Keep OFF for two-way human AI (budget mode = one-shot Polly, no ConversationRelay)
+# VOICE_RELAY_BUDGET_MODE=true
+VOICE_RELAY_TTS_PROVIDER=ElevenLabs
+VOICE_RELAY_TTS_VOICE=EXAVITQu4vr4xnSDxMaL
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=+17167032574
@@ -59,20 +79,31 @@ OPENAI_API_KEY=...
 
 Save. Enable **ConversationRelay** in Twilio if the Console asks you to onboard.
 
-### 4. Test
+### 4. Knowledge Hub (company facts on calls)
+
+At ConversationRelay `setup`, the EC2 relay POSTs to `/api/voice/context` (same `VOICE_RELAY_CALLBACK_SECRET`) and injects a short Knowledge Hub digest into the system prompt.
+
+1. Ingest FAQs / product copy in **Knowledge Hub** (`/knowledge`) — hours, what you do, pricing-safe facts.
+2. Confirm EC2 can reach `https://os.aarvanta.co/api/voice/context` (no IP allowlist blocking outbound HTTPS).
+3. On a test call, ask a question that exists in Knowledge Hub — the agent should answer from those facts (not invent).
+
+If no documents are ingested, the digest is empty and the agent falls back to the dialer briefing only.
+
+### 5. Test (naturalness + knowledge)
 **Outbound**
 1. Sign in → `/calling` or `/voice`
-2. Call a **verified** trial number (or leave trial)
-3. Answer — AI should greet and converse two-way
+2. In Voice settings, pick **ElevenLabs — Sarah** (or Rachel); do **not** enable budget mode
+3. Call a **verified** trial number (or leave trial)
+4. Answer — AI should greet warmly and answer in 2–4 sentences when asked to elaborate
 
 **Inbound**
 1. From your phone, dial `+1 716 703 2574`
-2. AI receptionist should answer
+2. Ask an open-ended question (“tell me more about what you do”) and a Knowledge Hub fact
 3. Check `/voice` for call log + transcript note after hangup
 
-### 5. Health
+### 6. Health
 - `https://os.aarvanta.co/api/health` → Voice Relay item **ok**
-- `https://YOUR-HOST/voice-relay/health` → `"openai": true`
+- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.3.0"`, `"contextConfigured": true`
 
 ## Voiceover (TTS) & cost
 
@@ -89,17 +120,28 @@ In **`/voice`** (and compact on **`/calling`**), operators can set:
 
 - **Provider** — ElevenLabs, Google, or Amazon Polly
 - **Language** — e.g. `en-US`, `en-GB`, `hi-IN` (passed to ConversationRelay + relay LLM prompt)
-- **Voice** — curated list, or paste a **custom Twilio/ElevenLabs voice ID**
+- **Voice** — curated list (default **Sarah**), or paste a **custom Twilio/ElevenLabs voice ID**. Prefer Sarah/Rachel for natural reception; Mark (fast) uses `flash_v2_5` (lower latency, flatter).
 - **Record calls** — opt-in (default off); optional spoken consent notice
 
 Prefs persist on the workspace (`voiceTtsProvider`, `voiceId`, `voiceLanguage`, `voiceCustomId`, `callRecordingEnabled`, `callRecordingAnnounce`). Env vars remain the fallback when prefs are unset:
 
 ```bash
 VOICE_RELAY_TTS_PROVIDER=ElevenLabs
-VOICE_RELAY_TTS_VOICE=UgBBYS2sOqTuMpoF3BR0-flash_v2_5-0.95_0.65_0.8
-# Skip ConversationRelay entirely (free of the $0.07/min fee)
-VOICE_RELAY_BUDGET_MODE=true
+VOICE_RELAY_TTS_VOICE=EXAVITQu4vr4xnSDxMaL
+# Skip ConversationRelay entirely (free of the $0.07/min fee) — robotic one-shot only
+# VOICE_RELAY_BUDGET_MODE=true
 ```
+
+### Reply style knobs (EC2)
+
+Controlled in `/opt/aarvanta/voice-relay/.env` (restart `voice-relay` after changes):
+
+| Env | Default | Effect |
+|-----|---------|--------|
+| `VOICE_RELAY_MAX_TOKENS` | `160` | LLM output budget (~2–4 sentences) |
+| `VOICE_RELAY_MAX_CHARS` | `480` | Hard spoken-length cap |
+| `VOICE_RELAY_TEMPERATURE` | `0.65` | Higher = more natural variation |
+| `VOICE_AGENT_SYSTEM_PROMPT` | warm receptionist | Override full system prompt |
 
 ### Call recording
 

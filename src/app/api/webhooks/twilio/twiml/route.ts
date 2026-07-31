@@ -13,8 +13,9 @@ import { getWebhookTenantScope } from "@/lib/tenant/context";
  * Otherwise → one-shot <Say> TTS.
  *
  * Query params:
- * - message / goal — briefing (topic/context) for the AI; never spoken verbatim.
- *   In one-shot <Say> fallback (no relay) it IS spoken, since there is no AI.
+ * - message / goal — briefing (topic/context) for the AI; never spoken verbatim
+ *   (capped at 1000 chars for ConversationRelay). In one-shot <Say> fallback
+ *   (no relay) it IS spoken, since there is no AI.
  * - mode=say — force one-shot TTS
  * - direction=inbound|outbound
  * - conversationId — for transcript callback correlation
@@ -64,13 +65,14 @@ async function twimlResponse(req: Request) {
   const settings = await getWorkspaceSettings(scope.workspaceId);
   const voice = resolveVoiceCallingConfig(settings);
 
+  const businessName = settings.businessName?.trim() || "Aarvanta";
   const defaultWelcome =
     direction === "inbound"
-      ? "Hi, thanks for calling Aarvanta. How can I help?"
-      : "Hi, this is Aarvanta. Do you have a moment?";
+      ? `Hi, thanks for calling ${businessName}. How can I help?`
+      : `Hi, this is ${businessName}. Do you have a moment?`;
 
   const brief = message?.trim() ?? "";
-  const goal = brief.slice(0, 600);
+  const goal = brief.slice(0, 1000);
   const relayUrl =
     mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
@@ -86,6 +88,7 @@ async function twimlResponse(req: Request) {
         direction,
         conversationId,
         goal,
+        businessName,
         language: voice.language,
         provider: voice.provider,
         voiceId: voice.voice,
@@ -122,6 +125,7 @@ function buildConversationRelayTwiml(
     direction: string;
     conversationId: string;
     goal: string;
+    businessName: string;
     language: string;
     provider: string;
     voiceId: string;
@@ -141,6 +145,7 @@ function buildConversationRelayTwiml(
       <Parameter name="goal" value="${escapeXml(params.goal)}" />
       <Parameter name="direction" value="${escapeXml(params.direction)}" />
       <Parameter name="conversationId" value="${escapeXml(params.conversationId)}" />
+      <Parameter name="businessName" value="${escapeXml(params.businessName)}" />
       <Parameter name="language" value="${escapeXml(params.language)}" />
       <Parameter name="source" value="aarvanta-voice-os" />
     </ConversationRelay>

@@ -185,8 +185,14 @@ export function VoiceConfigPanel({
               {!compact ? (
                 <p className="mt-0.5 text-xs text-muted">
                   Provider, language, and recording for AI calls. Applied to the next dial.
+                  Prefer Sarah or Rachel for a natural voice; avoid budget mode (one-shot Polly)
+                  when you want two-way AI.
                 </p>
-              ) : null}
+              ) : (
+                <p className="mt-0.5 text-[11px] text-muted">
+                  Sarah/Rachel sound most natural for reception.
+                </p>
+              )}
             </div>
           </div>
 
