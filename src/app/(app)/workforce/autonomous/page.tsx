@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
-/** Legacy autonomous queue — goal-first Tasks hub replaces it. */
+/** Legacy autonomous queue — Jobs hub replaces it. */
 export default function AutonomousRedirectPage() {
-  redirect("/workforce/tasks");
+  redirect("/workforce/jobs");
 }
 
-export const metadata = { title: "Workforce Tasks" };
+export const metadata = { title: "AI Team Jobs" };

@@ -18,7 +18,7 @@ export default function WorkforceError({
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
       <h2 className="text-lg font-semibold text-foreground">
-        AI Workforce failed to load
+        AI Team failed to load
       </h2>
       <p className="max-w-md text-sm text-muted">
         This is usually a temporary server or database issue. Try again, or return

@@ -76,7 +76,7 @@ export function TaskExecutionView({
           <CheckCircle2 className="h-8 w-8" style={{ color: "var(--wf-ok)" }} />
         </div>
         <h3 className="mt-4 text-xl font-bold" style={{ color: "var(--wf-ink)" }}>
-          Task Completed!
+          Job Completed!
         </h3>
         <p className="mt-1 text-sm" style={{ color: "var(--wf-muted)" }}>
           {report.outcome}
@@ -268,7 +268,7 @@ function ReportTab({ report }: { report: WorkforceReport | null }) {
     return (
       <WfPanel>
         <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
-          Report appears when the task completes.
+          Report appears when the job completes.
         </p>
       </WfPanel>
     );

@@ -5,9 +5,11 @@ import { PendingLink } from "@/components/layout/navigation-provider";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/workforce", label: "Workforce", exact: true },
-  { href: "/workforce/tasks", label: "Tasks", exact: false },
-  { href: "/workforce/approvals", label: "Approvals", exact: false },
+  { href: "/workforce", label: "Chat", exact: true },
+  { href: "/workforce/jobs", label: "Jobs", exact: false },
+  { href: "/workforce/waiting", label: "Waiting for You", exact: false },
+  { href: "/workforce/activity", label: "Activity", exact: false },
+  { href: "/workforce/settings", label: "Settings", exact: false },
 ];
 
 export function WorkforceNav() {
@@ -17,10 +19,10 @@ export function WorkforceNav() {
     <nav
       className="shrink-0 px-5 sm:px-8"
       style={{ background: "var(--wf-bg)" }}
-      aria-label="AI Workforce sections"
+      aria-label="AI Team sections"
     >
       <div
-        className="mx-auto flex max-w-5xl gap-1 border-b"
+        className="mx-auto flex max-w-5xl gap-1 overflow-x-auto border-b"
         style={{ borderColor: "var(--wf-line)" }}
       >
         {links.map((link) => {

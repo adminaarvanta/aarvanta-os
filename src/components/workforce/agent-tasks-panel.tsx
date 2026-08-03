@@ -105,11 +105,11 @@ export function AgentTasksPanel({
           CRM.
         </p>
         <Link
-          href="/workforce/tasks?start=1"
+          href="/workforce"
           className="mt-4 inline-flex rounded-full px-4 py-2 text-sm font-semibold text-white"
           style={{ background: "var(--wf-accent)" }}
         >
-          Start task
+          Start job
         </Link>
       </WfPanel>
     );

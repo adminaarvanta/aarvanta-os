@@ -41,7 +41,7 @@ export default function WorkforceLoading() {
           aria-busy="true"
           aria-live="polite"
         >
-          <span className="sr-only">Loading AI Workforce…</span>
+          <span className="sr-only">Loading AI Team…</span>
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}

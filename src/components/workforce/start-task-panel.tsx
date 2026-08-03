@@ -72,7 +72,7 @@ export function StartTaskPanel({
         execution?: WorkforceExecution;
       };
       if (!res.ok || !data.execution) {
-        setError(data.error?.message ?? "Failed to start task");
+        setError(data.error?.message ?? "Failed to start job");
         return;
       }
       setCreated(data.execution);
@@ -98,20 +98,20 @@ export function StartTaskPanel({
           <Bot className="h-12 w-12" style={{ color: "var(--wf-accent)" }} strokeWidth={1.5} />
         </div>
         <h3 className="mt-5 text-xl font-bold" style={{ color: "var(--wf-ink)" }}>
-          Task Created Successfully!
+          Job Created Successfully!
         </h3>
         <dl
           className="mx-auto mt-6 max-w-sm space-y-2 rounded-xl border p-4 text-left text-sm"
           style={{ borderColor: "var(--wf-line)", background: "var(--wf-bg)" }}
         >
           <div className="flex justify-between gap-2">
-            <dt style={{ color: "var(--wf-muted)" }}>Task</dt>
+            <dt style={{ color: "var(--wf-muted)" }}>Job</dt>
             <dd className="font-semibold">{GOAL_OBJECTIVE_LABELS[objective]}</dd>
           </div>
           <div className="flex justify-between gap-2">
             <dt style={{ color: "var(--wf-muted)" }}>Assigned AI</dt>
             <dd className="font-semibold">
-              {lead ? agentLabel(lead) : "AI Workforce"}
+              {lead ? agentLabel(lead) : "AI Team"}
             </dd>
           </div>
           <div className="flex justify-between gap-2">
@@ -136,9 +136,9 @@ export function StartTaskPanel({
         <WfPrimaryButton
           type="button"
           className="mt-6"
-          onClick={() => router.push(`/workforce/tasks/${created.id}`)}
+          onClick={() => router.push(`/workforce/jobs/${created.id}`)}
         >
-          View Task
+          View Job
         </WfPrimaryButton>
       </div>
     );
@@ -165,7 +165,7 @@ export function StartTaskPanel({
         </div>
         <div>
           <h3 className="text-[15px] font-bold" style={{ color: "var(--wf-ink)" }}>
-            Ask AI Workforce
+            Ask AI Team
           </h3>
           {contactName ? (
             <p className="text-xs" style={{ color: "var(--wf-muted)" }}>
@@ -244,7 +244,7 @@ export function StartTaskPanel({
         )}
 
         <WfPrimaryButton type="submit" disabled={busy} className="w-full">
-          {busy ? "Starting…" : "Start AI Task"}
+          {busy ? "Starting…" : "Start AI Job"}
         </WfPrimaryButton>
       </div>
     </form>

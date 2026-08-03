@@ -91,11 +91,11 @@ export default async function AgentPage({
               <Icon className="h-5 w-5" style={{ color: "var(--wf-accent)" }} />
             </div>
             <Link
-              href="/workforce/tasks?start=1"
+              href="/workforce"
               className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-white"
               style={{ background: "var(--wf-accent)" }}
             >
-              + Assign goal
+              + New job
             </Link>
           </div>
         }
@@ -103,7 +103,7 @@ export default async function AgentPage({
       <div className="px-5 sm:px-8" style={{ background: "var(--wf-bg)" }}>
         <div className="mx-auto max-w-5xl pb-1">
           <Link
-            href="/workforce"
+            href="/workforce/settings"
             className="text-xs font-semibold"
             style={{ color: "var(--wf-accent)" }}
           >

@@ -53,7 +53,7 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/whatsapp", label: "WhatsApp OS", icon: MessageCircle, badgeKey: "whatsapp", featureKey: "whatsappChannel" },
   { href: "/voice", label: "Voice OS", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
   { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
-  { href: "/workforce", label: "AI Workforce", icon: Sparkles, featureKey: "aiWorkforce" },
+  { href: "/workforce", label: "AI Team", icon: Sparkles, featureKey: "aiWorkforce" },
   { href: "/projects", label: "Projects", icon: Kanban, featureKey: "projects" },
   { href: "/workflows", label: "Workflows", icon: Workflow, featureKey: "workflows" },
   { href: "/hr", label: "HR", icon: Landmark, featureKey: "hr" },

@@ -10,7 +10,7 @@ const PATH_LABELS: Record<string, string> = {
   voice: "Voice OS",
   calling: "Calling",
   crm: "CRM",
-  workforce: "AI Workforce",
+  workforce: "AI Team",
   projects: "Projects",
   workflows: "Workflows",
   hr: "HR",

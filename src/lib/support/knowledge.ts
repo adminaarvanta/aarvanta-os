@@ -49,10 +49,10 @@ export const SUPPORT_DESTINATIONS: SupportDestination[] = [
   },
   {
     id: "workforce",
-    title: "AI Workforce",
+    title: "AI Team",
     href: "/workforce",
-    keywords: ["ai", "agents", "workforce", "employees", "copilot"],
-    blurb: "Your AI team — sales, marketing, ops, HR, and more.",
+    keywords: ["ai", "agents", "workforce", "employees", "copilot", "team"],
+    blurb: "Your AI team — chat, jobs, approvals, and specialists.",
   },
   {
     id: "projects",
@@ -156,9 +156,9 @@ export const SUPPORT_FAQS: SupportFaq[] = [
       "Click the language icon in the top header and pick any language. The whole OS will refresh in that language.",
   },
   {
-    question: "What is the AI Workforce?",
+    question: "What is the AI Team?",
     answer:
-      "AI Workforce is your team of AI employees (CEO, sales, marketing, HR, finance, and more). Open AI Workforce to browse and chat with them.",
+      "AI Team is your team of AI employees (CEO, sales, marketing, HR, finance, and more). Open Chat to start a job, or Settings to browse employees.",
     href: "/workforce",
   },
   {

@@ -309,7 +309,7 @@ export const SPEC_PHASES: Array<{
         id: "autonomous",
         phase: 30,
         name: "Autonomous AI Workforce",
-        href: "/workforce/tasks",
+        href: "/workforce/jobs",
         status: "partial",
         summary: "Goal-first pipeline: Goal Engine → Plan → Context → Orchestrator → Approvals → Report.",
       },
