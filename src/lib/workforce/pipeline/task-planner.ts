@@ -35,9 +35,11 @@ const PLANS: Record<
     }),
     step("Send WhatsApp outreach", "sales_manager", {
       toolHint: "whatsapp_send",
+      requiresApproval: true,
     }),
     step("Schedule AI voice follow-up", "sales_manager", {
       toolHint: "voice_call",
+      requiresApproval: true,
     }),
     step("Apply discount if customer requests above policy", "sales_manager", {
       toolHint: "discount_check",
@@ -57,6 +59,7 @@ const PLANS: Record<
     }),
     step("Send follow-up via preferred channel", "sales_manager", {
       toolHint: "whatsapp_send",
+      requiresApproval: true,
     }),
     step("Schedule reminder if no reply", "sales_manager", {
       toolHint: "crm_update",
@@ -75,6 +78,7 @@ const PLANS: Record<
     }),
     step("Send recovery outreach", "customer_success_manager", {
       toolHint: "whatsapp_send",
+      requiresApproval: true,
     }),
     step("Escalate discount or credit if needed", "customer_success_manager", {
       toolHint: "discount_check",
@@ -92,6 +96,7 @@ const PLANS: Record<
     step("Propose meeting times", "sales_manager", { toolHint: "strategy" }),
     step("Send meeting invite outreach", "sales_manager", {
       toolHint: "whatsapp_send",
+      requiresApproval: true,
     }),
     step("Log meeting activity in CRM", "sales_manager", {
       toolHint: "crm_update",
@@ -114,18 +119,38 @@ const PLANS: Record<
   ],
 };
 
+function leadAgentForCustom(goal: WorkforceGoal): AgentType {
+  switch (goal.moduleHint) {
+    case "hr":
+      return "hr_manager";
+    case "marketing":
+      return "marketing_manager";
+    case "finance":
+      return "cfo";
+    case "crm":
+    case "communications":
+      return "sales_manager";
+    case "operations":
+    default:
+      return "coo";
+  }
+}
+
 /** Task Planning Engine — produces steps only; no AI employees assigned yet beyond hints. */
 export function buildTaskPlan(goal: WorkforceGoal): TaskPlan {
   const steps =
     goal.objective === "custom"
-      ? [
-          step("Understand custom objective", "coo", { toolHint: "strategy" }),
-          step("Gather relevant business context", "coo", {
-            toolHint: "crm_review",
-          }),
-          step("Execute primary actions", "coo", { toolHint: "crm_update" }),
-          step("Generate task report", "ceo", { toolHint: "report" }),
-        ]
+      ? (() => {
+          const lead = leadAgentForCustom(goal);
+          return [
+            step("Understand custom objective", lead, { toolHint: "strategy" }),
+            step("Gather relevant business context", lead, {
+              toolHint: "crm_review",
+            }),
+            step("Execute primary actions", lead, { toolHint: "crm_update" }),
+            step("Generate task report", "ceo", { toolHint: "report" }),
+          ];
+        })()
       : PLANS[goal.objective]();
 
   return { steps, createdAt: crmNow() };

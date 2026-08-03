@@ -32,7 +32,7 @@ export function ContactManualPanel({
               entity="contacts"
               id={contact.id}
               label="contact"
-              redirectTo="/crm/contacts"
+              redirectTo="/crm/people"
             />
           </div>
         </div>

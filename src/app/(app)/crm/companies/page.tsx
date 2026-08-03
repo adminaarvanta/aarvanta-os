@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { CreateCompanyForm } from "@/components/crm/create-company-form";
 import { CrmImportForm } from "@/components/crm/crm-import-form";
@@ -20,10 +21,17 @@ export default async function CompaniesPage() {
   return (
     <>
       <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-foreground sm:text-xl">Companies</h2>
-        <p className="text-xs text-muted sm:text-sm">
-          Create and manage accounts — assign owners, log activities, and track deals.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
+              Companies
+            </h2>
+            <p className="text-xs text-muted sm:text-sm">
+              Accounts and the people behind them.
+            </p>
+          </div>
+          <AskAiButton module="crm" />
+        </div>
       </header>
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">

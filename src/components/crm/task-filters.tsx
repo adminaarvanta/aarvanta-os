@@ -17,7 +17,7 @@ export function TaskFilters({ members }: { members: MemberOption[] }) {
       params.delete("assignedTo");
     }
     const query = params.toString();
-    router.push(query ? `/crm/tasks?${query}` : "/crm/tasks");
+    router.push(query ? `/crm/activity?${query}` : "/crm/activity");
   }
 
   return (

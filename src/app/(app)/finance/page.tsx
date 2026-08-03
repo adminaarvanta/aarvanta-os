@@ -1,4 +1,5 @@
 import { PendingLink } from "@/components/layout/navigation-provider";
+import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { FinancePageHeader } from "@/components/finance/finance-nav";
 import { FinancePanel, FinanceStatStrip } from "@/components/finance/finance-ui";
 import { formatFinanceCurrency } from "@/lib/finance/format";
@@ -34,6 +35,7 @@ export default async function FinanceOverviewPage() {
         description="Invoices, expenses, double-entry ledger, and UK reports in one workspace."
         actions={
           <div className="flex flex-wrap gap-2">
+            <AskAiButton module="finance" />
             <PendingLink
               href="/finance/invoices"
               className="inline-flex items-center justify-center rounded-lg bg-[color:var(--finance-accent)] px-4 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"

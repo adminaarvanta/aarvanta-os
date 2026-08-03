@@ -1,10 +1,10 @@
 import type { EntityType, CanonicalEntityRef } from "@/types/entity";
 
 const ENTITY_ROUTES: Partial<Record<EntityType, (id: string) => string>> = {
-  contact: (id) => `/crm/contacts/${id}`,
+  contact: (id) => `/crm/people/${id}`,
   company: (id) => `/crm/companies/${id}`,
   deal: (id) => `/crm/deals/${id}`,
-  task: (id) => `/crm/tasks`,
+  task: () => `/crm/activity`,
   project: (id) => `/projects/${id}`,
   workflow: (id) => `/workflows/${id}`,
   conversation: (id) => `/inbox/${id}`,

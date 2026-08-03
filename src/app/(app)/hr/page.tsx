@@ -1,4 +1,5 @@
 import { PendingLink } from "@/components/layout/navigation-provider";
+import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { HrPageHeader } from "@/components/hr/hr-nav";
 import { HrPanel, HrStatStrip } from "@/components/hr/hr-ui";
 import { getHrStore } from "@/lib/data/platform-store";
@@ -34,6 +35,7 @@ export default async function HrOverviewPage() {
         description="From job post to exit documents — one colourful HR workspace."
         actions={
           <div className="flex flex-wrap gap-2">
+            <AskAiButton module="hr" />
             <PendingLink
               href="/hr/jobs"
               className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black shadow-sm shadow-gold/20 transition-colors hover:bg-gold-bright"

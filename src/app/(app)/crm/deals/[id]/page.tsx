@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { format } from "date-fns";
+import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { CrmNav } from "@/components/crm/crm-nav";
 import { DealDetailPanel } from "@/components/crm/deal-detail-panel";
 import { getCrmRepository } from "@/lib/data/crm-store";
@@ -51,19 +52,32 @@ export default async function DealDetailPage({
   return (
     <>
       <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="min-w-0">
-          <Link
-            href="/crm/pipelines"
-            className="text-xs text-gold hover:underline"
-          >
-            ← Pipelines
-          </Link>
-          <h2 className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
-            {deal.title}
-          </h2>
-          <p className="text-xs text-muted sm:text-sm">
-            {pipeline?.name ?? "Pipeline"} · {stageName}
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <Link
+              href="/crm/sales"
+              className="text-xs text-gold hover:underline"
+            >
+              ← Sales
+            </Link>
+            <h2 className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
+              {deal.title}
+            </h2>
+            <p className="text-xs text-muted sm:text-sm">
+              {pipeline?.name ?? "Pipeline"} · {stageName}
+            </p>
+          </div>
+          <AskAiButton
+            module="crm"
+            entityType="deal"
+            entityId={deal.id}
+            entityLabel={deal.title}
+            suggestions={[
+              "Prepare follow-up",
+              "Create a proposal",
+              "Close this lead",
+            ]}
+          />
         </div>
       </header>
       <CrmNav />

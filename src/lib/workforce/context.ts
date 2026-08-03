@@ -1,9 +1,13 @@
 import { getCrmRepository } from "@/lib/data/crm-store";
-import { getHrStore } from "@/lib/data/platform-store";
+import { getKnowledgeRepository } from "@/lib/data/knowledge-store";
+import { getFinanceStore, getHrStore } from "@/lib/data/platform-store";
 import { getRepository } from "@/lib/data/repository";
+import { searchKnowledgeChunks } from "@/lib/knowledge/search";
 import { contactDisplayName } from "@/types/crm";
 import type { TenantScope } from "@/types/communication";
 import type { Conversation } from "@/types/communication";
+
+const KNOWLEDGE_DIGEST_MAX = 1600;
 
 function timelineSnippet(conversation: Conversation, limit = 8) {
   return [...conversation.timeline]
@@ -31,7 +35,12 @@ function timelineSnippet(conversation: Conversation, limit = 8) {
 
 export async function buildWorkforceContext(
   scope: TenantScope,
-  input: { contactId?: string; conversationId?: string; taskId?: string }
+  input: {
+    contactId?: string;
+    conversationId?: string;
+    taskId?: string;
+    knowledgeTopic?: string;
+  }
 ) {
   const crm = getCrmRepository();
   const inbox = getRepository();
@@ -46,6 +55,9 @@ export async function buildWorkforceContext(
     hrCandidates,
     hrEmployees,
     hrCases,
+    knowledgeChunks,
+    invoices,
+    expenses,
   ] = await Promise.all([
     crm.listContacts(scope),
     crm.listCompanies(scope),
@@ -56,6 +68,9 @@ export async function buildWorkforceContext(
     getHrStore().list(scope),
     getHrStore().listEmployees(scope),
     getHrStore().listCases(scope),
+    getKnowledgeRepository().listChunks(scope),
+    getFinanceStore().list(scope),
+    getFinanceStore().listExpenses(scope),
   ]);
 
   const assignedTask = input.taskId
@@ -111,6 +126,43 @@ export async function buildWorkforceContext(
   const urgentConversations = conversations.filter(
     (c) => c.sentiment === "urgent" || c.sentiment === "frustrated"
   );
+
+  const knowledgeTopic =
+    input.knowledgeTopic?.trim() ||
+    [
+      contact ? `customer ${contactDisplayName(contact)}` : "",
+      deal ? `deal ${deal.title}` : "",
+      "company overview products services pricing FAQ",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+  let knowledgeDigest = "";
+  if (knowledgeChunks.length) {
+    const hits = await searchKnowledgeChunks(knowledgeChunks, knowledgeTopic, 5);
+    if (hits.length) {
+      const parts: string[] = [];
+      let used = 0;
+      for (const hit of hits) {
+        const title = hit.chunk.documentTitle?.trim() || "Document";
+        const content = hit.chunk.content.trim().replace(/\s+/g, " ");
+        const block = `[${title}] ${content}`;
+        if (used + block.length + 2 > KNOWLEDGE_DIGEST_MAX) {
+          const room = KNOWLEDGE_DIGEST_MAX - used - 2;
+          if (room > 80) parts.push(block.slice(0, room) + "…");
+          break;
+        }
+        parts.push(block);
+        used += block.length + 2;
+      }
+      knowledgeDigest = parts.join("\n\n");
+    }
+  }
+
+  const invoiceOpen = invoices.filter(
+    (i) => i.status === "sent" || i.status === "overdue" || i.status === "draft"
+  );
+  const overdueInvoices = invoices.filter((i) => i.status === "overdue");
 
   return {
     business: {
@@ -245,6 +297,25 @@ export async function buildWorkforceContext(
         role: e.role,
         department: e.department,
         leaveBalance: e.leaveBalance,
+      })),
+    },
+    knowledge: {
+      chunkCount: knowledgeChunks.length,
+      digest: knowledgeDigest || null,
+      grounded: Boolean(knowledgeDigest),
+    },
+    finance: {
+      invoiceCount: invoices.length,
+      openInvoiceCount: invoiceOpen.length,
+      overdueInvoiceCount: overdueInvoices.length,
+      openInvoiceTotal: invoiceOpen.reduce((s, i) => s + i.amount, 0),
+      expenseTotal: expenses.reduce((s, e) => s + e.amount, 0),
+      recentInvoices: invoices.slice(0, 5).map((i) => ({
+        id: i.id,
+        number: i.number,
+        amount: i.amount,
+        status: i.status,
+        clientName: i.clientName,
       })),
     },
   };

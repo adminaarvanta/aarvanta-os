@@ -1,4 +1,5 @@
 import { Brain } from "lucide-react";
+import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { KnowledgeAskPanel } from "@/components/knowledge/knowledge-ask-panel";
 import { KnowledgeDocumentList } from "@/components/knowledge/knowledge-document-list";
 import { KnowledgeSearchBar } from "@/components/knowledge/knowledge-search-bar";
@@ -28,15 +29,18 @@ export default async function KnowledgePage() {
               summaries, and tags.
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-muted">
-            RAG:{" "}
-            <span className="font-medium text-gold-bright">
-              {ai.status === "live"
-                ? `OpenAI · ${ai.model}`
-                : ai.status === "heuristic"
-                  ? "Keyword (demo)"
-                  : "Not configured"}
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <AskAiButton module="knowledge" />
+            <div className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-muted">
+              RAG:{" "}
+              <span className="font-medium text-gold-bright">
+                {ai.status === "live"
+                  ? `OpenAI · ${ai.model}`
+                  : ai.status === "heuristic"
+                    ? "Keyword (demo)"
+                    : "Not configured"}
+              </span>
+            </div>
           </div>
         </div>
       </header>

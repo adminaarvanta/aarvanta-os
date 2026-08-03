@@ -1,4 +1,5 @@
 import { PenLine } from "lucide-react";
+import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { WritingClient } from "@/components/platform/writing-client";
 import { CardList, ModulePageShell, StatGrid } from "@/components/platform/module-page-shell";
 import { getWritingStore } from "@/lib/data/platform-store";
@@ -18,6 +19,7 @@ export default async function WritingPage() {
       icon={PenLine}
       title="AI Writing Studio"
       description="Generate and manage proposals, emails, blogs, and operational drafts."
+      actions={<AskAiButton module="marketing" />}
     >
       <div className="space-y-8">
         <WritingClient />

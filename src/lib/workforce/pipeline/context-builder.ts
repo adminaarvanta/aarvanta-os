@@ -29,6 +29,14 @@ function summarizeContext(
   parts.push(
     `Business: ${fields.business.openDealCount} open deals · ${fields.business.openTaskCount} open tasks · ${fields.business.hotLeadCount} hot leads`
   );
+  if (fields.knowledge?.grounded) {
+    parts.push("Knowledge: grounded digest available");
+  }
+  if (fields.finance) {
+    parts.push(
+      `Finance: ${fields.finance.openInvoiceCount} open invoices · ${fields.finance.overdueInvoiceCount} overdue`
+    );
+  }
   return parts.join(" | ");
 }
 
@@ -40,6 +48,11 @@ export async function buildContextPackage(
   const fields = await buildWorkforceContext(scope, {
     contactId: goal.relatedContactId,
     conversationId: goal.relatedConversationId,
+    knowledgeTopic:
+      goal.customObjective ||
+      goal.instructions ||
+      goal.expectedOutcome ||
+      goal.objective,
   });
 
   const pkg: Omit<ContextPackage, "id"> & { id?: string } = {

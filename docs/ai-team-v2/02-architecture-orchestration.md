@@ -2,7 +2,7 @@
 
 Gateway → intent → plan → approval → tools. Phase 1 does **not** introduce a new orchestrator; it sits on the existing workforce pipeline.
 
-**Status:** Phase 0 (spec). Orchestration service lands in Phase 2.
+**Status:** Phase 2 + Phase 3 implemented. Phase 4 started (Knowledge + Finance in job context).
 
 ---
 

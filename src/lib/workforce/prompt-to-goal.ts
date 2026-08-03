@@ -132,6 +132,17 @@ const RULES: { test: RegExp; payload: GoalCreatePayload }[] = [
     },
   },
   {
+    test: /summarize|summary|overview/i,
+    payload: {
+      objective: "custom",
+      moduleHint: "crm",
+    },
+  },
+  {
+    test: /prepare\s+follow|draft\s+follow/i,
+    payload: { objective: "follow_up" },
+  },
+  {
     test: /review\s*(the\s*)?business|priorit/i,
     payload: {
       objective: "custom",

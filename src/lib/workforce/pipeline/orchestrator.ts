@@ -30,7 +30,8 @@ import type {
   WorkforceGoal,
 } from "@/types/workforce";
 
-function selectAgents(goal: WorkforceGoal): {
+/** Agents for a goal — used by pipeline and AI Team plan preview. */
+export function selectAgentsForGoal(goal: WorkforceGoal): {
   assigned: AgentType[];
   monitoring: AgentType[];
 } {
@@ -49,15 +50,27 @@ function selectAgents(goal: WorkforceGoal): {
         monitoring: ["ceo"],
       };
     case "custom":
-    default:
+    default: {
+      const byModule: Record<WorkforceGoal["moduleHint"], AgentType[]> = {
+        hr: ["hr_manager"],
+        marketing: ["marketing_manager"],
+        finance: ["cfo"],
+        crm: ["sales_manager"],
+        communications: ["sales_manager"],
+        operations: ["coo"],
+      };
       return {
-        assigned: ["coo"],
+        assigned: byModule[goal.moduleHint] ?? ["coo"],
         monitoring: ["ceo"],
       };
+    }
   }
 }
 
-function estimateMinutes(goal: WorkforceGoal): { min: number; max: number } {
+export function estimateMinutesForGoal(goal: WorkforceGoal): {
+  min: number;
+  max: number;
+} {
   switch (goal.objective) {
     case "close_lead":
       return { min: 15, max: 20 };
@@ -391,8 +404,8 @@ export async function startGoalPipeline(input: {
     },
   });
 
-  const { assigned, monitoring } = selectAgents(goal);
-  const eta = estimateMinutes(goal);
+  const { assigned, monitoring } = selectAgentsForGoal(goal);
+  const eta = estimateMinutesForGoal(goal);
   const plan = buildTaskPlan(goal);
 
   // Assign agents onto plan steps where missing

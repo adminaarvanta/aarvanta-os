@@ -41,7 +41,7 @@ export function CreatePipelineForm() {
         setStagesText(DEFAULT_STAGES);
         setOpen(false);
         if (data.pipeline?.id) {
-          router.push(`/crm/pipelines?pipeline=${data.pipeline.id}`);
+          router.push(`/crm/sales?pipeline=${data.pipeline.id}`);
         }
         router.refresh();
       }

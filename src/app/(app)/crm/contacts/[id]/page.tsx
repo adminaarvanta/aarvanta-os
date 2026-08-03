@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { format } from "date-fns";
+import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { ContactManualPanel } from "@/components/crm/contact-manual-panel";
 import { CrmAiInsightsPanel } from "@/components/crm/crm-ai-insights-panel";
 import { CrmNav } from "@/components/crm/crm-nav";
@@ -55,10 +56,10 @@ export default async function ContactDetailPage({
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div className="min-w-0">
             <Link
-              href="/crm/contacts"
+              href="/crm/people"
               className="text-xs text-gold hover:underline"
             >
-              ← Contacts
+              ← People
             </Link>
             <h2 className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
               {contactDisplayName(contact)}
@@ -81,6 +82,12 @@ export default async function ContactDetailPage({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <AskAiButton
+              module="crm"
+              entityType="contact"
+              entityId={contact.id}
+              entityLabel={contactDisplayName(contact)}
+            />
             <LeadScoreBadge score={contact.leadScore} />
             <ScoreContactButton contactId={contact.id} />
           </div>

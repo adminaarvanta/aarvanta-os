@@ -5,13 +5,38 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/crm", label: "Overview", exact: true },
-  { href: "/crm/leads", label: "Leads" },
-  { href: "/crm/contacts", label: "Contacts" },
-  { href: "/crm/companies", label: "Companies" },
-  { href: "/crm/pipelines", label: "Pipelines" },
-  { href: "/crm/tasks", label: "Tasks" },
+  { href: "/crm", label: "Dashboard", exact: true },
+  { href: "/crm/people", label: "People", exact: false },
+  { href: "/crm/companies", label: "Companies", exact: false },
+  { href: "/crm/sales", label: "Sales", exact: false },
+  { href: "/crm/conversations", label: "Conversations", exact: false },
+  { href: "/crm/calendar", label: "Calendar", exact: false },
+  { href: "/crm/activity", label: "Activity", exact: false },
 ];
+
+function isActive(pathname: string, href: string, exact: boolean) {
+  if (exact) return pathname === href;
+  if (href === "/crm/people") {
+    return (
+      pathname.startsWith("/crm/people") ||
+      pathname.startsWith("/crm/contacts") ||
+      pathname.startsWith("/crm/leads")
+    );
+  }
+  if (href === "/crm/sales") {
+    return (
+      pathname.startsWith("/crm/sales") ||
+      pathname.startsWith("/crm/pipelines") ||
+      pathname.startsWith("/crm/deals")
+    );
+  }
+  if (href === "/crm/activity") {
+    return (
+      pathname.startsWith("/crm/activity") || pathname.startsWith("/crm/tasks")
+    );
+  }
+  return pathname.startsWith(href);
+}
 
 export function CrmNav() {
   const pathname = usePathname();
@@ -23,9 +48,7 @@ export function CrmNav() {
     >
       <div className="flex min-w-max gap-1 px-3 sm:px-6">
         {links.map((link) => {
-          const active = link.exact
-            ? pathname === link.href
-            : pathname.startsWith(link.href);
+          const active = isActive(pathname, link.href, link.exact);
           return (
             <PendingLink
               key={link.href}
