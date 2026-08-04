@@ -57,7 +57,7 @@ export function AffiliateDashboardClient({
   });
 
   useEffect(() => {
-    if (initial) {
+    if (initial?.affiliate?.profile) {
       const p = initial.affiliate.profile;
       setProfile({
         name: p.name,
@@ -68,8 +68,9 @@ export function AffiliateDashboardClient({
         payoutDetails: p.payoutDetails ?? "",
         marketingChannels: p.marketingChannels ?? "",
       });
-      return;
     }
+
+    // Always refetch from the API so demo RSC memory and live stats stay fresh.
     void (async () => {
       const res = await fetch("/api/affiliate/me");
       const data = (await res.json()) as {
@@ -77,7 +78,9 @@ export function AffiliateDashboardClient({
         error?: { message?: string };
       };
       if (!res.ok) {
-        setError(data.error?.message ?? "Could not load dashboard.");
+        if (!initial) {
+          setError(data.error?.message ?? "Could not load dashboard.");
+        }
         return;
       }
       if (data.dashboard) {
@@ -92,6 +95,7 @@ export function AffiliateDashboardClient({
           payoutDetails: p.payoutDetails ?? "",
           marketingChannels: p.marketingChannels ?? "",
         });
+        setError(null);
       }
     })();
   }, [initial]);

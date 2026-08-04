@@ -99,7 +99,7 @@ export async function applyAsExternalPartner(input: {
   const regionCode = countryToRegionCode(input.country);
   const code = generateReferralCode(input.company || input.name);
 
-  return affiliateStore.createAffiliate({
+  const affiliate = await affiliateStore.createAffiliate({
     referralCode: code,
     source: "external",
     status: "pending",
@@ -116,6 +116,36 @@ export async function applyAsExternalPartner(input: {
       marketingChannels: input.marketingChannels?.trim(),
     },
   });
+
+  await affiliateStore.createAuditLog({
+    action: "affiliate_apply",
+    actorEmail: email,
+    resourceType: "affiliate",
+    resourceId: affiliate.id,
+    detail: `External partner applied (${affiliate.referralCode})`,
+  });
+
+  try {
+    const { listAffiliateAdminEmails } = await import("@/lib/affiliate/admin");
+    const { sendAffiliateApplicationNotifyEmail } = await import(
+      "@/lib/affiliate/send-activation-email"
+    );
+    const notify = await sendAffiliateApplicationNotifyEmail({
+      to: listAffiliateAdminEmails(),
+      applicantName: affiliate.profile.name,
+      applicantEmail: email,
+      company: affiliate.profile.company,
+      country: affiliate.profile.country,
+      referralCode: affiliate.referralCode,
+    });
+    if (notify.reason && notify.sent === 0) {
+      console.info("[affiliate] application notify skipped", notify);
+    }
+  } catch (err) {
+    console.warn("[affiliate] application notify failed", err);
+  }
+
+  return affiliate;
 }
 
 export async function optInAsCustomerAffiliate(input: {
@@ -216,15 +246,30 @@ export async function attributeSignup(input: {
 }): Promise<{
   attribution: AffiliateAttribution | null;
   earning: AffiliateEarning | null;
+  skippedReason?:
+    | "missing_code"
+    | "inactive_affiliate"
+    | "self_referral"
+    | undefined;
 }> {
   const code = input.referralCode
     ? normalizeReferralCode(input.referralCode)
     : "";
-  if (!code) return { attribution: null, earning: null };
+  if (!code) {
+    return {
+      attribution: null,
+      earning: null,
+      skippedReason: "missing_code",
+    };
+  }
 
   const affiliate = await affiliateStore.getAffiliateByCode(code);
   if (!affiliate || affiliate.status !== "active") {
-    return { attribution: null, earning: null };
+    return {
+      attribution: null,
+      earning: null,
+      skippedReason: "inactive_affiliate",
+    };
   }
 
   // Self-referral block
@@ -233,7 +278,11 @@ export async function attributeSignup(input: {
     (affiliate.userId && affiliate.userId === input.userId) ||
     (affiliate.tenantId && affiliate.tenantId === input.tenantId)
   ) {
-    return { attribution: null, earning: null };
+    return {
+      attribution: null,
+      earning: null,
+      skippedReason: "self_referral",
+    };
   }
 
   const rates = await resolveRatesForRegion(
@@ -287,6 +336,16 @@ export async function attributeSignup(input: {
       status: "attributed",
     });
   }
+
+  await affiliateStore.createAuditLog({
+    action: "affiliate_signup_attributed",
+    actorEmail: input.email.trim().toLowerCase(),
+    resourceType: "affiliate",
+    resourceId: affiliate.id,
+    detail: earning
+      ? `Signup attributed + CPA for ${input.email.trim().toLowerCase()}`
+      : `Signup attributed (repeat email, no CPA) for ${input.email.trim().toLowerCase()}`,
+  });
 
   return { attribution, earning };
 }
@@ -655,7 +714,7 @@ async function ensurePartnerLoginAccess(input: {
         tenantId: undefined,
         updatedAt: crmNow(),
       });
-    } else if (!affiliate.tenantId && linked.tenantId) {
+    } else if (affiliate.tenantId !== linked.tenantId) {
       affiliate = await affiliateStore.saveAffiliate({
         ...affiliate,
         tenantId: linked.tenantId,
@@ -664,26 +723,39 @@ async function ensurePartnerLoginAccess(input: {
     }
   }
 
+  // Prefer credential userId when present (Google-only / incomplete password setup).
   if (!affiliate.userId || !affiliate.tenantId) {
     const existingCreds = await getUserCredentials(email);
     if (existingCreds?.userId) {
       const linked = await membershipEmailMatches(existingCreds.userId, email);
-      affiliate = await affiliateStore.saveAffiliate({
-        ...affiliate,
-        userId: existingCreds.userId,
-        tenantId: linked.tenantId ?? affiliate.tenantId,
-        updatedAt: crmNow(),
-      });
+      if (linked.ok) {
+        affiliate = await affiliateStore.saveAffiliate({
+          ...affiliate,
+          userId: existingCreds.userId,
+          tenantId: linked.tenantId,
+          updatedAt: crmNow(),
+        });
+      }
     }
   }
 
-  if (!affiliate.userId || !affiliate.tenantId) {
+  // Always require a real membership — stale userId/tenantId alone is not enough.
+  // Also covers Google-only credential rows that previously blocked provisioning.
+  let membershipReady = false;
+  if (affiliate.userId && affiliate.tenantId) {
+    const linked = await membershipEmailMatches(affiliate.userId, email);
+    membershipReady = linked.ok && linked.tenantId === affiliate.tenantId;
+  }
+
+  if (!membershipReady) {
+    const existingCreds = await getUserCredentials(email);
     const provisioned = await provisionPartnerAccountWithoutPassword({
       email,
       name: affiliate.profile.name,
       country: affiliate.profile.country,
       companyName: affiliate.profile.company,
       phone: affiliate.profile.phone,
+      preferredUserId: existingCreds?.userId ?? affiliate.userId,
     });
     affiliate = await affiliateStore.saveAffiliate({
       ...affiliate,

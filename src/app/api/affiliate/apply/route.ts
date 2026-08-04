@@ -60,7 +60,9 @@ export async function POST(req: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Application failed.";
-    return apiError("AFFILIATE_APPLY_ERROR", message, 400);
+    const status = /Firestore|FIREBASE|production/i.test(message) ? 503 : 400;
+    console.error("[affiliate] apply failed", message);
+    return apiError("AFFILIATE_APPLY_ERROR", message, status);
   }
 }
 

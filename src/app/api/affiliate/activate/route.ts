@@ -11,12 +11,78 @@ import { isDemoMode } from "@/lib/config/app-mode";
 import { affiliateStore } from "@/lib/data/affiliate-store";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { crmNow } from "@/lib/data/crm-helpers";
+import type { Affiliate } from "@/types/affiliate";
+import type { WorkspaceMember } from "@/types/tenant";
 
 export const runtime = "nodejs";
 
 function isExpired(expiresAt?: string) {
   if (!expiresAt) return true;
   return new Date(expiresAt).getTime() < Date.now();
+}
+
+async function ensureAffiliateMembership(
+  affiliate: Affiliate,
+  email: string
+): Promise<{ affiliate: Affiliate; membership: WorkspaceMember }> {
+  const { provisionPartnerAccountWithoutPassword } = await import(
+    "@/lib/affiliate/provision-partner-account"
+  );
+
+  let current = affiliate;
+
+  if (current.userId) {
+    const memberships = await getTenantRepository().listMembershipsForUser(
+      current.userId
+    );
+    const membership =
+      memberships.find((m) => m.tenantId === current.tenantId) ??
+      memberships.find((m) => m.email.trim().toLowerCase() === email) ??
+      null;
+    if (membership) {
+      if (
+        current.tenantId !== membership.tenantId ||
+        current.userId !== membership.userId
+      ) {
+        current = await affiliateStore.saveAffiliate({
+          ...current,
+          userId: membership.userId,
+          tenantId: membership.tenantId,
+          updatedAt: crmNow(),
+        });
+      }
+      return { affiliate: current, membership };
+    }
+  }
+
+  const provisioned = await provisionPartnerAccountWithoutPassword({
+    email,
+    name: current.profile.name,
+    country: current.profile.country,
+    companyName: current.profile.company,
+    phone: current.profile.phone,
+    preferredUserId: current.userId,
+  });
+
+  current = await affiliateStore.saveAffiliate({
+    ...current,
+    userId: provisioned.userId,
+    tenantId: provisioned.organizationId,
+    updatedAt: crmNow(),
+  });
+
+  const memberships = await getTenantRepository().listMembershipsForUser(
+    provisioned.userId
+  );
+  const membership =
+    memberships.find((m) => m.tenantId === provisioned.organizationId) ??
+    memberships.find((m) => m.email.trim().toLowerCase() === email);
+
+  if (!membership) {
+    throw new Error("Partner membership missing after provision.");
+  }
+
+  return { affiliate: current, membership };
 }
 
 export async function GET(req: Request) {
@@ -64,7 +130,7 @@ export async function POST(req: Request) {
   }
 
   const token = parsed.data.token.trim();
-  const affiliate = await affiliateStore.getAffiliateByActivationToken(token);
+  let affiliate = await affiliateStore.getAffiliateByActivationToken(token);
   if (!affiliate || affiliate.status !== "active") {
     return apiError("NOT_FOUND", "This activation link is invalid.", 404);
   }
@@ -73,14 +139,6 @@ export async function POST(req: Request) {
       "EXPIRED",
       "This activation link has expired. Ask Aarvanta to resend it.",
       410
-    );
-  }
-
-  if (!affiliate.userId || !affiliate.tenantId) {
-    return apiError(
-      "NOT_READY",
-      "Partner account is not ready. Contact support.",
-      400
     );
   }
 
@@ -93,23 +151,23 @@ export async function POST(req: Request) {
     );
   }
 
-  const memberships = await getTenantRepository().listMembershipsForUser(
-    affiliate.userId
-  );
-  const membership =
-    memberships.find((m) => m.tenantId === affiliate.tenantId) ??
-    memberships[0];
-  if (!membership) {
+  let membership: WorkspaceMember;
+  try {
+    const ensured = await ensureAffiliateMembership(affiliate, email);
+    affiliate = ensured.affiliate;
+    membership = ensured.membership;
+  } catch (err) {
+    console.error("[affiliate] activate account recovery failed", err);
     return apiError(
       "NOT_READY",
-      "Partner membership missing. Contact support.",
+      "Partner account is not ready. Contact support.",
       400
     );
   }
 
   await upsertUserPassword({
     email,
-    userId: affiliate.userId,
+    userId: membership.userId,
     password: parsed.data.password,
   });
 

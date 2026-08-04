@@ -48,13 +48,27 @@ export async function GET() {
     ]);
 
   const { hasUserPassword } = await import("@/lib/auth/user-credentials");
-  const affiliatesWithFlags = await Promise.all(
-    affiliates.map(async (a) => {
-      const needsPasswordSetup =
-        a.status === "active" && !(await hasUserPassword(a.profile.email));
-      return { ...a, needsPasswordSetup };
-    })
-  );
+  const affiliatesWithFlags = (
+    await Promise.all(
+      affiliates.map(async (a) => {
+        const email = a.profile?.email?.trim().toLowerCase();
+        if (!email) {
+          console.warn("[affiliate] skipping affiliate with missing profile.email", a.id);
+          return null;
+        }
+        const needsPasswordSetup =
+          a.status === "active" && !(await hasUserPassword(email));
+        return { ...a, needsPasswordSetup };
+      })
+    )
+  ).filter((a): a is NonNullable<typeof a> => a !== null);
+
+  // Pending partner applications first so admin approval work is obvious.
+  affiliatesWithFlags.sort((a, b) => {
+    if (a.status === "pending" && b.status !== "pending") return -1;
+    if (b.status === "pending" && a.status !== "pending") return 1;
+    return (b.createdAt || "").localeCompare(a.createdAt || "");
+  });
 
   return NextResponse.json({
     affiliates: affiliatesWithFlags,

@@ -7,6 +7,8 @@ import { BrandLogo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
+const REF_STORAGE_KEY = "aarvanta_aff_ref";
+
 const COUNTRY_OPTIONS = [
   "United States",
   "United Kingdom",
@@ -31,17 +33,39 @@ function CompleteFormInner({ nextPath }: { nextPath: string }) {
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("United Kingdom");
   const [companyName, setCompanyName] = useState("");
+  const [referralCode, setReferralCode] = useState(
+    searchParams.get("ref") ?? searchParams.get("referralCode") ?? ""
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const fromUrl =
+      searchParams.get("ref") ?? searchParams.get("referralCode") ?? "";
+    if (fromUrl) {
+      setReferralCode(fromUrl);
+      try {
+        sessionStorage.setItem(REF_STORAGE_KEY, fromUrl);
+      } catch {
+        /* ignore */
+      }
+    } else {
+      try {
+        const stored = sessionStorage.getItem(REF_STORAGE_KEY)?.trim() ?? "";
+        if (stored) setReferralCode(stored);
+      } catch {
+        /* ignore */
+      }
+    }
+
     void (async () => {
       const res = await fetch("/api/auth/register/complete");
       const data = (await res.json()) as {
         pending?: boolean;
         email?: string;
         name?: string;
+        referralCode?: string;
       };
       if (!data.pending) {
         router.replace(`/register?next=${encodeURIComponent(safeNext)}`);
@@ -49,9 +73,17 @@ function CompleteFormInner({ nextPath }: { nextPath: string }) {
       }
       setEmail(data.email ?? "");
       setName(data.name ?? "");
+      if (data.referralCode?.trim()) {
+        setReferralCode(data.referralCode.trim());
+        try {
+          sessionStorage.setItem(REF_STORAGE_KEY, data.referralCode.trim());
+        } catch {
+          /* ignore */
+        }
+      }
       setReady(true);
     })();
-  }, [router, safeNext]);
+  }, [router, safeNext, searchParams]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +98,7 @@ function CompleteFormInner({ nextPath }: { nextPath: string }) {
           phone,
           country,
           companyName: companyName.trim() || undefined,
+          referralCode: referralCode.trim() || undefined,
           next: safeNext,
         }),
       });

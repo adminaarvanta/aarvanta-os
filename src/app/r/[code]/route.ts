@@ -3,11 +3,15 @@ import {
   AFFILIATE_COOKIE,
   getAffiliateCookieOptions,
 } from "@/lib/affiliate/cookie";
-import { DEFAULT_ATTRIBUTION_WINDOW_DAYS } from "@/lib/affiliate/constants";
+import {
+  DEFAULT_ATTRIBUTION_WINDOW_DAYS,
+  normalizeReferralCode,
+} from "@/lib/affiliate/constants";
 import {
   recordAffiliateClick,
   resolveRatesForRegion,
 } from "@/lib/affiliate/service";
+import { affiliateStore } from "@/lib/data/affiliate-store";
 
 export const runtime = "nodejs";
 
@@ -28,7 +32,15 @@ export async function GET(req: Request, ctx: Ctx) {
   });
 
   if (!affiliate) {
-    return NextResponse.redirect(new URL("/register", req.url));
+    const existing = await affiliateStore.getAffiliateByCode(
+      normalizeReferralCode(code)
+    );
+    const registerUrl = new URL("/register", req.url);
+    registerUrl.searchParams.set(
+      "aff",
+      existing && existing.status !== "active" ? "pending" : "invalid"
+    );
+    return NextResponse.redirect(registerUrl);
   }
 
   const rates = await resolveRatesForRegion(

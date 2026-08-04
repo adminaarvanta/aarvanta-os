@@ -163,3 +163,88 @@ export async function sendAffiliateApprovedNoticeEmail(input: {
     };
   }
 }
+
+export function affiliateAdminUrl(): string {
+  return `${appBaseUrl()}/affiliate/admin`;
+}
+
+/** Notify platform ops that a new partner application needs approval. */
+export async function sendAffiliateApplicationNotifyEmail(input: {
+  to: string[];
+  applicantName: string;
+  applicantEmail: string;
+  company?: string;
+  country: string;
+  referralCode: string;
+}): Promise<{ sent: number; failed: number; reason?: string }> {
+  const recipients = [
+    ...new Set(input.to.map((e) => e.trim().toLowerCase()).filter(Boolean)),
+  ];
+  const url = affiliateAdminUrl();
+
+  if (isDemoMode()) {
+    console.info("[affiliate:demo] Would email new application", {
+      to: recipients,
+      applicant: input.applicantEmail,
+      code: input.referralCode,
+      url,
+    });
+    return { sent: 0, failed: 0, reason: "demo_mode" };
+  }
+
+  if (recipients.length === 0) {
+    console.warn(
+      "[affiliate] No AFFILIATE_ADMIN_EMAILS / AUTH_EMAIL configured — skipping application notify"
+    );
+    return { sent: 0, failed: 0, reason: "no_admin_emails" };
+  }
+
+  if (!isEmailConfigured()) {
+    return { sent: 0, failed: recipients.length, reason: "email_not_configured" };
+  }
+
+  const subject = `New partner application: ${input.applicantName}`;
+  const text = [
+    `A new Aarvanta partner application needs approval.`,
+    ``,
+    `Name: ${input.applicantName}`,
+    `Email: ${input.applicantEmail}`,
+    `Company: ${input.company || "—"}`,
+    `Country: ${input.country}`,
+    `Referral code: ${input.referralCode}`,
+    ``,
+    `Review: ${url}`,
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;max-width:560px">
+      <p>A new Aarvanta partner application needs <strong>approval</strong>.</p>
+      <ul>
+        <li><strong>Name:</strong> ${escapeHtml(input.applicantName)}</li>
+        <li><strong>Email:</strong> ${escapeHtml(input.applicantEmail)}</li>
+        <li><strong>Company:</strong> ${escapeHtml(input.company || "—")}</li>
+        <li><strong>Country:</strong> ${escapeHtml(input.country)}</li>
+        <li><strong>Referral code:</strong> ${escapeHtml(input.referralCode)}</li>
+      </ul>
+      <p style="margin:24px 0">
+        <a href="${escapeHtml(url)}"
+           style="display:inline-block;background:#B8965D;color:#111;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">
+          Open affiliate admin
+        </a>
+      </p>
+    </div>
+  `;
+
+  let sent = 0;
+  let failed = 0;
+  for (const to of recipients) {
+    try {
+      await sendGmailEmail({ to, subject, text, html });
+      sent += 1;
+    } catch (error) {
+      failed += 1;
+      console.error("[affiliate] application notify failed", { to, error });
+    }
+  }
+  return { sent, failed };
+}

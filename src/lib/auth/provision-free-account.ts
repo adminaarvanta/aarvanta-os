@@ -124,7 +124,7 @@ export async function provisionFreeTierAccount(
   if (input.referralCode?.trim()) {
     try {
       const { attributeSignup } = await import("@/lib/affiliate/service");
-      await attributeSignup({
+      const result = await attributeSignup({
         referralCode: input.referralCode,
         email,
         userId: member.userId,
@@ -133,8 +133,24 @@ export async function provisionFreeTierAccount(
         companyId,
         country: input.country,
       });
+      if (result.skippedReason) {
+        console.info("[affiliate] attribution skipped on signup", {
+          email,
+          referralCode: input.referralCode,
+          reason: result.skippedReason,
+        });
+      } else if (!result.attribution) {
+        console.warn("[affiliate] attribution on signup produced no row", {
+          email,
+          referralCode: input.referralCode,
+        });
+      }
     } catch (err) {
-      console.warn("[affiliate] attribution on signup failed", err);
+      console.warn("[affiliate] attribution on signup failed", {
+        email,
+        referralCode: input.referralCode,
+        err,
+      });
     }
   }
 

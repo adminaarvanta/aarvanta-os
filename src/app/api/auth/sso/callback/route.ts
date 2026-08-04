@@ -16,12 +16,37 @@ import {
   getUserCredentials,
   upsertGoogleIdentity,
 } from "@/lib/auth/user-credentials";
+import {
+  AFFILIATE_COOKIE,
+  getAffiliateCookieOptions,
+} from "@/lib/affiliate/cookie";
+import {
+  DEFAULT_ATTRIBUTION_WINDOW_DAYS,
+  normalizeReferralCode,
+} from "@/lib/affiliate/constants";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import type { SsoProvider } from "@/types/platform-modules";
 
 export const runtime = "nodejs";
+
+function applyAffiliateCookie(
+  response: NextResponse,
+  referralCode: string | undefined,
+  requestUrl: string
+) {
+  const code = referralCode ? normalizeReferralCode(referralCode) : "";
+  if (!code) return;
+  response.cookies.set(
+    AFFILIATE_COOKIE,
+    code,
+    getAffiliateCookieOptions(
+      DEFAULT_ATTRIBUTION_WINDOW_DAYS * 24 * 60 * 60,
+      requestUrl
+    )
+  );
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -44,6 +69,7 @@ export async function GET(req: Request) {
   let next = "/build";
   let provider: SsoProvider = "google";
   let intent: "login" | "register" = "login";
+  let referralCode: string | undefined;
   try {
     const state = JSON.parse(
       Buffer.from(stateRaw, "base64url").toString()
@@ -51,10 +77,14 @@ export async function GET(req: Request) {
       provider?: SsoProvider;
       next?: string;
       intent?: "login" | "register";
+      ref?: string;
     };
     if (state.next) next = sanitizeNextPath(state.next);
     if (state.provider) provider = state.provider;
     if (state.intent === "register") intent = "register";
+    if (state.ref?.trim()) {
+      referralCode = normalizeReferralCode(state.ref) || undefined;
+    }
   } catch {
     /* defaults */
   }
@@ -108,15 +138,18 @@ export async function GET(req: Request) {
           name,
           googleSub: user.sub,
           next,
+          referralCode,
         });
-        const response = NextResponse.redirect(
-          new URL(`/register/complete?next=${encodeURIComponent(next)}`, req.url)
-        );
+        const completeUrl = new URL("/register/complete", req.url);
+        completeUrl.searchParams.set("next", next);
+        if (referralCode) completeUrl.searchParams.set("ref", referralCode);
+        const response = NextResponse.redirect(completeUrl);
         response.cookies.set(
           PENDING_SIGNUP_COOKIE,
           pending,
           getPendingSignupCookieOptions(req.url)
         );
+        applyAffiliateCookie(response, referralCode, req.url);
         return response;
       }
 
@@ -150,18 +183,21 @@ export async function GET(req: Request) {
       name,
       googleSub: user.sub,
       next,
+      referralCode,
     });
     const completeUrl = new URL("/register/complete", req.url);
     completeUrl.searchParams.set("next", next);
     if (intent === "register") {
       completeUrl.searchParams.set("from", "register");
     }
+    if (referralCode) completeUrl.searchParams.set("ref", referralCode);
     const response = NextResponse.redirect(completeUrl);
     response.cookies.set(
       PENDING_SIGNUP_COOKIE,
       pending,
       getPendingSignupCookieOptions(req.url)
     );
+    applyAffiliateCookie(response, referralCode, req.url);
     return response;
   } catch (err) {
     console.error("[sso/callback]", err);

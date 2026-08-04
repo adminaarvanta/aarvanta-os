@@ -69,6 +69,7 @@ export async function POST(req: Request) {
 
     const referralCode =
       parsed.data.referralCode?.trim() ||
+      pending.referralCode?.trim() ||
       cookieStore.get(AFFILIATE_COOKIE)?.value ||
       undefined;
 
@@ -136,5 +137,6 @@ export async function GET() {
     pending: true,
     email: pending.email,
     name: pending.name,
+    referralCode: pending.referralCode,
   });
 }

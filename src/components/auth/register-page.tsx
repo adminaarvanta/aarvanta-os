@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
+
+const REF_STORAGE_KEY = "aarvanta_aff_ref";
 
 const COUNTRY_OPTIONS = [
   "United States",
@@ -34,11 +36,33 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
   const [companyName, setCompanyName] = useState("");
   const [referralCode, setReferralCode] = useState(referralFromUrl);
   const [busy, setBusy] = useState(false);
+  const affHint = searchParams.get("aff");
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "sso_failed"
       ? "Google sign-up failed. Try again or use email."
-      : null
+      : affHint === "pending"
+        ? "That partner link is not active yet. You can still create a free account."
+        : affHint === "invalid"
+          ? "That referral link was not recognized. You can still create a free account."
+          : null
   );
+
+  useEffect(() => {
+    if (referralFromUrl) {
+      try {
+        sessionStorage.setItem(REF_STORAGE_KEY, referralFromUrl);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    try {
+      const stored = sessionStorage.getItem(REF_STORAGE_KEY)?.trim() ?? "";
+      if (stored) setReferralCode((current) => current || stored);
+    } catch {
+      /* ignore */
+    }
+  }, [referralFromUrl]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -206,7 +230,11 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
       </div>
 
       <a
-        href={`/api/auth/sso/start?provider=google&intent=register&next=${encodeURIComponent(safeNext)}`}
+        href={`/api/auth/sso/start?provider=google&intent=register&next=${encodeURIComponent(safeNext)}${
+          referralCode.trim()
+            ? `&ref=${encodeURIComponent(referralCode.trim())}`
+            : ""
+        }`}
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
       >
         Continue with Google

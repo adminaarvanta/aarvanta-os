@@ -2,7 +2,10 @@ import { randomBytes } from "crypto";
 import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
-import { getUserCredentials } from "@/lib/auth/user-credentials";
+import {
+  getUserCredentials,
+  hasUserPassword,
+} from "@/lib/auth/user-credentials";
 import { userIdFromEmail } from "@/lib/auth/provision-free-account";
 import type { SessionPayload } from "@/lib/auth/session";
 
@@ -37,6 +40,8 @@ export type ProvisionPartnerAccountInput = {
   country: string;
   companyName?: string;
   phone?: string;
+  /** Prefer this user id when credentials are missing (e.g. already linked affiliate). */
+  preferredUserId?: string;
 };
 
 export type ProvisionPartnerAccountResult = {
@@ -47,8 +52,9 @@ export type ProvisionPartnerAccountResult = {
 };
 
 /**
- * Create a free org + workspace + owner for an approved external partner.
- * Password is set later via the activation link (no credentials yet).
+ * Ensure an approved partner has a tenant membership so they can set a password.
+ * Reuses Google-only / empty credential records instead of failing with "already exists".
+ * Password is set later via the activation link (no credentials written here).
  */
 export async function provisionPartnerAccountWithoutPassword(
   input: ProvisionPartnerAccountInput
@@ -56,14 +62,40 @@ export async function provisionPartnerAccountWithoutPassword(
   await ensureDatastoreReady();
 
   const email = input.email.trim().toLowerCase();
-  const existing = await getUserCredentials(email);
-  if (existing) {
+  const existingCreds = await getUserCredentials(email);
+
+  if (existingCreds && (await hasUserPassword(email))) {
     throw new Error("An account with this email already exists. Please sign in.");
   }
 
   const repo = getTenantRepository();
+  const userId =
+    existingCreds?.userId ||
+    input.preferredUserId?.trim() ||
+    userIdFromEmail(email);
+
+  const memberships = await repo.listMembershipsForUser(userId);
+  const existingMembership = memberships.find(
+    (m) => m.email.trim().toLowerCase() === email
+  );
+  if (existingMembership) {
+    return {
+      organizationId: existingMembership.tenantId,
+      workspaceId: existingMembership.workspaceId,
+      userId: existingMembership.userId,
+      session: {
+        email,
+        name: existingMembership.name,
+        userId: existingMembership.userId,
+        role: existingMembership.role,
+        tenantId: existingMembership.tenantId,
+        workspaceId: existingMembership.workspaceId,
+        companyId: existingMembership.companyId,
+      },
+    };
+  }
+
   const now = crmNow();
-  const userId = userIdFromEmail(email);
   const displayName = input.name.trim() || email.split("@")[0] || "Partner";
   const companyLabel =
     input.companyName?.trim() || `${displayName}'s partner workspace`;
@@ -102,7 +134,7 @@ export async function provisionPartnerAccountWithoutPassword(
       phone,
       country: input.country.trim() || "United Kingdom",
       companyName: input.companyName?.trim() || undefined,
-      authProvider: "password",
+      authProvider: existingCreds?.authProvider === "google" ? "google" : "password",
       profileComplete: true,
     },
     {

@@ -103,9 +103,76 @@ export function AffiliateAdminClient() {
   }
 
   const pending = data.affiliates.filter((a) => a.status === "pending");
+  const others = data.affiliates.filter((a) => a.status !== "pending");
   const openPayouts = data.payouts.filter(
     (p) => p.status === "requested" || p.status === "approved"
   );
+
+  function renderAffiliateRow(a: AdminAffiliate) {
+    return (
+      <li
+        key={a.id}
+        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+      >
+        <div>
+          <p className="text-sm font-medium text-foreground">
+            {a.profile.name} · {a.referralCode}
+          </p>
+          <p className="text-xs text-muted">
+            {a.profile.email} · {a.source} · {a.profile.regionCode} ·{" "}
+            {a.status}
+            {a.needsPasswordSetup ? " · awaiting password" : ""}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {a.status !== "active" ? (
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void patch({
+                  action: "set_status",
+                  affiliateId: a.id,
+                  status: "active",
+                })
+              }
+            >
+              Approve
+            </Button>
+          ) : null}
+          {a.needsPasswordSetup ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={busy}
+              onClick={() =>
+                void patch({
+                  action: "resend_activation",
+                  affiliateId: a.id,
+                })
+              }
+            >
+              Send password link
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            onClick={() =>
+              void patch({
+                action: "set_status",
+                affiliateId: a.id,
+                status: "suspended",
+              })
+            }
+          >
+            Suspend
+          </Button>
+        </div>
+      </li>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -154,72 +221,32 @@ export function AffiliateAdminClient() {
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">
-          Affiliate queue
+          Partner applications awaiting approval
         </h3>
         <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
-          {data.affiliates.map((a) => (
-            <li
-              key={a.id}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-            >
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {a.profile.name} · {a.referralCode}
-                </p>
-                <p className="text-xs text-muted">
-                  {a.profile.email} · {a.source} · {a.profile.regionCode} ·{" "}
-                  {a.status}
-                  {a.needsPasswordSetup ? " · awaiting password" : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {a.status !== "active" ? (
-                  <Button
-                    size="sm"
-                    disabled={busy}
-                    onClick={() =>
-                      void patch({
-                        action: "set_status",
-                        affiliateId: a.id,
-                        status: "active",
-                      })
-                    }
-                  >
-                    Approve
-                  </Button>
-                ) : null}
-                {a.needsPasswordSetup ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() =>
-                      void patch({
-                        action: "resend_activation",
-                        affiliateId: a.id,
-                      })
-                    }
-                  >
-                    Send password link
-                  </Button>
-                ) : null}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() =>
-                    void patch({
-                      action: "set_status",
-                      affiliateId: a.id,
-                      status: "suspended",
-                    })
-                  }
-                >
-                  Suspend
-                </Button>
-              </div>
+          {pending.length === 0 ? (
+            <li className="px-4 py-3 text-sm text-muted">
+              No partner applications waiting. New submissions from /affiliate
+              appear here as pending.
             </li>
-          ))}
+          ) : (
+            pending.map(renderAffiliateRow)
+          )}
+        </ul>
+      </section>
+
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          All partners
+        </h3>
+        <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
+          {others.length === 0 ? (
+            <li className="px-4 py-3 text-sm text-muted">
+              No approved or suspended partners yet.
+            </li>
+          ) : (
+            others.map(renderAffiliateRow)
+          )}
         </ul>
       </section>
       <section>

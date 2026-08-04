@@ -8,6 +8,8 @@ export type PendingSignupPayload = {
   name: string;
   googleSub: string;
   next?: string;
+  /** Affiliate referral code preserved across Google OAuth. */
+  referralCode?: string;
 };
 
 function getSecret() {
@@ -45,6 +47,10 @@ export async function verifyPendingSignupToken(
       name: payload.name,
       googleSub: payload.googleSub,
       next: typeof payload.next === "string" ? payload.next : undefined,
+      referralCode:
+        typeof payload.referralCode === "string"
+          ? payload.referralCode
+          : undefined,
     };
   } catch {
     return null;

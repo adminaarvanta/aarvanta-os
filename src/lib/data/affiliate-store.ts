@@ -41,6 +41,18 @@ function isMemoryBackend() {
   return isDemoMode() || !isFirebaseConfigured();
 }
 
+/** Firestore client when not on the in-memory backend. Throws if misconfigured. */
+function requireFirestoreDb() {
+  if (isMemoryBackend()) return null;
+  const db = getAdminFirestore();
+  if (!db) {
+    throw new Error(
+      "Affiliate store requires Firestore in production. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY."
+    );
+  }
+  return db;
+}
+
 function seedIfNeeded() {
   if (seeded) return;
   seeded = true;
@@ -75,7 +87,7 @@ async function listAll<T>(collection: CollectionName): Promise<T[]> {
   if (isMemoryBackend()) {
     return Array.from(memory[collection].values()) as T[];
   }
-  const db = getAdminFirestore();
+  const db = requireFirestoreDb();
   if (!db) {
     return Array.from(memory[collection].values()) as T[];
   }
@@ -99,7 +111,7 @@ async function getById<T>(
   if (isMemoryBackend()) {
     return (memory[collection].get(id) as T) ?? null;
   }
-  const db = getAdminFirestore();
+  const db = requireFirestoreDb();
   if (!db) return (memory[collection].get(id) as T) ?? null;
   const snap = await db.collection(collection).doc(id).get();
   return snap.exists ? (snap.data() as T) : null;
@@ -112,8 +124,13 @@ async function saveDoc<T extends { id: string }>(
   seedIfNeeded();
   memory[collection].set(item.id, item);
   if (!isMemoryBackend()) {
-    const db = getAdminFirestore();
-    if (db) await db.collection(collection).doc(item.id).set(item);
+    const db = requireFirestoreDb();
+    if (!db) {
+      throw new Error(
+        "Affiliate store requires Firestore in production. Check FIREBASE_* configuration."
+      );
+    }
+    await db.collection(collection).doc(item.id).set(item);
   }
   return item;
 }

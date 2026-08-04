@@ -150,10 +150,12 @@ export interface AffiliateRateCard {
 }
 
 export type AffiliateAuditAction =
+  | "affiliate_apply"
   | "affiliate_approve"
   | "affiliate_reject"
   | "affiliate_suspend"
   | "affiliate_activation_sent"
+  | "affiliate_signup_attributed"
   | "rate_card_upsert"
   | "earning_approve"
   | "earning_clawback"
