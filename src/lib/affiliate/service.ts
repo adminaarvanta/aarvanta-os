@@ -600,6 +600,7 @@ async function ensurePartnerLoginAccess(input: {
     provisionPartnerAccountWithoutPassword,
     mintAffiliateActivationToken,
     affiliateActivationExpiry,
+    isAffiliateActivationExpired,
   } = await import("@/lib/affiliate/provision-partner-account");
   const {
     sendAffiliateActivationEmail,
@@ -668,22 +669,29 @@ async function ensurePartnerLoginAccess(input: {
     const existingCreds = await getUserCredentials(email);
     if (existingCreds?.userId) {
       const linked = await membershipEmailMatches(existingCreds.userId, email);
-      affiliate = await affiliateStore.saveAffiliate({
-        ...affiliate,
-        userId: existingCreds.userId,
-        tenantId: linked.tenantId ?? affiliate.tenantId,
-        updatedAt: crmNow(),
-      });
+      if (linked.ok && linked.tenantId) {
+        affiliate = await affiliateStore.saveAffiliate({
+          ...affiliate,
+          userId: existingCreds.userId,
+          tenantId: linked.tenantId,
+          updatedAt: crmNow(),
+        });
+      }
+      // else: credentials exist (often Google-only / orphaned) but no usable
+      // membership — fall through to provision a partner workspace for that userId.
     }
   }
 
   if (!affiliate.userId || !affiliate.tenantId) {
+    const existingCreds = await getUserCredentials(email);
     const provisioned = await provisionPartnerAccountWithoutPassword({
       email,
       name: affiliate.profile.name,
       country: affiliate.profile.country,
       companyName: affiliate.profile.company,
       phone: affiliate.profile.phone,
+      // Reuse Google-only / orphaned identity so we don't throw "already exists".
+      userId: existingCreds?.userId,
     });
     affiliate = await affiliateStore.saveAffiliate({
       ...affiliate,
@@ -693,14 +701,20 @@ async function ensurePartnerLoginAccess(input: {
     });
   }
 
-  const token =
-    input.forceNewToken || !affiliate.activationToken
-      ? mintAffiliateActivationToken()
-      : affiliate.activationToken;
-  const expiresAt =
-    input.forceNewToken || !affiliate.activationExpiresAt
-      ? affiliateActivationExpiry()
-      : affiliate.activationExpiresAt;
+  const tokenExpired = isAffiliateActivationExpired(
+    affiliate.activationExpiresAt
+  );
+  const needsFreshToken =
+    Boolean(input.forceNewToken) ||
+    !affiliate.activationToken ||
+    tokenExpired;
+
+  const token = needsFreshToken
+    ? mintAffiliateActivationToken()
+    : affiliate.activationToken!;
+  const expiresAt = needsFreshToken
+    ? affiliateActivationExpiry()
+    : affiliate.activationExpiresAt!;
 
   affiliate = await affiliateStore.saveAffiliate({
     ...affiliate,

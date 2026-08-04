@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
-import { getUserCredentials } from "@/lib/auth/user-credentials";
+import { getUserCredentials, hasUserPassword } from "@/lib/auth/user-credentials";
 import { userIdFromEmail } from "@/lib/auth/provision-free-account";
 import type { SessionPayload } from "@/lib/auth/session";
 
@@ -31,12 +31,19 @@ export function affiliateActivationExpiry(
   return d.toISOString();
 }
 
+export function isAffiliateActivationExpired(expiresAt?: string): boolean {
+  if (!expiresAt) return true;
+  return new Date(expiresAt).getTime() < Date.now();
+}
+
 export type ProvisionPartnerAccountInput = {
   email: string;
   name: string;
   country: string;
   companyName?: string;
   phone?: string;
+  /** Reuse an existing auth user id (e.g. Google-only / orphaned credentials). */
+  userId?: string;
 };
 
 export type ProvisionPartnerAccountResult = {
@@ -49,6 +56,11 @@ export type ProvisionPartnerAccountResult = {
 /**
  * Create a free org + workspace + owner for an approved external partner.
  * Password is set later via the activation link (no credentials yet).
+ *
+ * When `userId` is passed (or credentials already exist without a password),
+ * reuses that identity and only creates the partner workspace/membership.
+ * This unblocks Google-only and orphaned credential records that previously
+ * threw "An account with this email already exists."
  */
 export async function provisionPartnerAccountWithoutPassword(
   input: ProvisionPartnerAccountInput
@@ -57,13 +69,17 @@ export async function provisionPartnerAccountWithoutPassword(
 
   const email = input.email.trim().toLowerCase();
   const existing = await getUserCredentials(email);
-  if (existing) {
+
+  if (existing && (await hasUserPassword(email)) && !input.userId) {
     throw new Error("An account with this email already exists. Please sign in.");
   }
 
   const repo = getTenantRepository();
   const now = crmNow();
-  const userId = userIdFromEmail(email);
+  const userId =
+    input.userId?.trim() ||
+    existing?.userId ||
+    userIdFromEmail(email);
   const displayName = input.name.trim() || email.split("@")[0] || "Partner";
   const companyLabel =
     input.companyName?.trim() || `${displayName}'s partner workspace`;
@@ -102,7 +118,7 @@ export async function provisionPartnerAccountWithoutPassword(
       phone,
       country: input.country.trim() || "United Kingdom",
       companyName: input.companyName?.trim() || undefined,
-      authProvider: "password",
+      authProvider: existing?.authProvider === "google" ? "google" : "password",
       profileComplete: true,
     },
     {

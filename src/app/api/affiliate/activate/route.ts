@@ -8,18 +8,17 @@ import {
 } from "@/lib/auth/session";
 import { upsertUserPassword, hasUserPassword } from "@/lib/auth/user-credentials";
 import { isDemoMode } from "@/lib/config/app-mode";
+import { isAffiliateActivationExpired } from "@/lib/affiliate/provision-partner-account";
 import { affiliateStore } from "@/lib/data/affiliate-store";
+import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { crmNow } from "@/lib/data/crm-helpers";
 
 export const runtime = "nodejs";
 
-function isExpired(expiresAt?: string) {
-  if (!expiresAt) return true;
-  return new Date(expiresAt).getTime() < Date.now();
-}
-
 export async function GET(req: Request) {
+  await ensureDatastoreReady();
+
   const token = new URL(req.url).searchParams.get("token")?.trim() ?? "";
   if (!token) {
     return apiError("VALIDATION_ERROR", "Missing activation token.", 400);
@@ -29,7 +28,7 @@ export async function GET(req: Request) {
   if (!affiliate || affiliate.status !== "active") {
     return apiError("NOT_FOUND", "This activation link is invalid.", 404);
   }
-  if (isExpired(affiliate.activationExpiresAt)) {
+  if (isAffiliateActivationExpired(affiliate.activationExpiresAt)) {
     return apiError(
       "EXPIRED",
       "This activation link has expired. Ask Aarvanta to resend it.",
@@ -51,6 +50,8 @@ const postSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  await ensureDatastoreReady();
+
   const body = await parseJsonBody<unknown>(req);
   if (body instanceof NextResponse) return body;
 
@@ -64,23 +65,15 @@ export async function POST(req: Request) {
   }
 
   const token = parsed.data.token.trim();
-  const affiliate = await affiliateStore.getAffiliateByActivationToken(token);
+  let affiliate = await affiliateStore.getAffiliateByActivationToken(token);
   if (!affiliate || affiliate.status !== "active") {
     return apiError("NOT_FOUND", "This activation link is invalid.", 404);
   }
-  if (isExpired(affiliate.activationExpiresAt)) {
+  if (isAffiliateActivationExpired(affiliate.activationExpiresAt)) {
     return apiError(
       "EXPIRED",
       "This activation link has expired. Ask Aarvanta to resend it.",
       410
-    );
-  }
-
-  if (!affiliate.userId || !affiliate.tenantId) {
-    return apiError(
-      "NOT_READY",
-      "Partner account is not ready. Contact support.",
-      400
     );
   }
 
@@ -93,12 +86,64 @@ export async function POST(req: Request) {
     );
   }
 
-  const memberships = await getTenantRepository().listMembershipsForUser(
-    affiliate.userId
+  // Repair missing partner workspace so set-password still works for links
+  // minted before provision finished, or after orphaned-credential recovery.
+  if (!affiliate.userId || !affiliate.tenantId) {
+    const { provisionPartnerAccountWithoutPassword } = await import(
+      "@/lib/affiliate/provision-partner-account"
+    );
+    const { getUserCredentials } = await import("@/lib/auth/user-credentials");
+    const existingCreds = await getUserCredentials(email);
+    const provisioned = await provisionPartnerAccountWithoutPassword({
+      email,
+      name: affiliate.profile.name,
+      country: affiliate.profile.country,
+      companyName: affiliate.profile.company,
+      phone: affiliate.profile.phone,
+      userId: affiliate.userId || existingCreds?.userId,
+    });
+    affiliate = await affiliateStore.saveAffiliate({
+      ...affiliate,
+      userId: provisioned.userId,
+      tenantId: provisioned.organizationId,
+      updatedAt: crmNow(),
+    });
+  }
+
+  let memberships = await getTenantRepository().listMembershipsForUser(
+    affiliate.userId!
   );
-  const membership =
-    memberships.find((m) => m.tenantId === affiliate.tenantId) ??
+  let membership =
+    memberships.find((m) => m.tenantId === affiliate!.tenantId) ??
+    memberships.find((m) => m.email.trim().toLowerCase() === email) ??
     memberships[0];
+
+  if (!membership) {
+    const { provisionPartnerAccountWithoutPassword } = await import(
+      "@/lib/affiliate/provision-partner-account"
+    );
+    const provisioned = await provisionPartnerAccountWithoutPassword({
+      email,
+      name: affiliate.profile.name,
+      country: affiliate.profile.country,
+      companyName: affiliate.profile.company,
+      phone: affiliate.profile.phone,
+      userId: affiliate.userId,
+    });
+    affiliate = await affiliateStore.saveAffiliate({
+      ...affiliate,
+      userId: provisioned.userId,
+      tenantId: provisioned.organizationId,
+      updatedAt: crmNow(),
+    });
+    memberships = await getTenantRepository().listMembershipsForUser(
+      affiliate.userId!
+    );
+    membership =
+      memberships.find((m) => m.tenantId === affiliate!.tenantId) ??
+      memberships[0];
+  }
+
   if (!membership) {
     return apiError(
       "NOT_READY",
@@ -109,7 +154,7 @@ export async function POST(req: Request) {
 
   await upsertUserPassword({
     email,
-    userId: affiliate.userId,
+    userId: affiliate.userId!,
     password: parsed.data.password,
   });
 
