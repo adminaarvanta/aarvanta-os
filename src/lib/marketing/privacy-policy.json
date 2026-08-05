@@ -1,0 +1,1576 @@
+{
+  "meta": {
+    "effectiveDate": "5 August 2026",
+    "lastUpdated": "5 August 2026"
+  },
+  "sections": [
+    {
+      "number": 1,
+      "title": "Introduction",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "AARVANTA LTD (\"AARVANTA\", \"Company\", \"we\", \"our\" or \"us\") is committed to protecting the privacy, confidentiality and security of personal data entrusted to us."
+        },
+        {
+          "type": "p",
+          "text": "This Privacy Policy explains how personal data is collected, used, stored, disclosed and otherwise processed when individuals access or use the AARVANTA platform, websites, software applications, products and services, including Business OS available through os.aarvanta.co (\"Platform\")."
+        },
+        {
+          "type": "p",
+          "text": "We recognise our obligations under applicable data protection legislation and have implemented appropriate technical, organisational and administrative measures to safeguard personal data against unauthorised access, unlawful processing, accidental loss, destruction or damage."
+        },
+        {
+          "type": "p",
+          "text": "This Privacy Policy applies to all individuals who access or interact with the Platform, including visitors, customers, account holders, authorised users, business clients, partners, prospective customers, affiliates and any individual whose personal data is processed through our services."
+        },
+        {
+          "type": "p",
+          "text": "Where additional privacy notices apply to a specific product, feature or service, those notices supplement this Privacy Policy and prevail only to the extent of any inconsistency."
+        },
+        {
+          "type": "p",
+          "text": "By accessing or using the Platform, you acknowledge that your personal data will be processed in accordance with this Privacy Policy."
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "title": "Company Information",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The data controller responsible for processing personal data under this Privacy Policy is:"
+        },
+        {
+          "type": "p",
+          "text": "AARVANTA LTD"
+        },
+        {
+          "type": "p",
+          "text": "Company Number: 17217532"
+        },
+        {
+          "type": "p",
+          "text": "Registered Office:"
+        },
+        {
+          "type": "p",
+          "text": "195–197 Wood Street"
+        },
+        {
+          "type": "p",
+          "text": "London"
+        },
+        {
+          "type": "p",
+          "text": "E17 3NU"
+        },
+        {
+          "type": "p",
+          "text": "United Kingdom"
+        },
+        {
+          "type": "p",
+          "text": "Email:"
+        },
+        {
+          "type": "p",
+          "text": "admin@aarvanta.co"
+        },
+        {
+          "type": "p",
+          "text": "Unless expressly stated otherwise, AARVANTA LTD acts as the Data Controller for personal data collected through the Platform."
+        },
+        {
+          "type": "p",
+          "text": "Where customers upload or process personal data belonging to their own clients, employees or third parties through Business OS, AARVANTA generally acts as a Data Processor and processes such information only in accordance with the customer's documented instructions and applicable law."
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Scope",
+      "blocks": [
+        {
+          "type": "list",
+          "heading": "This Privacy Policy applies to all personal data processed through",
+          "items": [
+            "os.aarvanta.co",
+            "Customer portals",
+            "Business OS",
+            "AI Workforce",
+            "CRM",
+            "Automation tools",
+            "Mobile applications",
+            "APIs",
+            "Customer support",
+            "Sales enquiries",
+            "Marketing communications",
+            "Events",
+            "Demonstrations",
+            "Beta programmes",
+            "Partner programmes",
+            "Affiliate programmes",
+            "Recruitment enquiries",
+            "Any other products or services operated by AARVANTA LTD."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "This Privacy Policy applies regardless of whether access occurs through desktop computers, laptops, tablets, mobile devices or any other internet-enabled device."
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Definitions",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "For the purposes of this Privacy Policy:"
+        },
+        {
+          "type": "p",
+          "text": "Applicable Data Protection Laws means all laws governing the processing of personal data, including but not limited to the UK General Data Protection Regulation (UK GDPR), the EU General Data Protection Regulation (EU GDPR), the Data Protection Act 2018, the Privacy and Electronic Communications Regulations 2003 (PECR), together with any legislation replacing or amending them."
+        },
+        {
+          "type": "p",
+          "text": "Business Customer means any organisation, company, partnership, sole trader or other legal entity using the Platform."
+        },
+        {
+          "type": "p",
+          "text": "Customer Data means all information uploaded, imported, generated or stored within Business OS by or on behalf of customers."
+        },
+        {
+          "type": "p",
+          "text": "Data Controller has the meaning given under the UK GDPR and EU GDPR."
+        },
+        {
+          "type": "p",
+          "text": "Data Processor has the meaning given under the UK GDPR and EU GDPR."
+        },
+        {
+          "type": "p",
+          "text": "Personal Data means any information relating to an identified or identifiable natural person."
+        },
+        {
+          "type": "p",
+          "text": "Processing includes collection, recording, storage, organisation, structuring, adaptation, retrieval, consultation, disclosure, transmission, restriction, deletion and destruction of personal data."
+        },
+        {
+          "type": "p",
+          "text": "Platform means Business OS together with all related products, services, APIs, software, websites and applications operated by AARVANTA LTD."
+        },
+        {
+          "type": "p",
+          "text": "User means any individual accessing or using the Platform."
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Eligibility",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The Platform is intended solely for individuals who are at least 18 years of age."
+        },
+        {
+          "type": "p",
+          "text": "By creating an account or using the Platform, you confirm that you are at least 18 years old and possess the legal capacity to enter into binding agreements under applicable law."
+        },
+        {
+          "type": "p",
+          "text": "The Platform is not directed towards children."
+        },
+        {
+          "type": "p",
+          "text": "We do not knowingly collect or process personal data relating to anyone under the age of 18."
+        },
+        {
+          "type": "p",
+          "text": "If we become aware that personal data relating to a child has been collected without lawful authority, we will take reasonable steps to delete such information promptly."
+        },
+        {
+          "type": "p",
+          "text": "Parents or legal guardians who believe that a child has provided personal data should contact us immediately."
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "Categories of Personal Data We Collect",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Depending upon your interaction with the Platform, we may collect and process the following categories of information."
+        },
+        {
+          "type": "list",
+          "heading": "Identity Information",
+          "items": [
+            "Full name",
+            "Username",
+            "Business name",
+            "Job title",
+            "Date of birth where legally required",
+            "Government-issued identification where legally necessary",
+            "Company registration details",
+            "VAT information where applicable"
+          ]
+        },
+        {
+          "type": "list",
+          "heading": "Contact Information",
+          "items": [
+            "Email address",
+            "Telephone number",
+            "Registered business address",
+            "Billing address",
+            "Shipping address where applicable",
+            "Country",
+            "Region",
+            "Time zone"
+          ]
+        },
+        {
+          "type": "list",
+          "heading": "Account Information",
+          "items": [
+            "Login credentials",
+            "Password (stored in encrypted form)",
+            "Authentication tokens",
+            "Multi-factor authentication details",
+            "Security questions where applicable",
+            "Profile preferences",
+            "Notification preferences",
+            "Language preferences",
+            "User settings"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Financial Information"
+        },
+        {
+          "type": "p",
+          "text": "Where purchases are made through the Platform, payment processing is provided by Stripe. We do not store complete payment card details on our systems."
+        },
+        {
+          "type": "list",
+          "heading": "We may receive limited payment-related information including",
+          "items": [
+            "Payment status",
+            "Subscription status",
+            "Transaction identifiers",
+            "Billing history",
+            "Currency",
+            "Invoice records",
+            "VAT information",
+            "Refund information"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "All payment card information is collected and processed directly by Stripe in accordance with its own privacy and security standards."
+        },
+        {
+          "type": "p",
+          "text": "Customer Business Data"
+        },
+        {
+          "type": "p",
+          "text": "Business OS allows customers to upload and process information necessary for operating their businesses."
+        },
+        {
+          "type": "list",
+          "heading": "Depending upon customer usage, this may include",
+          "items": [
+            "Customer records",
+            "Employee records",
+            "Client databases",
+            "Contact lists",
+            "Documents",
+            "Contracts",
+            "Images",
+            "Reports",
+            "Business files",
+            "Communications",
+            "CRM information",
+            "Sales records",
+            "Internal operational data",
+            "Workflow information",
+            "AI prompts",
+            "AI-generated outputs",
+            "Uploaded documents",
+            "Files submitted for processing by AI services"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Such information remains under the control of the customer."
+        },
+        {
+          "type": "p",
+          "text": "Where AARVANTA processes Customer Business Data, it does so solely for the purpose of providing the contracted services and in accordance with customer instructions."
+        },
+        {
+          "type": "list",
+          "heading": "Communications Data",
+          "items": [
+            "Support tickets",
+            "Live chat conversations",
+            "Email correspondence",
+            "Feedback",
+            "Product reviews",
+            "Survey responses",
+            "Feature requests",
+            "Bug reports"
+          ]
+        },
+        {
+          "type": "list",
+          "heading": "Technical Information",
+          "items": [
+            "IP address",
+            "Browser type",
+            "Browser version",
+            "Device identifiers",
+            "Device operating system",
+            "Device model",
+            "Internet service provider",
+            "Time zone",
+            "Referring URLs",
+            "Pages visited",
+            "Session duration",
+            "Crash logs",
+            "Performance metrics",
+            "Diagnostic information"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "title": "Cookies and Similar Technologies",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The Platform uses cookies and similar technologies to distinguish users, improve functionality, maintain security, analyse usage patterns, remember user preferences and enhance the overall user experience."
+        },
+        {
+          "type": "p",
+          "text": "Cookies are small text files placed on your device when you visit the Platform. Certain cookies are essential for the operation of the Platform and cannot be disabled without affecting core functionality."
+        },
+        {
+          "type": "p",
+          "text": "Where required by applicable law, non-essential cookies will only be placed on your device after obtaining your consent through our cookie consent mechanism."
+        },
+        {
+          "type": "p",
+          "text": "You may withdraw or modify your cookie preferences at any time through our Cookie Settings or by adjusting your browser settings."
+        },
+        {
+          "type": "p",
+          "text": "Disabling certain cookies may affect the availability or functionality of specific features of the Platform."
+        },
+        {
+          "type": "p",
+          "text": "The categories of cookies we use include, but are not limited to:"
+        },
+        {
+          "type": "list",
+          "heading": "Strictly Necessary Cookies",
+          "items": [
+            "User authentication",
+            "Session management",
+            "Security controls",
+            "Fraud prevention",
+            "Load balancing",
+            "Account access",
+            "Payment processing",
+            "System integrity",
+            "Network management"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "These cookies cannot be disabled because they are necessary for providing the services requested by the user."
+        },
+        {
+          "type": "list",
+          "heading": "Functional Cookies",
+          "items": [
+            "Language preferences",
+            "Region",
+            "Dashboard settings",
+            "Theme preferences",
+            "Login preferences",
+            "User interface customisation",
+            "Accessibility settings"
+          ]
+        },
+        {
+          "type": "list",
+          "heading": "Analytics Cookies",
+          "items": [
+            "Visitor numbers",
+            "User journeys",
+            "Feature usage",
+            "Device types",
+            "Browser statistics",
+            "Performance measurements",
+            "Error reporting",
+            "Session duration",
+            "Traffic sources",
+            "Navigation behaviour"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Analytics information is generally aggregated and used to improve our products and services."
+        },
+        {
+          "type": "list",
+          "heading": "Security Cookies",
+          "items": [
+            "Unauthorised access",
+            "Account abuse",
+            "Malicious activity",
+            "Session hijacking",
+            "Fraudulent login attempts",
+            "Automated attacks",
+            "Denial of service attempts",
+            "Credential misuse"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Marketing Cookies"
+        },
+        {
+          "type": "p",
+          "text": "Marketing cookies are only used where you have provided your explicit consent."
+        },
+        {
+          "type": "list",
+          "heading": "These cookies may be used to",
+          "items": [
+            "Measure campaign effectiveness",
+            "Remember marketing preferences",
+            "Avoid repeatedly displaying the same advertisements",
+            "Improve communication relevance",
+            "Measure conversions"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "AARVANTA does not sell personal information to advertisers."
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "title": "Information Collected Automatically",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Whenever you access or use the Platform, certain information is collected automatically for operational, security and analytical purposes."
+        },
+        {
+          "type": "list",
+          "heading": "This information may include",
+          "items": [
+            "IP address",
+            "Device identifiers",
+            "Browser type",
+            "Browser version",
+            "Operating system",
+            "Language settings",
+            "Screen resolution",
+            "Network information",
+            "Internet service provider",
+            "Session timestamps",
+            "Login history",
+            "Device location derived from IP address",
+            "Time zone",
+            "Referral URLs",
+            "Exit pages",
+            "Usage statistics",
+            "Feature interactions",
+            "Error logs",
+            "Crash reports",
+            "API usage logs",
+            "Security event logs",
+            "Authentication records",
+            "System performance metrics"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "This information assists us in maintaining platform stability, detecting fraudulent activity, preventing unauthorised access, improving performance and fulfilling our legal obligations."
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "title": "Information You Provide Voluntarily",
+      "blocks": [
+        {
+          "type": "list",
+          "heading": "You may voluntarily provide personal information when you",
+          "items": [
+            "Create an account",
+            "Purchase a subscription",
+            "Request a demonstration",
+            "Contact customer support",
+            "Submit enquiries",
+            "Join waiting lists",
+            "Subscribe to newsletters",
+            "Participate in surveys",
+            "Attend webinars",
+            "Register for events",
+            "Apply for partnership programmes",
+            "Participate in affiliate programmes",
+            "Submit feedback",
+            "Report technical issues",
+            "Upload business documents",
+            "Configure AI agents",
+            "Import customer information",
+            "Connect third-party services"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "You are responsible for ensuring that all information you provide is accurate, complete and kept up to date."
+        },
+        {
+          "type": "p",
+          "text": "Where you upload personal data relating to another individual, you confirm that you have the legal authority to do so and that such processing complies with applicable data protection laws."
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "title": "Customer Uploaded Data",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Business OS enables customers to upload, create, import, store, organise, process and manage business information."
+        },
+        {
+          "type": "list",
+          "heading": "Customer Uploaded Data may include",
+          "items": [
+            "Documents",
+            "Contracts",
+            "Customer databases",
+            "Employee records",
+            "Supplier information",
+            "Sales records",
+            "Financial records",
+            "CRM information",
+            "Images",
+            "Videos",
+            "Audio files",
+            "Reports",
+            "Emails",
+            "Business communications",
+            "AI prompts",
+            "AI-generated content",
+            "Workflow information",
+            "Knowledge bases",
+            "Internal documentation"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Ownership of Customer Uploaded Data remains with the respective customer."
+        },
+        {
+          "type": "p",
+          "text": "AARVANTA does not acquire ownership rights over Customer Uploaded Data by virtue of providing the Platform."
+        },
+        {
+          "type": "list",
+          "heading": "Customer Uploaded Data is processed solely",
+          "items": [
+            "To provide the requested services;",
+            "To maintain platform functionality;",
+            "To perform customer-authorised AI processing;",
+            "To maintain security;",
+            "To comply with applicable legal obligations; and",
+            "To provide technical support where requested by the customer."
+          ]
+        },
+        {
+          "type": "list",
+          "heading": "We do not access Customer Uploaded Data except where",
+          "items": [
+            "Access is necessary to provide support requested by the customer;",
+            "Access is required to investigate technical issues;",
+            "Access is necessary to maintain security;",
+            "Access is required by applicable law;",
+            "Access is authorised by the customer."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "All personnel with authorised access are subject to strict confidentiality obligations."
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "title": "AI Processing",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Business OS includes artificial intelligence features designed to automate business processes and assist customers in carrying out business activities."
+        },
+        {
+          "type": "p",
+          "text": "When customers choose to use AI-powered functionality, information submitted by the customer may be processed through AI technologies solely for the purpose of delivering the requested functionality."
+        },
+        {
+          "type": "list",
+          "heading": "Examples include",
+          "items": [
+            "Content generation",
+            "Workflow automation",
+            "Document analysis",
+            "Customer communication",
+            "Business insights",
+            "CRM assistance",
+            "Data organisation",
+            "Business recommendations",
+            "Automation execution",
+            "AI workforce operations"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "AI processing is initiated only in response to user actions or customer-configured automations."
+        },
+        {
+          "type": "p",
+          "text": "AARVANTA does not intentionally use Customer Uploaded Data to train proprietary artificial intelligence models unless the customer has provided explicit prior consent or such processing is otherwise permitted by applicable law and contractual agreement."
+        },
+        {
+          "type": "p",
+          "text": "Customers remain responsible for reviewing AI-generated outputs before relying upon or distributing them."
+        },
+        {
+          "type": "p",
+          "text": "Artificial intelligence systems may occasionally generate inaccurate, incomplete or unexpected outputs. Users should exercise independent judgment and verify important information before making business, financial, legal or operational decisions based upon AI-generated content."
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "title": "How We Use Personal Data",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "We process personal data only where there is a lawful basis to do so and only for legitimate business purposes."
+        },
+        {
+          "type": "list",
+          "heading": "Personal data may be processed for the following purposes",
+          "items": [
+            "Creating and managing user accounts;",
+            "Providing access to Business OS;",
+            "Authenticating users;",
+            "Managing subscriptions;",
+            "Processing payments;",
+            "Delivering purchased services;",
+            "Operating AI-powered functionality;",
+            "Managing customer relationships;",
+            "Providing technical support;",
+            "Responding to enquiries;",
+            "Improving platform performance;",
+            "Monitoring system health;",
+            "Detecting fraudulent or malicious activity;",
+            "Preventing unauthorised access;",
+            "Conducting security monitoring;",
+            "Managing backups;",
+            "Maintaining service continuity;",
+            "Sending service-related communications;",
+            "Sending marketing communications where consent has been obtained or another lawful basis applies;",
+            "Conducting customer satisfaction surveys;",
+            "Developing new products and features;",
+            "Analysing platform usage;",
+            "Complying with applicable laws;",
+            "Responding to lawful requests from public authorities;",
+            "Enforcing our legal rights;",
+            "Protecting the rights, safety and property of AARVANTA, our customers and third parties."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "We will not process personal data for purposes incompatible with those described in this Privacy Policy unless required or permitted by applicable law."
+        }
+      ]
+    },
+    {
+      "number": 13,
+      "title": "Lawful Bases for Processing",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Where UK GDPR or EU GDPR applies, AARVANTA processes personal data on one or more of the following lawful bases:"
+        },
+        {
+          "type": "p",
+          "text": "Performance of a Contract"
+        },
+        {
+          "type": "p",
+          "text": "Processing necessary to provide the Platform, manage user accounts, fulfil subscriptions, process payments and deliver contracted services."
+        },
+        {
+          "type": "list",
+          "heading": "Legitimate Interests",
+          "items": [
+            "Improving products and services;",
+            "Preventing fraud;",
+            "Maintaining security;",
+            "Developing new functionality;",
+            "Responding to customer enquiries;",
+            "Managing business operations;",
+            "Conducting internal administration;",
+            "Protecting legal rights."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Before relying upon legitimate interests, we assess and balance our interests against the rights and freedoms of affected individuals."
+        },
+        {
+          "type": "list",
+          "heading": "Consent",
+          "items": [
+            "Marketing communications;",
+            "Optional cookies;",
+            "Certain analytics technologies;",
+            "Specific AI features where applicable."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Consent may be withdrawn at any time without affecting the lawfulness of processing carried out before its withdrawal."
+        },
+        {
+          "type": "p",
+          "text": "Legal Obligation"
+        },
+        {
+          "type": "p",
+          "text": "Processing necessary to comply with applicable legal and regulatory obligations, including taxation, accounting, anti-fraud measures, court orders, law enforcement requests and other statutory requirements."
+        },
+        {
+          "type": "p",
+          "text": "Vital Interests"
+        },
+        {
+          "type": "p",
+          "text": "Where necessary, personal data may be processed to protect the vital interests of an individual or another natural person."
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "title": "Disclosure of Personal Data",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "AARVANTA does not sell, rent, lease or otherwise trade personal data to third parties for their independent marketing purposes."
+        },
+        {
+          "type": "p",
+          "text": "Personal data is disclosed only where necessary to operate the Platform, fulfil contractual obligations, comply with legal requirements or protect legitimate business interests."
+        },
+        {
+          "type": "list",
+          "heading": "Depending upon the nature of the services being used, personal data may be disclosed to",
+          "items": [
+            "Cloud infrastructure providers",
+            "Payment service providers",
+            "Identity and authentication providers",
+            "Customer support providers",
+            "Email delivery providers",
+            "Professional advisers",
+            "Auditors",
+            "Legal advisers",
+            "Regulatory authorities",
+            "Government agencies where legally required",
+            "Law enforcement agencies where legally required",
+            "Courts and tribunals",
+            "Business partners acting under contractual obligations",
+            "Successors in the event of a merger, acquisition or corporate restructuring"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Every third party receiving personal data is required to process such information in accordance with contractual confidentiality obligations and applicable data protection legislation."
+        },
+        {
+          "type": "p",
+          "text": "Third parties are not authorised to use personal data for their own commercial purposes unless they act as an independent data controller and have their own lawful basis for processing."
+        }
+      ]
+    },
+    {
+      "number": 15,
+      "title": "Third-Party Service Providers",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "To provide the Platform efficiently and securely, AARVANTA engages carefully selected third-party service providers."
+        },
+        {
+          "type": "p",
+          "text": "These providers perform services on our behalf and are granted access only to the extent necessary to perform those services."
+        },
+        {
+          "type": "p",
+          "text": "Current categories of service providers include:"
+        },
+        {
+          "type": "p",
+          "text": "Cloud Infrastructure"
+        },
+        {
+          "type": "p",
+          "text": "Cloud hosting, servers, networking, storage, backups and disaster recovery."
+        },
+        {
+          "type": "p",
+          "text": "Authentication Services"
+        },
+        {
+          "type": "p",
+          "text": "Secure user authentication, identity verification, session management and access control."
+        },
+        {
+          "type": "p",
+          "text": "Payment Processing"
+        },
+        {
+          "type": "p",
+          "text": "Subscription billing, payment authorisation, invoicing, refunds and financial transaction management."
+        },
+        {
+          "type": "list",
+          "heading": "Email Services",
+          "items": [
+            "Account verification",
+            "Password resets",
+            "Billing notifications",
+            "Security alerts",
+            "Service announcements",
+            "Marketing communications where consent has been provided"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Customer Support"
+        },
+        {
+          "type": "p",
+          "text": "Support ticket management, troubleshooting, technical investigations and customer assistance."
+        },
+        {
+          "type": "p",
+          "text": "Analytics"
+        },
+        {
+          "type": "p",
+          "text": "Platform performance analysis, system monitoring, operational reporting and service improvement."
+        },
+        {
+          "type": "p",
+          "text": "Artificial Intelligence Services"
+        },
+        {
+          "type": "p",
+          "text": "Where customers choose to use AI-powered features, information necessary to fulfil the requested functionality may be securely processed through authorised AI technologies acting on behalf of AARVANTA."
+        },
+        {
+          "type": "p",
+          "text": "We seek to ensure that providers handling AI-related processing implement appropriate security measures and contractual safeguards consistent with applicable data protection laws."
+        }
+      ]
+    },
+    {
+      "number": 16,
+      "title": "Cloud Infrastructure and Data Hosting",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Business OS is hosted using enterprise-grade cloud infrastructure designed to provide resilience, scalability and security."
+        },
+        {
+          "type": "p",
+          "text": "Our hosting environment may include cloud infrastructure operated through Amazon Web Services (AWS) together with supporting deployment infrastructure operated through Vercel."
+        },
+        {
+          "type": "p",
+          "text": "Infrastructure providers are selected based upon recognised industry security standards and their ability to support secure, reliable and highly available cloud services."
+        },
+        {
+          "type": "list",
+          "heading": "Data may be stored, replicated and backed up across secure infrastructure for the purposes of",
+          "items": [
+            "Service availability",
+            "Disaster recovery",
+            "System resilience",
+            "Fault tolerance",
+            "Security monitoring",
+            "Performance optimisation",
+            "Backup restoration"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Where data is transferred outside the United Kingdom or European Economic Area, appropriate legal safeguards are implemented as described in this Privacy Policy."
+        }
+      ]
+    },
+    {
+      "number": 17,
+      "title": "Authentication and Account Security",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Business OS uses Firebase Authentication to provide secure account authentication and identity management."
+        },
+        {
+          "type": "list",
+          "heading": "Authentication services may include",
+          "items": [
+            "Email and password authentication",
+            "Multi-factor authentication where enabled",
+            "Session management",
+            "Secure authentication tokens",
+            "Account verification",
+            "Password recovery",
+            "Login security monitoring"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Passwords are never stored in plain text."
+        },
+        {
+          "type": "p",
+          "text": "Authentication credentials are protected using industry-recognised encryption and security practices."
+        },
+        {
+          "type": "p",
+          "text": "Users are responsible for maintaining the confidentiality of their login credentials."
+        },
+        {
+          "type": "p",
+          "text": "You must immediately notify AARVANTA if you become aware of any suspected unauthorised access to your account."
+        }
+      ]
+    },
+    {
+      "number": 18,
+      "title": "Payment Processing",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Subscription payments and other financial transactions are processed securely through Stripe."
+        },
+        {
+          "type": "p",
+          "text": "AARVANTA does not store complete payment card numbers, card verification values (CVV), PINs or equivalent payment authentication information on its own systems."
+        },
+        {
+          "type": "p",
+          "text": "Stripe is responsible for processing payment information in accordance with applicable payment industry standards, including the Payment Card Industry Data Security Standard (PCI DSS)."
+        },
+        {
+          "type": "list",
+          "heading": "Information received from Stripe may include",
+          "items": [
+            "Transaction identifiers",
+            "Payment status",
+            "Subscription status",
+            "Billing history",
+            "Invoice information",
+            "Refund status",
+            "Currency",
+            "Tax information where applicable"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Payment information is processed solely for the purpose of providing subscribed services, fulfilling contractual obligations, preventing fraud and complying with financial reporting requirements."
+        }
+      ]
+    },
+    {
+      "number": 19,
+      "title": "International Data Transfers",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "As a global technology platform, certain personal data may be processed outside the United Kingdom or European Economic Area."
+        },
+        {
+          "type": "p",
+          "text": "Where international transfers occur, AARVANTA implements appropriate safeguards designed to ensure that transferred personal data receives an equivalent level of protection required under applicable data protection legislation."
+        },
+        {
+          "type": "list",
+          "heading": "These safeguards may include",
+          "items": [
+            "UK International Data Transfer Agreement (IDTA)",
+            "UK Addendum to the European Commission's Standard Contractual Clauses",
+            "European Commission Standard Contractual Clauses (SCCs)",
+            "Transfers to jurisdictions benefiting from an adequacy decision",
+            "Additional technical and organisational safeguards where appropriate"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "International transfers are limited to what is necessary for providing the Platform, maintaining infrastructure, processing payments, authenticating users, delivering customer support and operating requested services."
+        }
+      ]
+    },
+    {
+      "number": 20,
+      "title": "Security of Personal Data",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Protecting personal data is fundamental to the operation of Business OS."
+        },
+        {
+          "type": "list",
+          "heading": "AARVANTA maintains administrative, technical and physical safeguards designed to protect personal data against",
+          "items": [
+            "Unauthorised access",
+            "Unauthorised disclosure",
+            "Accidental loss",
+            "Destruction",
+            "Alteration",
+            "Misuse",
+            "Corruption",
+            "Theft",
+            "Unlawful processing"
+          ]
+        },
+        {
+          "type": "list",
+          "heading": "Security measures include, where appropriate",
+          "items": [
+            "Encryption of data in transit using modern Transport Layer Security (TLS)",
+            "Encryption of data at rest where appropriate",
+            "Secure authentication mechanisms",
+            "Role-based access controls",
+            "Principle of least privilege",
+            "Multi-factor authentication for administrative access where implemented",
+            "Continuous infrastructure monitoring",
+            "Security logging and audit trails",
+            "Firewall protection",
+            "Network segmentation",
+            "Vulnerability management",
+            "Regular software updates",
+            "Backup procedures",
+            "Disaster recovery planning",
+            "Access monitoring",
+            "Incident detection mechanisms"
+          ]
+        },
+        {
+          "type": "p",
+          "text": "No method of electronic transmission or storage can be guaranteed to be completely secure. While AARVANTA employs reasonable and appropriate safeguards, absolute security cannot be guaranteed."
+        },
+        {
+          "type": "p",
+          "text": "Users are responsible for protecting their own account credentials and devices used to access the Platform."
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "title": "Security Incident Management",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "AARVANTA maintains procedures for identifying, investigating, managing and responding to actual or suspected security incidents."
+        },
+        {
+          "type": "list",
+          "heading": "Where a personal data breach occurs, we will",
+          "items": [
+            "Assess the nature and scope of the incident;",
+            "Contain and mitigate the incident where reasonably practicable;",
+            "Investigate the cause and impact;",
+            "Maintain appropriate records;",
+            "Notify affected customers where required by law or contractual obligation; and",
+            "Notify the relevant supervisory authority within applicable statutory timeframes where legally required."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "We continually review and improve our security practices to reduce the likelihood and impact of future incidents."
+        }
+      ]
+    },
+    {
+      "number": 22,
+      "title": "Data Retention",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Personal data is retained only for as long as necessary to fulfil the purposes for which it was collected, including satisfying legal, contractual, regulatory, accounting and operational requirements."
+        },
+        {
+          "type": "list",
+          "heading": "Retention periods vary depending upon",
+          "items": [
+            "The nature of the information;",
+            "Legal obligations;",
+            "Regulatory requirements;",
+            "Contractual commitments;",
+            "Operational needs;",
+            "Legitimate business interests;",
+            "Ongoing disputes or legal proceedings."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "When personal data is no longer required, it will be securely deleted, anonymised or irreversibly destroyed using methods appropriate to the nature of the information."
+        },
+        {
+          "type": "p",
+          "text": "Customer-uploaded data is retained in accordance with the customer's subscription, account settings, contractual arrangements and applicable legal obligations."
+        },
+        {
+          "type": "list",
+          "heading": "Following account termination, certain information may be retained for limited periods where necessary to",
+          "items": [
+            "Comply with legal obligations;",
+            "Resolve disputes;",
+            "Prevent fraud;",
+            "Enforce contractual rights;",
+            "Maintain financial records;",
+            "Protect the security and integrity of the Platform."
+          ]
+        }
+      ]
+    },
+    {
+      "number": 23,
+      "title": "Your Privacy Rights",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Subject to applicable law, you may exercise the rights described in this section in relation to your personal data."
+        },
+        {
+          "type": "p",
+          "text": "These rights are not absolute and may be subject to legal exemptions, restrictions or conditions under applicable legislation."
+        },
+        {
+          "type": "p",
+          "text": "Where AARVANTA acts solely as a Data Processor on behalf of a customer, requests relating to Customer Uploaded Data should ordinarily be directed to the relevant customer acting as the Data Controller. Where appropriate, AARVANTA will assist its customers in responding to such requests in accordance with applicable law and contractual obligations."
+        }
+      ]
+    },
+    {
+      "number": 24,
+      "title": "Right of Access",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "You have the right to request confirmation as to whether AARVANTA processes your personal data."
+        },
+        {
+          "type": "list",
+          "heading": "Where personal data is processed, you may request access to",
+          "items": [
+            "The categories of personal data being processed;",
+            "The purposes of processing;",
+            "The categories of recipients to whom the data has been disclosed;",
+            "The anticipated retention period or the criteria used to determine that period;",
+            "Information relating to international data transfers;",
+            "The source of the personal data where it was not collected directly from you;",
+            "Information regarding your statutory rights; and",
+            "A copy of the personal data undergoing processing."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Requests that are manifestly unfounded, excessive or repetitive may be refused or may be subject to a reasonable administrative fee where permitted by applicable law."
+        }
+      ]
+    },
+    {
+      "number": 25,
+      "title": "Right to Rectification",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "You have the right to request that inaccurate or incomplete personal data be corrected without undue delay."
+        },
+        {
+          "type": "p",
+          "text": "You are responsible for ensuring that information maintained within your account remains accurate and current."
+        },
+        {
+          "type": "p",
+          "text": "Certain account information may be updated directly through your account settings. Where information cannot be amended through the Platform, you may submit a request using the contact details provided in this Privacy Policy."
+        }
+      ]
+    },
+    {
+      "number": 26,
+      "title": "Right to Erasure",
+      "blocks": [
+        {
+          "type": "list",
+          "heading": "You may request the deletion of your personal data where",
+          "items": [
+            "The information is no longer necessary for the purpose for which it was collected;",
+            "You withdraw consent and there is no other lawful basis for processing;",
+            "You successfully object to processing;",
+            "The personal data has been unlawfully processed; or",
+            "Erasure is required to comply with a legal obligation."
+          ]
+        },
+        {
+          "type": "list",
+          "heading": "AARVANTA may decline to erase personal data where continued processing is required for",
+          "items": [
+            "Compliance with legal obligations;",
+            "Establishment, exercise or defence of legal claims;",
+            "Fraud prevention;",
+            "Security purposes;",
+            "Public interest reasons recognised by law; or",
+            "Other lawful exemptions under applicable data protection legislation."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Deletion of your account may result in the permanent removal of associated data, subject to any applicable retention obligations."
+        }
+      ]
+    },
+    {
+      "number": 27,
+      "title": "Right to Restrict Processing",
+      "blocks": [
+        {
+          "type": "list",
+          "heading": "You may request that processing of your personal data be restricted where",
+          "items": [
+            "The accuracy of the data is contested;",
+            "Processing is unlawful but erasure is not requested;",
+            "The data is required for legal claims;",
+            "An objection to processing is pending determination."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Where processing has been restricted, personal data may continue to be stored but will generally not be processed except where authorised by law or with your consent."
+        }
+      ]
+    },
+    {
+      "number": 28,
+      "title": "Right to Data Portability",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Where processing is based upon consent or contractual necessity and carried out by automated means, you may request a copy of your personal data in a structured, commonly used and machine-readable format."
+        },
+        {
+          "type": "p",
+          "text": "Where technically feasible, and where permitted by law, you may also request that such information be transmitted directly to another data controller."
+        }
+      ]
+    },
+    {
+      "number": 29,
+      "title": "Right to Object",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "You have the right to object to processing based upon legitimate interests where your particular circumstances justify such an objection."
+        },
+        {
+          "type": "p",
+          "text": "Where processing is carried out for direct marketing purposes, you may object at any time."
+        },
+        {
+          "type": "p",
+          "text": "Upon receipt of a valid objection relating to direct marketing, processing for that purpose will cease without undue delay."
+        }
+      ]
+    },
+    {
+      "number": 30,
+      "title": "Automated Decision-Making and Profiling",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Business OS incorporates artificial intelligence and automated technologies designed to assist users in carrying out business processes."
+        },
+        {
+          "type": "p",
+          "text": "These technologies support customer-directed activities such as workflow automation, content generation, document analysis, customer communications and operational efficiencies."
+        },
+        {
+          "type": "p",
+          "text": "Unless expressly stated otherwise, AARVANTA does not make decisions producing legal effects or similarly significant consequences concerning individuals solely by automated means without appropriate human involvement where required by applicable law."
+        },
+        {
+          "type": "p",
+          "text": "Where automated processing is used, appropriate safeguards are implemented in accordance with applicable legislation."
+        },
+        {
+          "type": "p",
+          "text": "Users remain responsible for reviewing and validating AI-generated outputs before relying upon them for business, legal, financial or operational decisions."
+        }
+      ]
+    },
+    {
+      "number": 31,
+      "title": "Marketing Communications",
+      "blocks": [
+        {
+          "type": "list",
+          "heading": "Where permitted by law or where you have provided your consent, AARVANTA may send communications relating to",
+          "items": [
+            "Product updates;",
+            "New features;",
+            "Service announcements;",
+            "Promotional offers;",
+            "Educational content;",
+            "Events;",
+            "Webinars;",
+            "Surveys; and",
+            "Other information relating to our products and services."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Marketing communications will only be sent where an appropriate lawful basis exists."
+        },
+        {
+          "type": "list",
+          "heading": "You may withdraw your consent or unsubscribe from marketing communications at any time by",
+          "items": [
+            "Using the unsubscribe link included within marketing emails;",
+            "Updating your communication preferences within your account settings; or",
+            "Contacting AARVANTA using the details provided in this Privacy Policy."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Withdrawal of marketing consent does not affect service-related communications necessary for account administration, security, billing or contractual performance."
+        }
+      ]
+    },
+    {
+      "number": 32,
+      "title": "Third-Party Websites and Services",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "The Platform may contain links to websites, applications or services operated by third parties."
+        },
+        {
+          "type": "p",
+          "text": "AARVANTA does not control and is not responsible for the privacy practices, security measures or content of third-party services."
+        },
+        {
+          "type": "p",
+          "text": "Access to third-party websites is undertaken at your own discretion and is governed by the privacy policies and terms applicable to those services."
+        },
+        {
+          "type": "p",
+          "text": "Users are encouraged to review the privacy documentation of any third-party service before providing personal information."
+        }
+      ]
+    },
+    {
+      "number": 33,
+      "title": "Business Transfers",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "In the event of a proposed or completed merger, acquisition, investment, restructuring, financing, sale of assets or other corporate transaction, personal data may be disclosed or transferred where reasonably necessary for evaluating, negotiating or completing such transaction."
+        },
+        {
+          "type": "p",
+          "text": "Any successor organisation receiving personal data will remain subject to obligations consistent with this Privacy Policy and applicable law unless affected individuals are otherwise notified."
+        }
+      ]
+    },
+    {
+      "number": 34,
+      "title": "Compliance with Legal Obligations",
+      "blocks": [
+        {
+          "type": "list",
+          "heading": "AARVANTA may disclose personal data where disclosure is necessary to",
+          "items": [
+            "Comply with applicable law;",
+            "Respond to lawful requests from public authorities;",
+            "Comply with court orders;",
+            "Protect the rights, property or safety of AARVANTA, its users or third parties;",
+            "Investigate fraud, security incidents or unlawful activity;",
+            "Enforce contractual rights; or",
+            "Defend legal claims."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Any such disclosure will be limited to the extent reasonably necessary and permitted by applicable law."
+        }
+      ]
+    },
+    {
+      "number": 35,
+      "title": "Changes to this Privacy Policy",
+      "blocks": [
+        {
+          "type": "list",
+          "heading": "AARVANTA reserves the right to amend or update this Privacy Policy from time to time in order to reflect",
+          "items": [
+            "Changes in applicable law;",
+            "Regulatory guidance;",
+            "Technological developments;",
+            "Changes to our products or services;",
+            "Security enhancements; or",
+            "Operational requirements."
+          ]
+        },
+        {
+          "type": "p",
+          "text": "Where material changes are made, appropriate notice will be provided through the Platform, by email or through other reasonable means where required by law."
+        },
+        {
+          "type": "p",
+          "text": "The \"Last Updated\" date appearing at the beginning of this Privacy Policy indicates the date on which the most recent revisions became effective."
+        },
+        {
+          "type": "p",
+          "text": "Continued use of the Platform following the effective date of any revised Privacy Policy constitutes acceptance of the updated policy to the extent permitted by applicable law."
+        }
+      ]
+    },
+    {
+      "number": 36,
+      "title": "Contacting AARVANTA",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "Questions, requests or concerns relating to this Privacy Policy or the processing of personal data may be directed to:"
+        },
+        {
+          "type": "p",
+          "text": "AARVANTA LTD"
+        },
+        {
+          "type": "p",
+          "text": "Company Number: 17217532"
+        },
+        {
+          "type": "p",
+          "text": "Registered Office:"
+        },
+        {
+          "type": "p",
+          "text": "195–197 Wood Street"
+        },
+        {
+          "type": "p",
+          "text": "London"
+        },
+        {
+          "type": "p",
+          "text": "E17 3NU"
+        },
+        {
+          "type": "p",
+          "text": "United Kingdom"
+        },
+        {
+          "type": "p",
+          "text": "Email: admin@aarvanta.co"
+        },
+        {
+          "type": "p",
+          "text": "Where submitting a data protection request, sufficient information should be provided to enable AARVANTA to verify your identity and locate the relevant information."
+        },
+        {
+          "type": "p",
+          "text": "We may request additional information where reasonably necessary to verify the identity of the individual making the request before responding."
+        }
+      ]
+    },
+    {
+      "number": 37,
+      "title": "Right to Lodge a Complaint",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "If you believe that your personal data has been processed in breach of applicable data protection law, you have the right to lodge a complaint with the competent supervisory authority."
+        },
+        {
+          "type": "p",
+          "text": "If you are located in the United Kingdom, the competent supervisory authority is the Information Commissioner's Office (ICO)."
+        },
+        {
+          "type": "p",
+          "text": "You may also have the right to lodge a complaint with the supervisory authority in the Member State of the European Union where you reside, work or where the alleged infringement occurred, where applicable."
+        },
+        {
+          "type": "p",
+          "text": "Nothing in this Privacy Policy affects any statutory rights or remedies available under applicable law."
+        }
+      ]
+    },
+    {
+      "number": 38,
+      "title": "Governing Law",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "This Privacy Policy shall be governed by and construed in accordance with the laws of England and Wales."
+        },
+        {
+          "type": "p",
+          "text": "Any dispute arising from or relating to this Privacy Policy, the processing of personal data or the use of the Platform shall be subject to the exclusive jurisdiction of the courts of England and Wales, unless mandatory provisions of applicable law provide otherwise."
+        }
+      ]
+    },
+    {
+      "number": 39,
+      "title": "Entire Privacy Policy",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "This Privacy Policy constitutes the complete privacy notice governing the collection, use, disclosure, storage and protection of personal data processed by AARVANTA LTD in connection with Business OS and the website located at os.aarvanta.co."
+        },
+        {
+          "type": "p",
+          "text": "Where additional product-specific privacy notices are published, those notices supplement this Privacy Policy only to the extent applicable to the relevant product or service."
+        },
+        {
+          "type": "p",
+          "text": "If any provision of this Privacy Policy is determined by a court or competent authority to be invalid, unlawful or unenforceable, the remaining provisions shall continue in full force and effect."
+        }
+      ]
+    }
+  ]
+}

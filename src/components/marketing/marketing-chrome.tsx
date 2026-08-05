@@ -8,6 +8,7 @@ const links = [
   { href: "/affiliate", label: "Partners" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
+  { href: "/privacy", label: "Privacy" },
 ];
 
 export function MarketingNav({ production }: { production: boolean }) {
@@ -72,6 +73,9 @@ export function MarketingFooter() {
           </Link>
           <Link href="/contact" className="hover:text-gold">
             Contact
+          </Link>
+          <Link href="/privacy" className="hover:text-gold">
+            Privacy
           </Link>
           <Link href="/inbox" className="hover:text-gold">
             App
