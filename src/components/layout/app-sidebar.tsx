@@ -218,65 +218,100 @@ export function AppSidebar({
           ) : null}
         </nav>
 
-        <div className="shrink-0 border-t border-border-subtle p-2">
+        <div className="shrink-0 border-t border-border-subtle p-3">
           {!collapsed ? (
-            <>
-              {plan ? (
-                <Link
-                  href="/billing"
-                  className="mb-2 flex items-center justify-between rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-xs transition-colors hover:border-gold/40"
-                >
-                  <span className="text-muted">Plan</span>
-                  <span className="font-semibold text-gold-bright">
-                    {plan.isSuperAdmin ? "Super Admin" : plan.planName}
-                  </span>
-                </Link>
-              ) : null}
-              <div className="mb-2 flex items-center justify-center px-2 text-muted">
+            <div className="rounded-xl border border-border-subtle bg-surface-muted/70 p-2.5">
+              <div className="flex items-center gap-2.5">
                 <PendingLink
                   href="/settings"
-                  className="rounded-lg p-2 hover:bg-surface-hover hover:text-gold"
+                  className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-0.5 transition-colors hover:bg-surface-hover"
+                  title="Account settings"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-semibold text-gold ring-1 ring-gold/30">
+                    {userName.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold leading-tight text-foreground">
+                      {userName}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] leading-tight text-muted">
+                      {userRole}
+                      {plan ? (
+                        <>
+                          <span className="mx-1 text-dim">·</span>
+                          <span className="text-gold-bright">
+                            {plan.isSuperAdmin ? "Super Admin" : plan.planName}
+                          </span>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                </PendingLink>
+                <PendingLink
+                  href="/settings"
+                  title="Settings"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-gold"
                 >
                   <Settings className="h-4 w-4" />
                 </PendingLink>
               </div>
+
+              <div className="mt-2 flex items-center gap-1.5 border-t border-border-subtle pt-2">
+                {plan ? (
+                  <Link
+                    href="/billing"
+                    className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] transition-colors hover:bg-surface-hover"
+                  >
+                    <span className="text-muted">Billing</span>
+                    <span className="inline-flex items-center gap-0.5 font-semibold text-gold-bright">
+                      Manage
+                      <ChevronRight className="h-3 w-3" />
+                    </span>
+                  </Link>
+                ) : (
+                  <span className="flex-1" />
+                )}
+                {production ? (
+                  <form action="/api/auth/logout" method="post">
+                    <button
+                      type="submit"
+                      title="Sign out"
+                      className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-[11px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Sign out
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1.5">
               <PendingLink
                 href="/settings"
-                className="flex items-center gap-3 rounded-xl bg-surface-muted px-3 py-2.5 transition-colors hover:bg-surface-hover"
+                title={`${userName} — Settings`}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-xs font-semibold text-gold ring-1 ring-gold/30 transition-opacity hover:opacity-90"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-semibold text-gold ring-1 ring-gold/30">
-                  {userName.charAt(0).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
-                  <p className="truncate text-xs text-muted">{userRole}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-dim" />
+                {userName.charAt(0).toUpperCase()}
               </PendingLink>
-              {production && (
-                <form action="/api/auth/logout" method="post" className="mt-2">
-                  <button
-                    type="submit"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted hover:bg-surface-hover hover:text-foreground"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    Sign out
-                  </button>
-                </form>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-1">
               <PendingLink
                 href="/settings"
                 title="Settings"
-                className="rounded-lg p-2 text-muted hover:bg-surface-hover hover:text-gold"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-gold"
               >
                 <Settings className="h-4 w-4" />
               </PendingLink>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy text-xs font-semibold text-gold ring-1 ring-gold/30">
-                {userName.charAt(0).toUpperCase()}
-              </span>
+              {production ? (
+                <form action="/api/auth/logout" method="post">
+                  <button
+                    type="submit"
+                    title="Sign out"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                  </button>
+                </form>
+              ) : null}
             </div>
           )}
         </div>
