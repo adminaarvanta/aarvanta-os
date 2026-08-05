@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   ASK_AI_SUGGESTIONS,
   type AiTeamModule,
-} from "@/lib/ai-team/context-command";
+} from "@/lib/ai-team/modules";
 import type { HumanPlan } from "@/lib/ai-team/plan";
 import type { WorkforceExecution } from "@/types/workforce";
 import { cn } from "@/lib/utils";

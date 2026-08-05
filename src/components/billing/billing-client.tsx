@@ -80,7 +80,7 @@ export function BillingClient({
   async function startCheckout(planId: string) {
     if (planId === "free" || planId === "enterprise") {
       if (planId === "enterprise") {
-        window.location.href = "/contact";
+        router.push("/contact");
         return;
       }
       return;
@@ -105,7 +105,7 @@ export function BillingClient({
         return;
       }
       if (data.url) {
-        window.location.href = data.url;
+        window.location.assign(data.url);
         return;
       }
       setInfo(data.message ?? "Plan activated.");
@@ -130,7 +130,7 @@ export function BillingClient({
       return;
     }
     if (data.url) {
-      window.location.href = data.url;
+      window.location.assign(data.url);
       return;
     }
     setInfo(data.message ?? "Portal unavailable in demo.");

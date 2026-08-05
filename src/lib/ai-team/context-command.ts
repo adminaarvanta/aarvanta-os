@@ -6,15 +6,10 @@ import type { CreateGoalInput } from "@/lib/workforce/pipeline/goal-engine";
 import { contactDisplayName } from "@/types/crm";
 import type { TenantScope } from "@/types/communication";
 import type { BusinessModuleHint } from "@/types/workforce";
+import type { AiTeamModule } from "@/lib/ai-team/modules";
 
-export type AiTeamModule =
-  | "crm"
-  | "hr"
-  | "marketing"
-  | "knowledge"
-  | "finance"
-  | "build"
-  | "operations";
+export type { AiTeamModule } from "@/lib/ai-team/modules";
+export { ASK_AI_SUGGESTIONS } from "@/lib/ai-team/modules";
 
 export type ContextCommandInput = {
   module: AiTeamModule;
@@ -127,17 +122,3 @@ export async function executeContextCommand(
 ) {
   return executeCommand(scope, goalInput);
 }
-
-export const ASK_AI_SUGGESTIONS: Record<AiTeamModule, string[]> = {
-  crm: [
-    "Summarize this customer",
-    "Prepare follow-up",
-    "Create a proposal",
-  ],
-  hr: ["Help hire an employee", "Review open roles and candidates"],
-  marketing: ["Launch a marketing campaign", "Draft outreach copy"],
-  knowledge: ["Review business priorities from knowledge"],
-  finance: ["Prepare finance and performance reports"],
-  build: ["Review the business and surface priorities"],
-  operations: ["Review the business and surface priorities"],
-};
