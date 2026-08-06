@@ -26,6 +26,9 @@ const PUBLIC_PREFIXES = [
   "/api/cron",
   "/api/health",
   "/api/contact",
+  // Voice relay (EC2) — routes still require X-Voice-Relay-Secret
+  "/api/voice/context",
+  "/api/voice/tools",
 ];
 
 function isLiveDemoPublic(pathname: string) {
