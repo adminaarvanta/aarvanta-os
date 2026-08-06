@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { deliverOutbound } from "@/lib/channels/deliver";
+import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import { normalizePhone } from "@/lib/data/conversation-helpers";
+import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
+import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { getSessionContext } from "@/lib/tenant/context";
+import { contactDisplayName } from "@/types/crm";
 
 const schema = z.object({
   phone: z.string().min(5),
   contactName: z.string().optional(),
+  contactId: z.string().optional(),
   message: z.string().min(1).max(2000),
 });
 
@@ -28,14 +34,34 @@ export async function POST(req: Request) {
   }
 
   const repo = getRepository();
+  const calling = getCallingAgentRepository();
+  const crm = getCrmRepository();
   const scope = ctx.scope;
-  let conversation = await repo.findConversationByPhone(parsed.data.phone, scope);
+  const phone = parsed.data.phone.trim();
+  const normalized = normalizePhone(phone);
+
+  let crmContact =
+    parsed.data.contactId
+      ? await crm.getContact(parsed.data.contactId, scope)
+      : null;
+
+  if (!crmContact) {
+    const contacts = await crm.listContacts(scope);
+    crmContact =
+      contacts.find(
+        (c) => c.phone && normalizePhone(c.phone) === normalized
+      ) ?? null;
+  }
+
+  let conversation = await repo.findConversationByPhone(phone, scope);
 
   if (!conversation) {
     conversation = await repo.addInboundCall(
       {
-        phone: parsed.data.phone,
-        contactName: parsed.data.contactName ?? parsed.data.phone,
+        phone,
+        contactName:
+          parsed.data.contactName ??
+          (crmContact ? contactDisplayName(crmContact) : phone),
         durationSeconds: 0,
         summary: "Outbound call initiated",
       },
@@ -43,10 +69,29 @@ export async function POST(req: Request) {
     );
   }
 
-  // Ensure contact name if provided
+  const agents = await calling.listAgents(scope);
+  const agent = agents[0];
+  const memorySummary = crmContact
+    ? await buildCallMemorySummary(crmContact.id, scope)
+    : undefined;
+
+  const session = await calling.createSession(
+    {
+      contactId: crmContact?.id,
+      voiceAgentId: agent?.id,
+      conversationId: conversation.id,
+      status: "ringing",
+      memorySummary,
+    },
+    scope
+  );
+
   const contact = {
     ...conversation.contact,
-    phone: conversation.contact.phone ?? parsed.data.phone,
+    phone: conversation.contact.phone ?? phone,
+    name:
+      parsed.data.contactName ??
+      (crmContact ? contactDisplayName(crmContact) : conversation.contact.name),
   };
 
   try {
@@ -56,8 +101,16 @@ export async function POST(req: Request) {
       content: parsed.data.message,
       conversationId: conversation.id,
       voiceDirection: "outbound",
+      contactId: crmContact?.id,
+      sessionId: session.id,
+      voiceAgentId: agent?.id,
     });
   } catch (error) {
+    await calling.updateSession(
+      session.id,
+      { status: "failed", outcome: "failed" },
+      scope
+    );
     return NextResponse.json(
       {
         error:
@@ -66,6 +119,8 @@ export async function POST(req: Request) {
       { status: 502 }
     );
   }
+
+  await calling.updateSession(session.id, { status: "in_progress" }, scope);
 
   const updated = await repo.addOutboundCall(
     conversation.id,
@@ -76,6 +131,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     conversationId: conversation.id,
+    sessionId: session.id,
+    contactId: crmContact?.id,
     conversation: updated,
   });
 }

@@ -61,7 +61,9 @@ MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "160"))
 MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "480"))
 REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.65"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
-SERVICE_VERSION = "1.4.0"
+TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
+SERVICE_VERSION = "1.5.0"
+MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
@@ -133,6 +135,146 @@ def resolve_context_url() -> str:
             "/api/webhooks/voice-relay", "/api/voice/context"
         ).rstrip("/")
     return ""
+
+
+def resolve_api_base() -> str:
+    """https://os… origin for /api/voice/tools/*."""
+    ctx = resolve_context_url()
+    if ctx and "/api/voice/context" in ctx:
+        return ctx.replace("/api/voice/context", "").rstrip("/")
+    if AARVANTA_CALLBACK_URL and "/api/" in AARVANTA_CALLBACK_URL:
+        return AARVANTA_CALLBACK_URL.split("/api/")[0].rstrip("/")
+    return ""
+
+
+BOOKING_TOOLS: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_availability",
+            "description": (
+                "Fetch the next business days with concrete available meeting slots. "
+                "Call this before offering times. Never invent slots."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "timezone": {
+                        "type": "string",
+                        "description": "IANA timezone, e.g. America/New_York",
+                    },
+                    "days": {
+                        "type": "integer",
+                        "description": "Number of business days to check (1–3)",
+                    },
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "book_meeting",
+            "description": (
+                "Book a discovery meeting on the calendar after the caller clearly "
+                "agrees to a specific start/end slot from get_availability."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "meetingStart": {
+                        "type": "string",
+                        "description": "ISO-8601 start from an availability slot",
+                    },
+                    "meetingEnd": {
+                        "type": "string",
+                        "description": "ISO-8601 end from an availability slot",
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "description": "IANA timezone used for the booking",
+                    },
+                },
+                "required": ["meetingStart", "meetingEnd"],
+            },
+        },
+    },
+]
+
+
+def post_tool_json(path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    base = resolve_api_base()
+    if not base or not AARVANTA_CALLBACK_SECRET:
+        return {"error": "Calendar tools not configured on relay"}
+    url = f"{base}{path}"
+    data = json.dumps(payload).encode("utf-8")
+    req = urlrequest.Request(
+        url,
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "X-Voice-Relay-Secret": AARVANTA_CALLBACK_SECRET,
+        },
+        method="POST",
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=TOOL_FETCH_TIMEOUT) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+            return body if isinstance(body, dict) else {"error": "Invalid tool response"}
+    except HTTPError as exc:
+        try:
+            detail = exc.read().decode("utf-8")
+            parsed = json.loads(detail)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:  # noqa: BLE001
+            detail = str(exc)
+        return {"error": f"Tool HTTP {exc.code}: {detail}"}
+    except (URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return {"error": str(exc)}
+
+
+def execute_booking_tool(
+    name: str,
+    arguments: dict[str, Any],
+    call_context: dict[str, Any],
+) -> dict[str, Any]:
+    timezone = (
+        str(arguments.get("timezone") or call_context.get("timezone") or "America/New_York")
+    )
+    if name == "get_availability":
+        days = int(arguments.get("days") or 3)
+        days = max(1, min(days, 3))
+        return post_tool_json(
+            "/api/voice/tools/calendar/availability",
+            {"timezone": timezone, "days": days},
+        )
+
+    if name == "book_meeting":
+        lead_id = str(call_context.get("contactId") or "").strip()
+        if not lead_id:
+            return {
+                "error": "No CRM contact on this call — cannot book. Ask to follow up by email."
+            }
+        meeting_start = str(arguments.get("meetingStart") or "").strip()
+        meeting_end = str(arguments.get("meetingEnd") or "").strip()
+        if not meeting_start or not meeting_end:
+            return {"error": "meetingStart and meetingEnd are required"}
+        payload: dict[str, Any] = {
+            "leadId": lead_id,
+            "meetingStart": meeting_start,
+            "meetingEnd": meeting_end,
+            "timezone": timezone,
+        }
+        if call_context.get("sessionId"):
+            payload["sessionId"] = call_context["sessionId"]
+        if call_context.get("campaignId"):
+            payload["campaignId"] = call_context["campaignId"]
+        if call_context.get("voiceAgentName"):
+            payload["salesRepName"] = call_context["voiceAgentName"]
+        return post_tool_json("/api/voice/tools/calendar/book", payload)
+
+    return {"error": f"Unknown tool: {name}"}
 
 
 async def send_text(ws: WebSocket, token: str, *, last: bool) -> None:
@@ -268,10 +410,53 @@ def build_system_prompt(
             "questions; if something isn't covered, say a teammate will follow up):\n"
             f"{knowledge_digest[:2000]}"
         )
+    contact_id = str(ctx.get("contactId") or "").strip()
+    parts.append(
+        "CALENDAR BOOKING TOOLS:\n"
+        "- When the caller is ready to schedule, call get_availability first. "
+        "Never invent dates or times.\n"
+        "- Offer at most two concrete slots from the tool result (day + time).\n"
+        "- Only after they clearly pick a slot, call book_meeting with that "
+        "slot's meetingStart and meetingEnd.\n"
+        "- After a successful booking, confirm the time and share the meet link "
+        "if provided.\n"
+        + (
+            f"- CRM contact id for this call: {contact_id}."
+            if contact_id
+            else "- No CRM contact id on this call — if they want a meeting, "
+            "offer to have a teammate email a calendar invite instead of booking."
+        )
+    )
     return "\n\n".join(parts)
 
 
-async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str, user_text: str) -> str:
+def _cap_reply(reply: str) -> str:
+    if len(reply) <= MAX_REPLY_CHARS:
+        return reply
+    cut = reply[:MAX_REPLY_CHARS]
+    end = max(cut.rfind("."), cut.rfind("!"), cut.rfind("?"))
+    return (cut[: end + 1] if end > 40 else cut.rsplit(" ", 1)[0]) + ""
+
+
+async def _speak_stream(ws: WebSocket, reply: str) -> None:
+    """Speak a completed reply in small chunks for ConversationRelay TTS."""
+    reply = _cap_reply(reply.strip() or "Sorry — could you repeat that?")
+    buffer = ""
+    for ch in reply:
+        buffer += ch
+        if any(buffer.endswith(p) for p in (" ", ".", "!", "?", ",", ";", ":")) or len(buffer) >= 24:
+            await send_text(ws, buffer, last=False)
+            buffer = ""
+    await send_text(ws, buffer if buffer else " ", last=True)
+
+
+async def stream_reply(
+    ws: WebSocket,
+    history: list[dict[str, str]],
+    system: str,
+    user_text: str,
+    call_context: dict[str, Any] | None = None,
+) -> str:
     history.append({"role": "user", "content": user_text})
     if not openai_client:
         reply = "Thanks for calling. Please try again later."
@@ -279,37 +464,85 @@ async def stream_reply(ws: WebSocket, history: list[dict[str, str]], system: str
         await send_text(ws, reply, last=True)
         return reply
 
-    messages = [{"role": "system", "content": system}, *history]
-    stream = openai_client.chat.completions.create(
-        model=OPENAI_MODEL,
-        messages=messages,  # type: ignore[arg-type]
-        max_tokens=MAX_REPLY_TOKENS,
-        temperature=REPLY_TEMPERATURE,
-        stream=True,
-    )
+    ctx = call_context or {}
+    tools_enabled = bool(resolve_api_base() and AARVANTA_CALLBACK_SECRET)
+    # OpenAI message list may include tool rounds (not just plain chat turns).
+    messages: list[dict[str, Any]] = [{"role": "system", "content": system}, *history]
+    filler_sent = False
 
-    full: list[str] = []
-    buffer = ""
-    for chunk in stream:
-        delta = chunk.choices[0].delta.content or ""
-        if not delta:
+    for _round in range(MAX_TOOL_ROUNDS + 1):
+        kwargs: dict[str, Any] = {
+            "model": OPENAI_MODEL,
+            "messages": messages,
+            "max_tokens": MAX_REPLY_TOKENS,
+            "temperature": REPLY_TEMPERATURE,
+        }
+        if tools_enabled:
+            kwargs["tools"] = BOOKING_TOOLS
+            kwargs["tool_choice"] = "auto"
+
+        completion = await asyncio.to_thread(
+            lambda: openai_client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+        )
+        choice = completion.choices[0].message
+        tool_calls = choice.tool_calls or []
+
+        if tool_calls and tools_enabled:
+            if not filler_sent:
+                await send_text(ws, "Let me check the calendar for a moment.", last=True)
+                filler_sent = True
+
+            assistant_msg: dict[str, Any] = {
+                "role": "assistant",
+                "content": choice.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments or "{}",
+                        },
+                    }
+                    for tc in tool_calls
+                ],
+            }
+            messages.append(assistant_msg)
+
+            for tc in tool_calls:
+                raw_args = tc.function.arguments or "{}"
+                try:
+                    args = json.loads(raw_args)
+                    if not isinstance(args, dict):
+                        args = {}
+                except json.JSONDecodeError:
+                    args = {}
+                log.info("tool call name=%s args=%s", tc.function.name, args)
+                result = await asyncio.to_thread(
+                    execute_booking_tool, tc.function.name, args, ctx
+                )
+                if tc.function.name == "book_meeting" and result.get("meeting"):
+                    ctx["lastBooking"] = result["meeting"]
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": json.dumps(result)[:4000],
+                    }
+                )
             continue
-        full.append(delta)
-        buffer += delta
-        if any(buffer.endswith(ch) for ch in (" ", ".", "!", "?", ",", ";", ":")) or len(buffer) >= 24:
-            await send_text(ws, buffer, last=False)
-            buffer = ""
 
-    reply = "".join(full).strip() or "Sorry — could you repeat that?"
-    # Hard-cap spoken length if model still overshoots
-    if len(reply) > MAX_REPLY_CHARS:
-        cut = reply[:MAX_REPLY_CHARS]
-        end = max(cut.rfind("."), cut.rfind("!"), cut.rfind("?"))
-        reply = (cut[: end + 1] if end > 40 else cut.rsplit(" ", 1)[0]) + ""
-    await send_text(ws, buffer if buffer else " ", last=True)
+        reply = (choice.content or "").strip() or "Sorry — could you repeat that?"
+        reply = _cap_reply(reply)
+        await _speak_stream(ws, reply)
+        history.append({"role": "assistant", "content": reply})
+        if len(history) > 16:
+            del history[:-16]
+        return reply
+
+    reply = "Sorry — I had trouble with the calendar. Can we try another time?"
+    await send_text(ws, reply, last=True)
     history.append({"role": "assistant", "content": reply})
-    if len(history) > 16:
-        del history[:-16]
     return reply
 
 
@@ -328,7 +561,11 @@ def post_transcript(session: dict[str, Any], turns: list[dict[str, str]], summar
     params = session.get("customParameters") or {}
     text_blob = " ".join(t.get("content", "") for t in turns).lower()
     outcome = "completed"
-    if "meeting" in text_blob and any(w in text_blob for w in ("book", "confirm", "scheduled", "see you")):
+    booked = bool((session.get("callContext") or {}).get("lastBooking"))
+    if booked or (
+        "meeting" in text_blob
+        and any(w in text_blob for w in ("book", "confirm", "scheduled", "see you"))
+    ):
         outcome = "meeting_booked"
     elif "not interested" in text_blob:
         outcome = "not_interested"
@@ -380,6 +617,7 @@ async def health() -> JSONResponse:
             "wssUrlConfigured": bool(VOICE_RELAY_WSS_URL),
             "callbackConfigured": bool(AARVANTA_CALLBACK_URL and AARVANTA_CALLBACK_SECRET),
             "contextConfigured": bool(resolve_context_url() and AARVANTA_CALLBACK_SECRET),
+            "toolsEnabled": bool(resolve_api_base() and AARVANTA_CALLBACK_SECRET),
             "maxReplyTokens": MAX_REPLY_TOKENS,
             "maxReplyChars": MAX_REPLY_CHARS,
             "temperature": REPLY_TEMPERATURE,
@@ -410,6 +648,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
     history: list[dict[str, str]] = []
     transcript: list[dict[str, str]] = []
     session: dict[str, Any] = {}
+    call_context: dict[str, Any] = {}
     system = SYSTEM_PROMPT
     offered_hangup = False
 
@@ -448,19 +687,42 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     context=context,
                 )
                 session["context"] = context
+                call_context = {
+                    "contactId": (
+                        str(context.get("contactId") or params.get("contactId") or "")
+                        .strip()
+                    ),
+                    "sessionId": (
+                        str(context.get("sessionId") or params.get("sessionId") or "")
+                        .strip()
+                    ),
+                    "campaignId": (
+                        str(context.get("campaignId") or params.get("campaignId") or "")
+                        .strip()
+                    ),
+                    "voiceAgentName": str(context.get("voiceAgentName") or "Ava"),
+                    "timezone": "America/New_York",
+                }
+                session["callContext"] = call_context
                 log.info(
-                    "setup callSid=%s from=%s direction=%s knowledge=%s",
+                    "setup callSid=%s from=%s direction=%s knowledge=%s contact=%s tools=%s",
                     session.get("callSid"),
                     session.get("from"),
                     params.get("direction"),
                     "yes" if knowledge_digest else "no",
+                    call_context.get("contactId") or "-",
+                    "yes" if resolve_api_base() and AARVANTA_CALLBACK_SECRET else "no",
                 )
                 # Outbound calls have no TwiML welcomeGreeting — the AI opens
                 # the call itself with a line generated from the briefing.
                 if str(params.get("direction") or "").lower().startswith("outbound"):
                     try:
                         opening = await stream_reply(
-                            websocket, history, system, OUTBOUND_OPENING_INSTRUCTION
+                            websocket,
+                            history,
+                            system,
+                            OUTBOUND_OPENING_INSTRUCTION,
+                            call_context,
                         )
                         # Drop the synthetic instruction from history; keep the
                         # assistant's opening so the conversation flows naturally.
@@ -489,7 +751,9 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     break
 
                 try:
-                    reply = await stream_reply(websocket, history, system, prompt)
+                    reply = await stream_reply(
+                        websocket, history, system, prompt, call_context
+                    )
                 except Exception as exc:  # noqa: BLE001
                     log.exception("OpenAI failed: %s", exc)
                     reply = "Sorry, I am having trouble right now."

@@ -89,6 +89,24 @@ At ConversationRelay `setup`, the EC2 relay POSTs to `/api/voice/context` (same 
 
 If no documents are ingested, the digest is empty and the agent falls back to the dialer briefing only.
 
+### 4b. In-call calendar booking (relay ≥ 1.5.0)
+
+The relay can call OpenAI tools that hit Aarvanta:
+
+| Tool | API |
+|------|-----|
+| `get_availability` | `POST /api/voice/tools/calendar/availability` |
+| `book_meeting` | `POST /api/voice/tools/calendar/book` |
+
+Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
+
+**Call now / campaign dials** must pass `contactId` + `sessionId` in TwiML custom params (manual outbound resolves CRM by phone). Without `contactId`, the agent will not book.
+
+1. Connect Google Calendar at `/voice/calendar` (optional — otherwise demo Meet link).
+2. Redeploy relay so `/health` shows `"version": "1.5.0"` and `"toolsEnabled": true`.
+3. Settings → Call now (CRM contact with phone) → agree a time on the call.
+4. Confirm under `/voice/meetings` (+ Google Calendar if connected).
+
 ### 5. Test (naturalness + knowledge)
 **Outbound**
 1. Sign in → `/calling` or `/voice`
@@ -103,7 +121,7 @@ If no documents are ingested, the digest is empty and the agent falls back to th
 
 ### 6. Health
 - `https://os.aarvanta.co/api/health` → Voice Relay item **ok**
-- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.3.0"`, `"contextConfigured": true`
+- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.5.0"`, `"contextConfigured": true`, `"toolsEnabled": true`
 
 ## Voiceover (TTS) & cost
 
