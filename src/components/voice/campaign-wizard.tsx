@@ -32,10 +32,48 @@ const TAG_OPTIONS: ContactTag[] = [
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold";
 
-export function CampaignWizard() {
+async function ensureVoiceAgents(
+  existing: VoiceAgent[]
+): Promise<{ agents: VoiceAgent[]; error?: string }> {
+  if (existing.length > 0) return { agents: existing };
+
+  const listRes = await fetch("/api/voice/agents");
+  if (listRes.ok) {
+    const data = (await listRes.json()) as { agents: VoiceAgent[] };
+    if (data.agents.length > 0) return { agents: data.agents };
+  } else if (listRes.status === 401) {
+    return { agents: [], error: "Sign in required to load voice agents." };
+  }
+
+  const createRes = await fetch("/api/voice/agents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "Ava",
+      language: "en-US",
+      ttsProvider: "ElevenLabs",
+      greetingName: "Ava",
+    }),
+  });
+  if (!createRes.ok) {
+    return {
+      agents: [],
+      error: "No voice agents found. Create one under Voice Agents first.",
+    };
+  }
+  const created = (await createRes.json()) as { agent: VoiceAgent };
+  return { agents: [created.agent] };
+}
+
+export function CampaignWizard({
+  initialAgents = [],
+}: {
+  initialAgents?: VoiceAgent[];
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [agents, setAgents] = useState<VoiceAgent[]>([]);
+  const [agents, setAgents] = useState<VoiceAgent[]>(initialAgents);
+  const [agentsLoading, setAgentsLoading] = useState(initialAgents.length === 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audienceCount, setAudienceCount] = useState<number | null>(null);
@@ -47,21 +85,32 @@ export function CampaignWizard() {
   const [tags, setTags] = useState<ContactTag[]>(["prospect", "hot_lead"]);
   const [minLeadScore, setMinLeadScore] = useState(50);
   const [industries, setIndustries] = useState("");
-  const [voiceAgentId, setVoiceAgentId] = useState("");
+  const [voiceAgentId, setVoiceAgentId] = useState(initialAgents[0]?.id ?? "");
   const [timezone, setTimezone] = useState("America/New_York");
   const [dailyCallLimit, setDailyCallLimit] = useState(40);
   const [weekendCalling, setWeekendCalling] = useState(false);
   const [retryPolicy, setRetryPolicy] = useState<RetryPolicy>(DEFAULT_RETRY_POLICY);
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
-      const res = await fetch("/api/voice/agents");
-      if (!res.ok) return;
-      const data = (await res.json()) as { agents: VoiceAgent[] };
-      setAgents(data.agents);
-      if (data.agents[0]) setVoiceAgentId(data.agents[0].id);
+      setAgentsLoading(true);
+      const result = await ensureVoiceAgents(initialAgents);
+      if (cancelled) return;
+      setAgents(result.agents);
+      setVoiceAgentId((current) => {
+        if (current && result.agents.some((a) => a.id === current)) {
+          return current;
+        }
+        return result.agents[0]?.id ?? "";
+      });
+      if (result.error) setError(result.error);
+      setAgentsLoading(false);
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialAgents]);
 
   useEffect(() => {
     if (step !== 1) return;
@@ -256,20 +305,78 @@ export function CampaignWizard() {
 
       {step === 2 && (
         <div className="space-y-3">
-          <label className="block space-y-1 text-sm">
-            <span>Voice agent</span>
-            <select
-              className={inputClass}
-              value={voiceAgentId}
-              onChange={(e) => setVoiceAgentId(e.target.value)}
-            >
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.language})
-                </option>
-              ))}
-            </select>
-          </label>
+          <p className="text-sm text-muted">
+            Who should place the calls? Pick a voice agent persona and script.
+          </p>
+          {agentsLoading ? (
+            <p className="text-sm text-muted">Loading agents…</p>
+          ) : agents.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-4 text-sm">
+              <p className="font-medium text-foreground">No voice agents yet</p>
+              <p className="mt-1 text-muted">
+                Create a default agent to continue, or add one under Voice Agents.
+              </p>
+              <Button
+                type="button"
+                className="mt-3"
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    setBusy(true);
+                    setError(null);
+                    const result = await ensureVoiceAgents([]);
+                    setAgents(result.agents);
+                    if (result.agents[0]) setVoiceAgentId(result.agents[0].id);
+                    if (result.error) setError(result.error);
+                    setBusy(false);
+                  })();
+                }}
+              >
+                Create default agent (Ava)
+              </Button>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {agents.map((a) => {
+                const selected = voiceAgentId === a.id;
+                return (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      onClick={() => setVoiceAgentId(a.id)}
+                      className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition ${
+                        selected
+                          ? "border-[var(--navy)] bg-[var(--primary-soft)] ring-2 ring-[rgba(26,47,89,0.2)] dark:border-gold dark:ring-[rgba(168,137,79,0.3)]"
+                          : "border-border bg-background hover:border-gold/50"
+                      }`}
+                    >
+                      <span
+                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                          selected
+                            ? "border-[var(--navy)] bg-[var(--navy)] dark:border-gold dark:bg-gold"
+                            : "border-border"
+                        }`}
+                      >
+                        {selected ? (
+                          <span className="h-1.5 w-1.5 rounded-full bg-white dark:bg-[var(--navy)]" />
+                        ) : null}
+                      </span>
+                      <span>
+                        <span className="block font-semibold text-foreground">
+                          {a.name}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted">
+                          {a.language}
+                          {a.ttsProvider ? ` · ${a.ttsProvider}` : ""} ·{" "}
+                          {a.flowConfig.stages.length} stages
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       )}
 

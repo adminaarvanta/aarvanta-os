@@ -23,7 +23,7 @@ export default async function AgentFlowPage({ params }: Params) {
           href="/voice/agents"
           className="rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-muted hover:text-foreground"
         >
-          ← AI Employees
+          ← Voice Agents
         </Link>
       }
     >

@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/voice", label: "Dashboard", exact: true, icon: LayoutDashboard },
-  { href: "/voice/agents", label: "AI Employees", exact: false, icon: Bot },
+  { href: "/voice/agents", label: "Agents", exact: false, icon: Bot },
   { href: "/voice/campaigns", label: "Campaigns", exact: false, icon: Megaphone },
   { href: "/voice/live", label: "Live Calls", exact: false, icon: Radio },
   { href: "/voice/queue", label: "Queue", exact: false, icon: Users },

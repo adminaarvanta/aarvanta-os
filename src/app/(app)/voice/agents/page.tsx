@@ -9,8 +9,8 @@ export default async function VoiceAgentsPage() {
 
   return (
     <VoicePageShell
-      title="AI Employees"
-      subtitle="Voice agent personas and conversation flows"
+      title="Voice Agents"
+      subtitle="Personas and conversation flows used by campaigns"
       tone="navy"
     >
       <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
@@ -41,4 +41,4 @@ export default async function VoiceAgentsPage() {
   );
 }
 
-export const metadata = { title: "Voice OS · AI Employees" };
+export const metadata = { title: "Voice OS · Voice Agents" };
