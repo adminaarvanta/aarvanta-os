@@ -10,11 +10,11 @@
     },
     {
       "path": "/api/cron/call-campaigns",
-      "schedule": "* * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/meeting-reminders",
-      "schedule": "*/5 * * * *"
+      "schedule": "15 7 * * *"
     }
   ]
 }
