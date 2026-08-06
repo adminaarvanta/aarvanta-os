@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { LoginPageShell } from "@/components/auth/login-page";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 import { getSessionFromCookies } from "@/lib/auth/session";
+import { isSsoConfigured } from "@/lib/auth/sso-oidc";
 import { isDemoMode } from "@/lib/config/app-mode";
 
 export default async function LoginPage({
@@ -21,5 +22,10 @@ export default async function LoginPage({
     redirect(nextPath);
   }
 
-  return <LoginPageShell nextPath={nextPath} />;
+  return (
+    <LoginPageShell
+      nextPath={nextPath}
+      googleEnabled={isSsoConfigured("google")}
+    />
+  );
 }

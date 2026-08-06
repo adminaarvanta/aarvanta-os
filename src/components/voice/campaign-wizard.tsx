@@ -152,22 +152,23 @@ export function CampaignWizard() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
-      <ol className="flex flex-wrap gap-2">
+      <ol className="flex flex-wrap gap-2 rounded-2xl border border-border bg-surface-elevated p-3 shadow-sm">
         {STEPS.map((label, i) => (
           <li
             key={label}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
               i === step
-                ? "bg-gold text-background"
+                ? "bg-[var(--navy)] text-white shadow-sm dark:bg-gold dark:text-[var(--navy)]"
                 : i < step
-                  ? "bg-gold/20 text-gold-bright"
-                  : "bg-surface text-muted"
+                  ? "bg-[rgba(168,137,79,0.18)] text-gold-dark dark:text-gold-bright"
+                  : "bg-surface-muted text-muted"
             }`}
           >
             {i + 1}. {label}
           </li>
         ))}
       </ol>
+      <div className="rounded-2xl border border-border bg-surface-elevated p-5 shadow-sm">
 
       {step === 0 && (
         <div className="space-y-3">
@@ -349,7 +350,7 @@ export function CampaignWizard() {
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="mt-6 flex flex-wrap gap-2 border-t border-border pt-4">
         <Button
           type="button"
           variant="secondary"
@@ -389,6 +390,7 @@ export function CampaignWizard() {
             </Button>
           </>
         )}
+      </div>
       </div>
     </div>
   );

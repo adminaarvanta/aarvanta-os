@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CampaignActions } from "@/components/voice/campaign-actions";
 import { QueueKanban, type QueueCard } from "@/components/voice/queue-kanban";
+import {
+  VoicePageShell,
+  VoiceStatusBadge,
+} from "@/components/voice/voice-ui";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -45,27 +49,25 @@ export default async function CampaignDetailPage({ params }: Params) {
   });
 
   return (
-    <>
-      <header className="border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs text-muted">
-              <Link href="/voice/campaigns" className="hover:text-gold">
-                Campaigns
-              </Link>
-            </p>
-            <h2 className="text-lg font-semibold text-foreground">
-              {campaign.name}
-            </h2>
-            <p className="text-xs text-muted sm:text-sm">
-              {campaign.goal} · Agent {agent?.name ?? "—"} · {campaign.status}
-            </p>
-          </div>
+    <VoicePageShell
+      title={campaign.name}
+      subtitle={`${campaign.goal} · Agent ${agent?.name ?? "—"} · ${campaign.timezone}`}
+      tone="gold"
+      actions={
+        <>
+          <VoiceStatusBadge status={campaign.status} />
           <CampaignActions campaignId={campaign.id} status={campaign.status} />
-        </div>
-      </header>
+          <Link
+            href="/voice/campaigns"
+            className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-muted hover:text-foreground"
+          >
+            All campaigns
+          </Link>
+        </>
+      }
+    >
       <QueueKanban items={cards} campaignId={campaign.id} />
-    </>
+    </VoicePageShell>
   );
 }
 

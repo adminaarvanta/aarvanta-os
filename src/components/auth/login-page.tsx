@@ -8,10 +8,17 @@ import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
 const LOGIN_ERRORS: Record<string, string> = {
   invalid_credentials: "Invalid email or password",
-  misconfigured: "Sign-in is not configured on this server. Contact your administrator.",
+  misconfigured:
+    "Google sign-in is not configured. Use email and password, or ask your admin to set SSO_GOOGLE_CLIENT_ID.",
 };
 
-function LoginFormInner({ nextPath }: { nextPath: string }) {
+function LoginFormInner({
+  nextPath,
+  googleEnabled,
+}: {
+  nextPath: string;
+  googleEnabled: boolean;
+}) {
   const searchParams = useSearchParams();
   const safeNextPath = sanitizeNextPath(nextPath);
   const errorCode = searchParams.get("error");
@@ -82,38 +89,54 @@ function LoginFormInner({ nextPath }: { nextPath: string }) {
         </Link>
       </p>
 
-      <div className="relative my-2">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-2 text-muted">or</span>
-        </div>
-      </div>
+      {googleEnabled ? (
+        <>
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-background px-2 text-muted">or</span>
+            </div>
+          </div>
 
-      <a
-        href={`/api/auth/sso/start?provider=google&next=${encodeURIComponent(safeNextPath)}`}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
-      >
-        Continue with Google
-      </a>
+          <a
+            href={`/api/auth/sso/start?provider=google&next=${encodeURIComponent(safeNextPath)}`}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
+          >
+            Continue with Google
+          </a>
+        </>
+      ) : null}
     </form>
   );
 }
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
+export function LoginForm({
+  nextPath,
+  googleEnabled,
+}: {
+  nextPath: string;
+  googleEnabled: boolean;
+}) {
   return (
     <Suspense
       fallback={
         <div className="mt-8 h-48 animate-pulse rounded-lg bg-surface-muted" />
       }
     >
-      <LoginFormInner nextPath={nextPath} />
+      <LoginFormInner nextPath={nextPath} googleEnabled={googleEnabled} />
     </Suspense>
   );
 }
 
-export function LoginPageShell({ nextPath }: { nextPath: string }) {
+export function LoginPageShell({
+  nextPath,
+  googleEnabled = false,
+}: {
+  nextPath: string;
+  googleEnabled?: boolean;
+}) {
   const safeNextPath = sanitizeNextPath(nextPath);
 
   return (
@@ -126,7 +149,7 @@ export function LoginPageShell({ nextPath }: { nextPath: string }) {
           Sign in to access your business operating system.
         </p>
 
-        <LoginForm nextPath={safeNextPath} />
+        <LoginForm nextPath={safeNextPath} googleEnabled={googleEnabled} />
 
         <p className="mt-6 text-center text-xs text-muted">
           <Link href="/" className="text-gold hover:underline">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InsightsDashboard } from "@/components/voice/insights-dashboard";
+import { VoicePageShell } from "@/components/voice/voice-ui";
 import {
   buildAgentPerformance,
   buildFunnelMetrics,
@@ -41,28 +42,26 @@ export default async function VoiceInsightsPage() {
   const trend = [...trendMap.entries()].map(([day, v]) => ({ day, ...v }));
 
   return (
-    <>
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Insights</h2>
-          <p className="text-xs text-muted sm:text-sm">
-            Funnel, agent performance, and AI recommendations
-          </p>
-        </div>
+    <VoicePageShell
+      title="Insights"
+      subtitle="Funnel, agent performance, and AI recommendations"
+      tone="green"
+      actions={
         <Link
           href="/api/voice/insights/export"
-          className="text-sm text-gold hover:underline"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:border-gold/40"
         >
           Export CSV
         </Link>
-      </header>
+      }
+    >
       <InsightsDashboard
         funnel={funnel}
         performance={performance}
         insights={insights}
         trend={trend}
       />
-    </>
+    </VoicePageShell>
   );
 }
 

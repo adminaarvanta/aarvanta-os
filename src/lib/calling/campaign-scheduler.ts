@@ -80,7 +80,31 @@ export async function runCampaignScheduler(limit = 10): Promise<SchedulerResult[
   return results;
 }
 
-async function dialQueueItem(item: CallQueueItem) {
+/** Manual dial — skips working-hours / daily-limit checks. */
+export async function dialQueueItemNow(
+  queueId: string,
+  scope: { tenantId: string; workspaceId: string; companyId: string }
+): Promise<{ sessionId: string }> {
+  const repo = getCallingAgentRepository();
+  const item = await repo.getQueueItem(queueId, scope);
+  if (!item) throw new Error("Queue item not found");
+  if (item.status === "calling") {
+    throw new Error("Call already in progress for this lead");
+  }
+
+  const campaign = await repo.getCampaign(item.campaignId, scope);
+  if (!campaign) throw new Error("Campaign not found");
+  if (campaign.status === "cancelled" || campaign.status === "completed") {
+    throw new Error(`Cannot dial for a ${campaign.status} campaign`);
+  }
+
+  await dialQueueItem(item);
+  const updated = await repo.getQueueItem(queueId, scope);
+  if (!updated?.sessionId) throw new Error("Call started but session missing");
+  return { sessionId: updated.sessionId };
+}
+
+export async function dialQueueItem(item: CallQueueItem) {
   const scope = {
     tenantId: item.tenantId,
     workspaceId: item.workspaceId,

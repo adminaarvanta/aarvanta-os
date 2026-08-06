@@ -11,10 +11,26 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  VoiceKpiCard,
+  VoicePanel,
+  type VoiceTone,
+} from "@/components/voice/voice-ui";
 import type {
   AgentPerformanceMetrics,
   FunnelMetrics,
 } from "@/lib/calling/campaign-analytics";
+
+const funnelColors = [
+  "var(--chart-pipeline)",
+  "var(--chart-ops)",
+  "var(--chart-ai)",
+  "var(--chart-revenue)",
+  "var(--chart-open)",
+  "var(--chart-won)",
+  "var(--gold)",
+  "var(--navy)",
+];
 
 export function InsightsDashboard({
   funnel,
@@ -39,153 +55,153 @@ export function InsightsDashboard({
   ];
   const max = Math.max(...funnelRows.map((r) => r.value), 1);
 
-  const stats = [
-    { label: "Total Calls", value: performance.totalCalls },
-    { label: "Meetings Booked", value: performance.meetingsBooked },
-    { label: "Booking Rate", value: `${performance.bookingRate}%` },
+  const stats: { label: string; value: string; tone: VoiceTone }[] = [
+    { label: "Total Calls", value: String(performance.totalCalls), tone: "navy" },
+    {
+      label: "Meetings Booked",
+      value: String(performance.meetingsBooked),
+      tone: "green",
+    },
+    {
+      label: "Booking Rate",
+      value: `${performance.bookingRate}%`,
+      tone: "cyan",
+    },
     {
       label: "Avg Duration",
       value: `${Math.round(performance.avgDurationSeconds / 60)}m`,
+      tone: "gold",
     },
-    { label: "Connected Rate", value: `${performance.connectedRate}%` },
+    {
+      label: "Connected Rate",
+      value: `${performance.connectedRate}%`,
+      tone: "blue",
+    },
     {
       label: "Positive Sentiment",
       value: `${performance.positiveSentiment}%`,
+      tone: "green",
     },
     {
       label: "Greeting Success",
       value: `${performance.greetingSuccessRate}%`,
+      tone: "amber",
     },
     {
       label: "Retry Success",
       value: `${performance.retrySuccessRate}%`,
+      tone: "cyan",
     },
   ];
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-xl border border-border bg-surface-elevated px-4 py-3"
-          >
-            <p className="text-xs text-muted">{s.label}</p>
-            <p className="mt-1 text-xl font-semibold text-foreground">
-              {s.value}
-            </p>
-          </div>
+          <VoiceKpiCard key={s.label} label={s.label} value={s.value} tone={s.tone} />
         ))}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-        <div className="rounded-xl border border-border bg-surface-elevated p-4">
-          <h3 className="mb-4 text-sm font-medium text-foreground">
-            Booking funnel
-          </h3>
-          <div className="space-y-2">
-            {funnelRows.map((row) => (
+        <VoicePanel title="Booking funnel" tone="blue">
+          <div className="space-y-2.5">
+            {funnelRows.map((row, i) => (
               <div key={row.label}>
                 <div className="mb-1 flex justify-between text-xs">
-                  <span className="text-muted">{row.label}</span>
-                  <span className="text-foreground">{row.value}</span>
+                  <span className="font-medium text-muted">{row.label}</span>
+                  <span className="font-semibold text-foreground">{row.value}</span>
                 </div>
-                <div className="h-2 rounded-full bg-surface">
+                <div className="h-2.5 rounded-full bg-surface-muted">
                   <div
-                    className="h-2 rounded-full bg-gold"
-                    style={{ width: `${(row.value / max) * 100}%` }}
+                    className="h-2.5 rounded-full transition-all"
+                    style={{
+                      width: `${(row.value / max) * 100}%`,
+                      background: funnelColors[i % funnelColors.length],
+                    }}
                   />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </VoicePanel>
 
-        <div className="rounded-xl border border-border bg-surface-elevated p-4">
-          <h3 className="mb-2 text-sm font-medium text-foreground">
-            Performance over time
-          </h3>
+        <VoicePanel title="Performance over time" tone="cyan">
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="var(--muted)" />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="var(--muted)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="var(--text-dim)" />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="var(--text-dim)" />
                 <Tooltip
                   contentStyle={{
-                    background: "var(--surface-elevated)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
+                    background: "var(--chart-tooltip-bg)",
+                    border: "1px solid var(--chart-tooltip-border)",
+                    borderRadius: 12,
                   }}
                 />
                 <Line
                   type="monotone"
                   dataKey="calls"
-                  stroke="var(--muted)"
-                  strokeWidth={2}
+                  stroke="var(--chart-pipeline)"
+                  strokeWidth={2.5}
                   dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="bookings"
-                  stroke="var(--gold)"
-                  strokeWidth={2}
+                  stroke="var(--chart-ai)"
+                  strokeWidth={2.5}
                   dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </VoicePanel>
       </section>
 
-      <section className="rounded-xl border border-border bg-surface-elevated p-4">
-        <h3 className="mb-3 text-sm font-medium text-foreground">
-          Agent conversion rates
-        </h3>
+      <VoicePanel title="Agent conversion rates" tone="green">
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={[
-                {
-                  name: "Greeting",
-                  rate: performance.greetingSuccessRate,
-                },
+                { name: "Greeting", rate: performance.greetingSuccessRate },
                 {
                   name: "Qualify",
                   rate: performance.qualificationCompletionRate,
                 },
-                {
-                  name: "Calendar",
-                  rate: performance.calendarOfferRate,
-                },
+                { name: "Calendar", rate: performance.calendarOfferRate },
                 { name: "Book", rate: performance.bookingRate },
               ]}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="var(--muted)" />
-              <YAxis tick={{ fontSize: 11 }} stroke="var(--muted)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="var(--text-dim)" />
+              <YAxis tick={{ fontSize: 11 }} stroke="var(--text-dim)" />
               <Tooltip
                 contentStyle={{
-                  background: "var(--surface-elevated)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
+                  background: "var(--chart-tooltip-bg)",
+                  border: "1px solid var(--chart-tooltip-border)",
+                  borderRadius: 12,
                 }}
               />
-              <Bar dataKey="rate" fill="var(--gold)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="rate" fill="var(--chart-ops)" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </section>
+      </VoicePanel>
 
       <section>
-        <h3 className="mb-3 text-sm font-medium text-foreground">AI Insights</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">AI Insights</h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          {insights.map((card) => (
+          {insights.map((card, i) => (
             <div
               key={card.title}
-              className="rounded-xl border border-border bg-surface-elevated p-4"
+              className="rounded-2xl border border-border bg-surface-elevated p-4 shadow-sm"
+              style={{
+                borderLeftWidth: 4,
+                borderLeftColor: funnelColors[i % funnelColors.length],
+              }}
             >
-              <p className="text-sm font-medium text-foreground">{card.title}</p>
+              <p className="text-sm font-semibold text-foreground">{card.title}</p>
               <p className="mt-1 text-sm text-muted">{card.body}</p>
             </div>
           ))}

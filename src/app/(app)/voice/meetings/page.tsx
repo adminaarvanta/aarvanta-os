@@ -1,4 +1,9 @@
 import Link from "next/link";
+import {
+  VoiceEmptyState,
+  VoicePageShell,
+  VoiceStatusBadge,
+} from "@/components/voice/voice-ui";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -15,50 +20,45 @@ export default async function VoiceMeetingsPage() {
   const companyById = new Map(companies.map((c) => [c.id, c]));
 
   return (
-    <>
-      <header className="border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-foreground">Meetings</h2>
-        <p className="text-xs text-muted sm:text-sm">
-          Bookings created by the AI calling agent
-        </p>
-      </header>
-      <div className="divide-y divide-border">
-        {meetings.map((m) => {
-          const contact = contactById.get(m.leadId);
-          const company = contact?.accountId
-            ? companyById.get(contact.accountId)
-            : undefined;
-          return (
-            <Link
-              key={m.id}
-              href={`/voice/meetings/${m.id}`}
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-4 hover:bg-surface-elevated sm:px-6"
-            >
-              <div>
-                <p className="font-medium text-foreground">{m.title}</p>
-                <p className="text-xs text-muted">
+    <VoicePageShell
+      title="Meetings"
+      subtitle="Bookings created by the AI calling agent"
+      tone="green"
+    >
+      {meetings.length ? (
+        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6">
+          {meetings.map((m) => {
+            const contact = contactById.get(m.leadId);
+            const company = contact?.accountId
+              ? companyById.get(contact.accountId)
+              : undefined;
+            return (
+              <Link
+                key={m.id}
+                href={`/voice/meetings/${m.id}`}
+                className="rounded-2xl border border-border bg-surface-elevated p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--chart-ai)]/40"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold text-foreground">{m.title}</p>
+                  <VoiceStatusBadge status={m.status} />
+                </div>
+                <p className="mt-1 text-xs text-muted">
                   {contact ? contactDisplayName(contact) : m.leadId}
                   {company ? ` · ${company.name}` : ""}
                 </p>
-              </div>
-              <div className="text-right text-xs text-muted">
-                <p>
+                <p className="mt-3 text-sm font-medium text-[var(--chart-ai)]">
                   {new Date(m.meetingStart).toLocaleString(undefined, {
                     timeZone: m.timezone,
                   })}
                 </p>
-                <p className="capitalize">{m.status}</p>
-              </div>
-            </Link>
-          );
-        })}
-        {!meetings.length ? (
-          <p className="px-4 py-10 text-center text-sm text-muted">
-            No meetings booked yet.
-          </p>
-        ) : null}
-      </div>
-    </>
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <VoiceEmptyState title="No meetings booked yet" />
+      )}
+    </VoicePageShell>
   );
 }
 

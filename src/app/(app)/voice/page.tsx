@@ -3,6 +3,14 @@ import {
   LiveActivityChart,
   TopHoursChart,
 } from "@/components/voice/dashboard-charts";
+import {
+  VoiceKpiCard,
+  VoicePageShell,
+  VoicePanel,
+  VoicePrimaryButton,
+  VoiceStatChip,
+  type VoiceTone,
+} from "@/components/voice/voice-ui";
 import { buildCampaignDashboardMetrics } from "@/lib/calling/campaign-analytics";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -29,110 +37,144 @@ export default async function VoiceOsDashboardPage() {
   const activeCampaign =
     campaigns.find((c) => c.status === "running") ?? campaigns[0];
 
-  const kpis = [
-    { label: "Progress", value: `${metrics.progress}%` },
-    { label: "Meetings Booked", value: String(metrics.meetingsBooked) },
-    { label: "Booking Rate", value: `${metrics.bookingRate}%` },
-    { label: "AI Confidence", value: `${metrics.aiConfidence}%` },
-  ];
+  const kpis: { label: string; value: string; hint: string; tone: VoiceTone }[] =
+    [
+      {
+        label: "Progress",
+        value: `${metrics.progress}%`,
+        hint: "Toward meeting target",
+        tone: "navy",
+      },
+      {
+        label: "Meetings Booked",
+        value: String(metrics.meetingsBooked),
+        hint: "Confirmed sessions",
+        tone: "green",
+      },
+      {
+        label: "Booking Rate",
+        value: `${metrics.bookingRate}%`,
+        hint: "Calls → meetings",
+        tone: "cyan",
+      },
+      {
+        label: "AI Confidence",
+        value: `${metrics.aiConfidence}%`,
+        hint: "Avg intent confidence",
+        tone: "gold",
+      },
+    ];
 
-  const today = [
-    { label: "Completed", value: metrics.today.completed },
-    { label: "Pending", value: metrics.today.pending },
-    { label: "Busy", value: metrics.today.busy },
-    { label: "Failed", value: metrics.today.failed },
-    { label: "Voicemail", value: metrics.today.voicemail },
-    { label: "Callbacks", value: metrics.today.callbacks },
-    { label: "Meetings", value: metrics.today.meetings },
+  const today: { label: string; value: number; tone: VoiceTone }[] = [
+    { label: "Completed", value: metrics.today.completed, tone: "green" },
+    { label: "Pending", value: metrics.today.pending, tone: "blue" },
+    { label: "Busy", value: metrics.today.busy, tone: "amber" },
+    { label: "Failed", value: metrics.today.failed, tone: "rose" },
+    { label: "Voicemail", value: metrics.today.voicemail, tone: "amber" },
+    { label: "Callbacks", value: metrics.today.callbacks, tone: "cyan" },
+    { label: "Meetings", value: metrics.today.meetings, tone: "green" },
   ];
 
   return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
-              Voice OS
-            </h2>
-            <p className="text-xs text-muted sm:text-sm">
-              {activeCampaign
-                ? `${activeCampaign.name} · Mission control`
-                : "AI outbound calling mission control"}
-            </p>
-          </div>
+    <VoicePageShell
+      title={activeCampaign?.name ?? "Mission control"}
+      subtitle={
+        activeCampaign
+          ? `${activeCampaign.goal} · Live campaign dashboard`
+          : "AI outbound calling mission control"
+      }
+      tone="navy"
+      actions={
+        <>
           <Link
-            href="/voice/campaigns/new"
-            className="rounded-lg bg-gold px-3 py-2 text-sm font-medium text-background hover:opacity-90"
+            href="/voice/live"
+            className="inline-flex items-center rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:border-[var(--chart-ops)]"
           >
-            New campaign
+            Live calls
           </Link>
-        </div>
-      </header>
-
+          <VoicePrimaryButton href="/voice/campaigns/new">
+            New campaign
+          </VoicePrimaryButton>
+        </>
+      }
+    >
       <div className="space-y-6 p-4 sm:p-6">
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {kpis.map((kpi) => (
-            <div
-              key={kpi.label}
-              className="rounded-xl border border-border bg-surface-elevated px-4 py-4"
-            >
-              <p className="text-xs uppercase tracking-wide text-muted">
-                {kpi.label}
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-foreground">
-                {kpi.value}
-              </p>
-            </div>
+            <VoiceKpiCard key={kpi.label} {...kpi} />
           ))}
         </section>
 
         <section>
-          <h3 className="mb-3 text-sm font-medium text-foreground">
-            Today&apos;s overview
-          </h3>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">
+              Today&apos;s overview
+            </h3>
+            <span className="text-xs text-muted">
+              {metrics.inProgress} live · {metrics.queued} queued
+            </span>
+          </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
             {today.map((item) => (
-              <div
+              <VoiceStatChip
                 key={item.label}
-                className="rounded-lg border border-border bg-surface px-3 py-3 text-center"
-              >
-                <p className="text-lg font-semibold text-foreground">
-                  {item.value}
-                </p>
-                <p className="text-xs text-muted">{item.label}</p>
-              </div>
+                label={item.label}
+                value={item.value}
+                tone={item.tone}
+              />
             ))}
           </div>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-border bg-surface-elevated p-4">
-            <h3 className="mb-2 text-sm font-medium text-foreground">
-              Live activity
-            </h3>
+          <VoicePanel title="Live activity" tone="cyan">
             <LiveActivityChart data={metrics.liveActivity} />
-          </div>
-          <div className="rounded-xl border border-border bg-surface-elevated p-4">
-            <h3 className="mb-2 text-sm font-medium text-foreground">
-              Top performing hours
-            </h3>
+          </VoicePanel>
+          <VoicePanel title="Top performing hours" tone="green">
             <TopHoursChart data={metrics.topHours} />
-          </div>
+          </VoicePanel>
         </section>
 
-        <section className="flex flex-wrap gap-3 text-sm">
-          <Link href="/voice/queue" className="text-gold hover:underline">
-            View queue ({metrics.queued})
-          </Link>
-          <Link href="/voice/live" className="text-gold hover:underline">
-            Live calls ({metrics.inProgress})
-          </Link>
-          <Link href="/voice/insights" className="text-gold hover:underline">
-            Insights
-          </Link>
+        <section className="grid gap-3 sm:grid-cols-3">
+          {(
+            [
+              {
+                href: "/voice/queue",
+                label: "Queue",
+                value: metrics.queued,
+                tone: "blue" as const,
+              },
+              {
+                href: "/voice/live",
+                label: "In progress",
+                value: metrics.inProgress,
+                tone: "cyan" as const,
+              },
+              {
+                href: "/voice/insights",
+                label: "Qualified",
+                value: metrics.qualified,
+                tone: "gold" as const,
+              },
+            ] as const
+          ).map((card) => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="rounded-2xl border border-border bg-surface-elevated p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-gold/40"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                {card.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">
+                {card.value}
+              </p>
+              <p className="mt-1 text-xs text-gold">Open →</p>
+            </Link>
+          ))}
         </section>
       </div>
-    </>
+    </VoicePageShell>
   );
 }
 

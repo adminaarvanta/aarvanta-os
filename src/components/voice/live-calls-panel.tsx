@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { VoiceEmptyState, VoiceStatusBadge } from "@/components/voice/voice-ui";
 
 type LiveSession = {
   id: string;
@@ -50,9 +51,15 @@ export function LiveCallsPanel() {
 
   if (!sessions.length) {
     return (
-      <p className="px-4 py-10 text-center text-sm text-muted sm:px-6">
-        No live AI calls right now. Running campaigns will appear here.
-      </p>
+      <VoiceEmptyState
+        title="No live AI calls right now"
+        body="When a campaign dial is in progress, the transcript and qualification checklist appear here."
+        action={
+          <Link href="/voice/queue" className="text-sm font-medium text-gold hover:underline">
+            Open queue →
+          </Link>
+        }
+      />
     );
   }
 
@@ -69,33 +76,40 @@ export function LiveCallsPanel() {
         return (
           <article
             key={session.id}
-            className="grid gap-4 rounded-xl border border-border bg-surface-elevated lg:grid-cols-[1.4fr_1fr]"
+            className="grid overflow-hidden rounded-2xl border border-[rgba(14,165,198,0.28)] bg-surface-elevated shadow-sm lg:grid-cols-[1.4fr_1fr]"
           >
-            <div className="p-4">
-              <header className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div className="p-4 sm:p-5">
+              <header className="mb-4 flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-semibold text-foreground">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--chart-ops)] opacity-60" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--chart-ops)]" />
+                    </span>
+                    <VoiceStatusBadge status="calling" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
                     {session.contactName ?? "Unknown lead"}
                   </h3>
                   <p className="text-xs text-muted">
                     {session.jobTitle ?? "—"} · {session.phone ?? "—"}
                   </p>
                 </div>
-                <span className="rounded-full bg-gold/15 px-2.5 py-0.5 text-xs text-gold-bright">
+                <span className="rounded-xl bg-[var(--chart-ops-soft)] px-3 py-1.5 font-mono text-sm font-semibold text-[var(--chart-ops)]">
                   {mm}:{ss}
                 </span>
               </header>
-              <div className="max-h-80 space-y-2 overflow-y-auto">
+              <div className="max-h-80 space-y-2 overflow-y-auto rounded-xl bg-surface-muted/50 p-3">
                 {session.transcript.map((t, i) => (
                   <div
                     key={`${session.id}-${i}`}
-                    className={`rounded-lg px-3 py-2 text-sm ${
+                    className={`rounded-xl px-3 py-2 text-sm ${
                       t.role === "assistant"
-                        ? "bg-surface text-foreground"
-                        : "bg-gold/10 text-foreground"
+                        ? "bg-surface-elevated text-foreground shadow-sm"
+                        : "bg-[var(--chart-pipeline-soft)] text-foreground"
                     }`}
                   >
-                    <p className="mb-0.5 text-[10px] uppercase tracking-wide text-muted">
+                    <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
                       {t.role === "assistant" ? "Ava" : "Lead"}
                     </p>
                     {t.content}
@@ -103,26 +117,26 @@ export function LiveCallsPanel() {
                 ))}
               </div>
             </div>
-            <aside className="border-t border-border p-4 lg:border-l lg:border-t-0">
-              <p className="text-xs uppercase tracking-wide text-muted">
+            <aside className="border-t border-border bg-gradient-to-b from-[rgba(14,165,198,0.08)] to-transparent p-4 lg:border-l lg:border-t-0 sm:p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
                 Current intent
               </p>
-              <p className="mt-1 text-sm font-medium text-foreground">
+              <p className="mt-1 text-base font-semibold text-foreground">
                 {session.intent ?? "—"}
                 {session.intentConfidence != null
                   ? ` · ${Math.round(session.intentConfidence * 100)}%`
                   : ""}
               </p>
-              <p className="mt-4 text-xs uppercase tracking-wide text-muted">
+              <p className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted">
                 Stage
               </p>
-              <p className="mt-1 text-sm capitalize text-foreground">
+              <p className="mt-1 text-sm capitalize text-[var(--chart-ops)]">
                 {(session.currentStage ?? "greeting").replace(/_/g, " ")}
               </p>
-              <p className="mt-4 text-xs uppercase tracking-wide text-muted">
+              <p className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted">
                 Qualification
               </p>
-              <ul className="mt-2 space-y-1 text-sm">
+              <ul className="mt-2 space-y-2 text-sm">
                 {(
                   [
                     ["painPoint", "Pain point"],
@@ -133,21 +147,23 @@ export function LiveCallsPanel() {
                 ).map(([key, label]) => (
                   <li key={key} className="flex items-center gap-2">
                     <span
-                      className={`inline-block h-3 w-3 rounded-sm border ${
+                      className={`inline-flex h-4 w-4 items-center justify-center rounded-md text-[10px] font-bold ${
                         q[key]
-                          ? "border-gold bg-gold"
-                          : "border-border bg-transparent"
+                          ? "bg-[var(--chart-ai)] text-white"
+                          : "border border-border bg-surface text-muted"
                       }`}
-                    />
+                    >
+                      {q[key] ? "✓" : ""}
+                    </span>
                     {label}
                   </li>
                 ))}
               </ul>
               <Link
                 href={`/voice/history/${session.id}`}
-                className="mt-4 inline-block text-sm text-gold hover:underline"
+                className="mt-5 inline-flex text-sm font-medium text-gold hover:underline"
               >
-                Open session
+                Open session →
               </Link>
             </aside>
           </article>

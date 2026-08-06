@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConversationReplay } from "@/components/voice/conversation-replay";
+import { VoicePageShell } from "@/components/voice/voice-ui";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -23,17 +24,23 @@ export default async function VoiceHistoryDetailPage({ params }: Params) {
       : null;
 
   return (
-    <>
-      <header className="border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <p className="text-xs text-muted">
-          <Link href="/voice/history" className="hover:text-gold">
-            Call History
-          </Link>
-        </p>
-        <h2 className="text-lg font-semibold text-foreground">
-          Conversation replay
-        </h2>
-      </header>
+    <VoicePageShell
+      title="Conversation replay"
+      subtitle={
+        contact
+          ? `${contactDisplayName(contact)}${company ? ` · ${company.name}` : ""}`
+          : "Transcript, AI decisions, and CRM updates"
+      }
+      tone="blue"
+      actions={
+        <Link
+          href="/voice/history"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-muted hover:text-foreground"
+        >
+          ← Call History
+        </Link>
+      }
+    >
       <ConversationReplay
         session={{
           ...session,
@@ -42,7 +49,7 @@ export default async function VoiceHistoryDetailPage({ params }: Params) {
           phone: contact?.phone,
         }}
       />
-    </>
+    </VoicePageShell>
   );
 }
 

@@ -51,37 +51,47 @@ export function FlowBuilder({ agent }: { agent: VoiceAgent }) {
       </p>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        {flow.stages.map((stage) => (
+        {flow.stages.map((stage, index) => (
           <div
             key={stage.id}
-            className="rounded-xl border border-border bg-surface-elevated p-4"
+            className="relative overflow-hidden rounded-2xl border border-border bg-surface-elevated p-4 shadow-sm"
           >
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-foreground">
-                {stage.label}
-              </h3>
+            <div className="absolute inset-y-0 left-0 w-1.5 bg-[var(--navy)] dark:bg-gold" />
+            <div className="mb-2 flex items-center justify-between gap-2 pl-2">
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--primary-soft)] text-[11px] font-bold text-[var(--navy)] dark:text-gold">
+                  {index + 1}
+                </span>
+                <h3 className="text-sm font-semibold text-foreground">
+                  {stage.label}
+                </h3>
+              </div>
               {flow.entryStage === stage.id ? (
-                <span className="text-[10px] uppercase text-gold">Entry</span>
+                <span className="rounded-full bg-[rgba(168,137,79,0.16)] px-2 py-0.5 text-[10px] font-semibold uppercase text-gold-dark dark:text-gold-bright">
+                  Entry
+                </span>
               ) : null}
             </div>
             <textarea
-              className="min-h-[72px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+              className="min-h-[72px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
               value={stage.objective}
               onChange={(e) =>
                 updateObjective(stage.id, e.target.value)
               }
             />
-            <div className="mt-2 flex flex-wrap gap-1">
+            <div className="mt-2 flex flex-wrap gap-1 pl-2">
               {stage.transitions.map((t) => (
                 <span
                   key={`${stage.id}-${t.when}-${t.to}`}
-                  className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted"
+                  className="rounded-full bg-[var(--chart-ops-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--chart-ops)]"
                 >
                   {t.when} → {t.to.replace(/_/g, " ")}
                 </span>
               ))}
               {!stage.transitions.length ? (
-                <span className="text-[11px] text-muted">Terminal</span>
+                <span className="rounded-full bg-[var(--chart-ai-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--chart-ai)]">
+                  Terminal
+                </span>
               ) : null}
             </div>
           </div>

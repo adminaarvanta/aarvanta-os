@@ -22,7 +22,13 @@ const COUNTRY_OPTIONS = [
   "Other",
 ] as const;
 
-function RegisterFormInner({ nextPath }: { nextPath: string }) {
+function RegisterFormInner({
+  nextPath,
+  googleEnabled,
+}: {
+  nextPath: string;
+  googleEnabled: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const safeNext = sanitizeNextPath(nextPath);
@@ -37,14 +43,17 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
   const [referralCode, setReferralCode] = useState(referralFromUrl);
   const [busy, setBusy] = useState(false);
   const affHint = searchParams.get("aff");
+  const errorCode = searchParams.get("error");
   const [error, setError] = useState<string | null>(
-    searchParams.get("error") === "sso_failed"
+    errorCode === "sso_failed"
       ? "Google sign-up failed. Try again or use email."
-      : affHint === "pending"
-        ? "That partner link is not active yet. You can still create a free account."
-        : affHint === "invalid"
-          ? "That referral link was not recognized. You can still create a free account."
-          : null
+      : errorCode === "misconfigured"
+        ? "Google sign-up is not configured. Create your account with email instead."
+        : affHint === "pending"
+          ? "That partner link is not active yet. You can still create a free account."
+          : affHint === "invalid"
+            ? "That referral link was not recognized. You can still create a free account."
+            : null
   );
 
   useEffect(() => {
@@ -220,25 +229,29 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
         {busy ? "Creating free account…" : "Create free account"}
       </Button>
 
-      <div className="relative my-2">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-2 text-muted">or</span>
-        </div>
-      </div>
+      {googleEnabled ? (
+        <>
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-background px-2 text-muted">or</span>
+            </div>
+          </div>
 
-      <a
-        href={`/api/auth/sso/start?provider=google&intent=register&next=${encodeURIComponent(safeNext)}${
-          referralCode.trim()
-            ? `&ref=${encodeURIComponent(referralCode.trim())}`
-            : ""
-        }`}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
-      >
-        Continue with Google
-      </a>
+          <a
+            href={`/api/auth/sso/start?provider=google&intent=register&next=${encodeURIComponent(safeNext)}${
+              referralCode.trim()
+                ? `&ref=${encodeURIComponent(referralCode.trim())}`
+                : ""
+            }`}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
+          >
+            Continue with Google
+          </a>
+        </>
+      ) : null}
 
       <p className="text-center text-xs text-muted">
         Free forever for getting started · No card required
@@ -247,7 +260,13 @@ function RegisterFormInner({ nextPath }: { nextPath: string }) {
   );
 }
 
-export function RegisterPageShell({ nextPath }: { nextPath: string }) {
+export function RegisterPageShell({
+  nextPath,
+  googleEnabled = false,
+}: {
+  nextPath: string;
+  googleEnabled?: boolean;
+}) {
   const safeNext = sanitizeNextPath(nextPath);
 
   return (
@@ -268,7 +287,10 @@ export function RegisterPageShell({ nextPath }: { nextPath: string }) {
             <div className="mt-8 h-64 animate-pulse rounded-lg bg-surface-muted" />
           }
         >
-          <RegisterFormInner nextPath={safeNext} />
+          <RegisterFormInner
+            nextPath={safeNext}
+            googleEnabled={googleEnabled}
+          />
         </Suspense>
 
         <p className="mt-6 text-center text-xs text-muted">

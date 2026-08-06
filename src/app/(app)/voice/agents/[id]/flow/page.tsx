@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FlowBuilder } from "@/components/voice/flow-builder";
+import { VoicePageShell } from "@/components/voice/voice-ui";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -13,19 +14,21 @@ export default async function AgentFlowPage({ params }: Params) {
   if (!agent) notFound();
 
   return (
-    <>
-      <header className="border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <p className="text-xs text-muted">
-          <Link href="/voice/agents" className="hover:text-gold">
-            AI Employees
-          </Link>
-        </p>
-        <h2 className="text-lg font-semibold text-foreground">
-          {agent.name} · Script / Flow
-        </h2>
-      </header>
+    <VoicePageShell
+      title={`${agent.name} · Script / Flow`}
+      subtitle="Stage-based conversation design for the AI employee"
+      tone="navy"
+      actions={
+        <Link
+          href="/voice/agents"
+          className="rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-muted hover:text-foreground"
+        >
+          ← AI Employees
+        </Link>
+      }
+    >
       <FlowBuilder agent={agent} />
-    </>
+    </VoicePageShell>
   );
 }
 

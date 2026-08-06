@@ -1,4 +1,5 @@
 import { QueueKanban, type QueueCard } from "@/components/voice/queue-kanban";
+import { VoicePageShell } from "@/components/voice/voice-ui";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -35,15 +36,13 @@ export default async function VoiceQueuePage() {
   });
 
   return (
-    <>
-      <header className="border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-foreground">AI Queue</h2>
-        <p className="text-xs text-muted sm:text-sm">
-          Kanban of pending, live, booked, and completed leads
-        </p>
-      </header>
+    <VoicePageShell
+      title="AI Queue"
+      subtitle="Kanban of pending, live, booked, and completed leads — Call now any time"
+      tone="cyan"
+    >
       <QueueKanban items={cards} />
-    </>
+    </VoicePageShell>
   );
 }
 

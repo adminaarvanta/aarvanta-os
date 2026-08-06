@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarSlotPicker } from "@/components/voice/calendar-slot-picker";
+import { VoicePageShell } from "@/components/voice/voice-ui";
 
 export default async function VoiceCalendarPage({
   searchParams,
@@ -9,35 +10,35 @@ export default async function VoiceCalendarPage({
   const params = await searchParams;
 
   return (
-    <>
-      <header className="border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Calendar</h2>
-            <p className="text-xs text-muted sm:text-sm">
-              Availability for AI booking — Google Calendar FreeBusy when connected
-            </p>
-          </div>
-          <Link
-            href="/api/integrations/google-calendar/oauth/start"
-            className="rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-gold/40"
-          >
-            Connect Google Calendar
-          </Link>
-        </div>
+    <VoicePageShell
+      title="Calendar"
+      subtitle="Availability for AI booking — Google Calendar FreeBusy when connected"
+      tone="amber"
+      actions={
+        <Link
+          href="/api/integrations/google-calendar/oauth/start"
+          className="rounded-xl bg-[var(--navy)] px-3 py-2 text-sm font-semibold text-white dark:bg-gold dark:text-[var(--navy)]"
+        >
+          Connect Google Calendar
+        </Link>
+      }
+    >
+      <div className="space-y-3 p-4 sm:p-6">
         {params.gcal === "connected" ? (
-          <p className="mt-2 text-xs text-gold">Google Calendar connected.</p>
+          <p className="rounded-xl border border-[rgba(18,163,106,0.3)] bg-[var(--chart-ai-soft)] px-3 py-2 text-sm text-[var(--chart-ai)]">
+            Google Calendar connected.
+          </p>
         ) : null}
         {params.gcal === "error" ? (
-          <p className="mt-2 text-xs text-red-400">
+          <p className="rounded-xl border border-[rgba(220,38,38,0.3)] bg-[rgba(220,38,38,0.08)] px-3 py-2 text-sm text-[var(--chart-lost)]">
             Google Calendar connection failed. Check OAuth credentials.
           </p>
         ) : null}
-      </header>
-      <div className="p-4 sm:p-6">
-        <CalendarSlotPicker leadId={params.leadId} />
+        <div className="rounded-2xl border border-border bg-surface-elevated p-4 shadow-sm sm:p-5">
+          <CalendarSlotPicker leadId={params.leadId} />
+        </div>
       </div>
-    </>
+    </VoicePageShell>
   );
 }
 

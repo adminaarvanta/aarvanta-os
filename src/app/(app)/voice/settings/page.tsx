@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { CallingWorkspace, type CallLogItem } from "@/components/calling/calling-workspace";
+import { VoicePageShell } from "@/components/voice/voice-ui";
 import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -37,24 +39,22 @@ export default async function VoiceSettingsPage() {
   calls.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 
   return (
-    <>
-      <header className="border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="text-lg font-semibold text-foreground">Settings</h2>
-        <p className="text-xs text-muted sm:text-sm">
-          Manual dialer, voice config, and Google Calendar connection
-        </p>
-      </header>
+    <VoicePageShell
+      title="Settings"
+      subtitle="Manual dialer, voice config, and calendar connection"
+      tone="slate"
+    >
       <div className="border-b border-border px-4 py-3 sm:px-6">
         <p className="text-sm text-muted">
           Connect Google Calendar from{" "}
-          <a href="/integrations" className="text-gold hover:underline">
-            Integrations
-          </a>{" "}
-          (or use the Calendar tab after OAuth is configured).
+          <Link href="/voice/calendar" className="font-medium text-gold hover:underline">
+            Calendar
+          </Link>{" "}
+          or Integrations. Use the dialer below for one-off outbound calls.
         </p>
       </div>
       <CallingWorkspace calls={calls} />
-    </>
+    </VoicePageShell>
   );
 }
 

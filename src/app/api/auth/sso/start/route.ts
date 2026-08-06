@@ -18,14 +18,18 @@ export async function GET(req: Request) {
   const fromCookie = cookieStore.get(AFFILIATE_COOKIE)?.value?.trim() || "";
   const referralCode = normalizeReferralCode(fromQuery || fromCookie) || undefined;
 
+  const errorBase = intent === "register" ? "/register" : "/login";
+
   if (!VALID_PROVIDERS.includes(provider)) {
     return NextResponse.redirect(
-      new URL("/login?error=invalid_credentials", req.url)
+      new URL(`${errorBase}?error=invalid_credentials`, req.url)
     );
   }
 
   if (!isSsoConfigured(provider)) {
-    return NextResponse.redirect(new URL("/login?error=misconfigured", req.url));
+    return NextResponse.redirect(
+      new URL(`${errorBase}?error=misconfigured`, req.url)
+    );
   }
 
   const origin = url.origin;
@@ -36,7 +40,9 @@ export async function GET(req: Request) {
   const authorizeUrl = buildOidcAuthorizeUrl({ provider, redirectUri, state });
 
   if (!authorizeUrl) {
-    return NextResponse.redirect(new URL("/login?error=misconfigured", req.url));
+    return NextResponse.redirect(
+      new URL(`${errorBase}?error=misconfigured`, req.url)
+    );
   }
 
   return NextResponse.redirect(authorizeUrl);
