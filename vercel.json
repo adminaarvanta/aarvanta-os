@@ -7,6 +7,14 @@
     {
       "path": "/api/cron/scheduled-calls",
       "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/call-campaigns",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/meeting-reminders",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
+import { finalizeCallSession } from "@/lib/calling/session-outcomes";
+import { syncCallOutcomeToCrm } from "@/lib/calling/crm-sync";
 import { getRepository } from "@/lib/data/repository";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
 
@@ -15,11 +17,21 @@ const schema = z.object({
   conversationId: z.string().optional(),
   direction: z.string().optional(),
   summary: z.string().optional(),
+  sessionId: z.string().optional(),
+  campaignId: z.string().optional(),
+  queueId: z.string().optional(),
+  contactId: z.string().optional(),
+  outcome: z.string().optional(),
+  sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
+  intent: z.string().optional(),
+  intentConfidence: z.number().optional(),
+  currentStage: z.string().optional(),
   turns: z
     .array(
       z.object({
         role: z.enum(["user", "assistant"]),
         content: z.string(),
+        stage: z.string().optional(),
       })
     )
     .default([]),
@@ -49,8 +61,16 @@ export async function POST(req: Request) {
 
   const scope = getWebhookTenantScope();
   const repo = getRepository();
-  const { conversationId, from, to, direction, turns, summary, callSid } =
-    parsed.data;
+  const {
+    conversationId,
+    from,
+    to,
+    direction,
+    turns,
+    summary,
+    callSid,
+    sessionId,
+  } = parsed.data;
 
   const phone =
     (direction?.toLowerCase().startsWith("outbound") ? to : from) ||
@@ -95,9 +115,36 @@ export async function POST(req: Request) {
     { name: "Voice Relay", id: "voice-relay" }
   );
 
+  const session = await finalizeCallSession({
+    scope,
+    sessionId,
+    callSid,
+    conversationId: conversation.id,
+    turns: turns.map((t) => ({
+      role: t.role,
+      content: t.content,
+      stage: t.stage as never,
+    })),
+    summary,
+    outcome: parsed.data.outcome as never,
+    sentiment: parsed.data.sentiment,
+    intent: parsed.data.intent,
+    intentConfidence: parsed.data.intentConfidence,
+    currentStage: parsed.data.currentStage as never,
+  });
+
+  if (session) {
+    try {
+      await syncCallOutcomeToCrm(session, scope);
+    } catch (err) {
+      console.error("[voice-relay] CRM sync failed", err);
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     conversationId: conversation.id,
+    sessionId: session?.id,
     turns: turns.length,
   });
 }

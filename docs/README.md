@@ -16,6 +16,7 @@ Cursor-ready PRD packs for the AI-first operating system. Prefer these focused d
 | Affiliate PRD | [`AFFILIATE_PRD.md`](AFFILIATE_PRD.md) |
 | Deferred tools | [`DEFERRED_TOOLS.md`](DEFERRED_TOOLS.md) |
 | Email / DNS / Voice setup | [`EMAIL_SETUP.md`](EMAIL_SETUP.md), [`NAMECOM_SETUP.md`](NAMECOM_SETUP.md), [`OPENSRS_SETUP.md`](OPENSRS_SETUP.md), [`VOICE_RELAY.md`](VOICE_RELAY.md) |
+| AI Calling Agent | [`docs/calling-agent/`](calling-agent/) | Voice OS campaigns, queue, calendar booking |
 
 ### How to use with Cursor
 

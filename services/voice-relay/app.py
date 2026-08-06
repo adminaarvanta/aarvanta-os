@@ -61,7 +61,7 @@ MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "160"))
 MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "480"))
 REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.65"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
-SERVICE_VERSION = "1.3.0"
+SERVICE_VERSION = "1.4.0"
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
@@ -150,8 +150,8 @@ OUTBOUND_OPENING_INSTRUCTION = (
 )
 
 
-def fetch_voice_context(params: dict[str, Any], session: dict[str, Any]) -> dict[str, str]:
-    """Pull Knowledge Hub digest from Aarvanta OS. Fail soft on timeout/errors."""
+def fetch_voice_context(params: dict[str, Any], session: dict[str, Any]) -> dict[str, Any]:
+    """Pull Knowledge Hub digest + campaign memory/FSM from Aarvanta OS."""
     url = resolve_context_url()
     if not url or not AARVANTA_CALLBACK_SECRET:
         return {}
@@ -162,6 +162,11 @@ def fetch_voice_context(params: dict[str, Any], session: dict[str, Any]) -> dict
         "topic": (params.get("goal") or params.get("context") or "").strip() or None,
         "from": session.get("from"),
         "to": session.get("to"),
+        "contactId": (params.get("contactId") or "").strip() or None,
+        "queueId": (params.get("queueId") or "").strip() or None,
+        "sessionId": (params.get("sessionId") or "").strip() or None,
+        "campaignId": (params.get("campaignId") or "").strip() or None,
+        "voiceAgentId": (params.get("voiceAgentId") or "").strip() or None,
     }
     data = json.dumps({k: v for k, v in payload.items() if v}).encode("utf-8")
     req = urlrequest.Request(
@@ -178,10 +183,7 @@ def fetch_voice_context(params: dict[str, Any], session: dict[str, Any]) -> dict
             body = json.loads(resp.read().decode("utf-8"))
             if not isinstance(body, dict):
                 return {}
-            return {
-                "businessName": str(body.get("businessName") or "").strip(),
-                "knowledgeDigest": str(body.get("knowledgeDigest") or "").strip(),
-            }
+            return body
     except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
         log.warning("voice context fetch failed: %s", exc)
         return {}
@@ -192,12 +194,20 @@ def build_system_prompt(
     *,
     business_name: str = "",
     knowledge_digest: str = "",
+    context: dict[str, Any] | None = None,
 ) -> str:
+    ctx = context or {}
     parts = [SYSTEM_PROMPT]
-    name = business_name.strip() or (params.get("businessName") or "").strip()
+    name = (
+        business_name.strip()
+        or str(ctx.get("businessName") or "").strip()
+        or (params.get("businessName") or "").strip()
+    )
+    agent_name = str(ctx.get("voiceAgentName") or "Ava").strip()
     if name:
         parts.append(
-            f"You represent {name}. Introduce yourself as calling from {name} when it fits."
+            f"You are {agent_name} representing {name}. "
+            f"Introduce yourself as {agent_name} calling from {name} when it fits."
         )
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
@@ -207,21 +217,50 @@ def build_system_prompt(
         )
     elif direction == "outbound":
         parts.append(
-            "Outbound call: explain why you called in a natural opening, then listen "
-            "and help — do not rush them."
+            "Outbound sales discovery call. Follow the conversation STAGE MACHINE "
+            "below — do not jump ahead. Never hard-pitch before permission. "
+            "When proposing a meeting, use progressive language "
+            "(short strategy session, no obligation). "
+            "When offering times, suggest only 2–3 days, then only two time slots."
         )
-    language = (params.get("language") or "").strip()
+    language = (params.get("language") or ctx.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
         parts.append(
             f"Respond in the language for locale '{language}'. "
             "Keep replies natural and clear for a phone call."
         )
-    goal = (params.get("goal") or params.get("context") or "").strip()
+    contact_name = str(ctx.get("contactName") or "").strip()
+    if contact_name:
+        bits = [f"You are speaking with {contact_name}"]
+        if ctx.get("contactTitle"):
+            bits.append(str(ctx.get("contactTitle")))
+        if ctx.get("companyName"):
+            bits.append(f"at {ctx.get('companyName')}")
+        parts.append(". ".join(bits) + ".")
+    goal = (
+        str(ctx.get("campaignGoal") or "").strip()
+        or (params.get("goal") or params.get("context") or "").strip()
+    )
     if goal:
         parts.append(
-            "Call briefing from the operator — this is CONTEXT about the topic and "
-            "purpose of the call. Use it to guide the conversation. NEVER read it "
-            f"aloud word-for-word:\n{goal[:1000]}"
+            "Call briefing — CONTEXT only, NEVER read aloud word-for-word:\n"
+            f"{goal[:1000]}"
+        )
+    memory = str(ctx.get("memorySummary") or "").strip()
+    if memory:
+        parts.append(
+            "Prior conversation memory (use for continuity; do not recite verbatim):\n"
+            f"{memory[:900]}"
+        )
+    flow = str(ctx.get("flowStages") or "").strip()
+    entry = str(ctx.get("entryStage") or "greeting").strip()
+    if flow:
+        parts.append(
+            "CONVERSATION STAGE MACHINE — start at "
+            f"'{entry}' and advance only via allowed transitions:\n{flow[:2500]}\n"
+            "Capture qualification quietly: interested, current solution, company size, "
+            "urgency, decision maker. If they decline a meeting, ask if a future "
+            "follow-up is okay, then close politely."
         )
     if knowledge_digest:
         parts.append(
@@ -286,14 +325,31 @@ async def say_goodbye_and_hangup(ws: WebSocket, transcript: list[dict[str, str]]
 def post_transcript(session: dict[str, Any], turns: list[dict[str, str]], summary: str) -> None:
     if not AARVANTA_CALLBACK_URL or not AARVANTA_CALLBACK_SECRET:
         return
+    params = session.get("customParameters") or {}
+    text_blob = " ".join(t.get("content", "") for t in turns).lower()
+    outcome = "completed"
+    if "meeting" in text_blob and any(w in text_blob for w in ("book", "confirm", "scheduled", "see you")):
+        outcome = "meeting_booked"
+    elif "not interested" in text_blob:
+        outcome = "not_interested"
+    elif "call back" in text_blob or "callback" in text_blob:
+        outcome = "callback_requested"
+    sentiment = "positive" if outcome == "meeting_booked" else "neutral"
     payload = {
         "callSid": session.get("callSid"),
         "from": session.get("from"),
         "to": session.get("to"),
-        "conversationId": (session.get("customParameters") or {}).get("conversationId"),
-        "direction": (session.get("customParameters") or {}).get("direction"),
+        "conversationId": params.get("conversationId"),
+        "direction": params.get("direction"),
+        "sessionId": params.get("sessionId"),
+        "campaignId": params.get("campaignId"),
+        "queueId": params.get("queueId"),
+        "contactId": params.get("contactId"),
         "turns": turns,
         "summary": summary,
+        "outcome": outcome,
+        "sentiment": sentiment,
+        "intent": "Interested" if outcome == "meeting_booked" else None,
     }
     data = json.dumps(payload).encode("utf-8")
     req = urlrequest.Request(
@@ -381,13 +437,17 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     params["direction"] = str(msg.get("direction")).lower()
 
                 context = await asyncio.to_thread(fetch_voice_context, params, session)
-                business_name = context.get("businessName") or (params.get("businessName") or "")
-                knowledge_digest = context.get("knowledgeDigest") or ""
+                business_name = str(
+                    context.get("businessName") or params.get("businessName") or ""
+                )
+                knowledge_digest = str(context.get("knowledgeDigest") or "")
                 system = build_system_prompt(
                     params,
                     business_name=business_name,
                     knowledge_digest=knowledge_digest,
+                    context=context,
                 )
+                session["context"] = context
                 log.info(
                     "setup callSid=%s from=%s direction=%s knowledge=%s",
                     session.get("callSid"),

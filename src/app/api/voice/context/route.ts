@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
+import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
+import { getCrmRepository } from "@/lib/data/crm-store";
 import { getKnowledgeRepository } from "@/lib/data/knowledge-store";
 import { searchKnowledgeChunks } from "@/lib/knowledge/search";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
+import { DEFAULT_FLOW_CONFIG } from "@/types/calling-agent";
+import { contactDisplayName } from "@/types/crm";
 
 /**
- * Voice relay (EC2) fetches company knowledge at ConversationRelay setup.
+ * Voice relay (EC2) fetches company knowledge + campaign/contact memory at setup.
  * Auth: X-Voice-Relay-Secret === VOICE_RELAY_CALLBACK_SECRET
  */
 const schema = z.object({
@@ -16,6 +21,11 @@ const schema = z.object({
   topic: z.string().max(2000).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  contactId: z.string().optional(),
+  queueId: z.string().optional(),
+  sessionId: z.string().optional(),
+  campaignId: z.string().optional(),
+  voiceAgentId: z.string().optional(),
 });
 
 const DIGEST_MAX_CHARS = 1800;
@@ -48,8 +58,8 @@ export async function POST(req: Request) {
   const settings = await getWorkspaceSettings(scope.workspaceId);
   const businessName = settings.businessName?.trim() || "Aarvanta";
 
-  const repo = getKnowledgeRepository();
-  const chunks = await repo.listChunks(scope);
+  const knowledgeRepo = getKnowledgeRepository();
+  const chunks = await knowledgeRepo.listChunks(scope);
   const topic = parsed.data.topic?.trim() || DEFAULT_TOPIC;
 
   let knowledgeDigest = "";
@@ -76,9 +86,83 @@ export async function POST(req: Request) {
     }
   }
 
+  const calling = getCallingAgentRepository();
+  let contactId = parsed.data.contactId;
+  let voiceAgentId = parsed.data.voiceAgentId;
+  let campaignGoal = "";
+  let memorySummary = "";
+  let contactName = "";
+  let contactTitle = "";
+  let companyName = "";
+
+  if (parsed.data.sessionId) {
+    const session = await calling.getSession(parsed.data.sessionId, scope);
+    if (session) {
+      contactId = contactId || session.contactId;
+      voiceAgentId = voiceAgentId || session.voiceAgentId;
+      memorySummary = session.memorySummary ?? "";
+      if (session.callSid == null && parsed.data.from) {
+        /* noop — sid set later */
+      }
+    }
+  }
+
+  if (parsed.data.campaignId) {
+    const campaign = await calling.getCampaign(parsed.data.campaignId, scope);
+    if (campaign) {
+      campaignGoal = campaign.goal;
+      voiceAgentId = voiceAgentId || campaign.voiceAgentId;
+    }
+  }
+
+  const agent = voiceAgentId
+    ? await calling.getAgent(voiceAgentId, scope)
+    : (await calling.listAgents(scope))[0];
+
+  if (contactId) {
+    const contact = await getCrmRepository().getContact(contactId, scope);
+    if (contact) {
+      contactName = contactDisplayName(contact);
+      contactTitle = contact.jobTitle ?? "";
+      if (contact.accountId) {
+        const company = await getCrmRepository().getCompany(
+          contact.accountId,
+          scope
+        );
+        companyName = company?.name ?? "";
+      }
+      if (!memorySummary) {
+        memorySummary = await buildCallMemorySummary(contactId, scope);
+      }
+    }
+  }
+
+  const flowConfig = agent?.flowConfig ?? DEFAULT_FLOW_CONFIG;
+  const stageBrief = flowConfig.stages
+    .map(
+      (s) =>
+        `${s.id}: ${s.objective} (transitions: ${s.transitions
+          .map((t) => `${t.when}→${t.to}`)
+          .join(", ") || "end"})`
+    )
+    .join("\n");
+
   return NextResponse.json({
     businessName,
     knowledgeDigest,
     chunkCount: chunks.length,
+    contactId,
+    contactName,
+    contactTitle,
+    companyName,
+    campaignGoal,
+    memorySummary,
+    voiceAgentName: agent?.greetingName ?? agent?.name ?? "Ava",
+    language: agent?.language ?? "en-US",
+    entryStage: flowConfig.entryStage,
+    flowStages: stageBrief,
+    sessionId: parsed.data.sessionId,
+    campaignId: parsed.data.campaignId,
+    queueId: parsed.data.queueId,
   });
 }

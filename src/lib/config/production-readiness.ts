@@ -1,4 +1,5 @@
 import { getAiRuntimeStatus } from "@/lib/ai/config";
+import { isSsoConfigured } from "@/lib/auth/sso-oidc";
 import { getAllChannelStatuses } from "@/lib/channels/config";
 import {
   getVoiceRelayWssUrl,
@@ -106,12 +107,14 @@ export function getProductionReadiness(): ProductionReadiness {
   }
 
   if (!has(process.env.CRON_SECRET)) {
-    warnings.push("CRON_SECRET not set — email sync cron endpoint is unauthenticated");
+    warnings.push(
+      "CRON_SECRET not set — cron endpoints (email, scheduled calls, campaigns, reminders) are unauthenticated"
+    );
     items.push({
       id: "cron_secret",
       label: "CRON_SECRET",
       status: "warning",
-      detail: "Set to protect /api/cron/sync-email",
+      detail: "Set to protect /api/cron/*",
     });
   } else {
     items.push({
@@ -229,6 +232,31 @@ export function getProductionReadiness(): ProductionReadiness {
     });
   }
 
+  const gcalClient =
+    has(process.env.GOOGLE_CALENDAR_CLIENT_ID) ||
+    has(process.env.SSO_GOOGLE_CLIENT_ID);
+  const gcalSecret =
+    has(process.env.GOOGLE_CALENDAR_CLIENT_SECRET) ||
+    has(process.env.SSO_GOOGLE_CLIENT_SECRET);
+  if (gcalClient && gcalSecret) {
+    items.push({
+      id: "google_calendar",
+      label: "Google Calendar",
+      status: "ok",
+      detail: "OAuth client configured for AI meeting booking",
+    });
+  } else {
+    warnings.push(
+      "Google Calendar OAuth not set — AI booking uses local availability until GOOGLE_CALENDAR_CLIENT_ID/SECRET are configured"
+    );
+    items.push({
+      id: "google_calendar",
+      label: "Google Calendar",
+      status: "warning",
+      detail: "Set GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET",
+    });
+  }
+
   const stripe = getStripeRuntimeStatus();
   if (stripe.status !== "live") {
     warnings.push("STRIPE_SECRET_KEY not set — Billing and Build OS checkout use demo fallback");
@@ -300,6 +328,28 @@ export function getProductionReadiness(): ProductionReadiness {
         namecom.status === "live"
           ? `${opensrs.env} (name.com preferred)`
           : opensrs.env,
+    });
+  }
+
+  const googleSso =
+    isSsoConfigured("google") &&
+    has(process.env.SSO_GOOGLE_CLIENT_SECRET);
+  if (!googleSso) {
+    warnings.push(
+      "Google OAuth not set — Continue with Google is hidden until SSO_GOOGLE_ISSUER, SSO_GOOGLE_CLIENT_ID, and SSO_GOOGLE_CLIENT_SECRET are configured"
+    );
+    items.push({
+      id: "google_sso",
+      label: "Google sign-in / sign-up",
+      status: "warning",
+      detail:
+        "Set SSO_GOOGLE_ISSUER, SSO_GOOGLE_CLIENT_ID, SSO_GOOGLE_CLIENT_SECRET",
+    });
+  } else {
+    items.push({
+      id: "google_sso",
+      label: "Google sign-in / sign-up",
+      status: "ok",
     });
   }
 

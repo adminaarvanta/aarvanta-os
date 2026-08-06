@@ -163,7 +163,7 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
     id: "voice",
     label: "Voice OS",
     href: "/voice",
-    description: "AI calling, dialer & call log",
+    description: "AI calling campaigns, dialer & queue",
     dotClass: "bg-primary-bright",
     iconClass: "text-primary-bright bg-primary-soft",
   },

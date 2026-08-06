@@ -34,6 +34,11 @@ async function twimlResponse(req: Request) {
   const mode = url.searchParams.get("mode");
   let direction = url.searchParams.get("direction") ?? "";
   const conversationId = url.searchParams.get("conversationId") ?? "";
+  const campaignId = url.searchParams.get("campaignId") ?? "";
+  const queueId = url.searchParams.get("queueId") ?? "";
+  const sessionId = url.searchParams.get("sessionId") ?? "";
+  const contactId = url.searchParams.get("contactId") ?? "";
+  const voiceAgentId = url.searchParams.get("voiceAgentId") ?? "";
 
   if (req.method === "POST") {
     try {
@@ -93,6 +98,11 @@ async function twimlResponse(req: Request) {
         provider: voice.provider,
         voiceId: voice.voice,
         elevenlabsTextNormalization: voice.elevenlabsTextNormalization,
+        campaignId,
+        queueId,
+        sessionId,
+        contactId,
+        voiceAgentId,
       })
     : buildSayTwiml(
         (brief || welcome || defaultWelcome).slice(0, 280),
@@ -130,6 +140,11 @@ function buildConversationRelayTwiml(
     provider: string;
     voiceId: string;
     elevenlabsTextNormalization: string;
+    campaignId?: string;
+    queueId?: string;
+    sessionId?: string;
+    contactId?: string;
+    voiceAgentId?: string;
   }
 ) {
   const elevenNorm =
@@ -137,6 +152,25 @@ function buildConversationRelayTwiml(
       ? ` elevenlabsTextNormalization="${escapeXml(params.elevenlabsTextNormalization)}"`
       : "";
   const welcomeAttr = welcome ? ` welcomeGreeting="${escapeXml(welcome)}"` : "";
+  const extra = [
+    params.campaignId
+      ? `<Parameter name="campaignId" value="${escapeXml(params.campaignId)}" />`
+      : "",
+    params.queueId
+      ? `<Parameter name="queueId" value="${escapeXml(params.queueId)}" />`
+      : "",
+    params.sessionId
+      ? `<Parameter name="sessionId" value="${escapeXml(params.sessionId)}" />`
+      : "",
+    params.contactId
+      ? `<Parameter name="contactId" value="${escapeXml(params.contactId)}" />`
+      : "",
+    params.voiceAgentId
+      ? `<Parameter name="voiceAgentId" value="${escapeXml(params.voiceAgentId)}" />`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n      ");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -148,6 +182,7 @@ function buildConversationRelayTwiml(
       <Parameter name="businessName" value="${escapeXml(params.businessName)}" />
       <Parameter name="language" value="${escapeXml(params.language)}" />
       <Parameter name="source" value="aarvanta-voice-os" />
+      ${extra}
     </ConversationRelay>
   </Connect>
 </Response>`;

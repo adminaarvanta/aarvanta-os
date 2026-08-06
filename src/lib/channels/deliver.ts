@@ -19,6 +19,12 @@ export interface DeliveryContext {
   /** Correlate Twilio ConversationRelay session with Voice OS thread */
   conversationId?: string;
   voiceDirection?: "inbound" | "outbound";
+  /** Campaign dialer correlation (passed into TwiML / ConversationRelay) */
+  campaignId?: string;
+  queueId?: string;
+  sessionId?: string;
+  contactId?: string;
+  voiceAgentId?: string;
 }
 
 async function sendWhatsAppMessage(to: string, text: string) {
@@ -79,7 +85,15 @@ async function sendTwilioSms(to: string, text: string) {
 async function initiateTwilioVoiceCall(
   to: string,
   message: string,
-  opts?: { conversationId?: string; direction?: "inbound" | "outbound" }
+  opts?: {
+    conversationId?: string;
+    direction?: "inbound" | "outbound";
+    campaignId?: string;
+    queueId?: string;
+    sessionId?: string;
+    contactId?: string;
+    voiceAgentId?: string;
+  }
 ) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -97,6 +111,11 @@ async function initiateTwilioVoiceCall(
   if (opts?.conversationId) {
     params.set("conversationId", opts.conversationId);
   }
+  if (opts?.campaignId) params.set("campaignId", opts.campaignId);
+  if (opts?.queueId) params.set("queueId", opts.queueId);
+  if (opts?.sessionId) params.set("sessionId", opts.sessionId);
+  if (opts?.contactId) params.set("contactId", opts.contactId);
+  if (opts?.voiceAgentId) params.set("voiceAgentId", opts.voiceAgentId);
   const twimlUrl = `${base}/api/webhooks/twilio/twiml?${params.toString()}`;
   const statusCallback = `${base}/api/webhooks/twilio`;
   const recordingCallback = `${base}/api/webhooks/twilio/recording`;
@@ -194,6 +213,11 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
       await initiateTwilioVoiceCall(ctx.contact.phone, ctx.content, {
         conversationId: ctx.conversationId,
         direction: ctx.voiceDirection ?? "outbound",
+        campaignId: ctx.campaignId,
+        queueId: ctx.queueId,
+        sessionId: ctx.sessionId,
+        contactId: ctx.contactId,
+        voiceAgentId: ctx.voiceAgentId,
       });
       return;
     }
