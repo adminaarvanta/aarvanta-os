@@ -94,8 +94,9 @@ export async function POST(req: Request) {
       (crmContact ? contactDisplayName(crmContact) : conversation.contact.name),
   };
 
+  let callSid: string | undefined;
   try {
-    await deliverOutbound({
+    const delivery = await deliverOutbound({
       channel: "voice",
       contact,
       content: parsed.data.message,
@@ -105,6 +106,7 @@ export async function POST(req: Request) {
       sessionId: session.id,
       voiceAgentId: agent?.id,
     });
+    callSid = delivery.callSid;
   } catch (error) {
     await calling.updateSession(
       session.id,
@@ -120,11 +122,23 @@ export async function POST(req: Request) {
     );
   }
 
-  await calling.updateSession(session.id, { status: "in_progress" }, scope);
+  await calling.updateSession(
+    session.id,
+    {
+      status: "in_progress",
+      callSid,
+      summary: parsed.data.message,
+    },
+    scope
+  );
 
   const updated = await repo.addOutboundCall(
     conversation.id,
-    { summary: parsed.data.message },
+    {
+      summary: parsed.data.message,
+      callSid,
+      durationSeconds: 0,
+    },
     scope,
     { name: ctx.name || "You", id: ctx.userId }
   );
@@ -133,6 +147,7 @@ export async function POST(req: Request) {
     conversationId: conversation.id,
     sessionId: session.id,
     contactId: crmContact?.id,
+    callSid,
     conversation: updated,
   });
 }

@@ -82,6 +82,11 @@ async function sendTwilioSms(to: string, text: string) {
   }
 }
 
+export type DeliveryResult = {
+  /** Twilio CallSid when channel is voice (or simulated sid in demo). */
+  callSid?: string;
+};
+
 async function initiateTwilioVoiceCall(
   to: string,
   message: string,
@@ -94,7 +99,7 @@ async function initiateTwilioVoiceCall(
     contactId?: string;
     voiceAgentId?: string;
   }
-) {
+): Promise<string> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_PHONE_NUMBER;
@@ -159,9 +164,15 @@ async function initiateTwilioVoiceCall(
   if (!response.ok) {
     throw new Error(`Twilio Voice failed (${response.status}): ${await response.text()}`);
   }
+
+  const payload = (await response.json()) as { sid?: string };
+  if (!payload.sid) {
+    throw new Error("Twilio Voice succeeded but returned no CallSid.");
+  }
+  return payload.sid;
 }
 
-export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
+export async function deliverOutbound(ctx: DeliveryContext): Promise<DeliveryResult> {
   const status = getChannelStatus(ctx.channel);
 
   if (status === "simulate") {
@@ -169,7 +180,10 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
       to: ctx.contact.phone ?? ctx.contact.email ?? ctx.contact.chatSessionId,
       content: ctx.content.slice(0, 80),
     });
-    return;
+    if (ctx.channel === "voice") {
+      return { callSid: `sim_${Date.now()}` };
+    }
+    return {};
   }
 
   if (status === "not_configured") {
@@ -184,12 +198,12 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
       const { consumeWhatsAppConversation } = await import("@/lib/billing/consume");
       await consumeWhatsAppConversation(scope);
       await sendWhatsAppMessage(ctx.contact.phone, ctx.content);
-      return;
+      return {};
     }
     case "sms": {
       if (!ctx.contact.phone) throw new Error("Contact has no phone for SMS.");
       await sendTwilioSms(ctx.contact.phone, ctx.content);
-      return;
+      return {};
     }
     case "email": {
       if (!ctx.contact.email) throw new Error("Contact has no email address.");
@@ -204,13 +218,13 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
         inReplyTo: ctx.emailInReplyTo,
         messageId: ctx.emailMessageId,
       });
-      return;
+      return {};
     }
     case "voice": {
       if (!ctx.contact.phone) throw new Error("Contact has no phone for voice.");
       const { requireVoiceCapacity } = await import("@/lib/billing/consume");
       await requireVoiceCapacity(scope, 1);
-      await initiateTwilioVoiceCall(ctx.contact.phone, ctx.content, {
+      const callSid = await initiateTwilioVoiceCall(ctx.contact.phone, ctx.content, {
         conversationId: ctx.conversationId,
         direction: ctx.voiceDirection ?? "outbound",
         campaignId: ctx.campaignId,
@@ -219,10 +233,10 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<void> {
         contactId: ctx.contactId,
         voiceAgentId: ctx.voiceAgentId,
       });
-      return;
+      return { callSid };
     }
     case "website_chat":
-      return;
+      return {};
     default:
       throw new Error(`Unsupported channel: ${ctx.channel}`);
   }

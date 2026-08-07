@@ -87,6 +87,12 @@ export default async function VoiceOsDashboardPage() {
       actions={
         <>
           <Link
+            href="/voice/dialer"
+            className="inline-flex items-center rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:border-[var(--chart-ops)]"
+          >
+            Dialer
+          </Link>
+          <Link
             href="/voice/live"
             className="inline-flex items-center rounded-xl border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:border-[var(--chart-ops)]"
           >

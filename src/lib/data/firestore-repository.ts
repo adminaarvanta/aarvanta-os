@@ -9,6 +9,7 @@ import {
   appendOutboundEmail,
   appendOutboundMessage,
   attachCallRecording,
+  patchTimelineCallBySid,
   createConversation,
   inScope,
   newId,
@@ -324,6 +325,14 @@ export const firestoreRepository: ConversationRepository = {
     const conv = await getScopedConversation(conversationId, scope);
     if (!conv) return null;
     return save(attachCallRecording(conv, input));
+  },
+
+  async patchCallBySid(conversationId, callSid, patch, scope) {
+    const conv = await getScopedConversation(conversationId, scope);
+    if (!conv) return null;
+    const updated = patchTimelineCallBySid(conv, callSid, patch);
+    if (!updated) return null;
+    return save(updated);
   },
 
   async addInboundChat(input, scope) {

@@ -168,7 +168,7 @@ export async function dialQueueItem(item: CallQueueItem) {
     .filter(Boolean)
     .join(" ");
 
-  await deliverOutbound({
+  const delivery = await deliverOutbound({
     channel: "voice",
     contact: {
       ...conversation.contact,
@@ -187,10 +187,18 @@ export async function dialQueueItem(item: CallQueueItem) {
 
   await inbox.addOutboundCall(
     conversation.id,
-    { summary: `[Campaign ${campaign.name}] Outbound AI call` },
+    {
+      summary: `[Campaign ${campaign.name}] Outbound AI call`,
+      callSid: delivery.callSid,
+      durationSeconds: 0,
+    },
     scope,
     { name: agent?.name ?? "Voice Agent", id: agent?.id ?? "voice-agent" }
   );
 
-  await repo.updateSession(session.id, { status: "in_progress" }, scope);
+  await repo.updateSession(
+    session.id,
+    { status: "in_progress", callSid: delivery.callSid, summary: briefing },
+    scope
+  );
 }

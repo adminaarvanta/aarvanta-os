@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isProductionMode } from "@/lib/config/app-mode";
+import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getRepository } from "@/lib/data/repository";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
 import {
@@ -100,12 +101,28 @@ export async function POST(req: Request) {
     scope
   );
 
+  // Also attach to Voice OS CallSession so History replay has audio.
+  const calling = getCallingAgentRepository();
+  const session = await calling.getSessionByCallSid(callSid, scope);
+  if (session) {
+    await calling.updateSession(
+      session.id,
+      {
+        recordingUrl: proxyPath,
+        recordingSid,
+        callSid,
+      },
+      scope
+    );
+  }
+
   await markWebhookProcessed("twilio_recording", recordingSid, scope);
 
   return NextResponse.json({
     received: true,
     processed: 1,
     conversationId: conversation.id,
+    sessionId: session?.id,
     recordingSid,
   });
 }

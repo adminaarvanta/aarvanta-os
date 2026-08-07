@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Dialer lives inside Voice OS Settings. */
+/** Dialer lives inside Voice OS. */
 export default function CallingRedirectPage() {
-  redirect("/voice/settings");
+  redirect("/voice/dialer");
 }

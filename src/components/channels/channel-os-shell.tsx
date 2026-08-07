@@ -67,7 +67,7 @@ export async function ChannelOsListPage({
           <div className="flex flex-wrap items-center gap-2">
             {os === "voice" ? (
               <Link
-                href="/voice/settings"
+                href="/voice/dialer"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-gold/40 hover:text-gold"
               >
                 <Phone className="h-4 w-4" />

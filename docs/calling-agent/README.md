@@ -15,7 +15,8 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 | `/voice/calendar` | Slot picker + Google Calendar connect |
 | `/voice/history` | Conversation replay |
 | `/voice/insights` | Funnel + performance + insights |
-| `/voice/settings` | Manual dialer + voice config |
+| `/voice/dialer` | Manual dialer (CRM person picker + Call now / Schedule) |
+| `/voice/settings` | Voice TTS / recording prefs |
 
 `/calling` redirects to `/voice/settings`.
 

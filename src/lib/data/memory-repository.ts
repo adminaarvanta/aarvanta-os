@@ -10,6 +10,7 @@ import {
   appendOutboundEmail,
   appendOutboundMessage,
   attachCallRecording,
+  patchTimelineCallBySid,
   createConversation,
   inScope,
   newId,
@@ -318,6 +319,19 @@ export const memoryRepository: ConversationRepository = {
     if (idx === -1) return null;
     getConversations()[idx] = attachCallRecording(getConversations()[idx], input);
     return structuredClone(getConversations()[idx]);
+  },
+
+  async patchCallBySid(conversationId, callSid, patch, scope) {
+    const idx = findIndex(conversationId, scope);
+    if (idx === -1) return null;
+    const updated = patchTimelineCallBySid(
+      getConversations()[idx],
+      callSid,
+      patch
+    );
+    if (!updated) return null;
+    getConversations()[idx] = updated;
+    return structuredClone(updated);
   },
 
   async addInboundChat(input, scope) {

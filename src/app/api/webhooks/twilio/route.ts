@@ -133,15 +133,26 @@ export async function POST(req: Request) {
           scope
         );
       }
-      await repo.addOutboundCall(
+      const patched = await repo.patchCallBySid(
         conversation.id,
+        call.callSid,
         {
           summary: call.summary,
           durationSeconds: call.durationSeconds,
-          callSid: call.callSid,
         },
         scope
       );
+      if (!patched) {
+        await repo.addOutboundCall(
+          conversation.id,
+          {
+            summary: call.summary,
+            durationSeconds: call.durationSeconds,
+            callSid: call.callSid,
+          },
+          scope
+        );
+      }
     } else {
       await repo.addInboundCall(
         {
@@ -152,6 +163,48 @@ export async function POST(req: Request) {
         },
         scope
       );
+    }
+
+    // Keep CallSession duration/status in sync for Voice OS History.
+    try {
+      const { getCallingAgentRepository } = await import(
+        "@/lib/data/calling-agent-store"
+      );
+      const calling = getCallingAgentRepository();
+      const session = await calling.getSessionByCallSid(call.callSid, scope);
+      if (session) {
+        const terminal = ["completed", "busy", "failed", "no-answer", "canceled"].includes(
+          call.status
+        );
+        const outcome =
+          call.status === "busy"
+            ? ("busy" as const)
+            : call.status === "no-answer"
+              ? ("no_answer" as const)
+              : call.status === "failed" || call.status === "canceled"
+                ? ("failed" as const)
+                : call.status === "completed"
+                  ? session.outcome ?? ("completed" as const)
+                  : undefined;
+        await calling.updateSession(
+          session.id,
+          {
+            callSid: call.callSid,
+            durationSeconds: call.durationSeconds || session.durationSeconds,
+            ...(terminal
+              ? {
+                  status:
+                    call.status === "completed" ? "completed" : "failed",
+                  endedAt: session.endedAt ?? new Date().toISOString(),
+                  ...(outcome ? { outcome } : {}),
+                }
+              : {}),
+          },
+          scope
+        );
+      }
+    } catch (err) {
+      console.warn("[twilio] session sync failed", err);
     }
 
     await markWebhookProcessed("twilio_voice", eventKey, scope);

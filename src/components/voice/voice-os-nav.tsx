@@ -7,6 +7,7 @@ import {
   History,
   LayoutDashboard,
   Megaphone,
+  Phone,
   PhoneCall,
   Radio,
   Settings2,
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/voice", label: "Dashboard", exact: true, icon: LayoutDashboard },
+  { href: "/voice/dialer", label: "Dialer", exact: false, icon: Phone },
   { href: "/voice/agents", label: "Agents", exact: false, icon: Bot },
   { href: "/voice/campaigns", label: "Campaigns", exact: false, icon: Megaphone },
   { href: "/voice/live", label: "Live Calls", exact: false, icon: Radio },

@@ -105,6 +105,18 @@ export interface ConversationRepository {
     },
     scope: TenantScope
   ): Promise<Conversation | null>;
+  /** Update an existing call event by Twilio CallSid. Returns null if not found. */
+  patchCallBySid(
+    conversationId: string,
+    callSid: string,
+    patch: {
+      durationSeconds?: number;
+      summary?: string;
+      recordingUrl?: string;
+      recordingSid?: string;
+    },
+    scope: TenantScope
+  ): Promise<Conversation | null>;
   addInboundChat(
     input: {
       sessionId: string;

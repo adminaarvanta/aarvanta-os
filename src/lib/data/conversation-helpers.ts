@@ -274,6 +274,40 @@ export function attachCallRecording(
   };
 }
 
+/** Patch an existing timeline call by CallSid (avoids duplicate outbound events). */
+export function patchTimelineCallBySid(
+  conv: Conversation,
+  callSid: string,
+  patch: {
+    durationSeconds?: number;
+    summary?: string;
+    recordingUrl?: string;
+    recordingSid?: string;
+  }
+): Conversation | null {
+  const idx = conv.timeline.findIndex(
+    (e) => e.type === "call" && e.callSid === callSid
+  );
+  if (idx < 0) return null;
+  const event = conv.timeline[idx];
+  if (!event || event.type !== "call") return null;
+  const now = new Date().toISOString();
+  const timeline = [...conv.timeline];
+  timeline[idx] = {
+    ...event,
+    durationSeconds: patch.durationSeconds ?? event.durationSeconds,
+    summary: patch.summary ?? event.summary,
+    recordingUrl: patch.recordingUrl ?? event.recordingUrl,
+    recordingSid: patch.recordingSid ?? event.recordingSid,
+  };
+  return {
+    ...conv,
+    timeline,
+    lastActivityAt: now,
+    updatedAt: now,
+  };
+}
+
 export function createConversation(
   scope: TenantScope,
   contact: ContactRef,
