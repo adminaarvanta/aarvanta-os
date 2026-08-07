@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { ContactTag } from "@/types/crm";
+import { contactDisplayName, type ContactTag, type CrmContact } from "@/types/crm";
 import {
   DEFAULT_RETRY_POLICY,
   DEFAULT_WORKING_HOURS,
+  type CampaignFilters,
   type RetryPolicy,
   type VoiceAgent,
 } from "@/types/calling-agent";
@@ -19,6 +20,8 @@ const STEPS = [
   "Retry Rules",
   "Launch",
 ] as const;
+
+type AudienceMode = "all" | "pick" | "filters";
 
 const TAG_OPTIONS: ContactTag[] = [
   "prospect",
@@ -77,6 +80,10 @@ export function CampaignWizard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audienceCount, setAudienceCount] = useState<number | null>(null);
+  const [audienceMode, setAudienceMode] = useState<AudienceMode>("pick");
+  const [contacts, setContacts] = useState<CrmContact[]>([]);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+  const [contactQuery, setContactQuery] = useState("");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -90,6 +97,45 @@ export function CampaignWizard({
   const [dailyCallLimit, setDailyCallLimit] = useState(40);
   const [weekendCalling, setWeekendCalling] = useState(false);
   const [retryPolicy, setRetryPolicy] = useState<RetryPolicy>(DEFAULT_RETRY_POLICY);
+
+  const contactsWithPhone = useMemo(
+    () => contacts.filter((c) => Boolean(c.phone?.trim())),
+    [contacts]
+  );
+
+  const filteredContacts = useMemo(() => {
+    const q = contactQuery.trim().toLowerCase();
+    if (!q) return contactsWithPhone;
+    return contactsWithPhone.filter((c) => {
+      const label = contactDisplayName(c).toLowerCase();
+      return (
+        label.includes(q) ||
+        (c.phone ?? "").toLowerCase().includes(q) ||
+        (c.email ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [contactsWithPhone, contactQuery]);
+
+  function buildFilters(): CampaignFilters {
+    if (audienceMode === "all") {
+      return { requirePhone: true };
+    }
+    if (audienceMode === "pick") {
+      return {
+        requirePhone: true,
+        contactIds: selectedContactIds,
+      };
+    }
+    return {
+      tags,
+      minLeadScore,
+      industries: industries
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      requirePhone: true,
+    };
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -113,28 +159,43 @@ export function CampaignWizard({
   }, [initialAgents]);
 
   useEffect(() => {
-    if (step !== 1) return;
+    void (async () => {
+      try {
+        const res = await fetch("/api/contacts");
+        if (!res.ok) return;
+        const data = (await res.json()) as { contacts: CrmContact[] };
+        setContacts(data.contacts ?? []);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (step !== 1 && step !== 5) return;
+    if (audienceMode === "pick") {
+      setAudienceCount(selectedContactIds.length);
+      return;
+    }
     void (async () => {
       const res = await fetch("/api/voice/audience/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filters: {
-            tags,
-            minLeadScore,
-            industries: industries
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean),
-            requirePhone: true,
-          },
-        }),
+        body: JSON.stringify({ filters: buildFilters() }),
       });
       if (!res.ok) return;
       const data = (await res.json()) as { count: number };
       setAudienceCount(data.count);
     })();
-  }, [step, tags, minLeadScore, industries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild when audience inputs change
+  }, [
+    step,
+    audienceMode,
+    selectedContactIds,
+    tags,
+    minLeadScore,
+    industries,
+  ]);
 
   function toggleTag(tag: ContactTag) {
     setTags((prev) =>
@@ -142,7 +203,17 @@ export function CampaignWizard({
     );
   }
 
-  async function launch(startNow: boolean) {
+  function toggleContact(id: string) {
+    setSelectedContactIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
+  async function launch(startNow: boolean, dialFirst = false) {
+    if (audienceMode === "pick" && selectedContactIds.length === 0) {
+      setError("Select at least one CRM contact, or switch to All / Filters.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -160,15 +231,7 @@ export function CampaignWizard({
           weekendCalling,
           retryPolicy,
           workingHours: DEFAULT_WORKING_HOURS,
-          filters: {
-            tags,
-            minLeadScore,
-            industries: industries
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean),
-            requirePhone: true,
-          },
+          filters: buildFilters(),
           status: "draft",
         }),
       });
@@ -188,9 +251,41 @@ export function CampaignWizard({
         if (!startRes.ok) {
           throw new Error("Campaign created but failed to start");
         }
+
+        if (dialFirst) {
+          const queueRes = await fetch(
+            `/api/voice/campaigns/${campaign.id}/queue`
+          );
+          if (queueRes.ok) {
+            const data = (await queueRes.json()) as {
+              queue: { id: string; status: string }[];
+            };
+            const first =
+              data.queue.find((q) => q.status === "pending") ?? data.queue[0];
+            if (first) {
+              const dialRes = await fetch("/api/voice/queue/call-now", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ queueId: first.id }),
+              });
+              if (!dialRes.ok) {
+                throw new Error(
+                  "Campaign started but first call failed — use Queue → Call now"
+                );
+              }
+              router.push("/voice/live");
+              router.refresh();
+              return;
+            }
+          }
+        }
       }
 
-      router.push(`/voice/campaigns/${campaign.id}`);
+      router.push(
+        dialFirst || startNow
+          ? `/voice/queue`
+          : `/voice/campaigns/${campaign.id}`
+      );
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed");
@@ -260,45 +355,148 @@ export function CampaignWizard({
       )}
 
       {step === 1 && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted">Select audience filters</p>
+        <div className="space-y-4">
+          <p className="text-sm text-muted">
+            Who should this campaign call?
+          </p>
           <div className="flex flex-wrap gap-2">
-            {TAG_OPTIONS.map((tag) => (
+            {(
+              [
+                ["pick", "Select people"],
+                ["all", "All with phone"],
+                ["filters", "By filters"],
+              ] as const
+            ).map(([mode, label]) => (
               <button
-                key={tag}
+                key={mode}
                 type="button"
-                onClick={() => toggleTag(tag)}
-                className={`rounded-full px-3 py-1 text-xs ${
-                  tags.includes(tag)
-                    ? "bg-gold text-background"
+                onClick={() => setAudienceMode(mode)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  audienceMode === mode
+                    ? "bg-[var(--navy)] text-white dark:bg-gold dark:text-[var(--navy)]"
                     : "border border-border text-muted"
                 }`}
               >
-                {tag}
+                {label}
               </button>
             ))}
           </div>
-          <label className="block space-y-1 text-sm">
-            <span>Min lead score</span>
-            <input
-              type="number"
-              className={inputClass}
-              value={minLeadScore}
-              onChange={(e) => setMinLeadScore(Number(e.target.value))}
-            />
-          </label>
-          <label className="block space-y-1 text-sm">
-            <span>Industries (comma-separated)</span>
-            <input
-              className={inputClass}
-              value={industries}
-              onChange={(e) => setIndustries(e.target.value)}
-              placeholder="Healthcare, SaaS"
-            />
-          </label>
+
+          {audienceMode === "all" ? (
+            <p className="rounded-xl border border-border bg-surface px-3 py-3 text-sm text-muted">
+              Queue every CRM contact that has a phone number (
+              <strong className="text-foreground">
+                {contactsWithPhone.length}
+              </strong>{" "}
+              right now).
+            </p>
+          ) : null}
+
+          {audienceMode === "pick" ? (
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  className={`${inputClass} max-w-xs`}
+                  placeholder="Search people…"
+                  value={contactQuery}
+                  onChange={(e) => setContactQuery(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    setSelectedContactIds(contactsWithPhone.map((c) => c.id))
+                  }
+                >
+                  Select all
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setSelectedContactIds([])}
+                >
+                  Clear
+                </Button>
+              </div>
+              <ul className="max-h-64 space-y-1 overflow-y-auto rounded-xl border border-border p-2">
+                {filteredContacts.length === 0 ? (
+                  <li className="px-2 py-6 text-center text-sm text-muted">
+                    No CRM contacts with phone numbers.
+                  </li>
+                ) : (
+                  filteredContacts.map((c) => {
+                    const checked = selectedContactIds.includes(c.id);
+                    return (
+                      <li key={c.id}>
+                        <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-surface">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleContact(c.id)}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-foreground">
+                              {contactDisplayName(c)}
+                            </span>
+                            <span className="block truncate text-xs text-muted">
+                              {c.phone}
+                            </span>
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+            </div>
+          ) : null}
+
+          {audienceMode === "filters" ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {TAG_OPTIONS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full px-3 py-1 text-xs ${
+                      tags.includes(tag)
+                        ? "bg-gold text-background"
+                        : "border border-border text-muted"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <label className="block space-y-1 text-sm">
+                <span>Min lead score</span>
+                <input
+                  type="number"
+                  className={inputClass}
+                  value={minLeadScore}
+                  onChange={(e) => setMinLeadScore(Number(e.target.value))}
+                />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>Industries (comma-separated)</span>
+                <input
+                  className={inputClass}
+                  value={industries}
+                  onChange={(e) => setIndustries(e.target.value)}
+                  placeholder="Healthcare, SaaS"
+                />
+              </label>
+            </div>
+          ) : null}
+
           <p className="text-sm text-foreground">
-            Audience preview:{" "}
-            <strong>{audienceCount ?? "…"}</strong> contacts with phone
+            Audience: <strong>{audienceCount ?? "…"}</strong> contacts
+            {audienceMode === "pick" && selectedContactIds.length === 0
+              ? " — select at least one for the demo"
+              : ""}
           </p>
         </div>
       )}
@@ -443,14 +641,26 @@ export function CampaignWizard({
       )}
 
       {step === 5 && (
-        <div className="space-y-2 rounded-xl border border-border bg-surface-elevated p-4 text-sm">
+        <div className="space-y-2 rounded-xl border border-border bg-surface p-4 text-sm">
           <p>
             <strong>{name || "Untitled"}</strong> — {goal}
           </p>
           <p className="text-muted">
-            Audience ≈ {audienceCount ?? "?"} · Agent{" "}
+            Audience ≈ {audienceCount ?? "?"} (
+            {audienceMode === "all"
+              ? "all with phone"
+              : audienceMode === "pick"
+                ? "selected people"
+                : "filters"}
+            ) · Agent{" "}
             {agents.find((a) => a.id === voiceAgentId)?.name ?? "—"} ·{" "}
             {timezone} · {dailyCallLimit}/day
+          </p>
+          <p className="text-xs text-muted">
+            Tip for a live demo: use{" "}
+            <strong className="text-foreground">Launch & call first now</strong>{" "}
+            — the queue fills immediately and the first lead starts dialing in
+            seconds. Auto-dial cron alone is not second-by-second.
           </p>
         </div>
       )}
@@ -472,6 +682,9 @@ export function CampaignWizard({
             disabled={
               busy ||
               (step === 0 && !name.trim()) ||
+              (step === 1 &&
+                audienceMode === "pick" &&
+                selectedContactIds.length === 0) ||
               (step === 2 && !voiceAgentId)
             }
             onClick={() => setStep((s) => s + 1)}
@@ -490,10 +703,18 @@ export function CampaignWizard({
             </Button>
             <Button
               type="button"
+              variant="secondary"
               disabled={busy || !name.trim() || !voiceAgentId}
-              onClick={() => void launch(true)}
+              onClick={() => void launch(true, false)}
             >
-              {busy ? "Launching…" : "Launch campaign"}
+              Launch campaign
+            </Button>
+            <Button
+              type="button"
+              disabled={busy || !name.trim() || !voiceAgentId}
+              onClick={() => void launch(true, true)}
+            >
+              {busy ? "Starting…" : "Launch & call first now"}
             </Button>
           </>
         )}

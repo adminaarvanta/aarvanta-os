@@ -50,8 +50,9 @@ function matchesFilters(
     return false;
   }
 
-  if (filters.contactIds?.length && !filters.contactIds.includes(contact.id)) {
-    return false;
+  // Explicit CRM contact list wins — skip tags/score/industry filters.
+  if (filters.contactIds?.length) {
+    return filters.contactIds.includes(contact.id);
   }
 
   if (filters.accountIds?.length) {
