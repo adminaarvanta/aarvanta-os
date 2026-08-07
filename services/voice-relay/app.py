@@ -43,26 +43,29 @@ AARVANTA_CALLBACK_SECRET = os.getenv("VOICE_RELAY_CALLBACK_SECRET", "").strip()
 AARVANTA_CONTEXT_URL = os.getenv("AARVANTA_VOICE_CONTEXT_URL", "").strip()
 
 DEFAULT_SYSTEM = (
-    "You are a warm, capable phone receptionist for the business. "
-    "Speak like a helpful human on a real phone call — natural pacing, not a script.\n"
-    "Rules:\n"
-    "- Answer the caller's question fully in 2–4 spoken sentences when they ask for detail.\n"
-    "- Use light conversational cues (e.g. 'Sure —', 'Happy to help') when it feels natural.\n"
-    "- Be clear and helpful; invite the next question when it fits.\n"
-    "- Do not invent pricing, contracts, legal promises, or facts not in your briefing or company knowledge.\n"
-    "- If you don't know, say you'll have a teammate follow up — don't guess.\n"
+    "You are a warm, concise phone representative for the business. "
+    "Speak like a real human on a short phone call — calm, clear, never scripted.\n"
+    "HARD RULES (never break these):\n"
+    "- NO BLUFFING: Never invent facts, features, pricing, timelines, clients, case studies, "
+    "integrations, or promises. If it is not in your briefing or company knowledge, say you "
+    "do not have that detail and offer a human follow-up.\n"
+    "- SHORT TURNS: Reply in 1–2 short sentences by default (max 3). Ask at most one question.\n"
+    "- NO REPEATS: Do not restate what you or the caller already said. Do not re-introduce "
+    "yourself after the opening. Do not loop the same pitch or question.\n"
+    "- STOP TALKING: After your answer or question, stop. Do not fill silence with more pitch.\n"
     "- Never say you are an AI unless asked.\n"
-    "- If the caller says they are done, the test is complete, goodbye, or thanks that's all: "
-    "reply with a brief warm goodbye only (e.g. 'Sounds good — take care, goodbye.')."
+    "- If the caller is done, goodbye, or testing is complete: one brief goodbye only, then stop."
 )
 SYSTEM_PROMPT = os.getenv("VOICE_AGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM).strip()
 VERIFY_SIGNATURES = os.getenv("VOICE_RELAY_VERIFY_SIGNATURES", "true").lower() != "false"
-MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "160"))
-MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "480"))
-REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.65"))
+MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "90"))
+MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "280"))
+REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.45"))
+REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.55"))
+REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.35"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
-SERVICE_VERSION = "1.5.0"
+SERVICE_VERSION = "1.5.1"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -359,11 +362,11 @@ def build_system_prompt(
         )
     elif direction == "outbound":
         parts.append(
-            "Outbound sales discovery call. Follow the conversation STAGE MACHINE "
-            "below — do not jump ahead. Never hard-pitch before permission. "
-            "When proposing a meeting, use progressive language "
+            "Outbound sales discovery call. Follow the STAGE MACHINE below — one stage "
+            "at a time, never jump ahead, never hard-pitch before permission. "
+            "Keep each turn short. When proposing a meeting, use light language "
             "(short strategy session, no obligation). "
-            "When offering times, suggest only 2–3 days, then only two time slots."
+            "When offering times, suggest only two concrete slots from tools — never invent."
         )
     language = (params.get("language") or ctx.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
@@ -418,8 +421,7 @@ def build_system_prompt(
         "- Offer at most two concrete slots from the tool result (day + time).\n"
         "- Only after they clearly pick a slot, call book_meeting with that "
         "slot's meetingStart and meetingEnd.\n"
-        "- After a successful booking, confirm the time and share the meet link "
-        "if provided.\n"
+        "- After a successful booking, confirm once (time + meet link) — do not repeat.\n"
         + (
             f"- CRM contact id for this call: {contact_id}."
             if contact_id
@@ -427,15 +429,71 @@ def build_system_prompt(
             "offer to have a teammate email a calendar invite instead of booking."
         )
     )
+    parts.append(
+        "ANTI-BLUFF / ANTI-LOOP:\n"
+        "- Prefer 'I don't have that detail — I can have a teammate follow up' over guessing.\n"
+        "- Never pad with filler ('as I mentioned', 'again', restating the value prop).\n"
+        "- If the caller already answered a question, move forward — do not ask it again."
+    )
     return "\n\n".join(parts)
 
 
+def _normalize_for_compare(text: str) -> str:
+    return re.sub(r"[^a-z0-9\s]", "", (text or "").lower())
+
+
 def _cap_reply(reply: str) -> str:
+    reply = (reply or "").strip()
+    # Drop duplicate consecutive sentences (common LLM loop on phone turns).
+    parts = re.split(r"(?<=[.!?])\s+", reply)
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for part in parts:
+        key = _normalize_for_compare(part)
+        if not key or len(key) < 8:
+            if part.strip():
+                cleaned.append(part.strip())
+            continue
+        if key in seen:
+            continue
+        # Near-duplicate: high word overlap with a prior sentence
+        words = set(key.split())
+        if any(
+            len(words & set(prev.split())) / max(len(words), 1) > 0.7
+            for prev in seen
+            if len(prev.split()) >= 4
+        ):
+            continue
+        seen.add(key)
+        cleaned.append(part.strip())
+    reply = " ".join(cleaned).strip() or reply
+
     if len(reply) <= MAX_REPLY_CHARS:
         return reply
     cut = reply[:MAX_REPLY_CHARS]
     end = max(cut.rfind("."), cut.rfind("!"), cut.rfind("?"))
     return (cut[: end + 1] if end > 40 else cut.rsplit(" ", 1)[0]) + ""
+
+
+def _dedupe_against_history(reply: str, history: list[dict[str, str]]) -> str:
+    """If the model repeats the last assistant turn, collapse to a short nudge."""
+    last_assistant = ""
+    for turn in reversed(history):
+        if turn.get("role") == "assistant" and turn.get("content"):
+            last_assistant = turn["content"]
+            break
+    if not last_assistant:
+        return reply
+    a = _normalize_for_compare(reply)
+    b = _normalize_for_compare(last_assistant)
+    if not a or not b:
+        return reply
+    if a == b or (len(a) > 24 and (a in b or b in a)):
+        return "Got it — what would you like to do next?"
+    aw, bw = set(a.split()), set(b.split())
+    if len(aw) >= 6 and len(aw & bw) / max(len(aw), 1) > 0.75:
+        return "Understood. Shall we book a time, or is there something else?"
+    return reply
 
 
 async def _speak_stream(ws: WebSocket, reply: str) -> None:
@@ -476,6 +534,8 @@ async def stream_reply(
             "messages": messages,
             "max_tokens": MAX_REPLY_TOKENS,
             "temperature": REPLY_TEMPERATURE,
+            "frequency_penalty": REPLY_FREQUENCY_PENALTY,
+            "presence_penalty": REPLY_PRESENCE_PENALTY,
         }
         if tools_enabled:
             kwargs["tools"] = BOOKING_TOOLS
@@ -489,7 +549,7 @@ async def stream_reply(
 
         if tool_calls and tools_enabled:
             if not filler_sent:
-                await send_text(ws, "Let me check the calendar for a moment.", last=True)
+                await send_text(ws, "One moment — checking the calendar.", last=True)
                 filler_sent = True
 
             assistant_msg: dict[str, Any] = {
@@ -533,6 +593,7 @@ async def stream_reply(
             continue
 
         reply = (choice.content or "").strip() or "Sorry — could you repeat that?"
+        reply = _dedupe_against_history(reply, history)
         reply = _cap_reply(reply)
         await _speak_stream(ws, reply)
         history.append({"role": "assistant", "content": reply})
@@ -621,6 +682,8 @@ async def health() -> JSONResponse:
             "maxReplyTokens": MAX_REPLY_TOKENS,
             "maxReplyChars": MAX_REPLY_CHARS,
             "temperature": REPLY_TEMPERATURE,
+            "frequencyPenalty": REPLY_FREQUENCY_PENALTY,
+            "presencePenalty": REPLY_PRESENCE_PENALTY,
         }
     )
 

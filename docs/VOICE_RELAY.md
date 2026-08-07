@@ -156,10 +156,12 @@ Controlled in `/opt/aarvanta/voice-relay/.env` (restart `voice-relay` after chan
 
 | Env | Default | Effect |
 |-----|---------|--------|
-| `VOICE_RELAY_MAX_TOKENS` | `160` | LLM output budget (~2–4 sentences) |
-| `VOICE_RELAY_MAX_CHARS` | `480` | Hard spoken-length cap |
-| `VOICE_RELAY_TEMPERATURE` | `0.65` | Higher = more natural variation |
-| `VOICE_AGENT_SYSTEM_PROMPT` | warm receptionist | Override full system prompt |
+| `VOICE_RELAY_MAX_TOKENS` | `90` | Short turns (~1–2 sentences) |
+| `VOICE_RELAY_MAX_CHARS` | `280` | Hard spoken-length cap |
+| `VOICE_RELAY_TEMPERATURE` | `0.45` | Lower = less ramble / invent |
+| `VOICE_RELAY_FREQUENCY_PENALTY` | `0.55` | Reduces repeated phrases |
+| `VOICE_RELAY_PRESENCE_PENALTY` | `0.35` | Encourages moving the call forward |
+| `VOICE_AGENT_SYSTEM_PROMPT` | anti-bluff concise | Override full system prompt (leave unset) |
 
 ### Call recording
 
