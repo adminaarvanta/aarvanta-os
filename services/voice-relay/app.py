@@ -42,10 +42,16 @@ AARVANTA_CALLBACK_URL = os.getenv("AARVANTA_VOICE_CALLBACK_URL", "").strip()
 AARVANTA_CALLBACK_SECRET = os.getenv("VOICE_RELAY_CALLBACK_SECRET", "").strip()
 AARVANTA_CONTEXT_URL = os.getenv("AARVANTA_VOICE_CONTEXT_URL", "").strip()
 
+BRAND_NAME = (os.getenv("VOICE_BRAND_NAME") or "Aarvanta").strip() or "Aarvanta"
+
 DEFAULT_SYSTEM = (
-    "You are a warm, concise phone representative for the business. "
+    f"You are a warm, concise phone representative for {BRAND_NAME}. "
     "Speak like a real human on a short phone call — calm, clear, never scripted.\n"
     "HARD RULES (never break these):\n"
+    f"- BRAND: The company/product name is always \"{BRAND_NAME}\" — never use any other "
+    "company, product, or workspace name for who you represent (ignore other brand names "
+    "in knowledge or briefing for identity).\n"
+    "- ALWAYS GREET first on a new call, then continue. Do not skip the greeting.\n"
     "- NO BLUFFING: Never invent facts, features, pricing, timelines, clients, case studies, "
     "integrations, or promises. If it is not in your briefing or company knowledge, say you "
     "do not have that detail and offer a human follow-up.\n"
@@ -65,7 +71,7 @@ REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.55
 REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.35"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
-SERVICE_VERSION = "1.5.1"
+SERVICE_VERSION = "1.5.2"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -289,9 +295,16 @@ async def end_session(ws: WebSocket, handoff: str = "completed") -> None:
 
 
 OUTBOUND_OPENING_INSTRUCTION = (
-    "(The person just answered the phone. Open the call now: greet them warmly and "
-    "say why you are calling in one natural beat based on your call briefing — "
-    "about one or two short sentences. Never read the briefing text aloud word-for-word.)"
+    f"(The person just answered. ALWAYS start with a warm greeting: say hi, your name, "
+    f"and that you are calling from {BRAND_NAME}. Then in the same short turn, say why "
+    f"you are calling based on the briefing — one or two sentences total. "
+    f"Use only the name {BRAND_NAME} for the company. Never read the briefing word-for-word.)"
+)
+
+INBOUND_OPENING_INSTRUCTION = (
+    f"(Inbound call just connected. ALWAYS start with a warm greeting: thank them for "
+    f"calling {BRAND_NAME}, say your name, and ask how you can help — one or two short "
+    f"sentences. Use only {BRAND_NAME} as the company name.)"
 )
 
 
@@ -343,30 +356,29 @@ def build_system_prompt(
 ) -> str:
     ctx = context or {}
     parts = [SYSTEM_PROMPT]
-    name = (
-        business_name.strip()
-        or str(ctx.get("businessName") or "").strip()
-        or (params.get("businessName") or "").strip()
-    )
+    # Always Aarvanta (or VOICE_BRAND_NAME) — never workspace/customer brand from context.
+    _ = business_name  # ignored for spoken identity
+    name = BRAND_NAME
     agent_name = str(ctx.get("voiceAgentName") or "Ava").strip()
-    if name:
-        parts.append(
-            f"You are {agent_name} representing {name}. "
-            f"Introduce yourself as {agent_name} calling from {name} when it fits."
-        )
+    parts.append(
+        f"You are {agent_name} representing {name}. "
+        f"On the opening turn only: greet and introduce yourself as {agent_name} "
+        f"from {name}. Never say you represent any other company."
+    )
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
         parts.append(
-            "Inbound call: greet warmly, understand what they need, answer clearly, "
-            "then invite the next question."
+            f"Inbound call for {name}: always greet first, understand what they need, "
+            "answer clearly, then invite the next question."
         )
     elif direction == "outbound":
         parts.append(
-            "Outbound sales discovery call. Follow the STAGE MACHINE below — one stage "
-            "at a time, never jump ahead, never hard-pitch before permission. "
-            "Keep each turn short. When proposing a meeting, use light language "
-            "(short strategy session, no obligation). "
-            "When offering times, suggest only two concrete slots from tools — never invent."
+            f"Outbound discovery call for {name}. Always greet first. "
+            "Follow the STAGE MACHINE below — one stage at a time, never jump ahead, "
+            "never hard-pitch before permission. Keep each turn short. "
+            "When proposing a meeting, use light language (short strategy session, "
+            "no obligation). When offering times, suggest only two concrete slots "
+            "from tools — never invent."
         )
     language = (params.get("language") or ctx.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
@@ -409,8 +421,8 @@ def build_system_prompt(
         )
     if knowledge_digest:
         parts.append(
-            "Company knowledge (use ONLY these facts when answering product/company "
-            "questions; if something isn't covered, say a teammate will follow up):\n"
+            f"Reference facts (use for answers only — your company name is still "
+            f"always {name}; do not adopt other brand names from this text as who you are):\n"
             f"{knowledge_digest[:2000]}"
         )
     contact_id = str(ctx.get("contactId") or "").strip()
@@ -684,6 +696,7 @@ async def health() -> JSONResponse:
             "temperature": REPLY_TEMPERATURE,
             "frequencyPenalty": REPLY_FREQUENCY_PENALTY,
             "presencePenalty": REPLY_PRESENCE_PENALTY,
+            "brand": BRAND_NAME,
         }
     )
 
@@ -739,13 +752,10 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     params["direction"] = str(msg.get("direction")).lower()
 
                 context = await asyncio.to_thread(fetch_voice_context, params, session)
-                business_name = str(
-                    context.get("businessName") or params.get("businessName") or ""
-                )
                 knowledge_digest = str(context.get("knowledgeDigest") or "")
                 system = build_system_prompt(
                     params,
-                    business_name=business_name,
+                    business_name=BRAND_NAME,
                     knowledge_digest=knowledge_digest,
                     context=context,
                 )
@@ -767,37 +777,51 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     "timezone": "America/New_York",
                 }
                 session["callContext"] = call_context
+                direction = str(params.get("direction") or "").lower()
                 log.info(
-                    "setup callSid=%s from=%s direction=%s knowledge=%s contact=%s tools=%s",
+                    "setup callSid=%s from=%s direction=%s brand=%s knowledge=%s contact=%s tools=%s",
                     session.get("callSid"),
                     session.get("from"),
-                    params.get("direction"),
+                    direction or "-",
+                    BRAND_NAME,
                     "yes" if knowledge_digest else "no",
                     call_context.get("contactId") or "-",
                     "yes" if resolve_api_base() and AARVANTA_CALLBACK_SECRET else "no",
                 )
-                # Outbound calls have no TwiML welcomeGreeting — the AI opens
-                # the call itself with a line generated from the briefing.
-                if str(params.get("direction") or "").lower().startswith("outbound"):
-                    try:
-                        opening = await stream_reply(
-                            websocket,
-                            history,
-                            system,
-                            OUTBOUND_OPENING_INSTRUCTION,
-                            call_context,
+                # Always open with a spoken greeting (inbound + outbound).
+                opening_instruction = (
+                    OUTBOUND_OPENING_INSTRUCTION
+                    if direction.startswith("outbound")
+                    else INBOUND_OPENING_INSTRUCTION
+                )
+                agent_name = str(call_context.get("voiceAgentName") or "Ava")
+                try:
+                    opening = await stream_reply(
+                        websocket,
+                        history,
+                        system,
+                        opening_instruction,
+                        call_context,
+                    )
+                    # Drop the synthetic instruction from history; keep the
+                    # assistant's opening so the conversation flows naturally.
+                    if len(history) >= 2 and history[-2]["role"] == "user":
+                        del history[-2]
+                    transcript.append({"role": "assistant", "content": opening})
+                except Exception as exc:  # noqa: BLE001
+                    log.exception("opening line failed: %s", exc)
+                    if direction.startswith("outbound"):
+                        fallback = (
+                            f"Hi, this is {agent_name} calling from {BRAND_NAME}. "
+                            "Do you have a moment?"
                         )
-                        # Drop the synthetic instruction from history; keep the
-                        # assistant's opening so the conversation flows naturally.
-                        if len(history) >= 2 and history[-2]["role"] == "user":
-                            del history[-2]
-                        transcript.append({"role": "assistant", "content": opening})
-                    except Exception as exc:  # noqa: BLE001
-                        log.exception("opening line failed: %s", exc)
-                        brand = business_name or "Aarvanta"
-                        fallback = f"Hi, this is {brand}. Do you have a moment?"
-                        await send_text(websocket, fallback, last=True)
-                        transcript.append({"role": "assistant", "content": fallback})
+                    else:
+                        fallback = (
+                            f"Hi, thanks for calling {BRAND_NAME}. "
+                            f"This is {agent_name} — how can I help?"
+                        )
+                    await send_text(websocket, fallback, last=True)
+                    transcript.append({"role": "assistant", "content": fallback})
                 continue
 
             if msg_type == "prompt":
