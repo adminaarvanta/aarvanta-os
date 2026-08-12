@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { BrandLogo } from "@/components/brand/logo";
+import {
+  AuthDivider,
+  AuthSplitLayout,
+  GoogleAuthButton,
+  authFieldClassName,
+  authLabelClassName,
+} from "@/components/auth/auth-split-layout";
 import { Button } from "@/components/ui/button";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
@@ -110,9 +116,23 @@ function RegisterFormInner({
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-8 space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
+      {googleEnabled ? (
+        <>
+          <GoogleAuthButton
+            href={`/api/auth/sso/start?provider=google&intent=register&next=${encodeURIComponent(safeNext)}${
+              referralCode.trim()
+                ? `&ref=${encodeURIComponent(referralCode.trim())}`
+                : ""
+            }`}
+            label="Continue with Google"
+          />
+          <AuthDivider />
+        </>
+      ) : null}
+
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-foreground">
+        <label htmlFor="name" className={authLabelClassName}>
           Full name
         </label>
         <input
@@ -121,11 +141,12 @@ function RegisterFormInner({
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
-          className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+          placeholder="Alex Morgan"
+          className={authFieldClassName}
         />
       </div>
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-foreground">
+        <label htmlFor="email" className={authLabelClassName}>
           Email
         </label>
         <input
@@ -135,11 +156,12 @@ function RegisterFormInner({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+          placeholder="you@company.com"
+          className={authFieldClassName}
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-foreground">
+        <label htmlFor="password" className={authLabelClassName}>
           Password
         </label>
         <input
@@ -150,13 +172,13 @@ function RegisterFormInner({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
-          className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+          placeholder="At least 8 characters"
+          className={authFieldClassName}
         />
-        <p className="mt-1 text-[11px] text-dim">At least 8 characters.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-foreground">
+          <label htmlFor="phone" className={authLabelClassName}>
             Phone
           </label>
           <input
@@ -167,11 +189,11 @@ function RegisterFormInner({
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+44 7700 900123"
             autoComplete="tel"
-            className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+            className={authFieldClassName}
           />
         </div>
         <div>
-          <label htmlFor="country" className="block text-sm font-medium text-foreground">
+          <label htmlFor="country" className={authLabelClassName}>
             Country
           </label>
           <select
@@ -179,7 +201,7 @@ function RegisterFormInner({
             required
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+            className={authFieldClassName}
           >
             {COUNTRY_OPTIONS.map((c) => (
               <option key={c} value={c}>
@@ -190,8 +212,8 @@ function RegisterFormInner({
         </div>
       </div>
       <div>
-        <label htmlFor="company" className="block text-sm font-medium text-foreground">
-          Company / workspace name{" "}
+        <label htmlFor="company" className={authLabelClassName}>
+          Company / workspace{" "}
           <span className="font-normal text-dim">(optional)</span>
         </label>
         <input
@@ -199,61 +221,41 @@ function RegisterFormInner({
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           placeholder="Leave blank — we’ll name it for you"
-          className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+          className={authFieldClassName}
         />
       </div>
       {referralCode ? (
         <div>
-          <label
-            htmlFor="referralCode"
-            className="block text-sm font-medium text-foreground"
-          >
+          <label htmlFor="referralCode" className={authLabelClassName}>
             Referral code
           </label>
           <input
             id="referralCode"
             value={referralCode}
             onChange={(e) => setReferralCode(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+            className={authFieldClassName}
           />
         </div>
       ) : null}
 
       {error ? (
-        <p className="text-sm text-red-400" role="alert">
+        <p
+          className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-500"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={busy}>
+      <Button
+        type="submit"
+        className="mt-1 h-11 w-full rounded-xl text-sm font-semibold"
+        disabled={busy}
+      >
         {busy ? "Creating free account…" : "Create free account"}
       </Button>
 
-      {googleEnabled ? (
-        <>
-          <div className="relative my-2">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-background px-2 text-muted">or</span>
-            </div>
-          </div>
-
-          <a
-            href={`/api/auth/sso/start?provider=google&intent=register&next=${encodeURIComponent(safeNext)}${
-              referralCode.trim()
-                ? `&ref=${encodeURIComponent(referralCode.trim())}`
-                : ""
-            }`}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface-muted px-4 py-2.5 text-sm font-medium text-foreground hover:border-gold"
-          >
-            Continue with Google
-          </a>
-        </>
-      ) : null}
-
-      <p className="text-center text-xs text-muted">
+      <p className="pt-1 text-center text-xs text-muted">
         Free forever for getting started · No card required
       </p>
     </form>
@@ -270,34 +272,17 @@ export function RegisterPageShell({
   const safeNext = sanitizeNextPath(nextPath);
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-lg shadow-gold/5 sm:p-10">
-        <div className="flex justify-center px-2">
-          <BrandLogo size="xl" fullWidth />
-        </div>
-        <h1 className="mt-4 text-center text-xl font-semibold text-foreground">
-          Start free
-        </h1>
-        <p className="mt-1 text-center text-sm text-muted">
-          Create your Aarvanta workspace in under a minute.
-        </p>
-
-        <Suspense
-          fallback={
-            <div className="mt-8 h-64 animate-pulse rounded-lg bg-surface-muted" />
-          }
-        >
-          <RegisterFormInner
-            nextPath={safeNext}
-            googleEnabled={googleEnabled}
-          />
-        </Suspense>
-
-        <p className="mt-6 text-center text-xs text-muted">
+    <AuthSplitLayout
+      title="Start free"
+      subtitle="Create your Aarvanta workspace in under a minute."
+      panelHeadline="Hire your first AI workforce"
+      panelBody="Launch a modern operating system for sales, marketing, ops, and support — without stitching tools together."
+      footer={
+        <p className="text-center text-sm text-muted">
           Already have an account?{" "}
           <Link
             href={`/login?next=${encodeURIComponent(safeNext)}`}
-            className="text-gold hover:underline"
+            className="font-medium text-gold hover:underline"
           >
             Sign in
           </Link>
@@ -306,7 +291,15 @@ export function RegisterPageShell({
             Home
           </Link>
         </p>
-      </div>
-    </div>
+      }
+    >
+      <Suspense
+        fallback={
+          <div className="h-72 animate-pulse rounded-xl bg-surface-muted" />
+        }
+      >
+        <RegisterFormInner nextPath={safeNext} googleEnabled={googleEnabled} />
+      </Suspense>
+    </AuthSplitLayout>
   );
 }

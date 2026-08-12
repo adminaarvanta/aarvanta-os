@@ -66,7 +66,7 @@ export async function GET(req: Request) {
     );
   }
 
-  let next = "/build";
+  let next = "/dashboard";
   let provider: SsoProvider = "google";
   let intent: "login" | "register" = "login";
   let referralCode: string | undefined;

@@ -72,7 +72,7 @@ export async function POST(req: Request) {
       referralCode,
     });
 
-    const nextPath = sanitizeNextPath(parsed.data.next ?? "/build");
+    const nextPath = sanitizeNextPath(parsed.data.next ?? "/dashboard");
     const response = NextResponse.json({
       ok: true,
       next: nextPath,
