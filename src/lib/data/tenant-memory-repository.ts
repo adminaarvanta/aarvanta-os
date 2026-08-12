@@ -125,6 +125,17 @@ export const tenantMemoryRepository: TenantRepository = {
     return members[idx];
   },
 
+  async updateMemberPreferences(id, patch, scope) {
+    const idx = members.findIndex((m) => m.id === id && inCrmScope(m, scope));
+    if (idx === -1) return null;
+    members[idx] = {
+      ...members[idx],
+      ...patch,
+      updatedAt: crmNow(),
+    };
+    return members[idx];
+  },
+
   async removeMember(id, scope) {
     const member = await this.getMember(id, scope);
     if (!member || member.role === "owner") return false;

@@ -27,7 +27,7 @@ export function AuthSplitLayout({
   panelBody?: string;
 }) {
   return (
-    <div className="grid min-h-[100dvh] bg-background lg:grid-cols-2">
+    <div className="grid min-h-[100dvh] bg-[radial-gradient(ellipse_at_top_right,rgba(168,137,79,0.08),transparent_42%),linear-gradient(180deg,var(--background),var(--surface-muted))] lg:grid-cols-2">
       <aside className="relative hidden overflow-hidden lg:block">
         <Image
           src="/auth-panel.jpg"
@@ -35,18 +35,17 @@ export function AuthSplitLayout({
           fill
           priority
           sizes="50vw"
-          className="object-cover"
+          className="object-cover scale-105"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(8,14,28,0.92)_0%,rgba(18,34,64,0.78)_45%,rgba(12,20,36,0.88)_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_15%,rgba(168,137,79,0.28),transparent_45%),radial-gradient(ellipse_at_80%_85%,rgba(47,127,146,0.18),transparent_40%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(8,14,28,0.94)_0%,rgba(18,34,64,0.8)_45%,rgba(12,20,36,0.9)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_15%,rgba(168,137,79,0.3),transparent_45%),radial-gradient(ellipse_at_80%_85%,rgba(47,127,146,0.2),transparent_40%)]" />
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.12]"
+          className="pointer-events-none absolute inset-0 opacity-[0.1]"
           style={{
             backgroundImage:
               "linear-gradient(rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.35) 1px, transparent 1px)",
             backgroundSize: "48px 48px",
-            maskImage:
-              "linear-gradient(to bottom, black 0%, transparent 75%)",
+            maskImage: "linear-gradient(to bottom, black 0%, transparent 75%)",
           }}
         />
 
@@ -59,17 +58,17 @@ export function AuthSplitLayout({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#d4b87a]">
               {panelEyebrow}
             </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-white xl:text-5xl">
+            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-white xl:text-[3.15rem] xl:leading-[1.1]">
               {panelHeadline}
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-white/75">
+            <p className="mt-4 max-w-md text-base leading-relaxed text-white/72">
               {panelBody}
             </p>
-            <ul className="mt-8 space-y-3">
+            <ul className="mt-9 space-y-3.5">
               {PANEL_POINTS.map((point) => (
                 <li
                   key={point}
-                  className="flex items-start gap-3 text-sm text-white/80"
+                  className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-white/82 backdrop-blur-sm"
                 >
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d4b87a]" />
                   {point}
@@ -78,51 +77,49 @@ export function AuthSplitLayout({
             </ul>
           </div>
 
-          <p className="text-xs text-white/45">
+          <p className="text-xs text-white/40">
             © {new Date().getFullYear()} Aarvanta Limited
           </p>
         </div>
       </aside>
 
-      <main className="relative flex min-h-[100dvh] flex-col overflow-y-auto px-5 py-10 sm:px-8 lg:px-12 xl:px-16">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(168,137,79,0.08),transparent_40%)]" />
-        <div className="relative mx-auto my-auto w-full max-w-[420px] animate-fade-up">
-          <div className="mb-8 lg:hidden">
+      <main className="relative flex min-h-[100dvh] flex-col overflow-y-auto px-4 py-8 sm:px-8 lg:px-10 xl:px-14">
+        <div className="relative mx-auto my-auto w-full max-w-[440px] animate-fade-up">
+          <div className="mb-6 lg:hidden">
             <Link href="/" className="inline-flex">
               <BrandLogo size="md" />
             </Link>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.75rem]">
-              {title}
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{subtitle}</p>
+          <div className="overflow-hidden rounded-[28px] border border-border/70 bg-surface/90 shadow-[0_24px_80px_-40px_rgba(14,21,34,0.45)] backdrop-blur-xl">
+            <div className="border-b border-border/60 bg-gradient-to-r from-gold/[0.08] via-transparent to-transparent px-6 py-6 sm:px-8 sm:py-7">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">
+                Aarvanta OS
+              </p>
+              <h1 className="mt-2 text-[1.65rem] font-semibold tracking-tight text-foreground sm:text-[1.85rem]">
+                {title}
+              </h1>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{subtitle}</p>
+            </div>
+
+            <div className="px-6 py-6 sm:px-8 sm:py-7">{children}</div>
           </div>
 
-          {children}
-
-          {footer ? <div className="mt-8">{footer}</div> : null}
+          {footer ? <div className="mt-6">{footer}</div> : null}
         </div>
       </main>
     </div>
   );
 }
 
-export const authFieldClassName =
-  "mt-1.5 w-full rounded-xl border border-border bg-[var(--input-bg)] px-3.5 py-2.5 text-sm text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-dim focus:border-gold focus:ring-2 focus:ring-[color:var(--focus-ring)]";
-
-export const authLabelClassName =
-  "block text-[13px] font-medium text-foreground";
-
-export function AuthDivider({ label = "or continue with" }: { label?: string }) {
+export function AuthDivider({ label = "or continue with email" }: { label?: string }) {
   return (
     <div className="relative my-1">
       <div className="absolute inset-0 flex items-center">
-        <span className="w-full border-t border-border" />
+        <span className="w-full border-t border-border/70" />
       </div>
-      <div className="relative flex justify-center text-xs">
-        <span className="bg-background px-3 text-muted">{label}</span>
+      <div className="relative flex justify-center text-[11px] font-medium uppercase tracking-[0.12em]">
+        <span className="bg-surface px-3 text-dim">{label}</span>
       </div>
     </div>
   );
@@ -138,10 +135,10 @@ export function GoogleAuthButton({
   return (
     <a
       href={href}
-      className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-gold/50 hover:bg-surface-muted"
+      className="group flex h-12 w-full items-center justify-center gap-2.5 rounded-2xl border border-border bg-surface-muted/70 px-4 text-sm font-semibold text-foreground shadow-sm transition-[border-color,background-color,transform] hover:-translate-y-px hover:border-gold/40 hover:bg-surface"
     >
       <GoogleGlyph />
-      {label}
+      <span>{label}</span>
     </a>
   );
 }

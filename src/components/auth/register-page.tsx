@@ -4,13 +4,17 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import {
+  AuthAlert,
+  AuthField,
+  AuthPasswordField,
+  AuthSelect,
+  AuthSubmitButton,
+} from "@/components/auth/auth-fields";
+import {
   AuthDivider,
   AuthSplitLayout,
   GoogleAuthButton,
-  authFieldClassName,
-  authLabelClassName,
 } from "@/components/auth/auth-split-layout";
-import { Button } from "@/components/ui/button";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
 const REF_STORAGE_KEY = "aarvanta_aff_ref";
@@ -131,129 +135,80 @@ function RegisterFormInner({
         </>
       ) : null}
 
-      <div>
-        <label htmlFor="name" className={authLabelClassName}>
-          Full name
-        </label>
-        <input
-          id="name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoComplete="name"
-          placeholder="Alex Morgan"
-          className={authFieldClassName}
-        />
-      </div>
-      <div>
-        <label htmlFor="email" className={authLabelClassName}>
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          placeholder="you@company.com"
-          className={authFieldClassName}
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className={authLabelClassName}>
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
-          placeholder="At least 8 characters"
-          className={authFieldClassName}
-        />
-      </div>
+      <AuthField
+        id="name"
+        label="Full name"
+        icon="name"
+        required
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        autoComplete="name"
+        placeholder="Alex Morgan"
+      />
+      <AuthField
+        id="email"
+        type="email"
+        label="Work email"
+        icon="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        autoComplete="email"
+        placeholder="you@company.com"
+      />
+      <AuthPasswordField
+        id="password"
+        label="Password"
+        required
+        minLength={8}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        autoComplete="new-password"
+        placeholder="At least 8 characters"
+        hint="Use 8+ characters for a stronger password."
+      />
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="phone" className={authLabelClassName}>
-            Phone
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+44 7700 900123"
-            autoComplete="tel"
-            className={authFieldClassName}
-          />
-        </div>
-        <div>
-          <label htmlFor="country" className={authLabelClassName}>
-            Country
-          </label>
-          <select
-            id="country"
-            required
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className={authFieldClassName}
-          >
-            {COUNTRY_OPTIONS.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div>
-        <label htmlFor="company" className={authLabelClassName}>
-          Company / workspace{" "}
-          <span className="font-normal text-dim">(optional)</span>
-        </label>
-        <input
-          id="company"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          placeholder="Leave blank — we’ll name it for you"
-          className={authFieldClassName}
+        <AuthField
+          id="phone"
+          type="tel"
+          label="Phone"
+          icon="phone"
+          required
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+44 7700 900123"
+          autoComplete="tel"
+        />
+        <AuthSelect
+          id="country"
+          label="Country"
+          required
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          options={COUNTRY_OPTIONS}
         />
       </div>
+      <AuthField
+        id="company"
+        label="Company / workspace"
+        icon="company"
+        value={companyName}
+        onChange={(e) => setCompanyName(e.target.value)}
+        placeholder="Optional — we’ll name it for you"
+      />
       {referralCode ? (
-        <div>
-          <label htmlFor="referralCode" className={authLabelClassName}>
-            Referral code
-          </label>
-          <input
-            id="referralCode"
-            value={referralCode}
-            onChange={(e) => setReferralCode(e.target.value)}
-            className={authFieldClassName}
-          />
-        </div>
+        <AuthField
+          id="referralCode"
+          label="Referral code"
+          icon="referral"
+          value={referralCode}
+          onChange={(e) => setReferralCode(e.target.value)}
+        />
       ) : null}
 
-      {error ? (
-        <p
-          className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-500"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
+      {error ? <AuthAlert>{error}</AuthAlert> : null}
 
-      <Button
-        type="submit"
-        className="mt-1 h-11 w-full rounded-xl text-sm font-semibold"
-        disabled={busy}
-      >
-        {busy ? "Creating free account…" : "Create free account"}
-      </Button>
+      <AuthSubmitButton busy={busy}>Create free account</AuthSubmitButton>
 
       <p className="pt-1 text-center text-xs text-muted">
         Free forever for getting started · No card required
@@ -274,7 +229,7 @@ export function RegisterPageShell({
   return (
     <AuthSplitLayout
       title="Start free"
-      subtitle="Create your Aarvanta workspace in under a minute."
+      subtitle="Create your Aarvanta workspace in under a minute — no card required."
       panelHeadline="Hire your first AI workforce"
       panelBody="Launch a modern operating system for sales, marketing, ops, and support — without stitching tools together."
       footer={
@@ -282,12 +237,12 @@ export function RegisterPageShell({
           Already have an account?{" "}
           <Link
             href={`/login?next=${encodeURIComponent(safeNext)}`}
-            className="font-medium text-gold hover:underline"
+            className="font-semibold text-gold hover:underline"
           >
             Sign in
           </Link>
           {" · "}
-          <Link href="/" className="text-gold hover:underline">
+          <Link href="/" className="font-medium text-gold hover:underline">
             Home
           </Link>
         </p>
@@ -295,7 +250,7 @@ export function RegisterPageShell({
     >
       <Suspense
         fallback={
-          <div className="h-72 animate-pulse rounded-xl bg-surface-muted" />
+          <div className="h-72 animate-pulse rounded-2xl bg-surface-muted" />
         }
       >
         <RegisterFormInner nextPath={safeNext} googleEnabled={googleEnabled} />

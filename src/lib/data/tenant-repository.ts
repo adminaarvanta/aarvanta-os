@@ -48,6 +48,13 @@ export interface TenantRepository {
     role: MemberRole,
     scope: TenantScope
   ): Promise<WorkspaceMember | null>;
+  updateMemberPreferences(
+    id: string,
+    patch: Partial<
+      Pick<WorkspaceMember, "hasSeenWalkthrough" | "walkthroughCompletedAt">
+    >,
+    scope: TenantScope
+  ): Promise<WorkspaceMember | null>;
   removeMember(id: string, scope: TenantScope): Promise<boolean>;
 
   listInvitations(scope: TenantScope): Promise<Invitation[]>;

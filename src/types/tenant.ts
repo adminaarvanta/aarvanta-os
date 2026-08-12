@@ -44,6 +44,9 @@ export interface WorkspaceMember extends TenantScope {
   authProvider?: MemberAuthProvider;
   /** False until phone/country collected (Google signup). */
   profileComplete?: boolean;
+  /** Free first-run product walkthrough completed or skipped. */
+  hasSeenWalkthrough?: boolean;
+  walkthroughCompletedAt?: string;
   joinedAt: string;
   updatedAt: string;
 }

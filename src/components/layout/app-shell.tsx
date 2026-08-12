@@ -13,6 +13,8 @@ export function AppShell({
   tenant,
   userName,
   userRole,
+  userId,
+  hasSeenWalkthrough = false,
   whatsappUnread,
   voiceUnread,
   entitlements,
@@ -26,16 +28,27 @@ export function AppShell({
   } | null;
   userName?: string;
   userRole?: string;
+  userId?: string | null;
+  hasSeenWalkthrough?: boolean;
   whatsappUnread?: number;
   voiceUnread?: number;
   entitlements?: EntitlementsClient | null;
   children: React.ReactNode;
 }) {
+  const autoStartWalkthrough =
+    production &&
+    entitlements?.planId === "free" &&
+    !hasSeenWalkthrough;
+
   return (
     <PlanProvider value={entitlements ?? null}>
       <NavigationProvider>
         <SidebarCollapseProvider>
-          <DemoTourProvider>
+          <DemoTourProvider
+            userId={userId ?? null}
+            hasSeenWalkthrough={hasSeenWalkthrough}
+            autoStartWalkthrough={autoStartWalkthrough}
+          >
             <ScrollRestoration />
             <AppShellFrame
               production={production}

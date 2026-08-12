@@ -157,6 +157,18 @@ export const tenantFirestoreRepository: TenantRepository = {
     return updated;
   },
 
+  async updateMemberPreferences(id, patch, scope) {
+    const existing = await this.getMember(id, scope);
+    if (!existing) return null;
+    const updated = {
+      ...existing,
+      ...patch,
+      updatedAt: crmNow(),
+    };
+    await getDb().collection(MEMBERS).doc(id).set(updated);
+    return updated;
+  },
+
   async removeMember(id, scope) {
     const existing = await this.getMember(id, scope);
     if (!existing || existing.role === "owner") return false;

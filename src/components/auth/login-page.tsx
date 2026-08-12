@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import {
+  AuthAlert,
+  AuthField,
+  AuthPasswordField,
+  AuthSubmitButton,
+} from "@/components/auth/auth-fields";
+import {
   AuthDivider,
   AuthSplitLayout,
   GoogleAuthButton,
-  authFieldClassName,
-  authLabelClassName,
 } from "@/components/auth/auth-split-layout";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
@@ -48,58 +52,34 @@ function LoginFormInner({
         </>
       ) : null}
 
-      <div>
-        <label htmlFor="email" className={authLabelClassName}>
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="you@company.com"
-          className={authFieldClassName}
-        />
-      </div>
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <label htmlFor="password" className={authLabelClassName}>
-            Password
-          </label>
-        </div>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          placeholder="Enter your password"
-          className={authFieldClassName}
-        />
-      </div>
+      <AuthField
+        id="email"
+        name="email"
+        type="email"
+        label="Email"
+        icon="email"
+        required
+        autoComplete="email"
+        placeholder="you@company.com"
+      />
+      <AuthPasswordField
+        id="password"
+        name="password"
+        label="Password"
+        required
+        autoComplete="current-password"
+        placeholder="Enter your password"
+      />
 
-      {error ? (
-        <p
-          className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-500"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
+      {error ? <AuthAlert>{error}</AuthAlert> : null}
 
-      <button
-        type="submit"
-        className="mt-1 w-full rounded-xl bg-gold px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-gold-bright"
-      >
-        Sign in
-      </button>
+      <AuthSubmitButton>Sign in to workspace</AuthSubmitButton>
 
       <p className="pt-1 text-center text-sm text-muted">
         New here?{" "}
         <Link
           href={`/register?next=${encodeURIComponent(safeNextPath)}`}
-          className="font-medium text-gold hover:underline"
+          className="font-semibold text-gold hover:underline"
         >
           Create a free account
         </Link>
@@ -118,7 +98,7 @@ export function LoginForm({
   return (
     <Suspense
       fallback={
-        <div className="h-56 animate-pulse rounded-xl bg-surface-muted" />
+        <div className="h-56 animate-pulse rounded-2xl bg-surface-muted" />
       }
     >
       <LoginFormInner nextPath={nextPath} googleEnabled={googleEnabled} />
@@ -138,12 +118,12 @@ export function LoginPageShell({
   return (
     <AuthSplitLayout
       title="Welcome back"
-      subtitle="Sign in to your Aarvanta workspace."
+      subtitle="Sign in to your Aarvanta workspace and pick up where you left off."
       panelHeadline="Run your company with AI"
-      panelBody="Pick up where you left off — CRM, inbox, voice, and your AI workforce in one place."
+      panelBody="CRM, inbox, voice, and your AI workforce — one modern operating system."
       footer={
         <p className="text-center text-xs text-muted">
-          <Link href="/" className="text-gold hover:underline">
+          <Link href="/" className="font-medium text-gold hover:underline">
             ← Back to home
           </Link>
         </p>

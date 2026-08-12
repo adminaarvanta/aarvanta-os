@@ -17,6 +17,8 @@ export default async function AppLayout({
   let tenant = null;
   let userName = "Founder";
   let userRole = "Owner";
+  let userId: string | null = null;
+  let hasSeenWalkthrough = false;
   let whatsappUnread = 0;
   let voiceUnread = 0;
   let entitlements: EntitlementsClient | null = null;
@@ -38,6 +40,8 @@ export default async function AppLayout({
     };
     userName = ctx.name || ctx.email.split("@")[0] || "Founder";
     userRole = ROLE_LABELS[ctx.role] ?? ctx.role;
+    userId = ctx.userId;
+    hasSeenWalkthrough = Boolean(ctx.member?.hasSeenWalkthrough);
     const conversations = await getRepository().listConversations(ctx.scope);
     const { unreadForChannel } = await import("@/lib/channels/filter-conversations");
     whatsappUnread = unreadForChannel(conversations, "whatsapp");
@@ -80,6 +84,8 @@ export default async function AppLayout({
       tenant={tenant}
       userName={userName}
       userRole={userRole}
+      userId={userId}
+      hasSeenWalkthrough={hasSeenWalkthrough}
       whatsappUnread={whatsappUnread}
       voiceUnread={voiceUnread}
       entitlements={entitlements}

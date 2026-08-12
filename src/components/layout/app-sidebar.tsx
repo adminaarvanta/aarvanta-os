@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Lock, LogOut, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
 import { BrandLogo } from "@/components/brand/logo";
+import { useDemoTourOptional } from "@/components/demo/demo-tour-provider";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { AllToolsPanel } from "@/components/layout/all-tools-panel";
 import { useSidebarCollapse } from "@/components/layout/sidebar-collapse";
@@ -55,17 +56,42 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const [toolsOpen, setToolsOpen] = useState(false);
-  const { collapsed, toggle } = useSidebarCollapse();
+  const { collapsed, setCollapsed, toggle } = useSidebarCollapse();
   const plan = usePlan();
+  const tour = useDemoTourOptional();
   // Main tabs always visible — locked ones show a Pro badge.
   const navItems = COMMAND_CENTER_NAV;
   const shortcuts = SIDEBAR_SHORTCUTS.filter((item) =>
     isNavHrefVisible(plan, item.href)
   );
 
+  const tourActive = Boolean(tour?.active);
+  const tourExpandSidebar = Boolean(tour?.step.expandSidebar);
+  const tourOpenAllTools = Boolean(tour?.step.openAllTools);
+
+  useEffect(() => {
+    if (!tourActive) return;
+    if (tourExpandSidebar && collapsed) {
+      setCollapsed(false);
+    }
+    setToolsOpen(tourOpenAllTools);
+  }, [
+    collapsed,
+    setCollapsed,
+    tourActive,
+    tourExpandSidebar,
+    tourOpenAllTools,
+  ]);
+
+  useEffect(() => {
+    if (tourActive) return;
+    setToolsOpen(false);
+  }, [tourActive]);
+
   return (
     <>
       <aside
+        data-demo-tour="sidebar-rail"
         className={cn(
           "relative z-20 hidden h-full shrink-0 flex-col border-r border-border-subtle bg-surface transition-[width] duration-200 md:flex",
           // Keep overflow visible in the brand header so the mark never clips;
@@ -202,6 +228,7 @@ export function AppSidebar({
                   <li key={item.id}>
                     <PendingLink
                       href={item.href}
+                      data-demo-tour={`nav-${tourNavId(item.href)}`}
                       pendingClassName="opacity-70"
                       className={cn(
                         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground",
@@ -224,6 +251,7 @@ export function AppSidebar({
               <div className="flex items-center gap-2.5">
                 <PendingLink
                   href="/settings"
+                  data-demo-tour="nav-settings"
                   className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-0.5 transition-colors hover:bg-surface-hover"
                   title="Account settings"
                 >
@@ -260,6 +288,7 @@ export function AppSidebar({
                 {plan ? (
                   <Link
                     href="/billing"
+                    data-demo-tour="nav-billing"
                     className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] transition-colors hover:bg-surface-hover"
                   >
                     <span className="text-muted">Billing</span>

@@ -18,7 +18,13 @@ export type DemoTourStep = {
 
 export const DEMO_TOUR_STORAGE_KEY = "aarvanta_demo_tour_active";
 export const DEMO_TOUR_STEP_KEY = "aarvanta_demo_tour_step";
+export const WALKTHROUGH_SEEN_STORAGE_PREFIX = "aarvanta.hasSeenWalkthrough";
 
+export function walkthroughSeenStorageKey(userId: string) {
+  return `${WALKTHROUGH_SEEN_STORAGE_PREFIX}.${userId}`;
+}
+
+/** Full-product tour (paid / Help replay). */
 export const DEMO_TOUR_STEPS: DemoTourStep[] = [
   {
     id: "welcome",
@@ -155,3 +161,126 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     placement: "center",
   },
 ];
+
+/**
+ * Free-plan first-run walkthrough — only modules Free users can use
+ * (full or explore). Skips WhatsApp, Voice, HR, and paid live-demo finale.
+ */
+export const FREE_TOUR_STEPS: DemoTourStep[] = [
+  {
+    id: "welcome",
+    title: "Welcome to your free workspace",
+    description:
+      "This short tour shows what you can do on Free — CRM, projects, Build OS, and your AI team. Use Next and Previous anytime.",
+    route: "/dashboard",
+    placement: "center",
+    tip: "Reopen this anytime from Help in the top-right",
+  },
+  {
+    id: "help",
+    title: "Help is always here",
+    description:
+      "The Help button reopens this tour, tips, and the 90-second live demo whenever you need a refresher.",
+    route: "/dashboard",
+    target: '[data-demo-tour="help-trigger"]',
+    placement: "bottom",
+    tip: "Look for the Help button in the header",
+  },
+  {
+    id: "sidebar",
+    title: "Sidebar navigation",
+    description:
+      "The left rail keeps your workspace uncluttered. Hover to expand labels — icons stay fixed so nothing jumps around.",
+    route: "/dashboard",
+    target: '[data-demo-tour="sidebar-rail"]',
+    placement: "right",
+    expandSidebar: true,
+    tip: "Hover the rail to expand · move away to collapse",
+  },
+  {
+    id: "dashboard",
+    title: "Command Center",
+    description:
+      "Your home base: pipeline signals, quick actions, and a map of the operating systems available to your workspace.",
+    route: "/dashboard",
+    target: '[data-demo-tour="nav-dashboard"], [data-demo-tour="mobile-nav-dashboard"]',
+    placement: "right",
+    expandSidebar: true,
+  },
+  {
+    id: "crm",
+    title: "CRM & pipelines",
+    description:
+      "Fully unlocked on Free — manage people, companies, deals, and tasks. Capture leads and move deals across stages.",
+    route: "/crm",
+    target: '[data-demo-tour="nav-crm"], [data-demo-tour="mobile-nav-crm"]',
+    placement: "right",
+    expandSidebar: true,
+    tip: "Try ⌘K to jump to a contact or deal",
+  },
+  {
+    id: "projects",
+    title: "Projects",
+    description:
+      "Also unlocked on Free — Kanban boards and tasks to deliver work for clients and your team.",
+    route: "/projects",
+    target: '[data-demo-tour="nav-projects"], [data-demo-tour="mobile-nav-projects"]',
+    placement: "right",
+    expandSidebar: true,
+  },
+  {
+    id: "build",
+    title: "Build OS",
+    description:
+      "Draft your business website with AI — unlimited pages while drafting. Preview on Aarvanta; custom-domain go-live is on paid plans.",
+    route: "/build",
+    target: '[data-demo-tour="nav-build"]',
+    placement: "right",
+    expandSidebar: true,
+    tip: "Shortcuts → Build sites opens the studio",
+  },
+  {
+    id: "workforce",
+    title: "AI Team",
+    description:
+      "Explore mode on Free includes 1 AI employee with chat and tasks. Upgrade later for a full AI workforce.",
+    route: "/workforce",
+    target: '[data-demo-tour="nav-workforce"], [data-demo-tour="mobile-nav-workforce"]',
+    placement: "right",
+    expandSidebar: true,
+  },
+  {
+    id: "all-tools",
+    title: "All tools & search",
+    description:
+      "Open All tools for Finance, Knowledge, Analytics, and more. Press ⌘K (Ctrl+K) anytime to jump across the OS.",
+    route: "/dashboard",
+    target: '[data-demo-tour="all-tools-panel"]',
+    placement: "right",
+    expandSidebar: true,
+    openAllTools: true,
+    tip: "Global search lives in the header",
+  },
+  {
+    id: "billing",
+    title: "Billing & upgrades",
+    description:
+      "WhatsApp, Voice, HR, and live publish unlock on paid plans. Manage your Free plan and upgrade from Billing when you’re ready.",
+    route: "/billing",
+    target: '[data-demo-tour="nav-billing"]',
+    placement: "right",
+    expandSidebar: true,
+  },
+  {
+    id: "finish",
+    title: "You're ready to build",
+    description:
+      "Start with CRM or Build OS. Use Help anytime to replay this tour. Welcome to Aarvanta.",
+    route: "/dashboard",
+    placement: "center",
+  },
+];
+
+export function tourStepsForPlan(planId: string | null | undefined): DemoTourStep[] {
+  return planId === "free" ? FREE_TOUR_STEPS : DEMO_TOUR_STEPS;
+}

@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import {
-  AuthSplitLayout,
-  authFieldClassName,
-  authLabelClassName,
-} from "@/components/auth/auth-split-layout";
-import { Button } from "@/components/ui/button";
+  AuthAlert,
+  AuthField,
+  AuthSelect,
+  AuthSubmitButton,
+} from "@/components/auth/auth-fields";
+import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
 const REF_STORAGE_KEY = "aarvanta_aff_ref";
@@ -122,90 +123,55 @@ function CompleteFormInner({ nextPath }: { nextPath: string }) {
   }
 
   if (!ready) {
-    return <div className="h-48 animate-pulse rounded-xl bg-surface-muted" />;
+    return <div className="h-48 animate-pulse rounded-2xl bg-surface-muted" />;
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <p className="rounded-xl border border-border bg-surface-muted px-3.5 py-2.5 text-xs text-muted">
+      <p className="rounded-2xl border border-border/70 bg-surface-muted/80 px-3.5 py-3 text-xs text-muted">
         Signed in with Google as{" "}
-        <span className="font-medium text-foreground">{email}</span>
+        <span className="font-semibold text-foreground">{email}</span>
       </p>
-      <div>
-        <label htmlFor="name" className={authLabelClassName}>
-          Full name
-        </label>
-        <input
-          id="name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className={authFieldClassName}
-        />
-      </div>
+      <AuthField
+        id="name"
+        label="Full name"
+        icon="name"
+        required
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="phone" className={authLabelClassName}>
-            Phone
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+44 7700 900123"
-            className={authFieldClassName}
-          />
-        </div>
-        <div>
-          <label htmlFor="country" className={authLabelClassName}>
-            Country
-          </label>
-          <select
-            id="country"
-            required
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className={authFieldClassName}
-          >
-            {COUNTRY_OPTIONS.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div>
-        <label htmlFor="company" className={authLabelClassName}>
-          Company / workspace{" "}
-          <span className="font-normal text-dim">(optional)</span>
-        </label>
-        <input
-          id="company"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          className={authFieldClassName}
+        <AuthField
+          id="phone"
+          type="tel"
+          label="Phone"
+          icon="phone"
+          required
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+44 7700 900123"
+        />
+        <AuthSelect
+          id="country"
+          label="Country"
+          required
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          options={COUNTRY_OPTIONS}
         />
       </div>
+      <AuthField
+        id="company"
+        label="Company / workspace"
+        icon="company"
+        value={companyName}
+        onChange={(e) => setCompanyName(e.target.value)}
+        placeholder="Optional"
+      />
 
-      {error ? (
-        <p
-          className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-500"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
+      {error ? <AuthAlert>{error}</AuthAlert> : null}
 
-      <Button
-        type="submit"
-        className="mt-1 h-11 w-full rounded-xl text-sm font-semibold"
-        disabled={busy}
-      >
-        {busy ? "Finishing…" : "Finish free signup"}
-      </Button>
+      <AuthSubmitButton busy={busy}>Finish free signup</AuthSubmitButton>
     </form>
   );
 }
@@ -219,7 +185,7 @@ export function RegisterCompleteShell({ nextPath }: { nextPath: string }) {
       panelBody="Confirm a few details and your Aarvanta workspace will be ready."
       footer={
         <p className="text-center text-xs text-muted">
-          <Link href="/register" className="text-gold hover:underline">
+          <Link href="/register" className="font-medium text-gold hover:underline">
             Start over
           </Link>
         </p>
@@ -227,7 +193,7 @@ export function RegisterCompleteShell({ nextPath }: { nextPath: string }) {
     >
       <Suspense
         fallback={
-          <div className="h-48 animate-pulse rounded-xl bg-surface-muted" />
+          <div className="h-48 animate-pulse rounded-2xl bg-surface-muted" />
         }
       >
         <CompleteFormInner nextPath={nextPath} />

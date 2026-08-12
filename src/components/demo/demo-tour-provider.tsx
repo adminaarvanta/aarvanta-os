@@ -6,13 +6,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { usePlan } from "@/components/billing/plan-context";
 import {
-  DEMO_TOUR_STEPS,
   DEMO_TOUR_STEP_KEY,
   DEMO_TOUR_STORAGE_KEY,
+  tourStepsForPlan,
+  walkthroughSeenStorageKey,
   type DemoTourStep,
 } from "@/lib/demo/tour-steps";
 
@@ -30,14 +33,69 @@ type DemoTourContextValue = {
 
 const DemoTourContext = createContext<DemoTourContextValue | null>(null);
 
-export function DemoTourProvider({ children }: { children: React.ReactNode }) {
+function readLocalSeen(userId: string | null | undefined) {
+  if (!userId || typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(walkthroughSeenStorageKey(userId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeLocalSeen(userId: string | null | undefined, seen: boolean) {
+  if (!userId || typeof window === "undefined") return;
+  try {
+    const key = walkthroughSeenStorageKey(userId);
+    if (seen) localStorage.setItem(key, "1");
+    else localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+async function persistWalkthroughSeen() {
+  try {
+    await fetch("/api/tenant/me/preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hasSeenWalkthrough: true }),
+    });
+  } catch {
+    /* offline / demo — localStorage still covers instant skip */
+  }
+}
+
+export function DemoTourProvider({
+  children,
+  userId = null,
+  hasSeenWalkthrough = false,
+  autoStartWalkthrough = false,
+}: {
+  children: React.ReactNode;
+  userId?: string | null;
+  hasSeenWalkthrough?: boolean;
+  /** Production Free first-run only — skipped in demo mode. */
+  autoStartWalkthrough?: boolean;
+}) {
   const router = useRouter();
+  const plan = usePlan();
+  const planId = plan?.planId ?? null;
+  const steps = useMemo(() => tourStepsForPlan(planId), [planId]);
+
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+  const [seen, setSeen] = useState(
+    () => hasSeenWalkthrough || readLocalSeen(userId)
+  );
+  const autoStartedRef = useRef(false);
 
-  const step = DEMO_TOUR_STEPS[stepIndex] ?? DEMO_TOUR_STEPS[0];
-  const totalSteps = DEMO_TOUR_STEPS.length;
+  const step = steps[stepIndex] ?? steps[0];
+  const totalSteps = steps.length;
+
+  useEffect(() => {
+    setSeen(hasSeenWalkthrough || readLocalSeen(userId));
+  }, [hasSeenWalkthrough, userId]);
 
   const persistActive = useCallback((value: boolean, index = stepIndex) => {
     if (value) {
@@ -51,13 +109,20 @@ export function DemoTourProvider({ children }: { children: React.ReactNode }) {
 
   const navigateForStep = useCallback(
     (index: number) => {
-      const next = DEMO_TOUR_STEPS[index];
+      const next = steps[index];
       if (!next?.route) return;
       setPendingRoute(next.route);
       router.push(next.route);
     },
-    [router]
+    [router, steps]
   );
+
+  const markWalkthroughSeen = useCallback(() => {
+    if (planId !== "free") return;
+    setSeen(true);
+    writeLocalSeen(userId, true);
+    void persistWalkthroughSeen();
+  }, [planId, userId]);
 
   const startTour = useCallback(
     (fromStep = 0) => {
@@ -74,7 +139,8 @@ export function DemoTourProvider({ children }: { children: React.ReactNode }) {
     setActive(false);
     setPendingRoute(null);
     persistActive(false);
-  }, [persistActive]);
+    markWalkthroughSeen();
+  }, [markWalkthroughSeen, persistActive]);
 
   const goToStep = useCallback(
     (index: number) => {
@@ -99,6 +165,7 @@ export function DemoTourProvider({ children }: { children: React.ReactNode }) {
     goToStep(stepIndex - 1);
   }, [goToStep, stepIndex]);
 
+  // Resume mid-tour within the same tab.
   useEffect(() => {
     if (sessionStorage.getItem(DEMO_TOUR_STORAGE_KEY) === "1") {
       const saved = Number(sessionStorage.getItem(DEMO_TOUR_STEP_KEY) ?? "0");
@@ -109,6 +176,20 @@ export function DemoTourProvider({ children }: { children: React.ReactNode }) {
       setActive(true);
     }
   }, [totalSteps]);
+
+  // Free first-run auto-start (production only via prop).
+  useEffect(() => {
+    if (!autoStartWalkthrough) return;
+    if (autoStartedRef.current) return;
+    if (planId !== "free") return;
+    if (seen) return;
+    if (active) return;
+    if (sessionStorage.getItem(DEMO_TOUR_STORAGE_KEY) === "1") return;
+
+    autoStartedRef.current = true;
+    const timer = window.setTimeout(() => startTour(0), 600);
+    return () => window.clearTimeout(timer);
+  }, [active, autoStartWalkthrough, planId, seen, startTour]);
 
   useEffect(() => {
     if (!pendingRoute) return;

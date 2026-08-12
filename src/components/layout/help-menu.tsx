@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { NinetySecondDemoPanel } from "@/components/demo/ninety-second-demo-panel";
 import { useDemoTourOptional } from "@/components/demo/demo-tour-provider";
+import { usePlan } from "@/components/billing/plan-context";
 import { DEMO_TOUR_STEPS } from "@/lib/demo/tour-steps";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +64,9 @@ export function HelpMenu() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tour = useDemoTourOptional();
+  const plan = usePlan();
   const rootRef = useRef<HTMLDivElement>(null);
+  const isFree = plan?.planId === "free";
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [liveDemoOpen, setLiveDemoOpen] = useState(false);
@@ -82,6 +85,7 @@ export function HelpMenu() {
 
   const jumpToLiveDemoTour = useCallback(() => {
     closeMenu();
+    // Live-demo highlight exists only on the full (paid) tour.
     const index = DEMO_TOUR_STEPS.findIndex((s) => s.id === "live-demo");
     tour?.startTour(index >= 0 ? index : 0);
   }, [closeMenu, tour]);
@@ -166,7 +170,9 @@ export function HelpMenu() {
                       Product tour
                     </span>
                     <span className="mt-0.5 block text-xs text-muted">
-                      Step-by-step walkthrough with spotlight highlights
+                      {isFree
+                        ? "Walk through Free features — CRM, Build, Projects, AI Team"
+                        : "Step-by-step walkthrough with spotlight highlights"}
                     </span>
                   </span>
                 </button>
@@ -192,26 +198,28 @@ export function HelpMenu() {
                   </span>
                 </button>
               </li>
-              <li>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={jumpToLiveDemoTour}
-                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
-                >
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-gold">
-                    <Sparkles className="h-4 w-4" />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-medium text-gold-bright">
-                      Tour demo step only
+              {!isFree ? (
+                <li>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={jumpToLiveDemoTour}
+                    className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
+                  >
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-gold">
+                      <Sparkles className="h-4 w-4" />
                     </span>
-                    <span className="mt-0.5 block text-xs text-muted">
-                      Jump to the live demo highlight in the tour
+                    <span>
+                      <span className="block text-sm font-medium text-gold-bright">
+                        Tour demo step only
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted">
+                        Jump to the live demo highlight in the tour
+                      </span>
                     </span>
-                  </span>
-                </button>
-              </li>
+                  </button>
+                </li>
+              ) : null}
             </ul>
 
             <div className="border-t border-border px-4 py-3 space-y-2">
