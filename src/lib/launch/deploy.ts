@@ -202,7 +202,7 @@ export async function deployLaunchSession(
       kind: "hr",
       id: page.id,
       label: "Employee handbook (starter)",
-      href: "/wiki",
+      href: "/knowledge",
     });
   }
 

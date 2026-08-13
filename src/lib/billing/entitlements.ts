@@ -172,9 +172,14 @@ export type EntitlementsClient = {
   creditsRemaining: number | "unlimited";
   creditsPercent: number | null;
   isSuperAdmin: boolean;
+  /** Build OS draft jobs used (workspace lifetime count). */
+  buildDraftsUsed?: number;
 };
 
-export function toClientEntitlements(e: Entitlements): EntitlementsClient {
+export function toClientEntitlements(
+  e: Entitlements,
+  extras?: { buildDraftsUsed?: number }
+): EntitlementsClient {
   return {
     planId: e.planId,
     planName: e.plan.name,
@@ -186,5 +191,6 @@ export function toClientEntitlements(e: Entitlements): EntitlementsClient {
     creditsRemaining: remainingForMetric(e, "ai_credits"),
     creditsPercent: usagePercent(e, "ai_credits"),
     isSuperAdmin: e.isSuperAdmin,
+    buildDraftsUsed: extras?.buildDraftsUsed,
   };
 }

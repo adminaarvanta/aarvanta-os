@@ -188,9 +188,9 @@ export const SPEC_PHASES: Array<{
         id: "knowledge-graph",
         phase: 15,
         name: "Knowledge Graph",
-        href: "/knowledge/graph",
-        status: "partial",
-        summary: "Entity relationships and source references with demo graph.",
+        status: "planned",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md). Entity graph UI not shipped.",
       },
       {
         id: "sops",
@@ -212,9 +212,9 @@ export const SPEC_PHASES: Array<{
         id: "portal",
         phase: 20,
         name: "Client Portal",
-        href: "/portal",
-        status: "partial",
-        summary: "Portal access records and project links. Customer-facing login planned.",
+        status: "planned",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md).",
       },
       {
         id: "analytics-v2",
@@ -223,39 +223,39 @@ export const SPEC_PHASES: Array<{
         href: "/analytics",
         status: "complete",
         summary:
-          "Merged into primary Analytics OS — finance, HR, and AI extras on the chart dashboard.",
+          "Merged into primary Analytics OS — separate Analytics 2.0 module removed 2026-08-13.",
       },
       {
         id: "templates",
         phase: 22,
         name: "Templates Library",
-        href: "/templates",
-        status: "partial",
-        summary: "Proposals, SOPs, campaigns, workflows, contracts.",
+        status: "planned",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md).",
       },
       {
         id: "memory",
         phase: 23,
         name: "Memory Layers",
-        href: "/memory",
-        status: "partial",
-        summary: "User, team, company, and customer memory layers.",
+        status: "planned",
+        summary:
+          "Removed product shell on 2026-08-13; agent memory remains under Workforce.",
       },
       {
         id: "success",
         phase: 24,
         name: "Customer Success",
-        href: "/success",
-        status: "partial",
-        summary: "Health scores, renewals, NPS, churn signals. Ticketing desk planned.",
+        status: "planned",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md).",
       },
       {
         id: "wiki",
         phase: 25,
         name: "Internal Wiki",
-        href: "/wiki",
-        status: "partial",
-        summary: "Handbook, department knowledge, training content.",
+        status: "planned",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md).",
       },
       {
         id: "finance",
@@ -278,9 +278,9 @@ export const SPEC_PHASES: Array<{
         id: "legal",
         phase: "ageb-3",
         name: "Legal OS",
-        href: "/legal",
-        status: "partial",
-        summary: "Contract templates, clause risk scan, contract repository.",
+        status: "planned",
+        summary:
+          "Product page/API removed 2026-08-13; analyze helpers may remain in lib for Launch.",
       },
       {
         id: "hr",
@@ -301,9 +301,9 @@ export const SPEC_PHASES: Array<{
         id: "governance",
         phase: 26,
         name: "Governance & Security",
-        href: "/governance",
-        status: "partial",
-        summary: "Audit trail, activity logs, permissions. MFA/compliance dashboard planned.",
+        status: "planned",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md).",
       },
       {
         id: "autonomous",
@@ -325,17 +325,17 @@ export const SPEC_PHASES: Array<{
         id: "franchise",
         phase: 32,
         name: "Franchise OS",
-        href: "/franchise",
-        status: "partial",
-        summary: "Multi-location performance and compliance dashboard.",
+        status: "planned",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md).",
       },
       {
         id: "regions",
         phase: 33,
         name: "Multi-Region",
-        href: "/regions",
         status: "planned",
-        summary: "Regional config and data residency blueprint.",
+        summary:
+          "Removed from product on 2026-08-13 (see docs/DEFERRED_TOOLS_ARCHIVE.md).",
       },
       {
         id: "marketplace",
@@ -373,10 +373,9 @@ export const SPEC_PHASES: Array<{
         id: "ageb-engines",
         phase: 3,
         name: "Core Engines",
-        href: "/platform/engines",
-        status: "partial",
+        status: "planned",
         summary:
-          "Identity, workflow, rules, finance, legal, communication, billing, event engines — registry and partial implementation.",
+          "Product page removed 2026-08-13; engine registry may still exist in platform libs.",
       },
       {
         id: "business-action-api",
@@ -416,9 +415,9 @@ export const SPEC_PHASES: Array<{
         id: "ageb-blueprint",
         phase: 15,
         name: "AGEB Blueprint Hub",
-        href: "/platform/ageb",
-        status: "partial",
-        summary: "Volume and engine implementation status dashboard for AGEB 2.0.",
+        status: "planned",
+        summary:
+          "Product page removed 2026-08-13; AGEB libraries remain for Launch OS.",
       },
     ] as SpecModule[],
   },

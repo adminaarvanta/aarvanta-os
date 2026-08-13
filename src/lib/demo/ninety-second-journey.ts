@@ -235,10 +235,10 @@ export async function runNinetySecondJourney(
       id: "customer_onboarded",
       label: "Customer onboarded",
       status: "completed",
-      summary: `Portal access enabled for ${contact.email ?? contactDisplayName(contact)}.`,
-      href: "/portal",
+      summary: `Customer record ready for ${contact.email ?? contactDisplayName(contact)}.`,
+      href: "/crm",
     });
-    links.portal = "/portal";
+    links.portal = "/crm";
 
     steps.push({
       id: "project_assigned",

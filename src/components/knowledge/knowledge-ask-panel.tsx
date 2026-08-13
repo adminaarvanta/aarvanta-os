@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Loader2, MessageSquare, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { KnowledgeAskResult } from "@/types/knowledge";
@@ -36,6 +37,8 @@ export function KnowledgeAskPanel() {
     }
   }
 
+  const hasCitations = Boolean(result && result.citations.length > 0);
+
   return (
     <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
       <div className="flex items-start gap-3">
@@ -43,9 +46,11 @@ export function KnowledgeAskPanel() {
           <Sparkles className="h-4 w-4 text-gold" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-foreground">AI Ask — Company Brain</h3>
+          <h3 className="text-sm font-semibold text-foreground">
+            AI Ask — Company Brain
+          </h3>
           <p className="text-xs text-muted">
-            Ask questions across your entire knowledge base with source citations
+            Answers only from your uploaded docs, with citations
           </p>
         </div>
       </div>
@@ -72,22 +77,38 @@ export function KnowledgeAskPanel() {
           <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
             {result.answer}
           </p>
-          {result.citations.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted">Sources</p>
+
+          {hasCitations ? (
+            <div className="border-t border-border pt-3">
+              <p className="text-xs font-medium text-foreground">Citations</p>
               <ul className="mt-2 space-y-2">
                 {result.citations.map((cite) => (
                   <li
                     key={`${cite.documentId}-${cite.chunkIndex}`}
-                    className="text-xs text-muted"
+                    className="rounded-md border border-border bg-surface-elevated px-3 py-2"
                   >
-                    <span className="text-gold">{cite.documentTitle}</span>
-                    {" — "}
-                    {cite.excerpt}…
+                    <Link
+                      href={`/knowledge/${cite.documentId}`}
+                      className="text-xs font-medium text-gold hover:underline"
+                    >
+                      {cite.documentTitle}
+                    </Link>
+                    <span className="ml-2 text-[10px] text-muted">
+                      chunk {cite.chunkIndex + 1}
+                    </span>
+                    <p className="mt-1 text-xs text-muted leading-relaxed">
+                      {cite.excerpt}
+                      {cite.excerpt.length >= 200 ? "…" : ""}
+                    </p>
                   </li>
                 ))}
               </ul>
             </div>
+          ) : (
+            <p className="border-t border-border pt-3 text-xs text-muted">
+              No citations — upload or rephrase so AI Team can ground on real
+              docs.
+            </p>
           )}
         </div>
       )}

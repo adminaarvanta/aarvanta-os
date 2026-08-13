@@ -163,7 +163,7 @@ export async function handleAnalyzeContract(
   const analysis = analyzeContractText(content);
   return success({
     ...analysis,
-    href: "/legal",
+    href: "/dashboard",
   });
 }
 
@@ -199,7 +199,7 @@ export async function handleGenerateContract(
     updatedAt: now,
   });
 
-  return success({ contractId: contract.id, riskScore: analysis.riskScore, href: "/legal" });
+  return success({ contractId: contract.id, riskScore: analysis.riskScore, href: "/dashboard" });
 }
 
 export async function handleGenerateHrDocument(

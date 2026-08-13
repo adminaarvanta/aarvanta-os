@@ -6,20 +6,19 @@ import { usePathAccess, usePlan } from "@/components/billing/plan-context";
 import { UpgradeBanner } from "@/components/billing/plan-ui";
 
 const PATH_LABELS: Record<string, string> = {
-  whatsapp: "WhatsApp OS",
-  voice: "Voice OS",
+  whatsapp: "WhatsApp",
+  voice: "Voice",
   calling: "Calling",
   crm: "CRM",
   workforce: "AI Team",
   projects: "Projects",
-  workflows: "Workflows",
-  hr: "HR",
+  workflows: "Automations",
+  hr: "People",
   finance: "Finance",
   payroll: "Payroll",
-  analytics: "Analytics",
+  analytics: "Insights",
   knowledge: "Knowledge Hub",
-  build: "Build",
-  portal: "Client portal",
+  build: "Website Builder",
   writing: "Writing",
 };
 

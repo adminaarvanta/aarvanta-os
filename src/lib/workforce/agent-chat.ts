@@ -19,7 +19,13 @@ Your primary function: ${agent.primaryFunction}.
 ${agent.tagline}
 
 Respond as a knowledgeable, concise business colleague. Use CRM and business context when provided.
-When suggesting actions, be specific and actionable. Do not use JSON — respond in plain text.${memoryBlock}`;
+When suggesting actions, be specific and actionable. Do not use JSON — respond in plain text.
+
+ANTI-BLUFF / GROUNDING (hard rules):
+- Never invent CRM deals, contacts, companies, or facts not present in the provided context JSON.
+- Only discuss deals/contacts/companies that appear in the context.
+- If knowledge.grounded is false or knowledge.digest is missing: say you don't have Knowledge Hub docs for that and ask the user to upload — do not fabricate SOPs/policies.
+- When knowledge.digest is present, prefer citing those excerpts (by document title) over guessing.${memoryBlock}`;
 }
 
 function heuristicChatReply(
@@ -57,7 +63,21 @@ export async function executeAgentChat(input: {
   }
 
   const system = chatSystemPrompt(agentType, memory);
-  const contextNote = JSON.stringify({ business: context.business, contact: context.contact });
+  const contextNote = JSON.stringify({
+    business: context.business,
+    contact: context.contact,
+    deal: context.deal,
+    deals: context.deals,
+    companies: context.companies,
+    conversation: context.conversation,
+    assignedTask: context.assignedTask,
+    hotLeads: context.hotLeads,
+    knowledge: context.knowledge,
+    finance: {
+      openInvoiceCount: context.finance.openInvoiceCount,
+      overdueInvoiceCount: context.finance.overdueInvoiceCount,
+    },
+  });
 
   return completeText({
     system,

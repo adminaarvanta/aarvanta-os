@@ -1,14 +1,13 @@
 import type { PlatformModule } from "@/lib/platform/modules";
 import { CORE_MODULES, PLATFORM_MODULES } from "@/lib/platform/modules";
-import { isDeferredToolId } from "@/lib/navigation/deferred-tools";
 
-/** All navigable modules, deduped by path. Incomplete tools are deferred. */
+/** All navigable modules, deduped by path. */
 export function getAllToolsModules(): PlatformModule[] {
   const seen = new Set<string>();
   const merged = [
     ...CORE_MODULES.filter((m) => m.id !== "help"),
     ...PLATFORM_MODULES,
-  ].filter((tool) => !isDeferredToolId(tool.id));
+  ];
 
   return merged.filter((tool) => {
     const key = tool.href.split("?")[0];

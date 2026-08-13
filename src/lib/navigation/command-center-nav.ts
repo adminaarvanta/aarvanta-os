@@ -49,17 +49,17 @@ export type OperatingSystemItem = {
 
 /** Primary sidebar navigation — Command Center design */
 export const COMMAND_CENTER_NAV: CommandNavItem[] = [
-  { href: "/dashboard", label: "Command Center", icon: LayoutDashboard, featureKey: "ungated" },
-  { href: "/whatsapp", label: "WhatsApp OS", icon: MessageCircle, badgeKey: "whatsapp", featureKey: "whatsappChannel" },
-  { href: "/voice", label: "Voice OS", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
+  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle, badgeKey: "whatsapp", featureKey: "whatsappChannel" },
+  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
   { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
   { href: "/workforce", label: "AI Team", icon: Sparkles, featureKey: "aiWorkforce" },
   { href: "/projects", label: "Projects", icon: Kanban, featureKey: "projects" },
-  { href: "/workflows", label: "Workflows", icon: Workflow, featureKey: "workflows" },
-  { href: "/hr", label: "HR", icon: Landmark, featureKey: "hr" },
+  { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
+  { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
   { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
-  { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
-  { href: "#all-tools", label: "All Tools", icon: LayoutGrid, featureKey: "ungated" },
+  { href: "/analytics", label: "Insights", icon: BarChart3, featureKey: "analytics" },
+  { href: "#all-tools", label: "More", icon: LayoutGrid, featureKey: "ungated" },
 ];
 
 /**
@@ -68,7 +68,7 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
 export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
   {
     id: "leads",
-    label: "Lead pipeline",
+    label: "Leads",
     href: "/crm/leads",
     description: "Capture and qualify new leads",
     dotClass: "bg-gold",
@@ -77,7 +77,7 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
   },
   {
     id: "build",
-    label: "Build sites",
+    label: "Website Builder",
     href: "/build",
     description: "Create and publish websites",
     dotClass: "bg-accent-cyan",

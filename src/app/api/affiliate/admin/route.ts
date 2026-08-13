@@ -4,30 +4,79 @@ import { apiError, parseJsonBody, unauthorized } from "@/lib/api/request";
 import { isAffiliatePlatformAdmin } from "@/lib/affiliate/admin";
 import {
   adminApproveEarning,
+  adminAssignHierarchy,
   adminClawbackEarning,
   adminSetAffiliateStatus,
   adminUpdatePayout,
   adminUpsertRateCard,
+  affiliateRole,
   approveMaturedEarnings,
+  buildTree,
   resendAffiliateActivation,
+  scopedAffiliatesForManager,
 } from "@/lib/affiliate/service";
 import { affiliateStore } from "@/lib/data/affiliate-store";
 import { getSessionContext } from "@/lib/tenant/context";
-import type { AffiliateRateCard } from "@/types/affiliate";
+import type { Affiliate, AffiliateRateCard } from "@/types/affiliate";
 
 export const runtime = "nodejs";
 
-async function requireAdmin() {
+type AdminAccess =
+  | { kind: "platform"; email: string }
+  | { kind: "regional_manager"; email: string; affiliate: Affiliate };
+
+async function resolveAdminAccess(): Promise<AdminAccess> {
   const session = await getSessionContext();
-  if (!isAffiliatePlatformAdmin(session.email, session.role)) {
-    throw new Error("Forbidden");
+  if (isAffiliatePlatformAdmin(session.email)) {
+    return { kind: "platform", email: session.email };
   }
-  return session;
+
+  const me =
+    (await affiliateStore.getAffiliateByUserId(session.userId)) ??
+    (await affiliateStore.getAffiliateByEmail(session.email));
+  if (me && affiliateRole(me) === "regional_manager" && me.status === "active") {
+    return { kind: "regional_manager", email: session.email, affiliate: me };
+  }
+
+  throw new Error("Forbidden");
+}
+
+async function withPasswordFlags(affiliates: Affiliate[]) {
+  const { hasUserPassword } = await import("@/lib/auth/user-credentials");
+  const flagged = (
+    await Promise.all(
+      affiliates.map(async (a) => {
+        const email = a.profile?.email?.trim().toLowerCase();
+        if (!email) {
+          console.warn(
+            "[affiliate] skipping affiliate with missing profile.email",
+            a.id
+          );
+          return null;
+        }
+        const needsPasswordSetup =
+          a.status === "active" && !(await hasUserPassword(email));
+        return {
+          ...a,
+          role: affiliateRole(a),
+          needsPasswordSetup,
+        };
+      })
+    )
+  ).filter((a): a is NonNullable<typeof a> => a !== null);
+
+  flagged.sort((a, b) => {
+    if (a.status === "pending" && b.status !== "pending") return -1;
+    if (b.status === "pending" && a.status !== "pending") return 1;
+    return (b.createdAt || "").localeCompare(a.createdAt || "");
+  });
+  return flagged;
 }
 
 export async function GET() {
+  let access: AdminAccess;
   try {
-    await requireAdmin();
+    access = await resolveAdminAccess();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unauthorized";
     if (message === "Forbidden") {
@@ -37,46 +86,53 @@ export async function GET() {
   }
 
   await approveMaturedEarnings();
-  const [affiliates, rateCards, earnings, payouts, leads, auditLogs] =
-    await Promise.all([
-      affiliateStore.listAffiliates(),
+  const allAffiliates = await affiliateStore.listAffiliates();
+
+  if (access.kind === "platform") {
+    const [rateCards, earnings, payouts, leads, auditLogs] = await Promise.all([
       affiliateStore.listRateCards(),
       affiliateStore.listEarnings(),
       affiliateStore.listPayouts(),
       affiliateStore.listLeadEvents(),
       affiliateStore.listAuditLogs(),
     ]);
+    const affiliates = await withPasswordFlags(allAffiliates);
+    return NextResponse.json({
+      access: "platform",
+      affiliates,
+      tree: buildTree(affiliates),
+      rateCards,
+      earnings,
+      payouts,
+      leads,
+      auditLogs: auditLogs.slice(0, 100),
+    });
+  }
 
-  const { hasUserPassword } = await import("@/lib/auth/user-credentials");
-  const affiliatesWithFlags = (
-    await Promise.all(
-      affiliates.map(async (a) => {
-        const email = a.profile?.email?.trim().toLowerCase();
-        if (!email) {
-          console.warn("[affiliate] skipping affiliate with missing profile.email", a.id);
-          return null;
-        }
-        const needsPasswordSetup =
-          a.status === "active" && !(await hasUserPassword(email));
-        return { ...a, needsPasswordSetup };
-      })
-    )
-  ).filter((a): a is NonNullable<typeof a> => a !== null);
+  const scoped = scopedAffiliatesForManager(allAffiliates, access.affiliate);
+  const scopedIds = new Set(scoped.map((a) => a.id));
+  const region = access.affiliate.profile.regionCode;
+  const [rateCards, earnings, payouts, leads] = await Promise.all([
+    affiliateStore.listRateCards(),
+    affiliateStore.listEarnings(),
+    affiliateStore.listPayouts(),
+    affiliateStore.listLeadEvents(),
+  ]);
 
-  // Pending partner applications first so admin approval work is obvious.
-  affiliatesWithFlags.sort((a, b) => {
-    if (a.status === "pending" && b.status !== "pending") return -1;
-    if (b.status === "pending" && a.status !== "pending") return 1;
-    return (b.createdAt || "").localeCompare(a.createdAt || "");
-  });
-
+  const affiliates = await withPasswordFlags(scoped);
   return NextResponse.json({
-    affiliates: affiliatesWithFlags,
-    rateCards,
-    earnings,
-    payouts,
-    leads,
-    auditLogs: auditLogs.slice(0, 100),
+    access: "regional_manager",
+    regionCode: region,
+    managerAffiliateId: access.affiliate.id,
+    affiliates,
+    tree: buildTree(affiliates),
+    rateCards: rateCards.filter(
+      (c) => !c.affiliateId && c.regionCode === region
+    ),
+    earnings: earnings.filter((e) => scopedIds.has(e.affiliateId)),
+    payouts: payouts.filter((p) => scopedIds.has(p.affiliateId)),
+    leads: leads.filter((l) => scopedIds.has(l.affiliateId)),
+    auditLogs: [],
   });
 }
 
@@ -85,6 +141,14 @@ const patchSchema = z.discriminatedUnion("action", [
     action: z.literal("set_status"),
     affiliateId: z.string(),
     status: z.enum(["active", "suspended", "rejected"]),
+    parentAffiliateId: z.string().nullable().optional(),
+    role: z.enum(["partner", "regional_manager"]).optional(),
+  }),
+  z.object({
+    action: z.literal("assign_hierarchy"),
+    affiliateId: z.string(),
+    parentAffiliateId: z.string().nullable().optional(),
+    role: z.enum(["partner", "regional_manager"]).optional(),
   }),
   z.object({
     action: z.literal("upsert_rate_card"),
@@ -124,9 +188,9 @@ const patchSchema = z.discriminatedUnion("action", [
 ]);
 
 export async function PATCH(req: Request) {
-  let session;
+  let access: AdminAccess;
   try {
-    session = await requireAdmin();
+    access = await resolveAdminAccess();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unauthorized";
     if (message === "Forbidden") {
@@ -148,18 +212,59 @@ export async function PATCH(req: Request) {
 
   try {
     const data = parsed.data;
+
+    if (access.kind === "regional_manager") {
+      const region = access.affiliate.profile.regionCode;
+
+      if (data.action === "upsert_rate_card") {
+        if (data.rateCard.regionCode !== region || data.rateCard.affiliateId) {
+          return apiError(
+            "FORBIDDEN",
+            `Regional managers may only edit the ${region} regional rate card.`,
+            403
+          );
+        }
+        const rateCard = await adminUpsertRateCard(
+          {
+            ...(data.rateCard as AffiliateRateCard),
+            updatedAt: new Date().toISOString(),
+          },
+          access.email,
+          { restrictRegionCode: region }
+        );
+        return NextResponse.json({ rateCard });
+      }
+
+      return apiError(
+        "FORBIDDEN",
+        "Regional managers can only update their region rate card.",
+        403
+      );
+    }
+
     if (data.action === "set_status") {
       const result = await adminSetAffiliateStatus({
         affiliateId: data.affiliateId,
         status: data.status,
-        actorEmail: session.email,
+        actorEmail: access.email,
+        parentAffiliateId: data.parentAffiliateId,
+        role: data.role,
       });
       return NextResponse.json(result);
+    }
+    if (data.action === "assign_hierarchy") {
+      const affiliate = await adminAssignHierarchy({
+        affiliateId: data.affiliateId,
+        actorEmail: access.email,
+        parentAffiliateId: data.parentAffiliateId,
+        role: data.role,
+      });
+      return NextResponse.json({ affiliate });
     }
     if (data.action === "resend_activation") {
       const result = await resendAffiliateActivation({
         affiliateId: data.affiliateId,
-        actorEmail: session.email,
+        actorEmail: access.email,
       });
       return NextResponse.json(result);
     }
@@ -169,7 +274,7 @@ export async function PATCH(req: Request) {
           ...(data.rateCard as AffiliateRateCard),
           updatedAt: new Date().toISOString(),
         },
-        session.email
+        access.email
       );
       return NextResponse.json({ rateCard });
     }
@@ -177,7 +282,7 @@ export async function PATCH(req: Request) {
       const payout = await adminUpdatePayout({
         payoutId: data.payoutId,
         status: data.status,
-        actorEmail: session.email,
+        actorEmail: access.email,
         adminNote: data.adminNote,
       });
       return NextResponse.json({ payout });
@@ -185,13 +290,13 @@ export async function PATCH(req: Request) {
     if (data.action === "approve_earning") {
       const earning = await adminApproveEarning({
         earningId: data.earningId,
-        actorEmail: session.email,
+        actorEmail: access.email,
       });
       return NextResponse.json({ earning });
     }
     const earning = await adminClawbackEarning({
       earningId: data.earningId,
-      actorEmail: session.email,
+      actorEmail: access.email,
     });
     return NextResponse.json({ earning });
   } catch (error) {

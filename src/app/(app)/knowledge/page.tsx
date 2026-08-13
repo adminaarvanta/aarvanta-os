@@ -25,8 +25,8 @@ export default async function KnowledgePage() {
               Knowledge Hub
             </h2>
             <p className="text-xs text-muted sm:text-sm">
-              Module 2 — Company Brain with upload, semantic search, AI Ask,
-              summaries, and tags.
+              Upload SOPs and policies so AI Team and Ask AI stay grounded —
+              search, ask with citations, summaries, and tags.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -53,10 +53,18 @@ export default async function KnowledgePage() {
           <KnowledgeSearchBar />
         </section>
 
-        <section>
-          <h3 className="mb-4 text-sm font-semibold text-foreground">
-            Knowledge library ({documents.length})
-          </h3>
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              Knowledge library
+            </h3>
+            <p className="text-xs text-muted">
+              {documents.length} document{documents.length === 1 ? "" : "s"}
+              {documents.length > 0
+                ? ` · ${documents.filter((d) => d.status === "ready").length} ready`
+                : ""}
+            </p>
+          </div>
           <KnowledgeDocumentList documents={documents} />
         </section>
       </div>

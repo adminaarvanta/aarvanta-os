@@ -47,6 +47,10 @@ export function classifyIntent(
     relatedContactId: extras?.relatedContactId,
     relatedDealId: extras?.relatedDealId,
     relatedConversationId: extras?.relatedConversationId,
+    // Preserve free-text for Knowledge Hub grounding in buildWorkforceContext.
+    instructions: [payload.instructions, text ? `User request: ${text}` : ""]
+      .filter(Boolean)
+      .join("\n"),
   };
 
   const previewGoal = buildWorkforceGoal(goalInput, PREVIEW_SCOPE);

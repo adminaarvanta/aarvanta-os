@@ -3,8 +3,10 @@ import { z } from "zod";
 import { apiError, parseJsonBody, unauthorized } from "@/lib/api/request";
 import { affiliateStore } from "@/lib/data/affiliate-store";
 import {
+  affiliateRole,
   buildAffiliateDashboard,
   requestPayout,
+  summarizeDownline,
   updateAffiliateProfile,
 } from "@/lib/affiliate/service";
 import { getSessionContext } from "@/lib/tenant/context";
@@ -23,10 +25,23 @@ export async function GET() {
   try {
     const { affiliate } = await resolveAffiliateForSession();
     if (!affiliate) {
-      return NextResponse.json({ affiliate: null, dashboard: null });
+      return NextResponse.json({
+        affiliate: null,
+        dashboard: null,
+        downline: [],
+        role: null,
+      });
     }
     const dashboard = await buildAffiliateDashboard(affiliate.id);
-    return NextResponse.json({ affiliate, dashboard });
+    const all = await affiliateStore.listAffiliates();
+    const downline = summarizeDownline(all, affiliate.id);
+    const role = affiliateRole(affiliate);
+    return NextResponse.json({
+      affiliate: { ...affiliate, role },
+      dashboard,
+      downline,
+      role,
+    });
   } catch {
     return unauthorized();
   }

@@ -174,6 +174,10 @@ export function AppSidebar({
                 );
               }
 
+              const isAiTeam = item.href === "/workforce";
+              const showFreeBadge =
+                isAiTeam && plan?.planId === "free" && !locked;
+
               return (
                 <li key={item.href}>
                   <PendingLink
@@ -190,15 +194,28 @@ export function AppSidebar({
                         "bg-gold/15 text-gold-bright before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-gold",
                       !locked &&
                         !active &&
-                        "text-muted hover:bg-surface-hover hover:text-foreground"
+                        "text-muted hover:bg-surface-hover hover:text-foreground",
+                      isAiTeam &&
+                        !locked &&
+                        !active &&
+                        "bg-gold/[0.07] text-foreground ring-1 ring-gold/25 hover:bg-gold/15"
                     )}
                   >
-                    <Icon className="h-[18px] w-[18px] shrink-0" />
+                    <Icon
+                      className={cn(
+                        "h-[18px] w-[18px] shrink-0",
+                        isAiTeam && !locked && "text-gold"
+                      )}
+                    />
                     {!collapsed ? (
                       <>
                         <span className="flex-1 truncate">{item.label}</span>
                         {locked ? (
                           <PremiumBadge />
+                        ) : showFreeBadge ? (
+                          <span className="rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-bright">
+                            Free
+                          </span>
                         ) : badge !== null ? (
                           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-semibold text-black">
                             {badge > 99 ? "99+" : badge}
@@ -209,6 +226,8 @@ export function AppSidebar({
                       <span className="absolute right-1 top-1 text-gold">
                         <Lock className="h-3 w-3" aria-hidden />
                       </span>
+                    ) : showFreeBadge ? (
+                      <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-gold" />
                     ) : badge !== null ? (
                       <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-gold" />
                     ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardList, StatGrid } from "@/components/platform/module-page-shell";
 import type {
@@ -8,12 +8,21 @@ import type {
   AffiliateEarning,
   AffiliatePayoutRequest,
   AffiliateRateCard,
+  AffiliateRole,
+  AffiliateTreeNode,
 } from "@/types/affiliate";
 
-type AdminAffiliate = Affiliate & { needsPasswordSetup?: boolean };
+type AdminAffiliate = Affiliate & {
+  needsPasswordSetup?: boolean;
+  role?: AffiliateRole;
+};
 
 type AdminPayload = {
+  access: "platform" | "regional_manager";
+  regionCode?: string;
+  managerAffiliateId?: string;
   affiliates: AdminAffiliate[];
+  tree: AffiliateTreeNode[];
   rateCards: AffiliateRateCard[];
   earnings: AffiliateEarning[];
   payouts: AffiliatePayoutRequest[];
@@ -102,77 +111,11 @@ export function AffiliateAdminClient() {
     return <p className="text-sm text-muted">Loading admin…</p>;
   }
 
+  const isPlatform = data.access === "platform";
   const pending = data.affiliates.filter((a) => a.status === "pending");
-  const others = data.affiliates.filter((a) => a.status !== "pending");
   const openPayouts = data.payouts.filter(
     (p) => p.status === "requested" || p.status === "approved"
   );
-
-  function renderAffiliateRow(a: AdminAffiliate) {
-    return (
-      <li
-        key={a.id}
-        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-      >
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            {a.profile.name} · {a.referralCode}
-          </p>
-          <p className="text-xs text-muted">
-            {a.profile.email} · {a.source} · {a.profile.regionCode} ·{" "}
-            {a.status}
-            {a.needsPasswordSetup ? " · awaiting password" : ""}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {a.status !== "active" ? (
-            <Button
-              size="sm"
-              disabled={busy}
-              onClick={() =>
-                void patch({
-                  action: "set_status",
-                  affiliateId: a.id,
-                  status: "active",
-                })
-              }
-            >
-              Approve
-            </Button>
-          ) : null}
-          {a.needsPasswordSetup ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={busy}
-              onClick={() =>
-                void patch({
-                  action: "resend_activation",
-                  affiliateId: a.id,
-                })
-              }
-            >
-              Send password link
-            </Button>
-          ) : null}
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={busy}
-            onClick={() =>
-              void patch({
-                action: "set_status",
-                affiliateId: a.id,
-                status: "suspended",
-              })
-            }
-          >
-            Suspend
-          </Button>
-        </div>
-      </li>
-    );
-  }
 
   return (
     <div className="space-y-8">
@@ -188,6 +131,15 @@ export function AffiliateAdminClient() {
           },
         ]}
       />
+
+      <p className="text-xs text-muted">
+        Access:{" "}
+        <span className="text-foreground">
+          {isPlatform
+            ? "Platform admin (full tree)"
+            : `Regional manager (${data.regionCode})`}
+        </span>
+      </p>
 
       {error ? (
         <p className="text-sm text-red-400" role="alert">
@@ -221,37 +173,60 @@ export function AffiliateAdminClient() {
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">
-          Partner applications awaiting approval
+          Hierarchy tree
         </h3>
-        <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
-          {pending.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-muted">
-              No partner applications waiting. New submissions from /affiliate
-              appear here as pending.
-            </li>
+        <div className="overflow-hidden rounded-xl border border-border bg-surface-elevated p-3">
+          {(data.tree?.length ?? 0) === 0 ? (
+            <p className="px-1 py-2 text-sm text-muted">No affiliates yet.</p>
           ) : (
-            pending.map(renderAffiliateRow)
+            <ul className="space-y-1">
+              {data.tree.map((node) => (
+                <TreeNodeView
+                  key={node.affiliate.id}
+                  node={node}
+                  depth={0}
+                  affiliates={data.affiliates}
+                  isPlatform={isPlatform}
+                  busy={busy}
+                  onPatch={patch}
+                />
+              ))}
+            </ul>
           )}
-        </ul>
+        </div>
       </section>
+
+      {isPlatform ? (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">
+            Partner applications awaiting approval
+          </h3>
+          <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
+            {pending.length === 0 ? (
+              <li className="px-4 py-3 text-sm text-muted">
+                No partner applications waiting. New submissions from /affiliate
+                appear here as pending.
+              </li>
+            ) : (
+              pending.map((a) => (
+                <PendingRow
+                  key={a.id}
+                  affiliate={a}
+                  affiliates={data.affiliates}
+                  busy={busy}
+                  onPatch={patch}
+                />
+              ))
+            )}
+          </ul>
+        </section>
+      ) : null}
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">
-          All partners
-        </h3>
-        <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
-          {others.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-muted">
-              No approved or suspended partners yet.
-            </li>
-          ) : (
-            others.map(renderAffiliateRow)
-          )}
-        </ul>
-      </section>
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">
-          Regional rate / cap matrix
+          {isPlatform
+            ? "Regional rate / cap matrix"
+            : `Rate matrix · ${data.regionCode}`}
         </h3>
         <ul className="space-y-3">
           {data.rateCards
@@ -269,147 +244,411 @@ export function AffiliateAdminClient() {
         </ul>
       </section>
 
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">
-          Payout queue
-        </h3>
-        <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
-          {data.payouts.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-muted">No payouts yet.</li>
-          ) : (
-            data.payouts.map((p) => (
-              <li
-                key={p.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {p.amount} {p.currency}
-                  </p>
-                  <p className="text-xs text-muted">
-                    {p.affiliateId} · {p.status}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {p.status === "requested" ? (
-                    <Button
-                      size="sm"
-                      disabled={busy}
-                      onClick={() =>
-                        void patch({
-                          action: "payout",
-                          payoutId: p.id,
-                          status: "approved",
-                        })
-                      }
-                    >
-                      Approve
-                    </Button>
-                  ) : null}
-                  {p.status === "approved" || p.status === "requested" ? (
-                    <Button
-                      size="sm"
-                      disabled={busy}
-                      onClick={() =>
-                        void patch({
-                          action: "payout",
-                          payoutId: p.id,
-                          status: "paid",
-                        })
-                      }
-                    >
-                      Mark paid
-                    </Button>
-                  ) : null}
-                  {p.status === "requested" ? (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={busy}
-                      onClick={() =>
-                        void patch({
-                          action: "payout",
-                          payoutId: p.id,
-                          status: "rejected",
-                        })
-                      }
-                    >
-                      Reject
-                    </Button>
-                  ) : null}
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
-      </section>
+      {isPlatform ? (
+        <>
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
+              Payout queue
+            </h3>
+            <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
+              {data.payouts.length === 0 ? (
+                <li className="px-4 py-3 text-sm text-muted">No payouts yet.</li>
+              ) : (
+                data.payouts.map((p) => (
+                  <li
+                    key={p.id}
+                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {p.amount} {p.currency}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {p.affiliateId} · {p.status}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {p.status === "requested" ? (
+                        <Button
+                          size="sm"
+                          disabled={busy}
+                          onClick={() =>
+                            void patch({
+                              action: "payout",
+                              payoutId: p.id,
+                              status: "approved",
+                            })
+                          }
+                        >
+                          Approve
+                        </Button>
+                      ) : null}
+                      {p.status === "approved" || p.status === "requested" ? (
+                        <Button
+                          size="sm"
+                          disabled={busy}
+                          onClick={() =>
+                            void patch({
+                              action: "payout",
+                              payoutId: p.id,
+                              status: "paid",
+                            })
+                          }
+                        >
+                          Mark paid
+                        </Button>
+                      ) : null}
+                      {p.status === "requested" ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() =>
+                            void patch({
+                              action: "payout",
+                              payoutId: p.id,
+                              status: "rejected",
+                            })
+                          }
+                        >
+                          Reject
+                        </Button>
+                      ) : null}
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
 
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">
-          Earnings
-        </h3>
-        <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
-          {data.earnings.slice(0, 40).map((e) => (
-            <li
-              key={e.id}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">
+              Earnings
+            </h3>
+            <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
+              {data.earnings.slice(0, 40).map((e) => (
+                <li
+                  key={e.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {e.type} · {e.amount} {e.currency}
+                    </p>
+                    <p className="text-xs text-muted">
+                      {e.email ?? e.tenantId} · {e.status}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {e.status === "pending" ? (
+                      <Button
+                        size="sm"
+                        disabled={busy}
+                        onClick={() =>
+                          void patch({
+                            action: "approve_earning",
+                            earningId: e.id,
+                          })
+                        }
+                      >
+                        Approve now
+                      </Button>
+                    ) : null}
+                    {e.status === "approved" || e.status === "pending" ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() =>
+                          void patch({
+                            action: "clawback_earning",
+                            earningId: e.id,
+                          })
+                        }
+                      >
+                        Clawback
+                      </Button>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Leads</h3>
+            <CardList
+              items={data.leads.slice(0, 40).map((l) => ({
+                id: l.id,
+                title: l.email,
+                body: l.affiliateId,
+                badge: l.status,
+              }))}
+            />
+          </section>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function TreeNodeView({
+  node,
+  depth,
+  affiliates,
+  isPlatform,
+  busy,
+  onPatch,
+}: {
+  node: AffiliateTreeNode;
+  depth: number;
+  affiliates: AdminAffiliate[];
+  isPlatform: boolean;
+  busy: boolean;
+  onPatch: (body: Record<string, unknown>) => Promise<void>;
+}) {
+  const a = node.affiliate as AdminAffiliate;
+  const role = a.role ?? "partner";
+  const [parentId, setParentId] = useState(a.parentAffiliateId ?? "");
+
+  useEffect(() => {
+    setParentId(a.parentAffiliateId ?? "");
+  }, [a.parentAffiliateId]);
+
+  const parentOptions = useMemo(
+    () =>
+      affiliates.filter(
+        (p) => p.id !== a.id && p.status !== "rejected" && p.status !== "suspended"
+      ),
+    [affiliates, a.id]
+  );
+
+  return (
+    <li>
+      <div
+        className="flex flex-wrap items-start justify-between gap-2 rounded-lg px-2 py-2 hover:bg-surface-muted/60"
+        style={{ marginLeft: depth * 16 }}
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">
+            {depth > 0 ? "↳ " : ""}
+            {a.profile.name} · {a.referralCode}
+          </p>
+          <p className="text-xs text-muted">
+            {a.profile.email} · {role} · {a.profile.regionCode} · {a.status}
+            {a.needsPasswordSetup ? " · awaiting password" : ""}
+          </p>
+        </div>
+        {isPlatform ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="rounded border border-border bg-surface-muted px-2 py-1 text-xs text-foreground"
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+              disabled={busy}
             >
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {e.type} · {e.amount} {e.currency}
-                </p>
-                <p className="text-xs text-muted">
-                  {e.email ?? e.tenantId} · {e.status}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {e.status === "pending" ? (
-                  <Button
-                    size="sm"
-                    disabled={busy}
-                    onClick={() =>
-                      void patch({
-                        action: "approve_earning",
-                        earningId: e.id,
-                      })
-                    }
-                  >
-                    Approve now
-                  </Button>
-                ) : null}
-                {e.status === "approved" || e.status === "pending" ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() =>
-                      void patch({
-                        action: "clawback_earning",
-                        earningId: e.id,
-                      })
-                    }
-                  >
-                    Clawback
-                  </Button>
-                ) : null}
-              </div>
-            </li>
+              <option value="">No parent (root)</option>
+              {parentOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.profile.name} ({p.referralCode})
+                </option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={busy}
+              onClick={() =>
+                void onPatch({
+                  action: "assign_hierarchy",
+                  affiliateId: a.id,
+                  parentAffiliateId: parentId || null,
+                })
+              }
+            >
+              Set parent
+            </Button>
+            {role !== "regional_manager" ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy}
+                onClick={() =>
+                  void onPatch({
+                    action: "assign_hierarchy",
+                    affiliateId: a.id,
+                    role: "regional_manager",
+                  })
+                }
+              >
+                Promote RM
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy}
+                onClick={() =>
+                  void onPatch({
+                    action: "assign_hierarchy",
+                    affiliateId: a.id,
+                    role: "partner",
+                  })
+                }
+              >
+                Demote
+              </Button>
+            )}
+            {a.status !== "active" ? (
+              <Button
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  void onPatch({
+                    action: "set_status",
+                    affiliateId: a.id,
+                    status: "active",
+                    parentAffiliateId: parentId || null,
+                  })
+                }
+              >
+                Approve
+              </Button>
+            ) : null}
+            {a.needsPasswordSetup ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy}
+                onClick={() =>
+                  void onPatch({
+                    action: "resend_activation",
+                    affiliateId: a.id,
+                  })
+                }
+              >
+                Send password link
+              </Button>
+            ) : null}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={busy}
+              onClick={() =>
+                void onPatch({
+                  action: "set_status",
+                  affiliateId: a.id,
+                  status: "suspended",
+                })
+              }
+            >
+              Suspend
+            </Button>
+          </div>
+        ) : null}
+      </div>
+      {node.children.length > 0 ? (
+        <ul className="space-y-1">
+          {node.children.map((child) => (
+            <TreeNodeView
+              key={child.affiliate.id}
+              node={child}
+              depth={depth + 1}
+              affiliates={affiliates}
+              isPlatform={isPlatform}
+              busy={busy}
+              onPatch={onPatch}
+            />
           ))}
         </ul>
-      </section>
+      ) : null}
+    </li>
+  );
+}
 
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Leads</h3>
-        <CardList
-          items={data.leads.slice(0, 40).map((l) => ({
-            id: l.id,
-            title: l.email,
-            body: l.affiliateId,
-            badge: l.status,
-          }))}
-        />
-      </section>
-    </div>
+function PendingRow({
+  affiliate: a,
+  affiliates,
+  busy,
+  onPatch,
+}: {
+  affiliate: AdminAffiliate;
+  affiliates: AdminAffiliate[];
+  busy: boolean;
+  onPatch: (body: Record<string, unknown>) => Promise<void>;
+}) {
+  const [parentId, setParentId] = useState(a.parentAffiliateId ?? "");
+  const [role, setRole] = useState<AffiliateRole>(a.role ?? "partner");
+
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <div>
+        <p className="text-sm font-medium text-foreground">
+          {a.profile.name} · {a.referralCode}
+        </p>
+        <p className="text-xs text-muted">
+          {a.profile.email} · {a.source} · {a.profile.regionCode}
+          {a.parentAffiliateId
+            ? ` · parent ${affiliates.find((p) => p.id === a.parentAffiliateId)?.referralCode ?? a.parentAffiliateId}`
+            : ""}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          className="rounded border border-border bg-surface-muted px-2 py-1 text-xs text-foreground"
+          value={parentId}
+          onChange={(e) => setParentId(e.target.value)}
+          disabled={busy}
+        >
+          <option value="">No parent</option>
+          {affiliates
+            .filter((p) => p.id !== a.id && p.status === "active")
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.profile.name} ({p.referralCode})
+              </option>
+            ))}
+        </select>
+        <select
+          className="rounded border border-border bg-surface-muted px-2 py-1 text-xs text-foreground"
+          value={role}
+          onChange={(e) => setRole(e.target.value as AffiliateRole)}
+          disabled={busy}
+        >
+          <option value="partner">Partner</option>
+          <option value="regional_manager">Regional manager</option>
+        </select>
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            void onPatch({
+              action: "set_status",
+              affiliateId: a.id,
+              status: "active",
+              parentAffiliateId: parentId || null,
+              role,
+            })
+          }
+        >
+          Approve
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={busy}
+          onClick={() =>
+            void onPatch({
+              action: "set_status",
+              affiliateId: a.id,
+              status: "rejected",
+            })
+          }
+        >
+          Reject
+        </Button>
+      </div>
+    </li>
   );
 }
 
@@ -423,6 +662,10 @@ function RateCardEditor({
   onSave: (card: AffiliateRateCard) => void;
 }) {
   const [draft, setDraft] = useState(card);
+
+  useEffect(() => {
+    setDraft(card);
+  }, [card]);
 
   return (
     <div className="rounded-xl border border-border bg-surface-elevated p-4">

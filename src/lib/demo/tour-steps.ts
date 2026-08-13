@@ -199,7 +199,7 @@ export const FREE_TOUR_STEPS: DemoTourStep[] = [
   },
   {
     id: "dashboard",
-    title: "Command Center",
+    title: "Home",
     description:
       "Your home base: pipeline signals, quick actions, and a map of the operating systems available to your workspace.",
     route: "/dashboard",
@@ -237,7 +237,7 @@ export const FREE_TOUR_STEPS: DemoTourStep[] = [
     target: '[data-demo-tour="nav-build"]',
     placement: "right",
     expandSidebar: true,
-    tip: "Shortcuts → Build sites opens the studio",
+    tip: "Shortcuts → Website Builder opens the studio",
   },
   {
     id: "workforce",
@@ -251,9 +251,9 @@ export const FREE_TOUR_STEPS: DemoTourStep[] = [
   },
   {
     id: "all-tools",
-    title: "All tools & search",
+    title: "More tools & search",
     description:
-      "Open All tools for Finance, Knowledge, Analytics, and more. Press ⌘K (Ctrl+K) anytime to jump across the OS.",
+      "Open More for Finance, Knowledge, Insights, and more. Press ⌘K (Ctrl+K) anytime to jump across the OS.",
     route: "/dashboard",
     target: '[data-demo-tour="all-tools-panel"]',
     placement: "right",

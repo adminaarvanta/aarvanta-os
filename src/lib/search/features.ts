@@ -1,7 +1,6 @@
 import { FOUNDER_COMMANDS } from "@/lib/founder/commands";
 import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
 import { CORE_MODULES, PLATFORM_MODULES } from "@/lib/platform/modules";
-import { isDeferredToolId } from "@/lib/navigation/deferred-tools";
 import type { GlobalSearchResult } from "@/types/search";
 
 function moduleToResult(
@@ -46,7 +45,6 @@ export function buildFeatureSearchIndex(): GlobalSearchResult[] {
   }
 
   for (const tool of [...CORE_MODULES, ...PLATFORM_MODULES]) {
-    if (isDeferredToolId(tool.id)) continue;
     add(moduleToResult(tool, [tool.group, String(tool.phase)]));
   }
 

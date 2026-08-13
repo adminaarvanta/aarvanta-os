@@ -12,6 +12,7 @@ import type {
   AffiliateLeadEvent,
   AffiliatePayoutRequest,
   AffiliateRateCard,
+  AffiliateTreeNode,
 } from "@/types/affiliate";
 
 type CollectionName =
@@ -65,6 +66,7 @@ function seedIfNeeded() {
     referralCode: "DEMOREF",
     source: "external",
     status: "active",
+    role: "regional_manager",
     profile: {
       name: "Demo Partner",
       email: "partner@demo.aarvanta.com",
@@ -80,6 +82,25 @@ function seedIfNeeded() {
     approvedAt: now,
   };
   memory.affiliates.set(demo.id, demo);
+  const demoChild: Affiliate = {
+    id: "aff_demo_child",
+    referralCode: "DEMOCH1",
+    source: "external",
+    status: "active",
+    role: "partner",
+    parentAffiliateId: demo.id,
+    profile: {
+      name: "Demo Sub-Partner",
+      email: "subpartner@demo.aarvanta.com",
+      company: "Demo Sub Agency",
+      country: "United Kingdom",
+      regionCode: "uk",
+    },
+    createdAt: now,
+    updatedAt: now,
+    approvedAt: now,
+  };
+  memory.affiliates.set(demoChild.id, demoChild);
 }
 
 async function listAll<T>(collection: CollectionName): Promise<T[]> {
@@ -140,6 +161,74 @@ export function hashIp(ip: string | null | undefined): string | undefined {
   return createHash("sha256").update(ip).digest("hex").slice(0, 16);
 }
 
+/** Pure hierarchy helpers (also re-exported via service). */
+export function listChildren(
+  affiliates: Affiliate[],
+  parentId: string
+): Affiliate[] {
+  return affiliates
+    .filter((a) => a.parentAffiliateId === parentId)
+    .sort((a, b) => a.profile.name.localeCompare(b.profile.name));
+}
+
+export function isDescendant(
+  affiliates: Affiliate[],
+  ancestorId: string,
+  maybeDescendantId: string
+): boolean {
+  if (ancestorId === maybeDescendantId) return false;
+  const byId = new Map(affiliates.map((a) => [a.id, a]));
+  let current = byId.get(maybeDescendantId);
+  const seen = new Set<string>();
+  while (current?.parentAffiliateId) {
+    if (seen.has(current.id)) break;
+    seen.add(current.id);
+    if (current.parentAffiliateId === ancestorId) return true;
+    current = byId.get(current.parentAffiliateId);
+  }
+  return false;
+}
+
+export function listDescendants(
+  affiliates: Affiliate[],
+  rootId: string
+): Affiliate[] {
+  const result: Affiliate[] = [];
+  const queue = listChildren(affiliates, rootId);
+  while (queue.length > 0) {
+    const next = queue.shift()!;
+    result.push(next);
+    queue.push(...listChildren(affiliates, next.id));
+  }
+  return result;
+}
+
+export function buildTree(affiliates: Affiliate[]): AffiliateTreeNode[] {
+  const byParent = new Map<string | undefined, Affiliate[]>();
+  for (const a of affiliates) {
+    const key = a.parentAffiliateId;
+    const list = byParent.get(key) ?? [];
+    list.push(a);
+    byParent.set(key, list);
+  }
+  for (const list of byParent.values()) {
+    list.sort((a, b) => a.profile.name.localeCompare(b.profile.name));
+  }
+
+  const ids = new Set(affiliates.map((a) => a.id));
+  function nodeFor(affiliate: Affiliate): AffiliateTreeNode {
+    const children = (byParent.get(affiliate.id) ?? []).map(nodeFor);
+    return { affiliate, children };
+  }
+
+  // Roots: no parent, or parent missing from the scoped set
+  const roots = affiliates.filter(
+    (a) => !a.parentAffiliateId || !ids.has(a.parentAffiliateId)
+  );
+  roots.sort((a, b) => a.profile.name.localeCompare(b.profile.name));
+  return roots.map(nodeFor);
+}
+
 export const affiliateStore = {
   async listAffiliates() {
     return listAll<Affiliate>("affiliates");
@@ -167,6 +256,23 @@ export const affiliateStore = {
     const all = await listAll<Affiliate>("affiliates");
     return all.find((a) => a.activationToken === key) ?? null;
   },
+  async listChildren(parentId: string) {
+    const all = await listAll<Affiliate>("affiliates");
+    return listChildren(all, parentId);
+  },
+  async listDescendants(rootId: string) {
+    const all = await listAll<Affiliate>("affiliates");
+    return listDescendants(all, rootId);
+  },
+  async buildTree(scoped?: Affiliate[]) {
+    const all = scoped ?? (await listAll<Affiliate>("affiliates"));
+    return buildTree(all);
+  },
+  async isDescendant(ancestorId: string, maybeDescendantId: string) {
+    const all = await listAll<Affiliate>("affiliates");
+    return isDescendant(all, ancestorId, maybeDescendantId);
+  },
+
   async saveAffiliate(item: Affiliate) {
     return saveDoc("affiliates", item);
   },
@@ -178,6 +284,7 @@ export const affiliateStore = {
     const now = crmNow();
     const item: Affiliate = {
       ...input,
+      role: input.role ?? "partner",
       id: input.id ?? crmNewId("aff"),
       createdAt: now,
       updatedAt: now,

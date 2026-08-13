@@ -45,14 +45,21 @@ export async function buildContextPackage(
   goal: WorkforceGoal,
   scope: TenantScope
 ): Promise<ContextPackage> {
+  const knowledgeTopic = [
+    goal.customObjective,
+    goal.instructions,
+    goal.expectedOutcome,
+    goal.objective !== "custom" ? goal.objective.replace(/_/g, " ") : "",
+  ]
+    .filter((part) => Boolean(part?.trim()))
+    .join(" ")
+    .trim();
+
   const fields = await buildWorkforceContext(scope, {
     contactId: goal.relatedContactId,
     conversationId: goal.relatedConversationId,
-    knowledgeTopic:
-      goal.customObjective ||
-      goal.instructions ||
-      goal.expectedOutcome ||
-      goal.objective,
+    dealId: goal.relatedDealId,
+    knowledgeTopic: knowledgeTopic || undefined,
   });
 
   const pkg: Omit<ContextPackage, "id"> & { id?: string } = {

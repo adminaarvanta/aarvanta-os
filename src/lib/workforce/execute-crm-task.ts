@@ -79,6 +79,8 @@ export async function executeCrmTaskForAgent(input: {
     const context = await buildWorkforceContext(input.scope, {
       contactId: task.contactId,
       taskId: task.id,
+      dealId: task.dealId,
+      knowledgeTopic: [task.title, task.description].filter(Boolean).join(" "),
     });
 
     const result = await executeAgentRun({

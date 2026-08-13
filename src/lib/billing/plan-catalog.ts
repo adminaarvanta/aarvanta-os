@@ -27,7 +27,8 @@ export type PlanLimitKey =
   | "emailsPerMonth"
   | "storageGb"
   | "workflows"
-  | "crmRecords";
+  | "crmRecords"
+  | "buildDrafts";
 
 export type PlanLimits = Record<PlanLimitKey, number | "unlimited">;
 
@@ -202,13 +203,13 @@ const exploreCore = {
   aiWorkforce: "explore" as const,
   unifiedInbox: "explore" as const,
   emailChannel: "explore" as const,
-  whatsappChannel: "none" as const,
-  voiceAi: "none" as const,
+  whatsappChannel: "explore" as const,
+  voiceAi: "explore" as const,
   workflows: "explore" as const,
   projects: "full" as const,
   knowledgeHub: "explore" as const,
   finance: "explore" as const,
-  hr: "none" as const,
+  hr: "explore" as const,
   payroll: "none" as const,
   clientPortal: "none" as const,
   employeePortal: "none" as const,
@@ -239,21 +240,22 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       storageGb: 1,
       workflows: 2,
       crmRecords: 250,
+      buildDrafts: 1,
     },
     features: exploreCore,
     highlights: [
-      "1 user — CRM, projects & full site builder (draft)",
-      "Build your business online — preview on Aarvanta subdomain",
-      "Unlimited pages & landing pages while drafting",
-      "400 AI credits / month · 1 AI Employee to explore",
+      "1 user — CRM, projects & 1 free website draft",
+      "AI Team included — explore with Knowledge Hub grounding",
+      "Browse WhatsApp, Voice & People (upgrade to go live)",
+      "400 AI credits / month · 1 AI Employee",
       "Sample inbox & workflows (explore mode)",
       "Community support",
     ],
     exclusions: [
       "No custom domain go-live / SSL publish",
-      "No WhatsApp or AI voice calling",
-      "No HR, API, portals, payroll, or white-label",
-      "Finance in explore/demo data only",
+      "1 website draft only — upgrade for more sites",
+      "WhatsApp, Voice & People are browse-only on Free",
+      "No API, portals, payroll, or white-label",
     ],
   },
   {
@@ -276,6 +278,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       storageGb: 25,
       workflows: 10,
       crmRecords: "unlimited",
+      buildDrafts: "unlimited",
     },
     features: {
       ...exploreCore,
@@ -324,6 +327,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       storageGb: 200,
       workflows: 50,
       crmRecords: "unlimited",
+      buildDrafts: "unlimited",
     },
     features: {
       crm: "full",
@@ -377,6 +381,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       storageGb: 1000,
       workflows: "unlimited",
       crmRecords: "unlimited",
+      buildDrafts: "unlimited",
     },
     features: {
       crm: "full",
@@ -430,6 +435,7 @@ export const PLAN_CATALOG: PlanDefinition[] = [
       storageGb: "unlimited",
       workflows: "unlimited",
       crmRecords: "unlimited",
+      buildDrafts: "unlimited",
     },
     features: {
       crm: "full",

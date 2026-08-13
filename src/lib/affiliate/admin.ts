@@ -1,19 +1,17 @@
 import { isDemoMode } from "@/lib/config/app-mode";
-import type { MemberRole } from "@/types/tenant";
 
 /**
- * Affiliate platform admins:
- * - demo: any signed-in user
- * - production: workspace owner/admin, or emails in AFFILIATE_ADMIN_EMAILS
+ * Affiliate platform admins (global affiliate data):
+ * - demo: any signed-in user (local testing)
+ * - production: email must be in AFFILIATE_ADMIN_EMAILS or AUTH_EMAIL
+ *
+ * Workspace owner/admin roles alone do NOT grant global affiliate access.
  */
 export function isAffiliatePlatformAdmin(
-  email: string | null | undefined,
-  role?: MemberRole | null
+  email: string | null | undefined
 ): boolean {
   if (!email) return false;
   if (isDemoMode()) return true;
-  if (role === "owner" || role === "admin") return true;
-
   return listAffiliateAdminEmails().includes(email.trim().toLowerCase());
 }
 

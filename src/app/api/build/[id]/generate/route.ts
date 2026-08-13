@@ -41,6 +41,22 @@ export async function POST(req: Request, context: RouteContext) {
     );
   }
 
+  try {
+    const { requireBuildGenerate } = await import("@/lib/billing/consume");
+    await requireBuildGenerate(scope, job);
+  } catch (error) {
+    const { isPlanEntitlementError, planErrorStatus } = await import(
+      "@/lib/billing/errors"
+    );
+    if (isPlanEntitlementError(error)) {
+      return NextResponse.json(
+        { error: error.toJSON() },
+        { status: planErrorStatus(error) }
+      );
+    }
+    throw error;
+  }
+
   const body = await parseJsonBody<unknown>(req);
   if (body instanceof NextResponse) return body;
 

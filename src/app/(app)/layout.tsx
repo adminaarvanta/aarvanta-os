@@ -52,7 +52,13 @@ export default async function AppLayout({
     const { resolveEntitlements, toClientEntitlements } = await import(
       "@/lib/billing/entitlements"
     );
-    entitlements = toClientEntitlements(await resolveEntitlements(ctx.scope));
+    const { getSiteBuildRepository } = await import(
+      "@/lib/data/site-build-store"
+    );
+    const buildJobs = await getSiteBuildRepository().list(ctx.scope);
+    entitlements = toClientEntitlements(await resolveEntitlements(ctx.scope), {
+      buildDraftsUsed: buildJobs.length,
+    });
   } catch {
     const { getPlan } = await import("@/lib/billing/plan-catalog");
     const free = getPlan("free")!;

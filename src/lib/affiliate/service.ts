@@ -1,6 +1,13 @@
 import { crmNow } from "@/lib/data/crm-helpers";
-import { affiliateStore } from "@/lib/data/affiliate-store";
 import {
+  affiliateStore,
+  buildTree,
+  isDescendant,
+  listChildren,
+  listDescendants,
+} from "@/lib/data/affiliate-store";
+import {
+  AFFILIATE_MAX_DEPTH,
   countryToRegionCode,
   DEFAULT_ATTRIBUTION_WINDOW_DAYS,
   DEFAULT_CURRENCY,
@@ -11,12 +18,112 @@ import {
 import type {
   Affiliate,
   AffiliateAttribution,
+  AffiliateDownlineSummary,
   AffiliateEarning,
   AffiliateProfile,
+  AffiliateRole,
   AffiliateRateCard,
   AffiliateSource,
+  AffiliateTreeNode,
   ResolvedAffiliateRates,
 } from "@/types/affiliate";
+
+export {
+  buildTree,
+  isDescendant,
+  listChildren,
+  listDescendants,
+};
+
+export function affiliateRole(affiliate: Affiliate): AffiliateRole {
+  return affiliate.role ?? "partner";
+}
+
+export function getAffiliateDepth(
+  affiliates: Affiliate[],
+  affiliateId: string
+): number {
+  const byId = new Map(affiliates.map((a) => [a.id, a]));
+  let depth = 1;
+  let current = byId.get(affiliateId);
+  const seen = new Set<string>();
+  while (current?.parentAffiliateId) {
+    if (seen.has(current.id)) break;
+    seen.add(current.id);
+    depth += 1;
+    current = byId.get(current.parentAffiliateId);
+  }
+  return depth;
+}
+
+/** Deepest depth among a node and all its descendants after reparenting. */
+export function projectedMaxDepthAfterParent(
+  affiliates: Affiliate[],
+  affiliateId: string,
+  newParentId: string | undefined
+): number {
+  const parentDepth = newParentId
+    ? getAffiliateDepth(affiliates, newParentId)
+    : 0;
+  const selfDepth = parentDepth + 1;
+  return selfDepth + maxSubtreeHeight(affiliates, affiliateId);
+}
+
+function maxSubtreeHeight(affiliates: Affiliate[], rootId: string): number {
+  const kids = listChildren(affiliates, rootId);
+  if (kids.length === 0) return 0;
+  return 1 + Math.max(...kids.map((k) => maxSubtreeHeight(affiliates, k.id)));
+}
+
+export function assertValidParentAssignment(
+  affiliates: Affiliate[],
+  affiliateId: string,
+  parentAffiliateId: string | undefined
+): void {
+  if (!parentAffiliateId) return;
+  if (parentAffiliateId === affiliateId) {
+    throw new Error("An affiliate cannot be its own parent.");
+  }
+  const parent = affiliates.find((a) => a.id === parentAffiliateId);
+  if (!parent) throw new Error("Parent affiliate not found.");
+  if (isDescendant(affiliates, affiliateId, parentAffiliateId)) {
+    throw new Error("Cannot create a cycle in the affiliate hierarchy.");
+  }
+  const maxDepth = projectedMaxDepthAfterParent(
+    affiliates,
+    affiliateId,
+    parentAffiliateId
+  );
+  if (maxDepth > AFFILIATE_MAX_DEPTH) {
+    throw new Error(
+      `Affiliate hierarchy cannot exceed ${AFFILIATE_MAX_DEPTH} levels.`
+    );
+  }
+}
+
+export function summarizeDownline(
+  affiliates: Affiliate[],
+  parentId: string
+): AffiliateDownlineSummary[] {
+  return listChildren(affiliates, parentId).map((child) => ({
+    id: child.id,
+    referralCode: child.referralCode,
+    name: child.profile.name,
+    email: child.profile.email,
+    status: child.status,
+    role: affiliateRole(child),
+    regionCode: child.profile.regionCode,
+    childCount: listChildren(affiliates, child.id).length,
+  }));
+}
+
+export function scopedAffiliatesForManager(
+  all: Affiliate[],
+  manager: Affiliate
+): Affiliate[] {
+  const downline = listDescendants(all, manager.id);
+  return [manager, ...downline];
+}
 
 function addDays(iso: string, days: number): string {
   const d = new Date(iso);
@@ -87,6 +194,8 @@ export async function applyAsExternalPartner(input: {
   website?: string;
   phone?: string;
   marketingChannels?: string;
+  /** Parent partner referral code (optional). */
+  parentReferralCode?: string;
   userId?: string;
   tenantId?: string;
 }): Promise<Affiliate> {
@@ -99,10 +208,29 @@ export async function applyAsExternalPartner(input: {
   const regionCode = countryToRegionCode(input.country);
   const code = generateReferralCode(input.company || input.name);
 
+  let parentAffiliateId: string | undefined;
+  if (input.parentReferralCode?.trim()) {
+    const parentCode = normalizeReferralCode(input.parentReferralCode);
+    const parent = await affiliateStore.getAffiliateByCode(parentCode);
+    if (!parent || parent.status !== "active") {
+      throw new Error("Parent referral code is invalid or inactive.");
+    }
+    const all = await affiliateStore.listAffiliates();
+    const parentDepth = getAffiliateDepth(all, parent.id);
+    if (parentDepth >= AFFILIATE_MAX_DEPTH) {
+      throw new Error(
+        `Parent is already at max hierarchy depth (${AFFILIATE_MAX_DEPTH}).`
+      );
+    }
+    parentAffiliateId = parent.id;
+  }
+
   const affiliate = await affiliateStore.createAffiliate({
     referralCode: code,
     source: "external",
     status: "pending",
+    role: "partner",
+    parentAffiliateId,
     userId: input.userId,
     tenantId: input.tenantId,
     profile: {
@@ -567,14 +695,30 @@ export async function adminSetAffiliateStatus(input: {
   affiliateId: string;
   status: "active" | "suspended" | "rejected";
   actorEmail: string;
+  /** Optional hierarchy assignment on approve / status change. */
+  parentAffiliateId?: string | null;
+  role?: AffiliateRole;
 }): Promise<AffiliateApprovalResult> {
   const affiliate = await affiliateStore.getAffiliate(input.affiliateId);
   if (!affiliate) throw new Error("Affiliate not found.");
   const now = crmNow();
 
+  const all = await affiliateStore.listAffiliates();
+  const nextParentId =
+    input.parentAffiliateId === undefined
+      ? affiliate.parentAffiliateId
+      : input.parentAffiliateId === null
+        ? undefined
+        : input.parentAffiliateId;
+  if (nextParentId !== affiliate.parentAffiliateId) {
+    assertValidParentAssignment(all, affiliate.id, nextParentId);
+  }
+
   let updated = await affiliateStore.saveAffiliate({
     ...affiliate,
     status: input.status,
+    parentAffiliateId: nextParentId,
+    role: input.role ?? affiliate.role ?? "partner",
     updatedAt: now,
     approvedAt: input.status === "active" ? now : affiliate.approvedAt,
   });
@@ -810,42 +954,62 @@ async function ensurePartnerLoginAccess(input: {
   };
 }
 
+function clampRateCardToCeiling(
+  card: AffiliateRateCard,
+  ceiling: AffiliateRateCard
+): AffiliateRateCard {
+  return {
+    ...card,
+    defaultDiscountPercent: Math.min(
+      card.defaultDiscountPercent,
+      ceiling.maxDiscountPercent
+    ),
+    defaultCpaAmount: Math.min(card.defaultCpaAmount, ceiling.maxCpaAmount),
+    defaultCommissionPercent: Math.min(
+      card.defaultCommissionPercent,
+      ceiling.maxCommissionPercent
+    ),
+    maxDiscountPercent: Math.min(
+      card.maxDiscountPercent,
+      ceiling.maxDiscountPercent
+    ),
+    maxCpaAmount: Math.min(card.maxCpaAmount, ceiling.maxCpaAmount),
+    maxCommissionPercent: Math.min(
+      card.maxCommissionPercent,
+      ceiling.maxCommissionPercent
+    ),
+  };
+}
+
 export async function adminUpsertRateCard(
   card: AffiliateRateCard,
-  actorEmail: string
+  actorEmail: string,
+  options?: {
+    /** When set, only this regionCode may be written (regional manager). */
+    restrictRegionCode?: string;
+  }
 ) {
-  // Enforce overrides cannot exceed regional max
-  if (card.affiliateId) {
-    const cards = await affiliateStore.listRateCards();
-    const regional = cards.find(
-      (c) => !c.affiliateId && c.regionCode === card.regionCode
+  if (
+    options?.restrictRegionCode &&
+    card.regionCode !== options.restrictRegionCode
+  ) {
+    throw new Error(
+      `Regional managers may only edit the ${options.restrictRegionCode} rate card.`
     );
-    if (regional) {
-      card = {
-        ...card,
-        defaultDiscountPercent: Math.min(
-          card.defaultDiscountPercent,
-          regional.maxDiscountPercent
-        ),
-        defaultCpaAmount: Math.min(
-          card.defaultCpaAmount,
-          regional.maxCpaAmount
-        ),
-        defaultCommissionPercent: Math.min(
-          card.defaultCommissionPercent,
-          regional.maxCommissionPercent
-        ),
-        maxDiscountPercent: Math.min(
-          card.maxDiscountPercent,
-          regional.maxDiscountPercent
-        ),
-        maxCpaAmount: Math.min(card.maxCpaAmount, regional.maxCpaAmount),
-        maxCommissionPercent: Math.min(
-          card.maxCommissionPercent,
-          regional.maxCommissionPercent
-        ),
-      };
-    }
+  }
+
+  const cards = await affiliateStore.listRateCards();
+  const global =
+    cards.find((c) => !c.affiliateId && c.regionCode === "global") ?? null;
+  const regional = cards.find(
+    (c) => !c.affiliateId && c.regionCode === card.regionCode
+  );
+
+  // Affiliate overrides ≤ regional max; regional cards ≤ global/platform max.
+  if (card.affiliateId && regional) {
+    card = clampRateCardToCeiling(card, regional);
+  } else if (!card.affiliateId && card.regionCode !== "global" && global) {
+    card = clampRateCardToCeiling(card, global);
   }
 
   const saved = await affiliateStore.saveRateCard({
@@ -860,6 +1024,44 @@ export async function adminUpsertRateCard(
     detail: `Upserted rate card for ${saved.regionCode}`,
   });
   return saved;
+}
+
+export async function adminAssignHierarchy(input: {
+  affiliateId: string;
+  actorEmail: string;
+  parentAffiliateId?: string | null;
+  role?: AffiliateRole;
+}): Promise<Affiliate> {
+  const affiliate = await affiliateStore.getAffiliate(input.affiliateId);
+  if (!affiliate) throw new Error("Affiliate not found.");
+
+  const all = await affiliateStore.listAffiliates();
+  const nextParentId =
+    input.parentAffiliateId === undefined
+      ? affiliate.parentAffiliateId
+      : input.parentAffiliateId === null
+        ? undefined
+        : input.parentAffiliateId;
+
+  if (nextParentId !== affiliate.parentAffiliateId) {
+    assertValidParentAssignment(all, affiliate.id, nextParentId);
+  }
+
+  const updated = await affiliateStore.saveAffiliate({
+    ...affiliate,
+    parentAffiliateId: nextParentId,
+    role: input.role ?? affiliate.role ?? "partner",
+    updatedAt: crmNow(),
+  });
+
+  await affiliateStore.createAuditLog({
+    action: "affiliate_hierarchy",
+    actorEmail: input.actorEmail,
+    resourceType: "affiliate",
+    resourceId: affiliate.id,
+    detail: `Hierarchy updated (parent=${nextParentId ?? "root"}, role=${updated.role ?? "partner"})`,
+  });
+  return updated;
 }
 
 export async function adminUpdatePayout(input: {
@@ -964,24 +1166,34 @@ export async function buildAffiliateDashboard(affiliateId: string) {
   const affiliate = await affiliateStore.getAffiliate(affiliateId);
   if (!affiliate) return null;
 
-  const [clicks, leads, earnings, payouts, rates] = await Promise.all([
-    affiliateStore.listClicksByAffiliate(affiliateId),
-    affiliateStore.listLeadEventsByAffiliate(affiliateId),
-    affiliateStore.listEarningsByAffiliate(affiliateId),
-    affiliateStore.listPayoutsByAffiliate(affiliateId),
-    resolveRatesForRegion(affiliate.profile.regionCode, affiliate),
-  ]);
+  const [clicks, leads, earnings, payouts, rates, allAffiliates] =
+    await Promise.all([
+      affiliateStore.listClicksByAffiliate(affiliateId),
+      affiliateStore.listLeadEventsByAffiliate(affiliateId),
+      affiliateStore.listEarningsByAffiliate(affiliateId),
+      affiliateStore.listPayoutsByAffiliate(affiliateId),
+      resolveRatesForRegion(affiliate.profile.regionCode, affiliate),
+      affiliateStore.listAffiliates(),
+    ]);
 
+  const downline = summarizeDownline(allAffiliates, affiliateId);
+  const descendants = listDescendants(allAffiliates, affiliateId);
   const balance = computeAffiliateBalance(earnings);
   return {
-    affiliate,
+    affiliate: {
+      ...affiliate,
+      role: affiliateRole(affiliate),
+    },
     rates,
     balance,
     stats: {
       clicks: clicks.length,
       leads: leads.filter((l) => l.status === "qualified").length,
       conversions: earnings.filter((e) => e.type === "commission").length,
+      downlineDirect: downline.length,
+      downlineTotal: descendants.length,
     },
+    downline,
     clicks: clicks.slice(0, 50),
     leads: leads.slice(0, 50),
     earnings,
@@ -990,3 +1202,4 @@ export async function buildAffiliateDashboard(affiliateId: string) {
 }
 
 export type AffiliateSourceType = AffiliateSource;
+export type { AffiliateTreeNode };

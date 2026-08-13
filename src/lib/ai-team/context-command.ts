@@ -90,19 +90,22 @@ export async function planContextCommand(
     relatedDealId: related.relatedDealId,
   });
 
+  const promptText = input.prompt.trim();
   const goalInput: CreateGoalInput = {
     ...intent.goalInput,
     moduleHint: intent.goalInput.moduleHint ?? related.moduleHint,
     relatedContactId:
       intent.goalInput.relatedContactId ?? related.relatedContactId,
     relatedDealId: intent.goalInput.relatedDealId ?? related.relatedDealId,
+    // intent.goalInput.instructions already includes the user prompt for RAG;
+    // prepend page/entity context when present.
     instructions: [related.contextNote, intent.goalInput.instructions]
       .filter(Boolean)
       .join("\n"),
   };
 
   if (goalInput.objective === "custom" && !goalInput.customObjective?.trim()) {
-    goalInput.customObjective = input.prompt.trim();
+    goalInput.customObjective = promptText;
   }
 
   const plan = buildHumanPlan({

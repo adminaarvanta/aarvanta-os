@@ -1,6 +1,7 @@
 /** Partner & Affiliate System — see docs/AFFILIATE_PRD.md */
 
 export type AffiliateSource = "external" | "customer";
+export type AffiliateRole = "partner" | "regional_manager";
 export type AffiliateStatus =
   | "pending"
   | "active"
@@ -44,6 +45,10 @@ export interface Affiliate {
   referralCode: string;
   source: AffiliateSource;
   status: AffiliateStatus;
+  /** Hierarchy parent; omit/undefined for root. Max depth 3. */
+  parentAffiliateId?: string;
+  /** Defaults to partner when unset. */
+  role?: AffiliateRole;
   userId?: string;
   tenantId?: string;
   profile: AffiliateProfile;
@@ -56,6 +61,23 @@ export interface Affiliate {
   createdAt: string;
   updatedAt: string;
   approvedAt?: string;
+}
+
+/** Nested affiliate for admin tree / downline views. */
+export interface AffiliateTreeNode {
+  affiliate: Affiliate;
+  children: AffiliateTreeNode[];
+}
+
+export interface AffiliateDownlineSummary {
+  id: string;
+  referralCode: string;
+  name: string;
+  email: string;
+  status: AffiliateStatus;
+  role: AffiliateRole;
+  regionCode: string;
+  childCount: number;
 }
 
 export interface AffiliateClick {
@@ -154,6 +176,7 @@ export type AffiliateAuditAction =
   | "affiliate_approve"
   | "affiliate_reject"
   | "affiliate_suspend"
+  | "affiliate_hierarchy"
   | "affiliate_activation_sent"
   | "affiliate_signup_attributed"
   | "rate_card_upsert"

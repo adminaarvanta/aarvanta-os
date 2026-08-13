@@ -92,7 +92,7 @@ export const AGEB_ENGINES: AgebEngine[] = [
       "Contract repository",
       "UK legal rule pack",
     ],
-    apiPath: "/api/legal",
+    // Product /api/legal shell removed 2026-08-13; helpers remain in lib/legal.
   },
   {
     id: "communication",

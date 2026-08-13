@@ -10,6 +10,8 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
+import { usePlan } from "@/components/billing/plan-context";
+import { UpgradeBanner } from "@/components/billing/plan-ui";
 import { BuildHome } from "@/components/build/build-home";
 import { BuildStudioLayout } from "@/components/build/build-studio-layout";
 import {
@@ -91,6 +93,7 @@ export function BuildOsClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const plan = usePlan();
   const jobParam = searchParams.get("job");
   const isNewCompose = searchParams.get("new") === "1";
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -798,12 +801,40 @@ export function BuildOsClient({
   const sectionCount =
     job?.generatedSite?.pages.reduce((n, p) => n + p.blocks.length, 0) ?? 0;
 
+  const freeDraftLimit =
+    plan?.planId === "free" &&
+    typeof plan.limits.buildDrafts === "number"
+      ? plan.limits.buildDrafts
+      : null;
+  const freeDraftsUsed = recentJobs.length;
+  const freeDraftExhausted =
+    freeDraftLimit != null && freeDraftsUsed >= freeDraftLimit;
+
   /* ---- Build OS home ---- */
   if (view === "home" && step !== "generate") {
     return (
       <div className="min-h-0 flex-1 overflow-y-auto bg-background">
         {error ? (
           <p className="border-b border-border px-4 py-2 text-xs text-red-400">{error}</p>
+        ) : null}
+        {freeDraftLimit != null ? (
+          <div className="border-b border-border-subtle px-4 py-3">
+            <UpgradeBanner
+              variant={freeDraftExhausted ? "warning" : "explore"}
+              title={
+                freeDraftExhausted
+                  ? "Free draft used"
+                  : "Free includes 1 website draft"
+              }
+              message={
+                freeDraftExhausted
+                  ? "Upgrade to create another site, refine with AI, or publish on a custom domain."
+                  : `You've used ${freeDraftsUsed} of ${freeDraftLimit} free draft${freeDraftLimit === 1 ? "" : "s"}. One AI generate is included — refine & more sites need a paid plan.`
+              }
+              href="/billing?upgrade=build"
+              ctaLabel="Upgrade"
+            />
+          </div>
         ) : null}
         <BuildHome
           drafts={draftJobs}

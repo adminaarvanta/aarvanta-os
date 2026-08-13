@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardList, StatGrid } from "@/components/platform/module-page-shell";
-import type { Affiliate, AffiliateEarning, AffiliatePayoutRequest } from "@/types/affiliate";
+import type {
+  Affiliate,
+  AffiliateDownlineSummary,
+  AffiliateEarning,
+  AffiliatePayoutRequest,
+} from "@/types/affiliate";
 
 type DashboardPayload = {
   affiliate: Affiliate;
@@ -22,7 +27,14 @@ type DashboardPayload = {
     available: number;
     currency: string;
   };
-  stats: { clicks: number; leads: number; conversions: number };
+  stats: {
+    clicks: number;
+    leads: number;
+    conversions: number;
+    downlineDirect?: number;
+    downlineTotal?: number;
+  };
+  downline?: AffiliateDownlineSummary[];
   leads: { id: string; email: string; status: string; createdAt: string }[];
   earnings: AffiliateEarning[];
   payouts: AffiliatePayoutRequest[];
@@ -75,6 +87,7 @@ export function AffiliateDashboardClient({
       const res = await fetch("/api/affiliate/me");
       const data = (await res.json()) as {
         dashboard?: DashboardPayload | null;
+        downline?: AffiliateDownlineSummary[];
         error?: { message?: string };
       };
       if (!res.ok) {
@@ -84,7 +97,10 @@ export function AffiliateDashboardClient({
         return;
       }
       if (data.dashboard) {
-        setDashboard(data.dashboard);
+        setDashboard({
+          ...data.dashboard,
+          downline: data.dashboard.downline ?? data.downline ?? [],
+        });
         const p = data.dashboard.affiliate.profile;
         setProfile({
           name: p.name,
@@ -192,9 +208,9 @@ export function AffiliateDashboardClient({
       <section className="rounded-xl border border-border bg-surface-elevated p-4">
         <h3 className="text-sm font-semibold text-foreground">Your link</h3>
         <p className="mt-1 text-xs text-muted">
-          Status: {affiliate.status} · Region: {rates.regionCode} · Buyer
-          discount {rates.discountPercent}% · CPA{" "}
-          {money(rates.cpaAmount, rates.currency)} · Commission{" "}
+          Status: {affiliate.status} · Role: {affiliate.role ?? "partner"} ·
+          Region: {rates.regionCode} · Buyer discount {rates.discountPercent}% ·
+          CPA {money(rates.cpaAmount, rates.currency)} · Commission{" "}
           {rates.commissionPercent}%
         </p>
         <code className="mt-3 block break-all rounded-lg bg-surface-muted px-3 py-2 text-sm text-foreground">
@@ -204,6 +220,26 @@ export function AffiliateDashboardClient({
           Code: <strong>{affiliate.referralCode}</strong>
         </p>
       </section>
+
+      {(dashboard.downline?.length ?? 0) > 0 ? (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">
+            Your team
+          </h3>
+          <p className="mb-2 text-xs text-muted">
+            {stats.downlineDirect ?? dashboard.downline!.length} direct ·{" "}
+            {stats.downlineTotal ?? dashboard.downline!.length} total in downline
+          </p>
+          <CardList
+            items={dashboard.downline!.map((m) => ({
+              id: m.id,
+              title: `${m.name} · ${m.referralCode}`,
+              body: `${m.email} · ${m.regionCode}${m.childCount ? ` · ${m.childCount} under them` : ""}`,
+              badge: m.role === "regional_manager" ? "RM" : m.status,
+            }))}
+          />
+        </section>
+      ) : null}
 
       {error ? (
         <p className="text-sm text-red-400" role="alert">

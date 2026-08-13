@@ -30,10 +30,19 @@ const ACTION_TYPES: AgentActionType[] = [
 
 export type AgentRunMode = "analyze" | "execute_task";
 
+const GROUNDING_RULES = `
+ANTI-BLUFF / GROUNDING (hard rules):
+- Never invent CRM deals, contacts, companies, stages, values, or other facts not present in the provided context JSON.
+- Only reference deals/contacts/companies listed in context (context.deal, context.deals, context.contact, context.companies, etc.).
+- If context.knowledge.grounded is false or context.knowledge.digest is null/empty: say you do not have Knowledge Hub documents for that topic and ask the user to upload SOPs/policies in Knowledge Hub. Do NOT fabricate SOPs, policies, playbooks, or company procedures.
+- When context.knowledge.digest is present, prefer citing it (document titles / digest excerpts) over general knowledge.
+- Aggregate counts (openDealCount, etc.) are OK as numbers; do not invent named deals to fill a narrative.`;
+
 function agentSystemPrompt(type: AgentType, mode: AgentRunMode): string {
   const agent = getAgentDefinition(type);
   const base = `You are ${agent.name} (${agent.title}) in Aarvanta OS — a multi-tenant business operating system.
 Primary function: ${agent.primaryFunction}.
+${GROUNDING_RULES}
 Respond ONLY with valid JSON:
 {
   "summary": "2-4 sentence executive summary",
@@ -55,7 +64,7 @@ Action payload schemas:
 - alert: { "severity": "info"|"warning"|"critical", "message": string }
 - generate_hr_document: { "documentType": string, "subjectName": string, "contextFields"?: object, "conversationId"?: string, "instructions"?: string }
 
-Use contactId/dealId/conversationId from context when provided.`;
+Use contactId/dealId/conversationId from context when provided — never invent IDs.`;
 
   if (mode === "execute_task") {
     return `${base}

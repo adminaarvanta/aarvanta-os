@@ -140,6 +140,26 @@ export function CommandCenterDashboard({
           ))}
         </div>
 
+        <Link
+          href="/workforce"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gold/35 bg-gradient-to-r from-gold/15 via-gold/5 to-transparent px-5 py-4 transition-colors hover:border-gold/55"
+        >
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">
+              Included on Free
+            </p>
+            <p className="mt-1 text-base font-semibold text-foreground">
+              Try your AI Team — hire your first AI employee
+            </p>
+            <p className="mt-0.5 text-sm text-muted">
+              Grounded in your Knowledge Hub. Open AI Team to assign a task in under a minute.
+            </p>
+          </div>
+          <span className="shrink-0 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-black">
+            Open AI Team
+          </span>
+        </Link>
+
         <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
           <div className="space-y-4">
             <BusinessOsMap />

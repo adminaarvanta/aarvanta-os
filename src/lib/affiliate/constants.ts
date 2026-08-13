@@ -4,6 +4,8 @@ export const AFFILIATE_COOKIE = "aarvanta_aff";
 export const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 60;
 export const EARNINGS_HOLD_DAYS = 14;
 export const DEFAULT_CURRENCY = "GBP";
+/** Root = depth 1; deepest allowed child = depth 3. */
+export const AFFILIATE_MAX_DEPTH = 3;
 
 /** Map free-text country (register form) → region code used by rate cards. */
 export function countryToRegionCode(country: string): string {

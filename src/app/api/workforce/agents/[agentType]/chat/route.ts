@@ -77,6 +77,7 @@ export async function POST(
       buildWorkforceContext(scope, {
         contactId: parsed.data.contactId,
         conversationId: parsed.data.conversationId,
+        knowledgeTopic: parsed.data.message,
       }),
       memoryRepo.listMemory(scope, agentType, 15),
       chatRepo.listMessages(scope, agentType, 20),

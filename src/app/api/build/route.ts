@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import { requireBuildDraftCreate } from "@/lib/billing/consume";
+import {
+  isPlanEntitlementError,
+  planErrorStatus,
+} from "@/lib/billing/errors";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
 import { createSiteBuildJob, generateSitePlan } from "@/lib/site-builder/orchestrate";
 import { normalizeSitePreferences } from "@/lib/site-builder/normalize-preferences";
@@ -47,6 +52,19 @@ export async function POST(req: Request) {
   const write = siteBuildWriteSchema.safeParse(body);
   const mode = write.success ? write.data.mode : "generate";
   const prefsInput = stripMode(body as Record<string, unknown>);
+
+  try {
+    const existing = await getSiteBuildRepository().list(scope);
+    await requireBuildDraftCreate(scope, existing.length);
+  } catch (error) {
+    if (isPlanEntitlementError(error)) {
+      return NextResponse.json(
+        { error: error.toJSON() },
+        { status: planErrorStatus(error) }
+      );
+    }
+    throw error;
+  }
 
   if (mode === "draft") {
     const parsed = siteDraftPreferencesSchema.safeParse(prefsInput);

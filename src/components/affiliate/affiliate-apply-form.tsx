@@ -23,6 +23,7 @@ export function AffiliateApplyForm() {
   const [company, setCompany] = useState("");
   const [website, setWebsite] = useState("");
   const [channels, setChannels] = useState("");
+  const [parentReferralCode, setParentReferralCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ code: string; status: string } | null>(
@@ -44,6 +45,7 @@ export function AffiliateApplyForm() {
           company: company.trim() || undefined,
           website: website.trim() || undefined,
           marketingChannels: channels.trim() || undefined,
+          parentReferralCode: parentReferralCode.trim() || undefined,
         }),
       });
       const data = (await res.json()) as {
@@ -153,6 +155,16 @@ export function AffiliateApplyForm() {
           onChange={(e) => setChannels(e.target.value)}
           placeholder="LinkedIn, newsletter, community…"
           className={inputClass}
+        />
+      </Field>
+      <Field label="Parent / sponsor referral code (optional)" id="aff-parent">
+        <input
+          id="aff-parent"
+          value={parentReferralCode}
+          onChange={(e) => setParentReferralCode(e.target.value)}
+          placeholder="e.g. DEMOREF"
+          className={inputClass}
+          autoComplete="off"
         />
       </Field>
       {error ? (

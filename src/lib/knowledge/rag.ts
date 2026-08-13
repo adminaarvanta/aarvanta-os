@@ -44,9 +44,11 @@ export async function askKnowledgeBase(input: {
   const hits = await searchKnowledgeChunks(input.chunks, input.question, 6);
 
   if (!hits.length) {
+    const hasDocs = input.documents.length > 0;
     return {
-      answer:
-        "I couldn't find relevant information in your knowledge base for that question. Try uploading more documents or rephrasing.",
+      answer: hasDocs
+        ? "No matching passages in your Knowledge Hub for that question. I won't invent an answer — try rephrasing, or upload a document that covers this topic (SOPs, policies, playbooks)."
+        : "Your Knowledge Hub is empty, so I have nothing to ground an answer on. Upload PDF, DOCX, or TXT docs — AI Team uses these to avoid fabricating SOPs and policies.",
       citations: [],
       method: "heuristic",
     };
@@ -59,24 +61,26 @@ export async function askKnowledgeBase(input: {
     )
     .join("\n\n---\n\n");
 
+  const citations = hits.map((hit) => ({
+    documentId: hit.chunk.documentId,
+    documentTitle: hit.chunk.documentTitle,
+    chunkIndex: hit.chunk.index,
+    excerpt: hit.chunk.content.slice(0, 220).replace(/\s+/g, " ").trim(),
+  }));
+
   if (!isAiConfigured()) {
     const top = hits[0]!.chunk;
     return {
       answer: `[Demo mode] Based on "${top.documentTitle}": ${top.content.slice(0, 400)}…`,
-      citations: hits.map((hit) => ({
-        documentId: hit.chunk.documentId,
-        documentTitle: hit.chunk.documentTitle,
-        chunkIndex: hit.chunk.index,
-        excerpt: hit.chunk.content.slice(0, 180),
-      })),
+      citations,
       method: "heuristic",
     };
   }
 
   const answer = await completeText({
     system: `You are the Company Brain for Aarvanta OS. Answer using ONLY the provided sources.
-If the sources don't contain enough information, say so clearly.
-Be concise and practical. Reference source titles when helpful.`,
+If the sources don't contain enough information, say so clearly and do not invent policies or SOPs.
+Be concise and practical. Cite source titles in the answer when helpful (e.g. "According to Onboarding SOP…").`,
     messages: [
       {
         role: "user",
@@ -88,12 +92,7 @@ Be concise and practical. Reference source titles when helpful.`,
 
   return {
     answer,
-    citations: hits.map((hit) => ({
-      documentId: hit.chunk.documentId,
-      documentTitle: hit.chunk.documentTitle,
-      chunkIndex: hit.chunk.index,
-      excerpt: hit.chunk.content.slice(0, 180),
-    })),
+    citations,
     method: "rag",
   };
 }

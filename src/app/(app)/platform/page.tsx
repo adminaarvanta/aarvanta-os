@@ -4,7 +4,6 @@ import {
   CORE_MODULES,
   PLATFORM_MODULES,
 } from "@/lib/platform/modules";
-import { DEFERRED_TOOLS, isDeferredToolId } from "@/lib/navigation/deferred-tools";
 import { coverageStats } from "@/lib/platform/spec-coverage";
 import { ModulePageShell } from "@/components/platform/module-page-shell";
 
@@ -45,8 +44,6 @@ function ModuleGrid({
 export default function PlatformHubPage() {
   const stats = coverageStats();
   const groups = ["Revenue", "Intelligence", "Operations", "Enterprise"] as const;
-  const activeCore = CORE_MODULES.filter((m) => !isDeferredToolId(m.id));
-  const activePlatform = PLATFORM_MODULES.filter((m) => !isDeferredToolId(m.id));
 
   return (
     <ModulePageShell
@@ -72,12 +69,6 @@ export default function PlatformHubPage() {
             Event audit log
           </Link>
           <Link
-            href="/platform/ageb"
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-gold/40"
-          >
-            AGEB 2.0 blueprint
-          </Link>
-          <Link
             href="/platform/coverage"
             className="inline-flex items-center gap-2 rounded-lg border border-gold/40 px-3 py-2 text-xs font-medium text-gold-bright hover:bg-gold/10"
           >
@@ -89,11 +80,11 @@ export default function PlatformHubPage() {
 
         <section>
           <h3 className="mb-3 text-sm font-semibold text-foreground">Core (Phase 1–10)</h3>
-          <ModuleGrid modules={activeCore} phasePrefix="" />
+          <ModuleGrid modules={CORE_MODULES} phasePrefix="" />
         </section>
 
         {groups.map((group) => {
-          const modules = activePlatform.filter((m) => m.group === group);
+          const modules = PLATFORM_MODULES.filter((m) => m.group === group);
           if (!modules.length) return null;
           return (
             <section key={group}>
@@ -102,34 +93,6 @@ export default function PlatformHubPage() {
             </section>
           );
         })}
-
-        <section>
-          <h3 className="mb-1 text-sm font-semibold text-foreground">
-            Deferred (hidden from All Tools)
-          </h3>
-          <p className="mb-3 text-xs text-muted">
-            Incomplete shells — backlog in{" "}
-            <code className="text-[11px]">docs/DEFERRED_TOOLS.md</code>. Routes still
-            exist for engineering work.
-          </p>
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {DEFERRED_TOOLS.map((tool) => (
-              <li
-                key={tool.id}
-                className="rounded-xl border border-dashed border-border bg-surface-muted/40 p-3"
-              >
-                <p className="text-sm font-medium text-foreground">{tool.label}</p>
-                <p className="mt-1 text-[11px] text-muted">{tool.reason}</p>
-                <Link
-                  href={tool.href}
-                  className="mt-2 inline-block text-[11px] text-gold hover:underline"
-                >
-                  Open route →
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
       </div>
     </ModulePageShell>
   );

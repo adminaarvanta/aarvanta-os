@@ -17,6 +17,8 @@ const applySchema = z.object({
   website: z.string().max(200).optional(),
   phone: z.string().max(24).optional(),
   marketingChannels: z.string().max(240).optional(),
+  /** Optional parent partner referral code. */
+  parentReferralCode: z.string().max(32).optional(),
 });
 
 /** Public partner application (pending until admin approves). */

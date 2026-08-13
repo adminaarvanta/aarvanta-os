@@ -9,7 +9,7 @@ export default function AffiliateAdminPage() {
     <ModulePageShell
       icon={Shield}
       title="Affiliate admin"
-      description="Approve partners, set regional discount and commission caps, fulfill payouts."
+      description="Manage hierarchy, regional rate matrix, partner approvals, and payouts."
     >
       <AffiliateAdminClient />
     </ModulePageShell>
