@@ -122,9 +122,9 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
   },
   {
     id: "affiliate",
-    label: "Partner program",
-    href: "/affiliate",
-    description: "Apply as an external affiliate partner",
+    label: "Affiliate",
+    href: "/affiliate/dashboard",
+    description: "Partner dashboard, hierarchy, and commissions",
     dotClass: "bg-accent-cyan",
     iconClass: "text-accent-cyan bg-accent-cyan/10",
     featureKey: "ungated",
@@ -202,8 +202,8 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
   {
     id: "affiliate",
     label: "PartnerOS",
-    href: "/referrals",
-    description: "Referrals, commissions & payouts",
+    href: "/affiliate/dashboard",
+    description: "Referrals, hierarchy, commissions & payouts",
     dotClass: "bg-gold",
     iconClass: "text-gold bg-gold/10",
   },
@@ -223,6 +223,12 @@ export const MOBILE_NAV_MORE: CommandNavItem[] = [
   { href: "/projects", label: "Projects", icon: Kanban, featureKey: "projects" },
   { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
   { href: "/referrals", label: "Referrals", icon: Handshake, featureKey: "ungated" },
+  {
+    href: "/affiliate/dashboard",
+    label: "Affiliate",
+    icon: Handshake,
+    featureKey: "ungated",
+  },
   { href: "/settings", label: "Settings", icon: Settings, featureKey: "ungated" },
   { href: "/billing", label: "Billing", icon: Wallet, featureKey: "ungated" },
 ];

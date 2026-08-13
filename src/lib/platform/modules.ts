@@ -297,6 +297,15 @@ export const PLATFORM_MODULES: PlatformModule[] = [
     phase: "GTM",
   },
   {
+    id: "affiliate-admin",
+    label: "Affiliate Admin",
+    description: "Hierarchy tree, approvals, regional rate matrix, payouts",
+    href: "/affiliate/admin",
+    icon: Handshake,
+    group: "Enterprise",
+    phase: "GTM",
+  },
+  {
     id: "referrals",
     label: "Referrals",
     description: "Customer affiliate opt-in and income tracking",

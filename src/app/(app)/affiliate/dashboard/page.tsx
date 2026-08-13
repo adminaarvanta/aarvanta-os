@@ -40,13 +40,33 @@ export default async function AffiliateDashboardPage() {
         showAdmin ? (
           <Link
             href="/affiliate/admin"
+            className="inline-flex items-center rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-black hover:bg-gold-bright"
+          >
+            Open hierarchy admin
+          </Link>
+        ) : (
+          <Link
+            href="/affiliate"
             className="text-sm text-gold hover:underline"
           >
-            Admin portal
+            Partner apply page
           </Link>
-        ) : null
+        )
       }
     >
+      {showAdmin ? (
+        <div className="mb-4 rounded-xl border border-gold/35 bg-gold/10 px-4 py-3 text-sm text-foreground">
+          You can manage the affiliate hierarchy tree, regional rates, and
+          approvals in{" "}
+          <Link
+            href="/affiliate/admin"
+            className="font-semibold text-gold hover:underline"
+          >
+            Affiliate Admin
+          </Link>
+          .
+        </div>
+      ) : null}
       <AffiliateDashboardClient initial={dashboard} />
     </ModulePageShell>
   );
