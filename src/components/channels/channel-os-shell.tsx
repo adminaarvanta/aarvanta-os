@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { MessageCircle, Phone } from "lucide-react";
+import { MessageCircle, Phone, Settings2 } from "lucide-react";
 import { StartChannelThread } from "@/components/channels/start-channel-thread";
 import { ConversationDetail } from "@/components/inbox/conversation-detail";
 import { IdentityBadge } from "@/components/inbox/identity-badge";
@@ -65,6 +65,15 @@ export async function ChannelOsListPage({
             <p className="text-xs text-muted sm:text-sm">{config.description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {os === "whatsapp" ? (
+              <Link
+                href="/whatsapp/manage"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-gold/40 hover:text-gold"
+              >
+                <Settings2 className="h-4 w-4" />
+                Manager
+              </Link>
+            ) : null}
             {os === "voice" ? (
               <Link
                 href="/voice/dialer"

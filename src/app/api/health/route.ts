@@ -3,6 +3,7 @@ import { getAiRuntimeStatus } from "@/lib/ai/config";
 import {
   getAllChannelStatuses,
   getPublicWebhookUrls,
+  getWhatsAppManagementStatus,
 } from "@/lib/channels/config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 import {
@@ -32,6 +33,7 @@ function voiceRelayPayload() {
 export async function GET() {
   const mode = isProductionMode() ? "production" : "demo";
   const channels = getAllChannelStatuses();
+  const whatsappManagement = getWhatsAppManagementStatus();
   const webhooks = getPublicWebhookUrls();
   const ai = getAiRuntimeStatus();
   const gmailSyncStatus = await checkGmailSyncAccess();
@@ -44,6 +46,7 @@ export async function GET() {
       mode,
       datastore: "memory",
       channels,
+      whatsappManagement,
       webhooks,
       voiceRelay: voiceRelayPayload(),
       ai,
@@ -65,6 +68,7 @@ export async function GET() {
         firestore: isFirebaseConfigured() ? "not_ready" : "not_configured",
         message: `Missing required configuration: ${readiness.requiredMissing.join(", ")}`,
         channels,
+        whatsappManagement,
         webhooks,
         voiceRelay: voiceRelayPayload(),
         ai,
@@ -85,6 +89,7 @@ export async function GET() {
       message:
         "Firestore unavailable (quota or connectivity). Serving demo data from memory until Firestore recovers.",
       channels,
+      whatsappManagement,
       webhooks,
       voiceRelay: voiceRelayPayload(),
       ai,
@@ -104,6 +109,7 @@ export async function GET() {
           datastore: "firestore",
           firestore: "not_configured",
           channels,
+          whatsappManagement,
           webhooks,
           voiceRelay: voiceRelayPayload(),
           ai,
@@ -123,6 +129,7 @@ export async function GET() {
       datastore: "firestore",
       firestore: "connected",
       channels,
+      whatsappManagement,
       webhooks,
       voiceRelay: voiceRelayPayload(),
       ai,
@@ -138,6 +145,7 @@ export async function GET() {
         datastore: "firestore",
         firestore: "error",
         channels,
+        whatsappManagement,
         webhooks,
         voiceRelay: voiceRelayPayload(),
         ai,

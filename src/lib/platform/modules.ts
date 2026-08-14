@@ -96,6 +96,15 @@ export const CORE_MODULES: PlatformModule[] = [
     phase: "9b-wa",
   },
   {
+    id: "whatsapp-manage",
+    label: "WhatsApp Manager",
+    description: "Templates, business profile, and WABA phone assets",
+    href: "/whatsapp/manage",
+    icon: MessageCircle,
+    group: "Core",
+    phase: "9b-wa",
+  },
+  {
     id: "inbox",
     label: "Unified Inbox",
     description: "Legacy multi-channel inbox (hidden from primary nav)",

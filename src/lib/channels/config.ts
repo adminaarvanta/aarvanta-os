@@ -1,7 +1,16 @@
 import type { Channel } from "@/types/communication";
 import { isDemoMode, isProductionMode } from "@/lib/config/app-mode";
+import {
+  getWhatsAppManagementStatus,
+  isWhatsAppManagementConfigured,
+} from "@/lib/channels/whatsapp-graph";
 
 export type ChannelStatus = "live" | "simulate" | "not_configured";
+
+export {
+  getWhatsAppManagementStatus,
+  isWhatsAppManagementConfigured,
+};
 
 export function isWhatsAppOutboundConfigured() {
   return Boolean(

@@ -107,6 +107,7 @@ npm run seed:firestore
 2. Copy from **WhatsApp → API Setup**:
    - Phone number ID → `WHATSAPP_PHONE_NUMBER_ID`
    - Access token → `WHATSAPP_ACCESS_TOKEN`
+   - WhatsApp Business Account ID → `WHATSAPP_BUSINESS_ACCOUNT_ID` (required for **WhatsApp Manager** / App Review `whatsapp_business_management`)
 3. From **App Settings → Basic**:
    - App Secret → `WHATSAPP_APP_SECRET`
 4. Invent a verify token → `WHATSAPP_VERIFY_TOKEN`
@@ -115,6 +116,11 @@ npm run seed:firestore
    - Verify token: same as env
    - Subscribe to **messages**
 6. Add test recipient numbers in Meta (dev mode)
+7. In the app: **WhatsApp → Manager** (`/whatsapp/manage`) to list phone assets, edit business profile, and create message templates for Meta review
+
+**App Review recordings**
+- `whatsapp_business_messaging`: send a text from `/whatsapp` and show it arrive on WhatsApp (production + live channel)
+- `whatsapp_business_management`: create a template (and optionally update profile) in `/whatsapp/manage` with `whatsappManagement: "live"` on `/api/health`
 
 ### 8. Twilio SMS & Voice
 
