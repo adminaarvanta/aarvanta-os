@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PeopleTreeView } from "@/components/affiliate/affiliate-people-tree";
 import { Button } from "@/components/ui/button";
 import { CardList, StatGrid } from "@/components/platform/module-page-shell";
 import type {
@@ -35,6 +36,7 @@ export function AffiliateAdminClient() {
   const [info, setInfo] = useState<string | null>(null);
   const [activationUrl, setActivationUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/affiliate/admin");
@@ -48,6 +50,9 @@ export function AffiliateAdminClient() {
     }
     setData(json);
     setError(null);
+    setSelectedId((prev) =>
+      prev && json.affiliates.some((a) => a.id === prev) ? prev : null
+    );
   }
 
   useEffect(() => {
@@ -116,6 +121,8 @@ export function AffiliateAdminClient() {
   const openPayouts = data.payouts.filter(
     (p) => p.status === "requested" || p.status === "approved"
   );
+  const selected =
+    data.affiliates.find((a) => a.id === selectedId) ?? null;
 
   return (
     <div className="space-y-8">
@@ -173,26 +180,28 @@ export function AffiliateAdminClient() {
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">
-          Hierarchy tree
+          People hierarchy
         </h3>
-        <div className="overflow-hidden rounded-xl border border-border bg-surface-elevated p-3">
-          {(data.tree?.length ?? 0) === 0 ? (
-            <p className="px-1 py-2 text-sm text-muted">No affiliates yet.</p>
-          ) : (
-            <ul className="space-y-1">
-              {data.tree.map((node) => (
-                <TreeNodeView
-                  key={node.affiliate.id}
-                  node={node}
-                  depth={0}
-                  affiliates={data.affiliates}
-                  isPlatform={isPlatform}
-                  busy={busy}
-                  onPatch={patch}
-                />
-              ))}
-            </ul>
-          )}
+        <p className="mb-3 text-xs text-muted">
+          Select a person to view details
+          {isPlatform ? " and manage parent, role, or status" : ""}.
+        </p>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="overflow-hidden rounded-xl border border-border bg-surface-elevated">
+            <PeopleTreeView
+              tree={data.tree ?? []}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </div>
+          <SelectedAffiliatePanel
+            affiliate={selected}
+            affiliates={data.affiliates}
+            isPlatform={isPlatform}
+            busy={busy}
+            onPatch={patch}
+            onClear={() => setSelectedId(null)}
+          />
         </div>
       </section>
 
@@ -392,57 +401,117 @@ export function AffiliateAdminClient() {
   );
 }
 
-function TreeNodeView({
-  node,
-  depth,
+function SelectedAffiliatePanel({
+  affiliate: a,
   affiliates,
   isPlatform,
   busy,
   onPatch,
+  onClear,
 }: {
-  node: AffiliateTreeNode;
-  depth: number;
+  affiliate: AdminAffiliate | null;
   affiliates: AdminAffiliate[];
   isPlatform: boolean;
   busy: boolean;
   onPatch: (body: Record<string, unknown>) => Promise<void>;
+  onClear: () => void;
 }) {
-  const a = node.affiliate as AdminAffiliate;
-  const role = a.role ?? "partner";
-  const [parentId, setParentId] = useState(a.parentAffiliateId ?? "");
+  const role = a?.role ?? "partner";
+  const [parentId, setParentId] = useState(a?.parentAffiliateId ?? "");
 
   useEffect(() => {
-    setParentId(a.parentAffiliateId ?? "");
-  }, [a.parentAffiliateId]);
+    setParentId(a?.parentAffiliateId ?? "");
+  }, [a?.id, a?.parentAffiliateId]);
 
   const parentOptions = useMemo(
     () =>
-      affiliates.filter(
-        (p) => p.id !== a.id && p.status !== "rejected" && p.status !== "suspended"
-      ),
-    [affiliates, a.id]
+      a
+        ? affiliates.filter(
+            (p) =>
+              p.id !== a.id &&
+              p.status !== "rejected" &&
+              p.status !== "suspended"
+          )
+        : [],
+    [affiliates, a]
   );
 
+  const parent = a?.parentAffiliateId
+    ? affiliates.find((p) => p.id === a.parentAffiliateId)
+    : undefined;
+
+  if (!a) {
+    return (
+      <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border bg-surface-elevated px-4 py-8 text-center text-sm text-muted">
+        Select a person in the tree to see their profile
+        {isPlatform ? " and hierarchy actions" : ""}.
+      </div>
+    );
+  }
+
   return (
-    <li>
-      <div
-        className="flex flex-wrap items-start justify-between gap-2 rounded-lg px-2 py-2 hover:bg-surface-muted/60"
-        style={{ marginLeft: depth * 16 }}
-      >
+    <div className="rounded-xl border border-border bg-surface-elevated p-4">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground">
-            {depth > 0 ? "↳ " : ""}
-            {a.profile.name} · {a.referralCode}
+          <p className="text-sm font-semibold text-foreground">
+            {a.profile.name}
           </p>
-          <p className="text-xs text-muted">
-            {a.profile.email} · {role} · {a.profile.regionCode} · {a.status}
-            {a.needsPasswordSetup ? " · awaiting password" : ""}
+          <p className="mt-0.5 text-xs text-muted">
+            {a.profile.email}
           </p>
         </div>
-        {isPlatform ? (
-          <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className="shrink-0 text-xs text-muted hover:text-foreground"
+          onClick={onClear}
+        >
+          Clear
+        </button>
+      </div>
+
+      <dl className="mt-3 space-y-1.5 text-xs">
+        <div className="flex justify-between gap-2">
+          <dt className="text-muted">Code</dt>
+          <dd className="font-medium text-foreground">{a.referralCode}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt className="text-muted">Role</dt>
+          <dd className="font-medium text-foreground">
+            {role === "regional_manager" ? "Regional manager" : "Partner"}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt className="text-muted">Region</dt>
+          <dd className="font-medium text-foreground">
+            {a.profile.regionCode}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt className="text-muted">Status</dt>
+          <dd className="font-medium text-foreground">{a.status}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt className="text-muted">Reports to</dt>
+          <dd className="truncate font-medium text-foreground">
+            {parent
+              ? `${parent.profile.name} (${parent.referralCode})`
+              : "— Root"}
+          </dd>
+        </div>
+        {a.needsPasswordSetup ? (
+          <div className="flex justify-between gap-2">
+            <dt className="text-muted">Password</dt>
+            <dd className="font-medium text-gold">Awaiting setup</dd>
+          </div>
+        ) : null}
+      </dl>
+
+      {isPlatform ? (
+        <div className="mt-4 space-y-3 border-t border-border pt-4">
+          <label className="block text-xs text-muted">
+            Parent in hierarchy
             <select
-              className="rounded border border-border bg-surface-muted px-2 py-1 text-xs text-foreground"
+              className="mt-1 w-full rounded border border-border bg-surface-muted px-2 py-1.5 text-xs text-foreground"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
               disabled={busy}
@@ -454,6 +523,8 @@ function TreeNodeView({
                 </option>
               ))}
             </select>
+          </label>
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="secondary"
@@ -545,24 +616,13 @@ function TreeNodeView({
               Suspend
             </Button>
           </div>
-        ) : null}
-      </div>
-      {node.children.length > 0 ? (
-        <ul className="space-y-1">
-          {node.children.map((child) => (
-            <TreeNodeView
-              key={child.affiliate.id}
-              node={child}
-              depth={depth + 1}
-              affiliates={affiliates}
-              isPlatform={isPlatform}
-              busy={busy}
-              onPatch={onPatch}
-            />
-          ))}
-        </ul>
-      ) : null}
-    </li>
+        </div>
+      ) : (
+        <p className="mt-4 border-t border-border pt-3 text-xs text-muted">
+          Read-only view of your region hierarchy.
+        </p>
+      )}
+    </div>
   );
 }
 
