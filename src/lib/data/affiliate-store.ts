@@ -2,7 +2,11 @@ import { createHash } from "crypto";
 import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
-import { buildDefaultRateCards } from "@/lib/affiliate/constants";
+import {
+  buildDefaultRateCards,
+  PLATFORM_ROOT_EMAIL,
+} from "@/lib/affiliate/constants";
+import { DEMO_ORG_AARVANTA } from "@/lib/data/tenant-demo-seed";
 import type {
   Affiliate,
   AffiliateAttribution,
@@ -61,12 +65,106 @@ function seedIfNeeded() {
   for (const card of buildDefaultRateCards(now)) {
     memory.affiliate_rate_cards.set(card.id, card);
   }
+  const root: Affiliate = {
+    id: "aff_platform_root",
+    referralCode: "AARVANTA",
+    source: "internal",
+    status: "active",
+    role: "partner",
+    tenantId: DEMO_ORG_AARVANTA,
+    profile: {
+      name: "Aarvanta",
+      email: "admin@aarvanta.co",
+      company: "Aarvanta",
+      country: "United Kingdom",
+      regionCode: "uk",
+    },
+    createdAt: now,
+    updatedAt: now,
+    approvedAt: now,
+  };
+  memory.affiliates.set(root.id, root);
+
+  const team: Array<{
+    id: string;
+    code: string;
+    name: string;
+    email: string;
+    userId: string;
+  }> = [
+    {
+      id: "aff_team_pavan",
+      code: "TEAMPAVAN",
+      name: "Pavan",
+      email: "pavan@aarvanta.com",
+      userId: "user_pavan",
+    },
+    {
+      id: "aff_team_sarah",
+      code: "TEAMSARAH",
+      name: "Sarah Chen",
+      email: "sarah.chen@meridian.io",
+      userId: "user_sarah",
+    },
+    {
+      id: "aff_team_john",
+      code: "TEAMJOHN",
+      name: "John Reeves",
+      email: "john@aarvanta.com",
+      userId: "user_john",
+    },
+    {
+      id: "aff_team_priya",
+      code: "TEAMPRIYA",
+      name: "Priya Shah",
+      email: "priya@aarvanta.com",
+      userId: "user_priya",
+    },
+    {
+      id: "aff_team_elena",
+      code: "TEAMELENA",
+      name: "Elena Rossi",
+      email: "elena@aarvanta.com",
+      userId: "user_elena",
+    },
+    {
+      id: "aff_team_tom",
+      code: "TEAMTOM",
+      name: "Tom Hughes",
+      email: "tom@aarvanta.com",
+      userId: "user_tom",
+    },
+  ];
+  for (const person of team) {
+    memory.affiliates.set(person.id, {
+      id: person.id,
+      referralCode: person.code,
+      source: "internal",
+      status: "active",
+      role: "partner",
+      parentAffiliateId: root.id,
+      userId: person.userId,
+      tenantId: DEMO_ORG_AARVANTA,
+      profile: {
+        name: person.name,
+        email: person.email,
+        company: "Aarvanta",
+        country: "United Kingdom",
+        regionCode: "uk",
+      },
+      createdAt: now,
+      updatedAt: now,
+      approvedAt: now,
+    });
+  }
+
   const demo: Affiliate = {
     id: "aff_demo_partner",
     referralCode: "DEMOREF",
     source: "external",
     status: "active",
     role: "regional_manager",
+    parentAffiliateId: root.id,
     profile: {
       name: "Demo Partner",
       email: "partner@demo.aarvanta.com",
@@ -225,7 +323,12 @@ export function buildTree(affiliates: Affiliate[]): AffiliateTreeNode[] {
   const roots = affiliates.filter(
     (a) => !a.parentAffiliateId || !ids.has(a.parentAffiliateId)
   );
-  roots.sort((a, b) => a.profile.name.localeCompare(b.profile.name));
+  roots.sort((a, b) => {
+    const aRoot = a.profile.email.toLowerCase() === PLATFORM_ROOT_EMAIL;
+    const bRoot = b.profile.email.toLowerCase() === PLATFORM_ROOT_EMAIL;
+    if (aRoot !== bRoot) return aRoot ? -1 : 1;
+    return a.profile.name.localeCompare(b.profile.name);
+  });
   return roots.map(nodeFor);
 }
 

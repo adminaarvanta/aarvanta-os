@@ -1,6 +1,6 @@
 /** Partner & Affiliate System — see docs/AFFILIATE_PRD.md */
 
-export type AffiliateSource = "external" | "customer";
+export type AffiliateSource = "external" | "customer" | "internal";
 export type AffiliateRole = "partner" | "regional_manager";
 export type AffiliateStatus =
   | "pending"
@@ -177,6 +177,7 @@ export type AffiliateAuditAction =
   | "affiliate_reject"
   | "affiliate_suspend"
   | "affiliate_hierarchy"
+  | "affiliate_downline_enroll"
   | "affiliate_activation_sent"
   | "affiliate_signup_attributed"
   | "rate_card_upsert"

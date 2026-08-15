@@ -75,6 +75,17 @@ async function runProductionBootstrap(): Promise<void> {
     await ensureCrmSampleSeed(ctx.scope);
     await ensureHrPlatformSeed(ctx.scope);
     await ensureWorkflowBootstrap(ctx.scope);
+    try {
+      const { ensurePlatformAffiliateHierarchy } = await import(
+        "@/lib/affiliate/platform-hierarchy"
+      );
+      await ensurePlatformAffiliateHierarchy();
+    } catch (error) {
+      console.warn(
+        "[bootstrap] Affiliate hierarchy sync skipped:",
+        error instanceof Error ? error.message : error
+      );
+    }
   } catch (error) {
     console.warn(
       "[bootstrap] Production workspace bootstrap skipped:",

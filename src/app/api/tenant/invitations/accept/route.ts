@@ -108,6 +108,23 @@ export async function POST(req: Request) {
       scope
     );
 
+    try {
+      const { attachPlatformMemberToHierarchy } = await import(
+        "@/lib/affiliate/platform-hierarchy"
+      );
+      await attachPlatformMemberToHierarchy({
+        email: member.email,
+        name: member.name,
+        userId: member.userId,
+        tenantId: member.tenantId,
+        role: member.role,
+        status: member.status,
+        country: member.country,
+      });
+    } catch (error) {
+      console.warn("[affiliate] attach invited member to hierarchy failed", error);
+    }
+
     await upsertUserPassword({
       email,
       userId: member.userId,

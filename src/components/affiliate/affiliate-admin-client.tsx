@@ -194,8 +194,9 @@ export function AffiliateAdminClient() {
           People hierarchy
         </h3>
         <p className="mb-3 text-xs text-muted">
-          Select a person to view details
-          {isPlatform ? " and manage parent, role, or status" : ""}.
+          Team members sit under admin@aarvanta.co. New partners attach to the
+          referring member, or to admin when they have no referral.
+          {isPlatform ? " Select a person to manage parent, role, or status." : ""}
         </p>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="overflow-hidden rounded-xl border border-border bg-surface-elevated">

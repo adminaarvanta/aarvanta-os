@@ -34,6 +34,23 @@ export async function POST(req: Request) {
       ctx.scope
     );
 
+    try {
+      const { attachPlatformMemberToHierarchy } = await import(
+        "@/lib/affiliate/platform-hierarchy"
+      );
+      await attachPlatformMemberToHierarchy({
+        email: member.email,
+        name: member.name,
+        userId: member.userId,
+        tenantId: member.tenantId,
+        role: member.role,
+        status: member.status,
+        country: member.country,
+      });
+    } catch (error) {
+      console.warn("[affiliate] attach new member to hierarchy failed", error);
+    }
+
     return NextResponse.json({ member }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Create member failed";

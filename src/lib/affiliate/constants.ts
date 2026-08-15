@@ -1,6 +1,7 @@
 import type { AffiliateRateCard } from "@/types/affiliate";
 
 export const AFFILIATE_COOKIE = "aarvanta_aff";
+export const PLATFORM_ROOT_EMAIL = "admin@aarvanta.co";
 export const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 60;
 export const EARNINGS_HOLD_DAYS = 14;
 export const DEFAULT_CURRENCY = "GBP";

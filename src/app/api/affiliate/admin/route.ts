@@ -87,6 +87,14 @@ export async function GET() {
   }
 
   await approveMaturedEarnings();
+  try {
+    const { ensurePlatformAffiliateHierarchy } = await import(
+      "@/lib/affiliate/platform-hierarchy"
+    );
+    await ensurePlatformAffiliateHierarchy();
+  } catch (error) {
+    console.warn("[affiliate] platform hierarchy sync failed", error);
+  }
   const allAffiliates = await affiliateStore.listAffiliates();
 
   if (access.kind === "platform") {

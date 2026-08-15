@@ -208,22 +208,12 @@ export async function applyAsExternalPartner(input: {
   const regionCode = countryToRegionCode(input.country);
   const code = await uniqueReferralCode(input.company || input.name);
 
-  let parentAffiliateId: string | undefined;
-  if (input.parentReferralCode?.trim()) {
-    const parentCode = normalizeReferralCode(input.parentReferralCode);
-    const parent = await affiliateStore.getAffiliateByCode(parentCode);
-    if (!parent || parent.status !== "active") {
-      throw new Error("Parent referral code is invalid or inactive.");
-    }
-    const all = await affiliateStore.listAffiliates();
-    const parentDepth = getAffiliateDepth(all, parent.id);
-    if (parentDepth >= AFFILIATE_MAX_DEPTH) {
-      throw new Error(
-        `Parent is already at max hierarchy depth (${AFFILIATE_MAX_DEPTH}).`
-      );
-    }
-    parentAffiliateId = parent.id;
-  }
+  const { resolveAffiliateParentId } = await import(
+    "@/lib/affiliate/platform-hierarchy"
+  );
+  const parentAffiliateId = await resolveAffiliateParentId(
+    input.parentReferralCode
+  );
 
   const now = crmNow();
   let affiliate = await affiliateStore.createAffiliate({
@@ -319,12 +309,17 @@ export async function optInAsCustomerAffiliate(input: {
     return existing;
   }
 
+  const { resolveAffiliateParentId } = await import(
+    "@/lib/affiliate/platform-hierarchy"
+  );
+  const parentAffiliateId = await resolveAffiliateParentId(undefined);
   const regionCode = countryToRegionCode(input.country);
   const now = crmNow();
   return affiliateStore.createAffiliate({
     referralCode: await uniqueReferralCode(input.name),
     source: "customer",
     status: "active",
+    parentAffiliateId,
     userId: input.userId,
     tenantId: input.tenantId,
     profile: {
