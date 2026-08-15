@@ -1,5 +1,8 @@
 import { isEmailConfigured } from "@/lib/channels/config";
-import { sendGmailEmail } from "@/lib/channels/gmail-client";
+import {
+  describeGmailSendFailure,
+  sendGmailEmail,
+} from "@/lib/channels/gmail-client";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { ROLE_LABELS, type Invitation, type MemberRole } from "@/types/tenant";
 
@@ -97,7 +100,7 @@ export async function sendInvitationEmail(input: {
     return {
       sent: false,
       acceptUrl,
-      reason: error instanceof Error ? error.message : "send_failed",
+      reason: describeGmailSendFailure(error),
     };
   }
 }

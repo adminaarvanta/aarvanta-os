@@ -1,5 +1,6 @@
 import type { Channel } from "@/types/communication";
 import { isDemoMode, isProductionMode } from "@/lib/config/app-mode";
+import { isGmailConfigured } from "@/lib/channels/gmail-client";
 import {
   getWhatsAppManagementStatus,
   isWhatsAppManagementConfigured,
@@ -43,11 +44,7 @@ export function isSmsConfigured() {
 }
 
 export function isEmailConfigured() {
-  return Boolean(
-    process.env.GMAIL_USER?.trim() &&
-      process.env.GMAIL_APP_PASSWORD?.trim() &&
-      (process.env.EMAIL_FROM?.trim() || process.env.GMAIL_USER?.trim())
-  );
+  return isGmailConfigured();
 }
 
 export function isVoiceConfigured() {

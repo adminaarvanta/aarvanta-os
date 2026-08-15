@@ -65,6 +65,7 @@ curl https://os.aarvanta.co/api/health
 |---------|-----|
 | `No password configured` | `GMAIL_APP_PASSWORD` empty or not deployed to Vercel |
 | `emailSync: error` | Wrong app password, or IMAP disabled in Gmail settings |
+| `535 Username and Password not accepted` | `GMAIL_APP_PASSWORD` is wrong, revoked, or still has quotes. Create a new App password for `GMAIL_USER` and update Vercel (16 chars, no quotes). 2-Step Verification must stay on. |
 | Inbound not appearing | Wait for cron (5 min) or `POST /api/email/sync` as admin |
 | Outbound works, no inbound | Check cron + `CRON_SECRET` on Vercel |
 

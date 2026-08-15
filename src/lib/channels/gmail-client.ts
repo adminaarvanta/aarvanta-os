@@ -7,14 +7,36 @@ export interface GmailSendResult {
 
 export type GmailSyncAccess = "ok" | "not_configured" | "error";
 
+/** Google app passwords are 16 chars; Vercel/env often keep spaces or wrapping quotes. */
+function sanitizeAppPassword(value: string): string {
+  return value
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\s+/g, "");
+}
+
 export function getGmailCredentials(): {
   user: string;
   appPassword: string;
 } | null {
   const user = process.env.GMAIL_USER?.trim();
-  const appPassword = process.env.GMAIL_APP_PASSWORD?.trim();
+  const raw = process.env.GMAIL_APP_PASSWORD;
+  const appPassword = raw ? sanitizeAppPassword(raw) : "";
   if (!user || !appPassword) return null;
   return { user, appPassword };
+}
+
+/** Stable reason for UI; full SMTP text stays in server logs. */
+export function describeGmailSendFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (
+    /535|BadCredentials|Username and Password not accepted|Invalid login/i.test(
+      message
+    )
+  ) {
+    return "gmail_auth_rejected";
+  }
+  return "send_failed";
 }
 
 export function getEmailFromAddress(): string | null {

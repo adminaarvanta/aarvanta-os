@@ -39,6 +39,17 @@ export async function GET() {
   const gmailSyncStatus = await checkGmailSyncAccess();
   const emailInbound = { ...getEmailInboundConfig(), gmailSyncStatus };
   const readiness = getProductionReadiness();
+  if (isProductionMode() && gmailSyncStatus === "error") {
+    readiness.warnings.push(
+      "Gmail login rejected — rotate GMAIL_APP_PASSWORD for GMAIL_USER. Outbound mail and IMAP sync fail until then."
+    );
+    readiness.items.push({
+      id: "gmail_auth",
+      label: "Gmail IMAP/SMTP",
+      status: "error",
+      detail: "Login rejected. Rotate GMAIL_APP_PASSWORD.",
+    });
+  }
 
   if (!isProductionMode()) {
     return NextResponse.json({
