@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const COUNTRIES = [
@@ -17,18 +18,35 @@ const COUNTRIES = [
 ] as const;
 
 export function AffiliateApplyForm() {
+  return (
+    <Suspense>
+      <AffiliateApplyFormInner />
+    </Suspense>
+  );
+}
+
+function AffiliateApplyFormInner() {
+  const searchParams = useSearchParams();
+  const refFromUrl =
+    searchParams.get("ref") ??
+    searchParams.get("referralCode") ??
+    searchParams.get("parent") ??
+    "";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("United Kingdom");
   const [company, setCompany] = useState("");
   const [website, setWebsite] = useState("");
   const [channels, setChannels] = useState("");
-  const [parentReferralCode, setParentReferralCode] = useState("");
+  const [parentReferralCode, setParentReferralCode] = useState(refFromUrl);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<{ code: string; status: string } | null>(
-    null
-  );
+  const [done, setDone] = useState<{
+    code: string;
+    status: string;
+    emailSent?: boolean;
+    alreadyHasPassword?: boolean;
+  } | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,6 +68,10 @@ export function AffiliateApplyForm() {
       });
       const data = (await res.json()) as {
         affiliate?: { referralCode: string; status: string };
+        activation?: {
+          needed: boolean;
+          emailSent: boolean;
+        };
         error?: { message?: string };
       };
       if (!res.ok) {
@@ -60,6 +82,8 @@ export function AffiliateApplyForm() {
         setDone({
           code: data.affiliate.referralCode,
           status: data.affiliate.status,
+          emailSent: data.activation?.emailSent,
+          alreadyHasPassword: data.activation?.needed === false,
         });
       }
     } catch {
@@ -72,20 +96,23 @@ export function AffiliateApplyForm() {
   if (done) {
     return (
       <div className="rounded-xl border border-border bg-surface-elevated p-6 text-sm">
-        <p className="font-medium text-foreground">Application received</p>
+        <p className="font-medium text-foreground">You are in the partner program</p>
         <p className="mt-2 text-muted">
           Status: <span className="text-gold">{done.status}</span>. Your code{" "}
           <code className="rounded bg-surface-muted px-1.5 py-0.5 text-foreground">
             {done.code}
           </code>{" "}
-          activates after Aarvanta approves your application.
+          is active.
         </p>
         <p className="mt-3 text-muted">
-          After approval, we email you a link to create your password. Then sign
-          in and open your affiliate dashboard.
+          {done.alreadyHasPassword
+            ? "You already have an Aarvanta password. Sign in and open your affiliate dashboard."
+            : done.emailSent
+              ? "Check your email for a link to create your password. Then sign in and open your affiliate dashboard."
+              : "Check your email for a link to create your password. If it does not arrive, contact Aarvanta to resend it."}
         </p>
         <p className="mt-3 text-xs text-muted">
-          Already have an Aarvanta account? Sign in after approval and open{" "}
+          After you set a password, sign in and open{" "}
           <span className="text-foreground">/affiliate/dashboard</span>.
         </p>
       </div>
@@ -166,6 +193,11 @@ export function AffiliateApplyForm() {
           className={inputClass}
           autoComplete="off"
         />
+        {refFromUrl ? (
+          <p className="mt-1 text-xs text-muted">
+            Filled from the affiliate link you used.
+          </p>
+        ) : null}
       </Field>
       {error ? (
         <p className="text-sm text-red-400" role="alert">

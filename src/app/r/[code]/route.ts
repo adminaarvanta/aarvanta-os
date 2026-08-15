@@ -31,16 +31,21 @@ export async function GET(req: Request, ctx: Ctx) {
     ip,
   });
 
+  const joinAsPartner =
+    new URL(req.url).searchParams.get("join") === "partner" ||
+    new URL(req.url).searchParams.get("as") === "partner";
+
   if (!affiliate) {
     const existing = await affiliateStore.getAffiliateByCode(
       normalizeReferralCode(code)
     );
-    const registerUrl = new URL("/register", req.url);
-    registerUrl.searchParams.set(
+    const dest = joinAsPartner ? "/affiliate" : "/register";
+    const destUrl = new URL(dest, req.url);
+    destUrl.searchParams.set(
       "aff",
       existing && existing.status !== "active" ? "pending" : "invalid"
     );
-    return NextResponse.redirect(registerUrl);
+    return NextResponse.redirect(destUrl);
   }
 
   const rates = await resolveRatesForRegion(
@@ -53,10 +58,10 @@ export async function GET(req: Request, ctx: Ctx) {
     60 *
     60;
 
-  const registerUrl = new URL("/register", req.url);
-  registerUrl.searchParams.set("ref", affiliate.referralCode);
+  const destUrl = new URL(joinAsPartner ? "/affiliate" : "/register", req.url);
+  destUrl.searchParams.set("ref", affiliate.referralCode);
 
-  const response = NextResponse.redirect(registerUrl);
+  const response = NextResponse.redirect(destUrl);
   response.cookies.set(
     AFFILIATE_COOKIE,
     affiliate.referralCode,

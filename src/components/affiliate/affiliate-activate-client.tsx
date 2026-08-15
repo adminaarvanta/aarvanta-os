@@ -103,8 +103,16 @@ export function AffiliateActivateClient({ token }: { token: string }) {
         {loading ? (
           <p className="mt-8 text-sm text-muted">Loading…</p>
         ) : error && !email ? (
-          <div className="mt-8 rounded-xl border border-danger/40 bg-danger/10 p-4 text-sm text-danger">
-            {error}
+          <div className="mt-8 space-y-3 rounded-xl border border-danger/40 bg-danger/10 p-4 text-sm text-danger">
+            <p>{error}</p>
+            <p className="text-xs text-muted">
+              If you already created a password,{" "}
+              <Link href="/login" className="text-gold hover:underline">
+                sign in
+              </Link>
+              . Otherwise ask Aarvanta to open Affiliate Admin → your name →{" "}
+              <strong>Send password link</strong> and use the new link only.
+            </p>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="mt-8 space-y-4">

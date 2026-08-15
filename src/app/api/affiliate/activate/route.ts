@@ -16,6 +16,19 @@ import type { WorkspaceMember } from "@/types/tenant";
 
 export const runtime = "nodejs";
 
+function normalizeToken(raw: string): string {
+  let token = raw.trim();
+  if (!token) return "";
+  try {
+    if (/%[0-9a-fA-F]{2}/.test(token)) {
+      token = decodeURIComponent(token);
+    }
+  } catch {
+    /* keep raw */
+  }
+  return token.trim();
+}
+
 function isExpired(expiresAt?: string) {
   if (!expiresAt) return true;
   return new Date(expiresAt).getTime() < Date.now();
@@ -85,29 +98,65 @@ async function ensureAffiliateMembership(
   return { affiliate: current, membership };
 }
 
+async function resolveActivationAffiliate(token: string) {
+  const affiliate = await affiliateStore.getAffiliateByActivationToken(token);
+  if (!affiliate) {
+    return {
+      error: apiError(
+        "NOT_FOUND",
+        "This activation link is invalid or was replaced. Ask Aarvanta to resend a fresh set-password link from Affiliate Admin.",
+        404
+      ),
+    } as const;
+  }
+  if (affiliate.status === "rejected" || affiliate.status === "suspended") {
+    return {
+      error: apiError(
+        "FORBIDDEN",
+        `This partner account is ${affiliate.status}. Contact Aarvanta support.`,
+        403
+      ),
+    } as const;
+  }
+  if (affiliate.status !== "active" && affiliate.status !== "pending") {
+    return {
+      error: apiError(
+        "NOT_FOUND",
+        "This activation link is invalid.",
+        404
+      ),
+    } as const;
+  }
+  if (isExpired(affiliate.activationExpiresAt)) {
+    return {
+      error: apiError(
+        "EXPIRED",
+        "This activation link has expired. Ask Aarvanta to resend it from Affiliate Admin → Send password link.",
+        410
+      ),
+    } as const;
+  }
+  return { affiliate } as const;
+}
+
 export async function GET(req: Request) {
-  const token = new URL(req.url).searchParams.get("token")?.trim() ?? "";
+  const token = normalizeToken(
+    new URL(req.url).searchParams.get("token") ?? ""
+  );
   if (!token) {
     return apiError("VALIDATION_ERROR", "Missing activation token.", 400);
   }
 
-  const affiliate = await affiliateStore.getAffiliateByActivationToken(token);
-  if (!affiliate || affiliate.status !== "active") {
-    return apiError("NOT_FOUND", "This activation link is invalid.", 404);
-  }
-  if (isExpired(affiliate.activationExpiresAt)) {
-    return apiError(
-      "EXPIRED",
-      "This activation link has expired. Ask Aarvanta to resend it.",
-      410
-    );
-  }
+  const resolved = await resolveActivationAffiliate(token);
+  if ("error" in resolved) return resolved.error;
 
+  const { affiliate } = resolved;
   return NextResponse.json({
     email: affiliate.profile.email,
     name: affiliate.profile.name,
     referralCode: affiliate.referralCode,
     expiresAt: affiliate.activationExpiresAt,
+    status: affiliate.status,
   });
 }
 
@@ -129,24 +178,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const token = parsed.data.token.trim();
-  let affiliate = await affiliateStore.getAffiliateByActivationToken(token);
-  if (!affiliate || affiliate.status !== "active") {
-    return apiError("NOT_FOUND", "This activation link is invalid.", 404);
-  }
-  if (isExpired(affiliate.activationExpiresAt)) {
-    return apiError(
-      "EXPIRED",
-      "This activation link has expired. Ask Aarvanta to resend it.",
-      410
-    );
-  }
+  const token = normalizeToken(parsed.data.token);
+  const resolved = await resolveActivationAffiliate(token);
+  if ("error" in resolved) return resolved.error;
 
+  let affiliate = resolved.affiliate;
   const email = affiliate.profile.email.trim().toLowerCase();
   if (await hasUserPassword(email)) {
     return apiError(
       "ALREADY_ACTIVE",
-      "A password is already set. Please sign in.",
+      "A password is already set. Please sign in at /login.",
       409
     );
   }
@@ -171,11 +212,14 @@ export async function POST(req: Request) {
     password: parsed.data.password,
   });
 
+  const now = crmNow();
   await affiliateStore.saveAffiliate({
     ...affiliate,
+    status: "active",
+    approvedAt: affiliate.approvedAt ?? now,
     activationToken: undefined,
     activationExpiresAt: undefined,
-    updatedAt: crmNow(),
+    updatedAt: now,
   });
 
   const session = {

@@ -59,7 +59,8 @@ export default function AffiliateLandingPage() {
             Apply as an external partner
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Applications start as pending until Aarvanta approves them.
+            You are activated immediately. We email you a link to create your
+            password.
           </p>
           <div className="mt-6">
             <AffiliateApplyForm />

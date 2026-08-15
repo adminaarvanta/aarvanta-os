@@ -128,6 +128,7 @@ export function AffiliateDashboardClient({
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
   const link = `${origin}/r/${affiliate.referralCode}`;
+  const partnerJoinLink = `${origin}/r/${affiliate.referralCode}?join=partner`;
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -215,6 +216,12 @@ export function AffiliateDashboardClient({
         </p>
         <code className="mt-3 block break-all rounded-lg bg-surface-muted px-3 py-2 text-sm text-foreground">
           {link || `/r/${affiliate.referralCode}`}
+        </code>
+        <p className="mt-2 text-xs text-muted">
+          Share this so new partners can join your team:
+        </p>
+        <code className="mt-1 block break-all rounded-lg bg-surface-muted px-3 py-2 text-sm text-foreground">
+          {partnerJoinLink || `/r/${affiliate.referralCode}?join=partner`}
         </code>
         <p className="mt-2 text-xs text-dim">
           Code: <strong>{affiliate.referralCode}</strong>

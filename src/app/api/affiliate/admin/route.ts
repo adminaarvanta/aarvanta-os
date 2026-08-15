@@ -55,7 +55,8 @@ async function withPasswordFlags(affiliates: Affiliate[]) {
           return null;
         }
         const needsPasswordSetup =
-          a.status === "active" && !(await hasUserPassword(email));
+          (a.status === "active" || a.status === "pending") &&
+          !(await hasUserPassword(email));
         return {
           ...a,
           role: affiliateRole(a),

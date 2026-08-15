@@ -197,13 +197,25 @@ function RegisterFormInner({
         placeholder="Optional — we’ll name it for you"
       />
       {referralCode ? (
-        <AuthField
-          id="referralCode"
-          label="Referral code"
-          icon="referral"
-          value={referralCode}
-          onChange={(e) => setReferralCode(e.target.value)}
-        />
+        <>
+          <AuthField
+            id="referralCode"
+            label="Referral code"
+            icon="referral"
+            value={referralCode}
+            onChange={(e) => setReferralCode(e.target.value)}
+          />
+          <p className="text-xs text-muted">
+            Joining as a partner under this code?{" "}
+            <Link
+              href={`/affiliate?ref=${encodeURIComponent(referralCode.trim())}`}
+              className="text-gold hover:underline"
+            >
+              Apply to the partner program
+            </Link>
+            .
+          </p>
+        </>
       ) : null}
 
       {error ? <AuthAlert>{error}</AuthAlert> : null}

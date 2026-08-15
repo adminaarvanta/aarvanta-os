@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody, unauthorized } from "@/lib/api/request";
+import { AFFILIATE_COOKIE } from "@/lib/affiliate/cookie";
 import {
   applyAsExternalPartner,
   optInAsCustomerAffiliate,
@@ -21,7 +23,7 @@ const applySchema = z.object({
   parentReferralCode: z.string().max(32).optional(),
 });
 
-/** Public partner application (pending until admin approves). */
+/** Public partner application — auto-activated; set-password email sent. */
 export async function POST(req: Request) {
   const body = await parseJsonBody<unknown>(req);
   if (body instanceof NextResponse) return body;
@@ -52,13 +54,20 @@ export async function POST(req: Request) {
     /* anonymous apply */
   }
 
+  const cookieStore = await cookies();
+  const parentReferralCode =
+    parsed.data.parentReferralCode?.trim() ||
+    cookieStore.get(AFFILIATE_COOKIE)?.value ||
+    undefined;
+
   try {
-    const affiliate = await applyAsExternalPartner({
+    const { affiliate, activation } = await applyAsExternalPartner({
       ...parsed.data,
+      parentReferralCode,
       userId,
       tenantId,
     });
-    return NextResponse.json({ affiliate });
+    return NextResponse.json({ affiliate, activation });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Application failed.";
@@ -69,12 +78,21 @@ export async function POST(req: Request) {
 }
 
 /** Customer in-app referral opt-in → active affiliate. */
-export async function PUT() {
+export async function PUT(req: Request) {
   let session;
   try {
     session = await getSessionContext();
   } catch {
     return unauthorized();
+  }
+
+  const cookieStore = await cookies();
+  let parentFromBody: string | undefined;
+  try {
+    const json = (await req.json()) as { parentReferralCode?: string };
+    parentFromBody = json.parentReferralCode?.trim() || undefined;
+  } catch {
+    /* empty body */
   }
 
   try {
@@ -85,6 +103,8 @@ export async function PUT() {
       name: session.name || session.email,
       country: session.member?.country || "United Kingdom",
       company: session.member?.companyName,
+      parentReferralCode:
+        parentFromBody || cookieStore.get(AFFILIATE_COOKIE)?.value,
     });
     return NextResponse.json({ affiliate });
   } catch (error) {

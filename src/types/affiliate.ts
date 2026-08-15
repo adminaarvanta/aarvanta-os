@@ -54,7 +54,7 @@ export interface Affiliate {
   profile: AffiliateProfile;
   /** When set, earnings/discounts use this card (must be ≤ region max). */
   rateCardOverrideId?: string;
-  /** One-time set-password token after admin approval (external partners). */
+  /** One-time set-password token after auto-activation (external partners). */
   activationToken?: string;
   activationExpiresAt?: string;
   activationSentAt?: string;

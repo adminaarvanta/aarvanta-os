@@ -198,7 +198,7 @@ export async function applyAsExternalPartner(input: {
   parentReferralCode?: string;
   userId?: string;
   tenantId?: string;
-}): Promise<Affiliate> {
+}): Promise<AffiliateApprovalResult> {
   const email = input.email.trim().toLowerCase();
   const existing = await affiliateStore.getAffiliateByEmail(email);
   if (existing) {
@@ -206,7 +206,7 @@ export async function applyAsExternalPartner(input: {
   }
 
   const regionCode = countryToRegionCode(input.country);
-  const code = generateReferralCode(input.company || input.name);
+  const code = await uniqueReferralCode(input.company || input.name);
 
   let parentAffiliateId: string | undefined;
   if (input.parentReferralCode?.trim()) {
@@ -225,14 +225,16 @@ export async function applyAsExternalPartner(input: {
     parentAffiliateId = parent.id;
   }
 
-  const affiliate = await affiliateStore.createAffiliate({
+  const now = crmNow();
+  let affiliate = await affiliateStore.createAffiliate({
     referralCode: code,
     source: "external",
-    status: "pending",
+    status: "active",
     role: "partner",
     parentAffiliateId,
     userId: input.userId,
     tenantId: input.tenantId,
+    approvedAt: now,
     profile: {
       name: input.name.trim(),
       email,
@@ -250,8 +252,15 @@ export async function applyAsExternalPartner(input: {
     actorEmail: email,
     resourceType: "affiliate",
     resourceId: affiliate.id,
-    detail: `External partner applied (${affiliate.referralCode})`,
+    detail: `Partner auto-activated (${affiliate.referralCode})`,
   });
+
+  const activation = await ensurePartnerLoginAccess({
+    affiliate,
+    actorEmail: email,
+  });
+  affiliate =
+    (await affiliateStore.getAffiliate(affiliate.id)) ?? activation.affiliate;
 
   try {
     const { listAffiliateAdminEmails } = await import("@/lib/affiliate/admin");
@@ -273,7 +282,7 @@ export async function applyAsExternalPartner(input: {
     console.warn("[affiliate] application notify failed", err);
   }
 
-  return affiliate;
+  return { affiliate, activation: activation.meta };
 }
 
 export async function optInAsCustomerAffiliate(input: {
@@ -283,8 +292,23 @@ export async function optInAsCustomerAffiliate(input: {
   name: string;
   country: string;
   company?: string;
+  parentReferralCode?: string;
 }): Promise<Affiliate> {
   const email = input.email.trim().toLowerCase();
+  const parentCode = input.parentReferralCode?.trim();
+  if (parentCode) {
+    const enrolled = await enrollReferredUserAsAffiliate({
+      referralCode: parentCode,
+      email,
+      name: input.name,
+      userId: input.userId,
+      tenantId: input.tenantId,
+      country: input.country,
+      company: input.company,
+    });
+    if (enrolled) return enrolled;
+  }
+
   const existing =
     (await affiliateStore.getAffiliateByUserId(input.userId)) ??
     (await affiliateStore.getAffiliateByEmail(email));
@@ -298,7 +322,7 @@ export async function optInAsCustomerAffiliate(input: {
   const regionCode = countryToRegionCode(input.country);
   const now = crmNow();
   return affiliateStore.createAffiliate({
-    referralCode: generateReferralCode(input.name),
+    referralCode: await uniqueReferralCode(input.name),
     source: "customer",
     status: "active",
     userId: input.userId,
@@ -476,6 +500,107 @@ export async function attributeSignup(input: {
   });
 
   return { attribution, earning };
+}
+
+async function uniqueReferralCode(seed: string): Promise<string> {
+  for (let i = 0; i < 8; i += 1) {
+    const code = generateReferralCode(seed);
+    const clash = await affiliateStore.getAffiliateByCode(code);
+    if (!clash) return code;
+  }
+  return generateReferralCode(`${seed}${Date.now()}`);
+}
+
+/**
+ * Turn a referred signup into a working downline affiliate so they can share
+ * their own /r/{code} link (depth-capped). Safe no-op if already enrolled.
+ */
+export async function enrollReferredUserAsAffiliate(input: {
+  referralCode?: string | null;
+  email: string;
+  name: string;
+  userId: string;
+  tenantId: string;
+  country: string;
+  company?: string;
+}): Promise<Affiliate | null> {
+  const parentCode = input.referralCode
+    ? normalizeReferralCode(input.referralCode)
+    : "";
+  if (!parentCode) return null;
+
+  const parent = await affiliateStore.getAffiliateByCode(parentCode);
+  if (!parent || parent.status !== "active") return null;
+
+  const email = input.email.trim().toLowerCase();
+  if (parent.profile.email.toLowerCase() === email) return null;
+  if (parent.userId && parent.userId === input.userId) return null;
+
+  const existing =
+    (await affiliateStore.getAffiliateByUserId(input.userId)) ??
+    (await affiliateStore.getAffiliateByEmail(email));
+  if (existing) {
+    if (
+      !existing.parentAffiliateId &&
+      existing.status !== "rejected" &&
+      existing.id !== parent.id
+    ) {
+      const all = await affiliateStore.listAffiliates();
+      try {
+        assertValidParentAssignment(all, existing.id, parent.id);
+        return affiliateStore.saveAffiliate({
+          ...existing,
+          parentAffiliateId: parent.id,
+          userId: existing.userId ?? input.userId,
+          tenantId: existing.tenantId ?? input.tenantId,
+          updatedAt: crmNow(),
+        });
+      } catch {
+        return existing;
+      }
+    }
+    return existing;
+  }
+
+  const all = await affiliateStore.listAffiliates();
+  const parentDepth = getAffiliateDepth(all, parent.id);
+  if (parentDepth >= AFFILIATE_MAX_DEPTH) {
+    console.info("[affiliate] skip downline enroll — parent at max depth", {
+      email,
+      parent: parent.referralCode,
+    });
+    return null;
+  }
+
+  const regionCode = countryToRegionCode(input.country) || parent.profile.regionCode;
+  const now = crmNow();
+  const created = await affiliateStore.createAffiliate({
+    referralCode: await uniqueReferralCode(input.name || email),
+    source: "customer",
+    status: "active",
+    role: "partner",
+    parentAffiliateId: parent.id,
+    userId: input.userId,
+    tenantId: input.tenantId,
+    profile: {
+      name: input.name.trim() || email.split("@")[0] || "Partner",
+      email,
+      company: input.company?.trim(),
+      country: input.country.trim() || parent.profile.country,
+      regionCode,
+    },
+    approvedAt: now,
+  });
+
+  await affiliateStore.createAuditLog({
+    action: "affiliate_downline_enroll",
+    actorEmail: email,
+    resourceType: "affiliate",
+    resourceId: created.id,
+    detail: `Enrolled under ${parent.referralCode}`,
+  });
+
+  return created;
 }
 
 export async function getActiveAttributionForTenant(tenantId: string) {
@@ -755,8 +880,24 @@ export async function resendAffiliateActivation(input: {
   affiliateId: string;
   actorEmail: string;
 }): Promise<AffiliateApprovalResult> {
-  const affiliate = await affiliateStore.getAffiliate(input.affiliateId);
+  let affiliate = await affiliateStore.getAffiliate(input.affiliateId);
   if (!affiliate) throw new Error("Affiliate not found.");
+  if (affiliate.status === "rejected" || affiliate.status === "suspended") {
+    throw new Error(
+      `Cannot send activation while affiliate is ${affiliate.status}.`
+    );
+  }
+
+  // Pending partners can still receive a set-password link; activate them.
+  if (affiliate.status === "pending") {
+    affiliate = await affiliateStore.saveAffiliate({
+      ...affiliate,
+      status: "active",
+      approvedAt: affiliate.approvedAt ?? crmNow(),
+      updatedAt: crmNow(),
+    });
+  }
+
   if (affiliate.status !== "active") {
     throw new Error("Affiliate must be active before sending activation.");
   }

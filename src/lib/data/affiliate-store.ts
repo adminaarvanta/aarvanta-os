@@ -237,9 +237,14 @@ export const affiliateStore = {
     return getById<Affiliate>("affiliates", id);
   },
   async getAffiliateByCode(code: string) {
-    const normalized = code.trim().toUpperCase();
+    const { normalizeReferralCode } = await import("@/lib/affiliate/constants");
+    const normalized = normalizeReferralCode(code);
+    if (!normalized) return null;
     const all = await listAll<Affiliate>("affiliates");
-    return all.find((a) => a.referralCode === normalized) ?? null;
+    return (
+      all.find((a) => normalizeReferralCode(a.referralCode) === normalized) ??
+      null
+    );
   },
   async getAffiliateByEmail(email: string) {
     const key = email.trim().toLowerCase();
@@ -253,6 +258,21 @@ export const affiliateStore = {
   async getAffiliateByActivationToken(token: string) {
     const key = token.trim();
     if (!key) return null;
+
+    if (!isMemoryBackend()) {
+      const db = requireFirestoreDb();
+      if (db) {
+        const snap = await db
+          .collection("affiliates")
+          .where("activationToken", "==", key)
+          .limit(1)
+          .get();
+        if (!snap.empty) {
+          return snap.docs[0]!.data() as Affiliate;
+        }
+      }
+    }
+
     const all = await listAll<Affiliate>("affiliates");
     return all.find((a) => a.activationToken === key) ?? null;
   },

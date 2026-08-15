@@ -1,5 +1,8 @@
 import { isEmailConfigured } from "@/lib/channels/config";
-import { sendGmailEmail } from "@/lib/channels/gmail-client";
+import {
+  describeGmailSendFailure,
+  sendGmailEmail,
+} from "@/lib/channels/gmail-client";
 import { isDemoMode } from "@/lib/config/app-mode";
 
 export type AffiliateEmailResult =
@@ -29,7 +32,7 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
-/** Email set-password link after partner approval. */
+/** Email set-password link when a partner is auto-activated. */
 export async function sendAffiliateActivationEmail(input: {
   email: string;
   name: string;
@@ -51,11 +54,11 @@ export async function sendAffiliateActivationEmail(input: {
     return { sent: false, url, reason: "email_not_configured" };
   }
 
-  const subject = "You're approved — create your Aarvanta partner password";
+  const subject = "Create your Aarvanta partner password";
   const text = [
     `Hi ${firstName},`,
     ``,
-    `Your Aarvanta partner application was approved.`,
+    `You are in the Aarvanta partner program.`,
     `Create a password to access your affiliate dashboard:`,
     url,
     ``,
@@ -68,7 +71,7 @@ export async function sendAffiliateActivationEmail(input: {
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;max-width:560px">
       <p>Hi ${escapeHtml(firstName)},</p>
-      <p>Your Aarvanta partner application was <strong>approved</strong>.</p>
+      <p>You are in the Aarvanta partner program.</p>
       <p>Create a password to access your affiliate dashboard:</p>
       <p style="margin:24px 0">
         <a href="${escapeHtml(url)}"
@@ -99,12 +102,12 @@ export async function sendAffiliateActivationEmail(input: {
     return {
       sent: false,
       url,
-      reason: error instanceof Error ? error.message : "send_failed",
+      reason: describeGmailSendFailure(error),
     };
   }
 }
 
-/** Notify partners who already have a login that they were approved. */
+/** Notify partners who already have a login that their partner account is ready. */
 export async function sendAffiliateApprovedNoticeEmail(input: {
   email: string;
   name: string;
@@ -128,7 +131,7 @@ export async function sendAffiliateApprovedNoticeEmail(input: {
   const text = [
     `Hi ${firstName},`,
     ``,
-    `Your partner application was approved.`,
+    `You are in the Aarvanta partner program.`,
     `Sign in and open your dashboard:`,
     url,
   ].join("\n");
@@ -136,7 +139,7 @@ export async function sendAffiliateApprovedNoticeEmail(input: {
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;max-width:560px">
       <p>Hi ${escapeHtml(firstName)},</p>
-      <p>Your partner application was <strong>approved</strong>.</p>
+      <p>You are in the Aarvanta partner program. Your account is <strong>active</strong>.</p>
       <p style="margin:24px 0">
         <a href="${escapeHtml(url)}"
            style="display:inline-block;background:#B8965D;color:#111;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">
@@ -159,7 +162,7 @@ export async function sendAffiliateApprovedNoticeEmail(input: {
     return {
       sent: false,
       url,
-      reason: error instanceof Error ? error.message : "send_failed",
+      reason: describeGmailSendFailure(error),
     };
   }
 }
@@ -168,7 +171,7 @@ export function affiliateAdminUrl(): string {
   return `${appBaseUrl()}/affiliate/admin`;
 }
 
-/** Notify platform ops that a new partner application needs approval. */
+/** Notify platform ops that a new partner joined (auto-activated). */
 export async function sendAffiliateApplicationNotifyEmail(input: {
   to: string[];
   applicantName: string;
@@ -203,9 +206,9 @@ export async function sendAffiliateApplicationNotifyEmail(input: {
     return { sent: 0, failed: recipients.length, reason: "email_not_configured" };
   }
 
-  const subject = `New partner application: ${input.applicantName}`;
+  const subject = `New partner joined: ${input.applicantName}`;
   const text = [
-    `A new Aarvanta partner application needs approval.`,
+    `A new Aarvanta partner was auto-activated.`,
     ``,
     `Name: ${input.applicantName}`,
     `Email: ${input.applicantEmail}`,
@@ -213,12 +216,12 @@ export async function sendAffiliateApplicationNotifyEmail(input: {
     `Country: ${input.country}`,
     `Referral code: ${input.referralCode}`,
     ``,
-    `Review: ${url}`,
+    `Admin: ${url}`,
   ].join("\n");
 
   const html = `
     <div style="font-family:system-ui,-apple-system,sans-serif;line-height:1.5;color:#111;max-width:560px">
-      <p>A new Aarvanta partner application needs <strong>approval</strong>.</p>
+      <p>A new Aarvanta partner was <strong>auto-activated</strong>.</p>
       <ul>
         <li><strong>Name:</strong> ${escapeHtml(input.applicantName)}</li>
         <li><strong>Email:</strong> ${escapeHtml(input.applicantEmail)}</li>

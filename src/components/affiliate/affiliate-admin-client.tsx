@@ -30,6 +30,19 @@ type AdminPayload = {
   leads: { id: string; email: string; status: string; affiliateId: string }[];
 };
 
+function activationEmailFailureCopy(reason?: string): string {
+  if (reason === "gmail_auth_rejected") {
+    return "Set-password email not sent — Gmail rejected the mailbox login. Rotate GMAIL_APP_PASSWORD on Vercel, then resend. Copy the activation link below and share it with the partner.";
+  }
+  if (reason === "email_not_configured") {
+    return "Set-password email not sent (Gmail is not configured). Copy the activation link below and share it with the partner.";
+  }
+  if (reason === "demo_mode") {
+    return "Set-password email not sent (demo mode). Copy the activation link below and share it with the partner.";
+  }
+  return `Set-password email not sent (${reason ?? "unknown"}). Copy the activation link below and share it with the partner.`;
+}
+
 export function AffiliateAdminClient() {
   const [data, setData] = useState<AdminPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -97,9 +110,7 @@ export function AffiliateAdminClient() {
           );
           setActivationUrl(a.activationUrl ?? null);
         } else {
-          setInfo(
-            `Set-password email not sent (${a.reason ?? "unknown"}). Copy the activation link below and share it with the partner.`
-          );
+          setInfo(activationEmailFailureCopy(a.reason));
           setActivationUrl(a.activationUrl ?? null);
         }
       }
@@ -205,28 +216,21 @@ export function AffiliateAdminClient() {
         </div>
       </section>
 
-      {isPlatform ? (
+      {isPlatform && pending.length > 0 ? (
         <section>
           <h3 className="mb-3 text-sm font-semibold text-foreground">
-            Partner applications awaiting approval
+            Legacy applications still pending
           </h3>
           <ul className="divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface-elevated">
-            {pending.length === 0 ? (
-              <li className="px-4 py-3 text-sm text-muted">
-                No partner applications waiting. New submissions from /affiliate
-                appear here as pending.
-              </li>
-            ) : (
-              pending.map((a) => (
-                <PendingRow
-                  key={a.id}
-                  affiliate={a}
-                  affiliates={data.affiliates}
-                  busy={busy}
-                  onPatch={patch}
-                />
-              ))
-            )}
+            {pending.map((a) => (
+              <PendingRow
+                key={a.id}
+                affiliate={a}
+                affiliates={data.affiliates}
+                busy={busy}
+                onPatch={patch}
+              />
+            ))}
           </ul>
         </section>
       ) : null}

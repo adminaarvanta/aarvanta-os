@@ -123,7 +123,9 @@ export async function provisionFreeTierAccount(
 
   if (input.referralCode?.trim()) {
     try {
-      const { attributeSignup } = await import("@/lib/affiliate/service");
+      const { attributeSignup, enrollReferredUserAsAffiliate } = await import(
+        "@/lib/affiliate/service"
+      );
       const result = await attributeSignup({
         referralCode: input.referralCode,
         email,
@@ -145,6 +147,15 @@ export async function provisionFreeTierAccount(
           referralCode: input.referralCode,
         });
       }
+      await enrollReferredUserAsAffiliate({
+        referralCode: input.referralCode,
+        email,
+        name: displayName,
+        userId: member.userId,
+        tenantId,
+        country: input.country,
+        company: input.companyName,
+      });
     } catch (err) {
       console.warn("[affiliate] attribution on signup failed", {
         email,

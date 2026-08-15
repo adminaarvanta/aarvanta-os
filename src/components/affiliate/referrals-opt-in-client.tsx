@@ -13,12 +13,19 @@ export function ReferralsOptInClient({
   const [joined, setJoined] = useState(hasAffiliate);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [parentCode, setParentCode] = useState("");
 
   async function optIn() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/affiliate/apply", { method: "PUT" });
+      const res = await fetch("/api/affiliate/apply", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parentReferralCode: parentCode.trim() || undefined,
+        }),
+      });
       const data = (await res.json()) as { error?: { message?: string } };
       if (!res.ok) {
         setError(data.error?.message ?? "Could not enable referrals.");
@@ -43,6 +50,17 @@ export function ReferralsOptInClient({
             {error}
           </p>
         ) : null}
+        <label className="block text-sm font-medium text-foreground" htmlFor="parent-ref">
+          Sponsor referral code (if you joined from a partner link)
+        </label>
+        <input
+          id="parent-ref"
+          value={parentCode}
+          onChange={(e) => setParentCode(e.target.value)}
+          placeholder="Optional — e.g. DEMOREF"
+          className="w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
+          autoComplete="off"
+        />
         <Button type="button" disabled={busy} onClick={() => void optIn()}>
           {busy ? "Enabling…" : "Enable referral program"}
         </Button>
