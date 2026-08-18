@@ -37,7 +37,7 @@ export async function sendAffiliateActivationEmail(input: {
   email: string;
   name: string;
   token: string;
-  expiresAt: string;
+  expiresAt?: string;
 }): Promise<AffiliateEmailResult> {
   const url = affiliateActivationUrl(input.token);
   const firstName = input.name.split(/\s+/)[0] || "there";
@@ -62,7 +62,7 @@ export async function sendAffiliateActivationEmail(input: {
     `Create a password to access your affiliate dashboard:`,
     url,
     ``,
-    `This link expires on ${new Date(input.expiresAt).toUTCString()}.`,
+    `This link stays valid until you create your password. Resending the email does not invalidate it.`,
     ``,
     `After that, sign in anytime at ${appBaseUrl()}/login`,
     `and open ${affiliateDashboardUrl()}.`,
@@ -84,7 +84,7 @@ export async function sendAffiliateActivationEmail(input: {
         <a href="${escapeHtml(url)}">${escapeHtml(url)}</a>
       </p>
       <p style="font-size:12px;color:#777">
-        Expires ${escapeHtml(new Date(input.expiresAt).toUTCString())}.
+        This link stays valid until you create your password.
       </p>
     </div>
   `;

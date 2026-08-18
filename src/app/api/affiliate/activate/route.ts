@@ -29,11 +29,6 @@ function normalizeToken(raw: string): string {
   return token.trim();
 }
 
-function isExpired(expiresAt?: string) {
-  if (!expiresAt) return true;
-  return new Date(expiresAt).getTime() < Date.now();
-}
-
 async function ensureAffiliateMembership(
   affiliate: Affiliate,
   email: string
@@ -104,7 +99,7 @@ async function resolveActivationAffiliate(token: string) {
     return {
       error: apiError(
         "NOT_FOUND",
-        "This activation link is invalid or was replaced. Ask Aarvanta to resend a fresh set-password link from Affiliate Admin.",
+        "This activation link is not in our records. If you already created a password, sign in. Otherwise ask Aarvanta to send the password link again — that link will keep working.",
         404
       ),
     } as const;
@@ -127,12 +122,13 @@ async function resolveActivationAffiliate(token: string) {
       ),
     } as const;
   }
-  if (isExpired(affiliate.activationExpiresAt)) {
+  const email = affiliate.profile.email.trim().toLowerCase();
+  if (affiliate.passwordSetAt || (await hasUserPassword(email))) {
     return {
       error: apiError(
-        "EXPIRED",
-        "This activation link has expired. Ask Aarvanta to resend it from Affiliate Admin → Send password link.",
-        410
+        "ALREADY_ACTIVE",
+        "A password is already set. Please sign in at /login.",
+        409
       ),
     } as const;
   }
@@ -217,8 +213,15 @@ export async function POST(req: Request) {
     ...affiliate,
     status: "active",
     approvedAt: affiliate.approvedAt ?? now,
-    activationToken: undefined,
-    activationExpiresAt: undefined,
+    passwordSetAt: now,
+    previousActivationTokens: [
+      ...new Set(
+        [
+          ...(affiliate.previousActivationTokens ?? []),
+          affiliate.activationToken,
+        ].filter((t): t is string => Boolean(t))
+      ),
+    ],
     updatedAt: now,
   });
 

@@ -27,7 +27,8 @@ type CollectionName =
   | "affiliate_earnings"
   | "affiliate_payout_requests"
   | "affiliate_rate_cards"
-  | "affiliate_audit_logs";
+  | "affiliate_audit_logs"
+  | "affiliate_activation_tokens";
 
 const memory: Record<CollectionName, Map<string, unknown>> = {
   affiliates: new Map(),
@@ -38,6 +39,7 @@ const memory: Record<CollectionName, Map<string, unknown>> = {
   affiliate_payout_requests: new Map(),
   affiliate_rate_cards: new Map(),
   affiliate_audit_logs: new Map(),
+  affiliate_activation_tokens: new Map(),
 };
 
 let seeded = false;
@@ -254,6 +256,46 @@ async function saveDoc<T extends { id: string }>(
   return item;
 }
 
+type ActivationTokenRecord = {
+  id: string;
+  affiliateId: string;
+  createdAt: string;
+  consumedAt?: string;
+};
+
+function uniqueTokens(tokens: Array<string | undefined | null>): string[] {
+  return [
+    ...new Set(
+      tokens
+        .map((t) => t?.trim())
+        .filter((t): t is string => Boolean(t))
+    ),
+  ];
+}
+
+function affiliateHoldsToken(affiliate: Affiliate, token: string): boolean {
+  if (affiliate.activationToken === token) return true;
+  return (affiliate.previousActivationTokens ?? []).includes(token);
+}
+
+async function registerActivationToken(
+  affiliateId: string,
+  token: string
+): Promise<void> {
+  const id = token.trim();
+  if (!id || !affiliateId) return;
+  const existing = await getById<ActivationTokenRecord>(
+    "affiliate_activation_tokens",
+    id
+  );
+  await saveDoc("affiliate_activation_tokens", {
+    id,
+    affiliateId,
+    createdAt: existing?.createdAt ?? crmNow(),
+    consumedAt: existing?.consumedAt,
+  });
+}
+
 export function hashIp(ip: string | null | undefined): string | undefined {
   if (!ip) return undefined;
   return createHash("sha256").update(ip).digest("hex").slice(0, 16);
@@ -362,22 +404,41 @@ export const affiliateStore = {
     const key = token.trim();
     if (!key) return null;
 
+    const record = await getById<ActivationTokenRecord>(
+      "affiliate_activation_tokens",
+      key
+    );
+    if (record?.affiliateId) {
+      const byId = await getById<Affiliate>("affiliates", record.affiliateId);
+      if (byId) return byId;
+    }
+
     if (!isMemoryBackend()) {
       const db = requireFirestoreDb();
       if (db) {
-        const snap = await db
-          .collection("affiliates")
-          .where("activationToken", "==", key)
-          .limit(1)
-          .get();
-        if (!snap.empty) {
-          return snap.docs[0]!.data() as Affiliate;
+        try {
+          const [currentSnap, previousSnap] = await Promise.all([
+            db
+              .collection("affiliates")
+              .where("activationToken", "==", key)
+              .limit(1)
+              .get(),
+            db
+              .collection("affiliates")
+              .where("previousActivationTokens", "array-contains", key)
+              .limit(1)
+              .get(),
+          ]);
+          const hit = currentSnap.docs[0] ?? previousSnap.docs[0];
+          if (hit) return hit.data() as Affiliate;
+        } catch (error) {
+          console.warn("[affiliate] activation token query failed", error);
         }
       }
     }
 
     const all = await listAll<Affiliate>("affiliates");
-    return all.find((a) => a.activationToken === key) ?? null;
+    return all.find((a) => affiliateHoldsToken(a, key)) ?? null;
   },
   async listChildren(parentId: string) {
     const all = await listAll<Affiliate>("affiliates");
@@ -397,7 +458,33 @@ export const affiliateStore = {
   },
 
   async saveAffiliate(item: Affiliate) {
-    return saveDoc("affiliates", item);
+    const existing = await getById<Affiliate>("affiliates", item.id);
+    const currentToken = item.activationToken ?? existing?.activationToken;
+    const previousActivationTokens = uniqueTokens([
+      ...(existing?.previousActivationTokens ?? []),
+      ...(item.previousActivationTokens ?? []),
+      existing?.activationToken,
+      item.activationToken,
+    ]).filter((t) => t !== currentToken);
+
+    const merged: Affiliate = {
+      ...existing,
+      ...item,
+      activationToken: currentToken,
+      previousActivationTokens:
+        previousActivationTokens.length > 0
+          ? previousActivationTokens.slice(-20)
+          : existing?.previousActivationTokens,
+      activationExpiresAt:
+        item.activationExpiresAt ?? existing?.activationExpiresAt,
+      passwordSetAt: item.passwordSetAt ?? existing?.passwordSetAt,
+    };
+
+    const saved = await saveDoc("affiliates", merged);
+    if (saved.activationToken) {
+      await registerActivationToken(saved.id, saved.activationToken);
+    }
+    return saved;
   },
   async createAffiliate(
     input: Omit<Affiliate, "id" | "createdAt" | "updatedAt"> & {

@@ -905,7 +905,6 @@ export async function resendAffiliateActivation(input: {
   const activation = await ensurePartnerLoginAccess({
     affiliate,
     actorEmail: input.actorEmail,
-    forceNewToken: true,
   });
   const updated =
     (await affiliateStore.getAffiliate(affiliate.id)) ?? activation.affiliate;
@@ -930,7 +929,6 @@ async function membershipEmailMatches(
 async function ensurePartnerLoginAccess(input: {
   affiliate: Affiliate;
   actorEmail: string;
-  forceNewToken?: boolean;
 }): Promise<{
   affiliate: Affiliate;
   meta: NonNullable<AffiliateApprovalResult["activation"]>;
@@ -965,8 +963,7 @@ async function ensurePartnerLoginAccess(input: {
       ...affiliate,
       userId: existingCreds?.userId ?? affiliate.userId,
       tenantId: membership?.tenantId ?? affiliate.tenantId,
-      activationToken: undefined,
-      activationExpiresAt: undefined,
+      passwordSetAt: affiliate.passwordSetAt ?? crmNow(),
       updatedAt: crmNow(),
     });
     const notice = await sendAffiliateApprovedNoticeEmail({
@@ -1046,18 +1043,19 @@ async function ensurePartnerLoginAccess(input: {
   }
 
   const token =
-    input.forceNewToken || !affiliate.activationToken
-      ? mintAffiliateActivationToken()
-      : affiliate.activationToken;
-  const expiresAt =
-    input.forceNewToken || !affiliate.activationExpiresAt
-      ? affiliateActivationExpiry()
-      : affiliate.activationExpiresAt;
+    affiliate.activationToken || mintAffiliateActivationToken();
+  const previousActivationTokens = [
+    ...new Set(
+      (affiliate.previousActivationTokens ?? []).filter((t) => t !== token)
+    ),
+  ].slice(-20);
 
   affiliate = await affiliateStore.saveAffiliate({
     ...affiliate,
     activationToken: token,
-    activationExpiresAt: expiresAt,
+    previousActivationTokens,
+    activationExpiresAt:
+      affiliate.activationExpiresAt || affiliateActivationExpiry(),
     activationSentAt: crmNow(),
     updatedAt: crmNow(),
   });
@@ -1066,7 +1064,7 @@ async function ensurePartnerLoginAccess(input: {
     email,
     name: affiliate.profile.name,
     token,
-    expiresAt,
+    expiresAt: affiliate.activationExpiresAt,
   });
 
   await affiliateStore.createAuditLog({

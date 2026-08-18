@@ -96,8 +96,8 @@ export function AffiliateActivateClient({ token }: { token: string }) {
           Create your partner password
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Your application was approved. Set a password to open your affiliate
-          dashboard.
+          Your partner account is ready. Set a password to open your affiliate
+          dashboard. This link stays valid until you create a password.
         </p>
 
         {loading ? (
@@ -111,7 +111,8 @@ export function AffiliateActivateClient({ token }: { token: string }) {
                 sign in
               </Link>
               . Otherwise ask Aarvanta to open Affiliate Admin → your name →{" "}
-              <strong>Send password link</strong> and use the new link only.
+              <strong>Send password link</strong>. That email reuses the same
+              working link.
             </p>
           </div>
         ) : (

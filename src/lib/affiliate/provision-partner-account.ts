@@ -19,7 +19,7 @@ function slugify(value: string): string {
   );
 }
 
-export const AFFILIATE_ACTIVATION_DAYS = 7;
+export const AFFILIATE_ACTIVATION_DAYS = 365;
 
 export function mintAffiliateActivationToken(): string {
   return randomBytes(24).toString("hex");
