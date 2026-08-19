@@ -110,8 +110,8 @@ export function CrmOverviewLoading() {
       <span className="sr-only">Loading CRM…</span>
       <PageHeaderLoading />
       <div className="shrink-0 border-b border-border bg-background px-3 sm:px-6">
-        <div className="flex gap-4 py-3">
-          {Array.from({ length: 5 }).map((_, i) => (
+        <div className="flex gap-3 py-3">
+          {Array.from({ length: 7 }).map((_, i) => (
             <Skeleton key={i} className="h-4 w-16" />
           ))}
         </div>
@@ -138,8 +138,8 @@ export function CrmListLoading() {
       <span className="sr-only">Loading…</span>
       <PageHeaderLoading />
       <div className="shrink-0 border-b border-border bg-background px-3 sm:px-6">
-        <div className="flex gap-4 py-3">
-          {Array.from({ length: 5 }).map((_, i) => (
+        <div className="flex gap-3 py-3">
+          {Array.from({ length: 7 }).map((_, i) => (
             <Skeleton key={i} className="h-4 w-16" />
           ))}
         </div>

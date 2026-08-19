@@ -19,10 +19,10 @@ const statusIcon = {
   done: CheckCircle2,
 };
 
-const priorityColor = {
-  low: "text-muted",
-  medium: "text-gold-bright",
-  high: "text-red-400",
+const priorityTone = {
+  low: "bg-surface-muted text-muted",
+  medium: "bg-gold/12 text-gold-bright",
+  high: "bg-danger/12 text-danger",
 };
 
 export function TaskList({
@@ -99,7 +99,11 @@ export function TaskList({
   }
 
   if (tasks.length === 0) {
-    return <p className="text-sm text-muted">No tasks yet.</p>;
+    return (
+      <p className="rounded-xl border border-dashed border-border px-3 py-8 text-center text-sm text-muted">
+        Nothing here yet.
+      </p>
+    );
   }
 
   function assigneeName(userId?: string) {
@@ -108,7 +112,7 @@ export function TaskList({
   }
 
   return (
-    <ul className="divide-y divide-border rounded-xl border border-border bg-surface-elevated">
+    <ul className="space-y-2">
       {tasks.map((task) => {
         const Icon = statusIcon[task.status];
         const agentLabel =
@@ -116,80 +120,99 @@ export function TaskList({
             ? getAgentDefinition(task.assignedAgentType).name
             : task.assignedAgentType;
         return (
-          <li key={task.id} className="flex items-start gap-3 px-4 py-3">
-            <button
-              type="button"
-              onClick={() => cycleStatus(task)}
-              className="mt-0.5 text-gold hover:opacity-80"
-              title="Click to advance status"
-            >
-              <Icon className="h-5 w-5" />
-            </button>
-            <div className="min-w-0 flex-1 space-y-2">
-              <div>
-                <p
-                  className={cn(
-                    "text-sm font-medium text-foreground",
-                    task.status === "done" && "line-through text-muted"
-                  )}
-                >
-                  {task.title}
-                </p>
-                {task.description && (
-                  <p className="mt-0.5 text-xs text-muted">{task.description}</p>
+          <li
+            key={task.id}
+            className="rounded-xl border border-border/80 bg-surface-elevated p-3"
+          >
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => cycleStatus(task)}
+                className={cn(
+                  "mt-0.5 shrink-0 rounded-full p-0.5 transition-colors",
+                  task.status === "done"
+                    ? "text-accent-cyan"
+                    : "text-gold hover:bg-gold/10"
                 )}
-                <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-muted">
-                  <span className={priorityColor[task.priority]}>
-                    {task.priority} priority
-                  </span>
-                  {task.dueDate && <span>Due {task.dueDate}</span>}
-                  {agentLabel && (
-                    <span className="text-gold">AI: {agentLabel}</span>
-                  )}
-                  {task.source === "ai" && !agentLabel && (
-                    <span className="text-gold">AI-created</span>
-                  )}
-                  {task.agentRunId && (
-                    <Link
-                      href={`/workforce/runs/${task.agentRunId}`}
-                      className="text-gold hover:underline"
-                    >
-                      View run
-                    </Link>
-                  )}
-                </div>
-              </div>
-              {!task.assignedAgentType && (
-                <div className="max-w-xs">
-                  <MemberSelect
-                    members={members}
-                    value={task.assignedTo ?? ""}
-                    onChange={(userId) => assignTask(task.id, userId)}
-                    placeholder="Assign to…"
-                  />
-                  {task.assignedTo && (
-                    <p className="mt-1 text-[10px] text-muted">
-                      Assigned: {assigneeName(task.assignedTo)}
-                    </p>
-                  )}
-                </div>
-              )}
-              <div className="flex flex-wrap items-center gap-1">
-                {task.assignedAgentType && task.status !== "done" && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="h-7 px-2 text-[10px]"
-                    disabled={executingId !== null}
-                    onClick={() => void executeWithAgent(task)}
+                title="Click to advance status"
+              >
+                <Icon className="h-5 w-5" />
+              </button>
+              <div className="min-w-0 flex-1 space-y-2">
+                <div>
+                  <p
+                    className={cn(
+                      "text-sm font-medium text-foreground",
+                      task.status === "done" && "line-through text-muted"
+                    )}
                   >
-                    <Play className="mr-1 h-3 w-3" />
-                    {executingId === task.id ? "Working…" : "Complete with agent"}
-                  </Button>
-                )}
-                <EditTaskForm task={task} members={members} />
-                <DeleteEntityButton entity="tasks" id={task.id} label="task" />
+                    {task.title}
+                  </p>
+                  {task.description ? (
+                    <p className="mt-0.5 text-xs text-muted">{task.description}</p>
+                  ) : null}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize",
+                        priorityTone[task.priority]
+                      )}
+                    >
+                      {task.priority}
+                    </span>
+                    {task.dueDate ? (
+                      <span className="text-[10px] text-muted">
+                        Due {task.dueDate}
+                      </span>
+                    ) : null}
+                    {agentLabel ? (
+                      <span className="text-[10px] text-gold">AI: {agentLabel}</span>
+                    ) : null}
+                    {task.source === "ai" && !agentLabel ? (
+                      <span className="text-[10px] text-gold">AI-created</span>
+                    ) : null}
+                    {task.agentRunId ? (
+                      <Link
+                        href={`/workforce/runs/${task.agentRunId}`}
+                        className="text-[10px] text-gold hover:underline"
+                      >
+                        View run
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+                {!task.assignedAgentType ? (
+                  <div className="max-w-xs">
+                    <MemberSelect
+                      members={members}
+                      value={task.assignedTo ?? ""}
+                      onChange={(userId) => assignTask(task.id, userId)}
+                      placeholder="Assign to…"
+                    />
+                    {task.assignedTo ? (
+                      <p className="mt-1 text-[10px] text-muted">
+                        Assigned: {assigneeName(task.assignedTo)}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div className="flex flex-wrap items-center gap-1">
+                  {task.assignedAgentType && task.status !== "done" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 px-2 text-[10px]"
+                      disabled={executingId !== null}
+                      onClick={() => void executeWithAgent(task)}
+                    >
+                      <Play className="mr-1 h-3 w-3" />
+                      {executingId === task.id ? "Working…" : "Complete with agent"}
+                    </Button>
+                  ) : null}
+                  <EditTaskForm task={task} members={members} />
+                  <DeleteEntityButton entity="tasks" id={task.id} label="task" />
+                </div>
               </div>
             </div>
           </li>

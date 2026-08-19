@@ -21,9 +21,11 @@ export function TaskFilters({ members }: { members: MemberOption[] }) {
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface-elevated p-4">
+    <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/80 bg-surface-elevated/80 p-3">
       <div className="min-w-[12rem]">
-        <label className="mb-1 block text-xs text-muted">Filter by assignee</label>
+        <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted">
+          Filter by assignee
+        </label>
         <MemberSelect
           members={members}
           value={assignedTo}

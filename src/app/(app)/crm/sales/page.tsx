@@ -1,9 +1,15 @@
+import { Kanban } from "lucide-react";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
-import { CrmNav } from "@/components/crm/crm-nav";
 import { ClosedDealsList } from "@/components/crm/closed-deals-list";
 import { CreateDealForm } from "@/components/crm/create-deal-form";
 import { CreatePipelineForm } from "@/components/crm/create-pipeline-form";
 import { CrmImportForm } from "@/components/crm/crm-import-form";
+import {
+  CrmEmptyState,
+  CrmFacet,
+  CrmShell,
+  CrmToolbar,
+} from "@/components/crm/crm-shell";
 import { DeleteEntityButton } from "@/components/crm/delete-entity-button";
 import { EditPipelineForm } from "@/components/crm/edit-pipeline-form";
 import { PipelineBoard } from "@/components/crm/pipeline-board";
@@ -35,101 +41,72 @@ export default async function SalesPage({
 
   if (!activePipeline) {
     return (
-      <>
-        <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground sm:text-xl">
-                Sales
-              </h2>
-              <p className="text-xs text-muted sm:text-sm">
-                Opportunities and pipelines — create one to get started.
-              </p>
-            </div>
-            <AskAiButton module="crm" />
-          </div>
-        </header>
-        <CrmNav />
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 sm:p-6">
-          <div className="flex flex-wrap items-start gap-2">
-            <CreatePipelineForm />
-            <CrmImportForm entity="pipelines" />
-            <CrmImportForm entity="deals" />
-          </div>
-          <p className="text-sm text-muted">
-            No sales pipelines yet. Add one or import a template.
-          </p>
-        </div>
-      </>
+      <CrmShell
+        title="Sales"
+        description="Opportunities and pipelines — create one to get started."
+        actions={<AskAiButton module="crm" />}
+        wide
+      >
+        <CrmToolbar>
+          <CreatePipelineForm />
+          <CrmImportForm entity="pipelines" />
+          <CrmImportForm entity="deals" />
+        </CrmToolbar>
+        <CrmEmptyState
+          icon={Kanban}
+          title="No sales pipelines yet"
+          description="Add a pipeline or import a template to start tracking deals by stage."
+        />
+      </CrmShell>
     );
   }
 
-  const pipelineDeals = deals.filter(
-    (d) => d.pipelineId === activePipeline.id
-  );
+  const pipelineDeals = deals.filter((d) => d.pipelineId === activePipeline.id);
 
   return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
-              Sales
-            </h2>
-            <p className="text-xs text-muted sm:text-sm">
-              Opportunities, stages, and owners — Ask AI what’s stuck.
-            </p>
-          </div>
-          <AskAiButton module="crm" />
-        </div>
-      </header>
-      <CrmNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 sm:p-6">
-        <div className="flex flex-wrap items-start gap-2">
-          <CreatePipelineForm />
-          <EditPipelineForm pipeline={activePipeline} />
-          <DeleteEntityButton
-            entity="pipelines"
-            id={activePipeline.id}
-            label="pipeline"
-            redirectTo="/crm/sales"
-          />
-          <CrmImportForm entity="pipelines" />
-          <CrmImportForm entity="deals" />
-        </div>
-
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div className="flex min-w-max flex-wrap gap-2 sm:min-w-0">
-            {pipelines.map((p) => (
-              <a
-                key={p.id}
-                href={`/crm/sales?pipeline=${p.id}`}
-                className={
-                  p.id === activePipeline.id
-                    ? "rounded-full bg-gold px-4 py-1.5 text-sm font-semibold text-black"
-                    : "rounded-full border border-border bg-surface-elevated px-4 py-1.5 text-sm text-muted hover:border-gold/40"
-                }
-              >
-                {p.name}
-              </a>
-            ))}
-          </div>
-        </div>
+    <CrmShell
+      title="Sales"
+      description="Opportunities, stages, and owners — Ask AI what’s stuck."
+      actions={<AskAiButton module="crm" />}
+      wide
+    >
+      <CrmToolbar>
+        {pipelines.map((p) => (
+          <CrmFacet
+            key={p.id}
+            href={`/crm/sales?pipeline=${p.id}`}
+            active={p.id === activePipeline.id}
+          >
+            {p.name}
+          </CrmFacet>
+        ))}
+        <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
         <CreateDealForm
           pipeline={activePipeline}
           contacts={contacts}
           members={memberOptions}
         />
-        <PipelineBoard
-          pipeline={activePipeline}
-          deals={pipelineDeals}
-          contacts={contacts}
-          members={memberOptions}
-          currentUserId={ctx.userId}
+        <CreatePipelineForm />
+        <EditPipelineForm pipeline={activePipeline} />
+        <DeleteEntityButton
+          entity="pipelines"
+          id={activePipeline.id}
+          label="pipeline"
+          redirectTo="/crm/sales"
         />
-        <ClosedDealsList deals={pipelineDeals} contacts={contacts} />
-      </div>
-    </>
+        <CrmImportForm entity="pipelines" />
+        <CrmImportForm entity="deals" />
+      </CrmToolbar>
+
+      <PipelineBoard
+        pipeline={activePipeline}
+        deals={pipelineDeals}
+        contacts={contacts}
+        members={memberOptions}
+        currentUserId={ctx.userId}
+      />
+      <ClosedDealsList deals={pipelineDeals} contacts={contacts} />
+    </CrmShell>
   );
 }
 

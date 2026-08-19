@@ -1,8 +1,16 @@
 import Link from "next/link";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
-import { CrmNav } from "@/components/crm/crm-nav";
+import { CrmSection, CrmShell } from "@/components/crm/crm-shell";
+import { CrmTimeline } from "@/components/crm/crm-timeline";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getTenantScope } from "@/lib/tenant/context";
+import { cn } from "@/lib/utils";
+
+function isOverdue(dueDate: string) {
+  const due = new Date(dueDate);
+  due.setHours(23, 59, 59, 999);
+  return due.getTime() < Date.now();
+}
 
 export default async function CalendarPage() {
   const scope = await getTenantScope();
@@ -27,73 +35,64 @@ export default async function CalendarPage() {
     .slice(0, 20);
 
   return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
-              Calendar
-            </h2>
-            <p className="text-xs text-muted sm:text-sm">
-              Upcoming due work and recent meetings/calls.
+    <CrmShell
+      title="Calendar"
+      description="Upcoming due work and recent meetings or calls."
+      actions={<AskAiButton module="crm" />}
+    >
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CrmSection title="Due soon">
+          {datedTasks.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted">
+              Add due dates to tasks and they will show up here.
             </p>
-          </div>
-          <AskAiButton module="crm" />
-        </div>
-      </header>
-      <CrmNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
-        <section className="rounded-xl border border-border bg-surface-elevated p-5">
-          <h3 className="text-sm font-semibold text-foreground">Due soon</h3>
-          <ul className="mt-3 space-y-2">
-            {datedTasks.map((task) => (
-              <li key={task.id}>
-                <Link
-                  href="/crm/activity"
-                  className="flex flex-col gap-0.5 rounded-lg border border-border px-3 py-2 text-sm hover:bg-surface-muted sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <span className="font-medium text-foreground">
-                    {task.title}
-                  </span>
-                  <span className="text-xs text-muted">
-                    Due {new Date(task.dueDate!).toLocaleDateString()}
-                  </span>
-                </Link>
-              </li>
-            ))}
-            {datedTasks.length === 0 && (
-              <p className="text-sm text-muted">No dated open tasks.</p>
-            )}
-          </ul>
-        </section>
+          ) : (
+            <ul className="space-y-2">
+              {datedTasks.map((task) => {
+                const overdue = isOverdue(task.dueDate!);
+                return (
+                  <li key={task.id}>
+                    <Link
+                      href="/crm/activity"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-border/80 px-3 py-2.5 text-sm transition hover:border-gold/35 hover:bg-surface-muted"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-foreground">
+                          {task.title}
+                        </span>
+                        <span className="text-[11px] capitalize text-muted">
+                          {task.priority} priority
+                        </span>
+                      </span>
+                      <time
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                          overdue
+                            ? "bg-danger/12 text-danger"
+                            : "bg-surface-muted text-muted"
+                        )}
+                      >
+                        {new Date(task.dueDate!).toLocaleDateString()}
+                      </time>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CrmSection>
 
-        <section className="rounded-xl border border-border bg-surface-elevated p-5">
-          <h3 className="text-sm font-semibold text-foreground">
-            Recent meetings & calls
-          </h3>
-          <ul className="mt-3 space-y-2">
-            {meetings.map((activity) => (
-              <li
-                key={activity.id}
-                className="rounded-lg border border-border px-3 py-2 text-sm"
-              >
-                <p className="font-medium text-foreground">
-                  [{activity.type}] {activity.title}
-                </p>
-                <p className="text-xs text-muted">
-                  {new Date(activity.occurredAt).toLocaleString()}
-                </p>
-              </li>
-            ))}
-            {meetings.length === 0 && (
-              <p className="text-sm text-muted">
-                No meetings or calls logged yet.
-              </p>
-            )}
-          </ul>
-        </section>
+        <CrmSection title="Meetings & calls">
+          {meetings.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted">
+              Log a call or meeting from a deal or person record.
+            </p>
+          ) : (
+            <CrmTimeline items={meetings} empty="No meetings or calls yet." />
+          )}
+        </CrmSection>
       </div>
-    </>
+    </CrmShell>
   );
 }
 

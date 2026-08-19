@@ -1,22 +1,21 @@
 import Link from "next/link";
-import { format } from "date-fns";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
-import { CrmNav } from "@/components/crm/crm-nav";
 import { DealDetailPanel } from "@/components/crm/deal-detail-panel";
+import {
+  CrmBackLink,
+  CrmDetailList,
+  CrmSection,
+  CrmShell,
+  formatCrmMoney,
+} from "@/components/crm/crm-shell";
+import { CrmTimeline } from "@/components/crm/crm-timeline";
+import { StatTile } from "@/components/ui/os/stat-tile";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { activeMemberOptions, memberNameByUserId } from "@/lib/crm/members";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
 import { Badge } from "@/components/ui/badge";
-
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export default async function DealDetailPage({
   params,
@@ -30,9 +29,7 @@ export default async function DealDetailPage({
 
   const deal = await repo.getDeal(id, scope);
   if (!deal) {
-    return (
-      <div className="p-8 text-sm text-muted">Deal not found.</div>
-    );
+    return <div className="p-8 text-sm text-muted">Deal not found.</div>;
   }
 
   const [pipeline, contact, company, activities, tasks, members] =
@@ -50,169 +47,126 @@ export default async function DealDetailPage({
     pipeline?.stages.find((s) => s.id === deal.stageId)?.name ?? deal.stageId;
 
   return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <Link
-              href="/crm/sales"
-              className="text-xs text-gold hover:underline"
+    <CrmShell
+      title={deal.title}
+      back={<CrmBackLink href="/crm/sales" label="Sales" />}
+      description={`${pipeline?.name ?? "Pipeline"} · ${stageName}`}
+      actions={
+        <AskAiButton
+          module="crm"
+          entityType="deal"
+          entityId={deal.id}
+          entityLabel={deal.title}
+          suggestions={[
+            "Prepare follow-up",
+            "Create a proposal",
+            "Close this lead",
+          ]}
+        />
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatTile
+          label="Value"
+          value={formatCrmMoney(deal.value, deal.currency)}
+        />
+        <StatTile label="Probability" value={`${deal.probability}%`} />
+        <div className="rounded-xl border border-border bg-surface-elevated p-4">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted">
+            Status
+          </p>
+          <div className="mt-3">
+            <Badge
+              className={
+                deal.status === "won"
+                  ? "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30"
+                  : deal.status === "lost"
+                    ? "bg-danger/15 text-danger ring-danger/45"
+                    : "bg-surface-muted text-foreground ring-border"
+              }
             >
-              ← Sales
-            </Link>
-            <h2 className="mt-1 text-lg font-semibold text-foreground sm:text-xl">
-              {deal.title}
-            </h2>
-            <p className="text-xs text-muted sm:text-sm">
-              {pipeline?.name ?? "Pipeline"} · {stageName}
-            </p>
+              {deal.status}
+            </Badge>
           </div>
-          <AskAiButton
-            module="crm"
-            entityType="deal"
-            entityId={deal.id}
-            entityLabel={deal.title}
-            suggestions={[
-              "Prepare follow-up",
-              "Create a proposal",
-              "Close this lead",
+        </div>
+      </div>
+
+      <DealDetailPanel
+        deal={deal}
+        members={memberOptions}
+        currentUserId={ctx.userId}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CrmSection title="Details">
+          <CrmDetailList
+            items={[
+              {
+                label: "Owner",
+                value: memberNameByUserId(members, deal.ownerId),
+              },
+              {
+                label: "Contact",
+                value: contact ? (
+                  <Link
+                    href={`/crm/contacts/${contact.id}`}
+                    className="text-gold hover:underline"
+                  >
+                    {contactDisplayName(contact)}
+                  </Link>
+                ) : (
+                  "—"
+                ),
+              },
+              {
+                label: "Company",
+                value: company ? (
+                  <Link
+                    href={`/crm/companies/${company.id}`}
+                    className="text-gold hover:underline"
+                  >
+                    {company.name}
+                  </Link>
+                ) : (
+                  "—"
+                ),
+              },
+              {
+                label: "Expected close",
+                value: deal.expectedCloseDate ?? "—",
+              },
             ]}
           />
-        </div>
-      </header>
-      <CrmNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-surface-elevated p-4">
-            <p className="text-xs text-muted">Value</p>
-            <p className="mt-1 text-xl font-semibold text-gold">
-              {formatCurrency(deal.value, deal.currency)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-surface-elevated p-4">
-            <p className="text-xs text-muted">Probability</p>
-            <p className="mt-1 text-xl font-semibold text-foreground">
-              {deal.probability}%
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-surface-elevated p-4">
-            <p className="text-xs text-muted">Status</p>
-            <p className="mt-1">
-              <Badge
-                className={
-                  deal.status === "won"
-                    ? "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30"
-                    : deal.status === "lost"
-                      ? "bg-danger/15 text-danger ring-danger/45"
-                      : "bg-surface-muted text-foreground ring-border"
-                }
-              >
-                {deal.status}
-              </Badge>
-            </p>
-          </div>
-        </div>
+          {deal.notes ? (
+            <p className="mt-3 text-xs text-muted">{deal.notes}</p>
+          ) : null}
+        </CrmSection>
 
-        <DealDetailPanel
-          deal={deal}
-          members={memberOptions}
-          currentUserId={ctx.userId}
-        />
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-border bg-surface-elevated p-5">
-            <h3 className="text-sm font-semibold text-foreground">Details</h3>
-            <dl className="mt-3 space-y-2 text-sm">
-              <div>
-                <dt className="text-muted">Owner</dt>
-                <dd>{memberNameByUserId(members, deal.ownerId)}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Contact</dt>
-                <dd>
-                  {contact ? (
-                    <Link
-                      href={`/crm/contacts/${contact.id}`}
-                      className="text-gold hover:underline"
-                    >
-                      {contactDisplayName(contact)}
-                    </Link>
-                  ) : (
-                    "—"
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted">Company</dt>
-                <dd>
-                  {company ? (
-                    <Link
-                      href={`/crm/companies/${company.id}`}
-                      className="text-gold hover:underline"
-                    >
-                      {company.name}
-                    </Link>
-                  ) : (
-                    "—"
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted">Expected close</dt>
-                <dd>{deal.expectedCloseDate ?? "—"}</dd>
-              </div>
-            </dl>
-            {deal.notes && (
-              <p className="mt-3 text-xs text-muted">{deal.notes}</p>
-            )}
-          </section>
-
-          <section className="rounded-xl border border-border bg-surface-elevated p-5">
-            <h3 className="text-sm font-semibold text-foreground">Tasks</h3>
-            <ul className="mt-3 space-y-2">
+        <CrmSection title="Tasks">
+          {tasks.length === 0 ? (
+            <p className="text-sm text-muted">No tasks linked.</p>
+          ) : (
+            <ul className="space-y-2">
               {tasks.map((task) => (
                 <li
                   key={task.id}
-                  className="rounded-lg border border-border px-3 py-2 text-sm"
+                  className="rounded-xl border border-border/80 px-3 py-2.5 text-sm"
                 >
                   <p className="font-medium text-foreground">{task.title}</p>
-                  <p className="text-xs text-muted">{task.status}</p>
+                  <p className="text-xs capitalize text-muted">
+                    {task.status.replace(/_/g, " ")}
+                  </p>
                 </li>
               ))}
-              {tasks.length === 0 && (
-                <p className="text-sm text-muted">No tasks linked.</p>
-              )}
             </ul>
-          </section>
-        </div>
-
-        <section className="rounded-xl border border-border bg-surface-elevated p-5">
-          <h3 className="text-sm font-semibold text-foreground">Activities</h3>
-          <ul className="mt-3 space-y-3">
-            {activities.map((activity) => (
-              <li
-                key={activity.id}
-                className="border-l-2 border-gold/40 pl-3 text-sm"
-              >
-                <p className="font-medium text-foreground">
-                  [{activity.type}] {activity.title}
-                </p>
-                {activity.description && (
-                  <p className="text-muted">{activity.description}</p>
-                )}
-                <p className="text-xs text-muted">
-                  {format(new Date(activity.occurredAt), "dd MMM yyyy HH:mm")}
-                  {activity.authorName ? ` · ${activity.authorName}` : ""}
-                </p>
-              </li>
-            ))}
-            {activities.length === 0 && (
-              <p className="text-sm text-muted">No activities logged.</p>
-            )}
-          </ul>
-        </section>
+          )}
+        </CrmSection>
       </div>
-    </>
+
+      <CrmSection title="Activities">
+        <CrmTimeline items={activities} />
+      </CrmSection>
+    </CrmShell>
   );
 }
 

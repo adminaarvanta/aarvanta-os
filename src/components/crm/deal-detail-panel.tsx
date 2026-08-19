@@ -20,8 +20,8 @@ export function DealDetailPanel({
   const [deal, setDeal] = useState(initialDeal);
 
   return (
-    <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-foreground">Manual deal actions</h3>
+    <section className="space-y-4 rounded-2xl border border-border/80 bg-surface-elevated p-5">
+      <h3 className="text-sm font-semibold text-foreground">Deal actions</h3>
       <AssignOwnerField
         label="Owner"
         value={deal.ownerId}

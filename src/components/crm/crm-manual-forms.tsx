@@ -60,7 +60,7 @@ export function LogActivityForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-xl border border-border bg-surface-elevated p-4 space-y-3"
+      className="space-y-3 rounded-2xl border border-border/80 bg-surface-elevated p-5"
     >
       <p className="text-sm font-medium text-foreground">Log activity</p>
       <div className="grid gap-3 sm:grid-cols-2">

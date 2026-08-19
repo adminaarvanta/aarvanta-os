@@ -27,7 +27,7 @@ export function CrmAiInsightsPanel({ contactId }: { contactId: string }) {
   }, [contactId]);
 
   return (
-    <section className="rounded-xl border border-border bg-surface-elevated p-5">
+    <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/10 via-surface-elevated to-surface-elevated p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="rounded-lg bg-gold/15 p-2 ring-1 ring-gold/30">

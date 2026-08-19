@@ -5,15 +5,9 @@ import Link from "next/link";
 import type { CrmDeal, CrmPipeline, PipelineStage } from "@/types/crm";
 import { contactDisplayName, type CrmContact } from "@/types/crm";
 import { DealManualActions } from "@/components/crm/deal-manual-actions";
+import { formatCrmMoney } from "@/components/crm/crm-shell";
 import { MemberSelect } from "@/components/shared/member-select";
-
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { cn } from "@/lib/utils";
 
 export function PipelineBoard({
   pipeline,
@@ -93,61 +87,86 @@ export function PipelineBoard({
     return c ? contactDisplayName(c) : null;
   }
 
+  const totalValue = openDeals.reduce((sum, d) => sum + d.value, 0);
   const forecast = openDeals.reduce(
     (sum, d) => sum + d.value * (d.probability / 100),
     0
   );
+  const coverage = totalValue > 0 ? Math.round((forecast / totalValue) * 100) : 0;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          {openDeals.length} open deal{openDeals.length !== 1 ? "s" : ""}
-        </p>
-        <p>
-          Weighted forecast:{" "}
-          <span className="font-semibold text-foreground">
-            {formatCurrency(forecast, "GBP")}
-          </span>
-        </p>
+      <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface-elevated p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            Weighted forecast
+          </p>
+          <p className="mt-0.5 text-lg font-semibold text-foreground">
+            {formatCrmMoney(forecast)}
+            <span className="ml-2 text-sm font-normal text-muted">
+              of {formatCrmMoney(totalValue)} · {openDeals.length} open
+            </span>
+          </p>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted sm:max-w-xs">
+          <div
+            className="h-full rounded-full bg-gold"
+            style={{ width: `${coverage}%` }}
+          />
+        </div>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-4">
+
+      <div className="flex gap-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
         {stages.map((stage) => {
           const columnDeals = openDeals.filter((d) => d.stageId === stage.id);
+          const columnValue = columnDeals.reduce((sum, d) => sum + d.value, 0);
           return (
             <div
               key={stage.id}
-              className="w-[min(85vw,18rem)] shrink-0 rounded-xl border border-border bg-surface-muted sm:w-72"
+              className="w-[min(86vw,18.5rem)] shrink-0 rounded-2xl border border-border/80 bg-surface-muted/60 sm:w-72"
             >
-              <div className="border-b border-border px-3 py-2">
-                <h3 className="text-sm font-semibold text-foreground">
-                  {stage.name}
-                </h3>
-                <p className="text-xs text-muted">
-                  {columnDeals.length} · {stage.probability}%
-                </p>
+              <div className="flex items-start justify-between gap-2 px-3 py-3">
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-semibold text-foreground">
+                    {stage.name}
+                  </h3>
+                  <p className="text-[11px] text-muted">
+                    {formatCrmMoney(columnValue)} · {stage.probability}%
+                  </p>
+                </div>
+                <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold tabular-nums text-foreground ring-1 ring-border">
+                  {columnDeals.length}
+                </span>
               </div>
-              <div className="space-y-2 p-2 min-h-[120px]">
+              <div className="space-y-2 px-2 pb-2 min-h-[8rem]">
+                {columnDeals.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-xs text-muted">
+                    No deals in this stage
+                  </p>
+                ) : null}
                 {columnDeals.map((deal) => (
                   <div
                     key={deal.id}
-                    className="rounded-lg border border-border bg-surface-elevated p-3 shadow-sm"
+                    className={cn(
+                      "rounded-xl border border-border bg-surface-elevated p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+                      moving === deal.id && "opacity-60"
+                    )}
                   >
                     <Link
                       href={`/crm/deals/${deal.id}`}
-                      className="text-sm font-medium text-foreground hover:text-gold"
+                      className="text-sm font-medium leading-snug text-foreground hover:text-gold"
                     >
                       {deal.title}
                     </Link>
-                    <p className="mt-1 text-xs font-semibold text-gold">
-                      {formatCurrency(deal.value, deal.currency)}
+                    <p className="mt-1 text-sm font-semibold tabular-nums text-gold">
+                      {formatCrmMoney(deal.value, deal.currency)}
                     </p>
-                    {contactName(deal.contactId) && (
-                      <p className="mt-1 text-xs text-muted">
+                    {contactName(deal.contactId) ? (
+                      <p className="mt-1 truncate text-xs text-muted">
                         {contactName(deal.contactId)}
                       </p>
-                    )}
-                    <div className="mt-2">
+                    ) : null}
+                    <div className="mt-2 space-y-1.5">
                       <MemberSelect
                         members={members}
                         value={deal.ownerId ?? ""}
@@ -155,22 +174,23 @@ export function PipelineBoard({
                         placeholder="Assign owner…"
                         className="text-xs py-1"
                       />
+                      <select
+                        className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground outline-none focus:border-gold"
+                        value={deal.stageId}
+                        disabled={moving === deal.id}
+                        aria-label="Move deal to stage"
+                        onChange={(e) => {
+                          const next = stages.find((s) => s.id === e.target.value);
+                          if (next) moveDeal(deal.id, next);
+                        }}
+                      >
+                        {stages.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <select
-                      className="mt-2 w-full rounded border border-border bg-surface-muted px-2 py-1 text-xs text-foreground"
-                      value={deal.stageId}
-                      disabled={moving === deal.id}
-                      onChange={(e) => {
-                        const next = stages.find((s) => s.id === e.target.value);
-                        if (next) moveDeal(deal.id, next);
-                      }}
-                    >
-                      {stages.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          Move to {s.name}
-                        </option>
-                      ))}
-                    </select>
                     <DealManualActions
                       deal={deal}
                       members={members}

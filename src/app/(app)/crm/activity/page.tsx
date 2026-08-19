@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
-import { CrmNav } from "@/components/crm/crm-nav";
 import { CreateTaskForm } from "@/components/crm/create-task-form";
 import { CrmImportForm } from "@/components/crm/crm-import-form";
+import { CrmShell, CrmToolbar } from "@/components/crm/crm-shell";
 import { SeedCrmSampleButton } from "@/components/crm/seed-crm-sample-button";
 import { TaskFilters } from "@/components/crm/task-filters";
 import { TaskList } from "@/components/crm/task-list";
@@ -32,57 +32,51 @@ export default async function ActivityPage({
   const inProgress = tasks.filter((t) => t.status === "in_progress");
   const done = tasks.filter((t) => t.status === "done");
 
-  return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
-              Activity
-            </h2>
-            <p className="text-xs text-muted sm:text-sm">
-              Open work across relationships — tasks, follow-ups, and AI-created
-              actions.
-            </p>
-          </div>
-          <AskAiButton module="crm" />
-        </div>
-      </header>
-      <CrmNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 sm:p-6">
-        <div className="flex flex-wrap items-start gap-2">
-          <div className="min-w-[min(100%,24rem)] flex-1">
-            <CreateTaskForm members={memberOptions} />
-          </div>
-          <CrmImportForm entity="tasks" />
-          <SeedCrmSampleButton />
-        </div>
-        <Suspense fallback={null}>
-          <TaskFilters members={memberOptions} />
-        </Suspense>
+  const columns = [
+    { title: "To do", hint: "Not started", tasks: todo },
+    { title: "In progress", hint: "Being worked", tasks: inProgress },
+    { title: "Done", hint: "Closed", tasks: done },
+  ];
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <section>
-            <h3 className="mb-2 text-sm font-semibold text-foreground">
-              To do ({todo.length})
-            </h3>
-            <TaskList tasks={todo} members={memberOptions} />
-          </section>
-          <section>
-            <h3 className="mb-2 text-sm font-semibold text-foreground">
-              In progress ({inProgress.length})
-            </h3>
-            <TaskList tasks={inProgress} members={memberOptions} />
-          </section>
-          <section>
-            <h3 className="mb-2 text-sm font-semibold text-foreground">
-              Done ({done.length})
-            </h3>
-            <TaskList tasks={done} members={memberOptions} />
-          </section>
+  return (
+    <CrmShell
+      title="Activity"
+      description="Open work across relationships — tasks, follow-ups, and AI-created actions."
+      actions={<AskAiButton module="crm" />}
+    >
+      <CrmToolbar>
+        <div className="min-w-[min(100%,24rem)] flex-1">
+          <CreateTaskForm members={memberOptions} />
         </div>
+        <CrmImportForm entity="tasks" />
+        <SeedCrmSampleButton />
+      </CrmToolbar>
+      <Suspense fallback={null}>
+        <TaskFilters members={memberOptions} />
+      </Suspense>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        {columns.map((column) => (
+          <section
+            key={column.title}
+            className="rounded-2xl border border-border/80 bg-surface-muted/40 p-3"
+          >
+            <div className="mb-3 flex items-center justify-between px-1">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {column.title}
+                </h2>
+                <p className="text-[11px] text-muted">{column.hint}</p>
+              </div>
+              <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold tabular-nums ring-1 ring-border">
+                {column.tasks.length}
+              </span>
+            </div>
+            <TaskList tasks={column.tasks} members={memberOptions} />
+          </section>
+        ))}
       </div>
-    </>
+    </CrmShell>
   );
 }
 

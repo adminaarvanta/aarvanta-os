@@ -22,10 +22,10 @@ export function ContactManualPanel({
   const router = useRouter();
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <section className="rounded-xl border border-border bg-surface-elevated p-5 space-y-4">
+    <div className="grid gap-4 lg:grid-cols-2">
+      <section className="space-y-4 rounded-2xl border border-border/80 bg-surface-elevated p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Manual CRM actions</h3>
+          <h3 className="text-sm font-semibold text-foreground">Actions</h3>
           <div className="flex flex-wrap gap-2">
             <EditContactForm contact={contact} companies={companies} />
             <DeleteEntityButton
