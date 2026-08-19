@@ -59,6 +59,21 @@ export async function withFirestoreFallback<T>(
   }
 }
 
+/**
+ * Run an operation; on Firestore quota errors switch to memory and retry once.
+ */
+export async function runWithQuotaFallback<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (!isFirestoreQuotaError(error)) throw error;
+    disableFirestoreFallback(
+      error instanceof Error ? error.message : String(error)
+    );
+    return fn();
+  }
+}
+
 /** Proxy that falls back from Firestore to memory on quota errors. */
 export function createResilientRepository<M extends object, F extends M>(
   memory: M,
