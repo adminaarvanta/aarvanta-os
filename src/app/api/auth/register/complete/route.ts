@@ -16,7 +16,11 @@ import {
   SESSION_COOKIE,
 } from "@/lib/auth/session";
 import { isDemoMode } from "@/lib/config/app-mode";
-import { ensureDatastoreReady } from "@/lib/data/datastore";
+import {
+  ensureDatastoreReady,
+  isFirestoreQuotaError,
+  runWithQuotaFallback,
+} from "@/lib/data/datastore";
 
 export const runtime = "nodejs";
 
@@ -73,16 +77,18 @@ export async function POST(req: Request) {
       cookieStore.get(AFFILIATE_COOKIE)?.value ||
       undefined;
 
-    const result = await provisionFreeTierAccount({
-      email: pending.email,
-      name: parsed.data.name?.trim() || pending.name,
-      phone: parsed.data.phone,
-      country: parsed.data.country,
-      companyName: parsed.data.companyName,
-      googleSub: pending.googleSub,
-      authProvider: "google",
-      referralCode,
-    });
+    const result = await runWithQuotaFallback(() =>
+      provisionFreeTierAccount({
+        email: pending.email,
+        name: parsed.data.name?.trim() || pending.name,
+        phone: parsed.data.phone,
+        country: parsed.data.country,
+        companyName: parsed.data.companyName,
+        googleSub: pending.googleSub,
+        authProvider: "google",
+        referralCode,
+      })
+    );
 
     const nextPath = sanitizeNextPath(
       parsed.data.next ?? pending.next ?? "/dashboard"
@@ -118,6 +124,13 @@ export async function POST(req: Request) {
       error instanceof Error ? error.message : "Could not complete signup.";
     if (/already exists/i.test(message)) {
       return apiError("EMAIL_EXISTS", message, 409);
+    }
+    if (isFirestoreQuotaError(error)) {
+      return apiError(
+        "SERVICE_UNAVAILABLE",
+        "Sign-up is temporarily busy. Please wait a minute and try again.",
+        503
+      );
     }
     return apiError("REGISTER_ERROR", message, 500);
   }

@@ -12,7 +12,11 @@ import {
 } from "@/lib/auth/session";
 import { hasUserPassword } from "@/lib/auth/user-credentials";
 import { isDemoMode } from "@/lib/config/app-mode";
-import { ensureDatastoreReady } from "@/lib/data/datastore";
+import {
+  ensureDatastoreReady,
+  isFirestoreQuotaError,
+  runWithQuotaFallback,
+} from "@/lib/data/datastore";
 
 export const runtime = "nodejs";
 
@@ -31,6 +35,14 @@ const registerSchema = z.object({
   next: z.string().optional(),
 });
 
+function registrationUnavailableResponse() {
+  return apiError(
+    "SERVICE_UNAVAILABLE",
+    "Sign-up is temporarily busy. Please wait a minute and try again.",
+    503
+  );
+}
+
 export async function POST(req: Request) {
   try {
     await ensureDatastoreReady();
@@ -47,13 +59,6 @@ export async function POST(req: Request) {
     }
 
     const email = parsed.data.email.trim().toLowerCase();
-    if (await hasUserPassword(email)) {
-      return apiError(
-        "EMAIL_EXISTS",
-        "An account with this email already exists. Please sign in.",
-        409
-      );
-    }
 
     const cookieStore = await cookies();
     const referralCode =
@@ -61,15 +66,21 @@ export async function POST(req: Request) {
       cookieStore.get(AFFILIATE_COOKIE)?.value ||
       undefined;
 
-    const result = await provisionFreeTierAccount({
-      email,
-      name: parsed.data.name,
-      phone: parsed.data.phone,
-      country: parsed.data.country,
-      companyName: parsed.data.companyName,
-      password: parsed.data.password,
-      authProvider: "password",
-      referralCode,
+    const result = await runWithQuotaFallback(async () => {
+      if (await hasUserPassword(email)) {
+        throw new Error("EMAIL_EXISTS: An account with this email already exists.");
+      }
+
+      return provisionFreeTierAccount({
+        email,
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        country: parsed.data.country,
+        companyName: parsed.data.companyName,
+        password: parsed.data.password,
+        authProvider: "password",
+        referralCode,
+      });
     });
 
     const nextPath = sanitizeNextPath(parsed.data.next ?? "/dashboard");
@@ -97,8 +108,15 @@ export async function POST(req: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Registration failed.";
-    if (/already exists/i.test(message)) {
-      return apiError("EMAIL_EXISTS", message, 409);
+    if (/EMAIL_EXISTS|already exists/i.test(message)) {
+      return apiError(
+        "EMAIL_EXISTS",
+        "An account with this email already exists. Please sign in.",
+        409
+      );
+    }
+    if (isFirestoreQuotaError(error)) {
+      return registrationUnavailableResponse();
     }
     return apiError("REGISTER_ERROR", message, 500);
   }

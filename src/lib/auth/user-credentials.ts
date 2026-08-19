@@ -1,5 +1,9 @@
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { isDemoMode } from "@/lib/config/app-mode";
+import {
+  isMemoryDatastore,
+  withFirestoreFallback,
+} from "@/lib/data/datastore";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import type { MemberAuthProvider } from "@/types/tenant";
 
@@ -25,16 +29,28 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function shouldUseCredentialMemory() {
+  return isDemoMode() || !isFirebaseConfigured() || isMemoryDatastore();
+}
+
 async function readRecord(email: string): Promise<UserCredentialRecord | null> {
   const key = emailKey(email);
-  if (isDemoMode() || !isFirebaseConfigured()) {
+  if (shouldUseCredentialMemory()) {
     return memory.get(key) ?? null;
   }
-  const db = getAdminFirestore();
-  if (!db) return memory.get(key) ?? null;
-  const snap = await db.collection(COLLECTION).doc(key).get();
-  if (!snap.exists) return null;
-  return snap.data() as UserCredentialRecord;
+
+  return withFirestoreFallback(
+    async () => {
+      const db = getAdminFirestore();
+      if (!db) return memory.get(key) ?? null;
+      const snap = await db.collection(COLLECTION).doc(key).get();
+      if (!snap.exists) return null;
+      const record = snap.data() as UserCredentialRecord;
+      memory.set(key, record);
+      return record;
+    },
+    () => memory.get(key) ?? null
+  );
 }
 
 async function writeRecord(
@@ -42,13 +58,18 @@ async function writeRecord(
 ): Promise<UserCredentialRecord> {
   const key = emailKey(record.email);
   memory.set(key, record);
-  if (!isDemoMode() && isFirebaseConfigured()) {
-    const db = getAdminFirestore();
-    if (db) {
-      await db.collection(COLLECTION).doc(key).set(record);
-    }
+  if (shouldUseCredentialMemory()) {
+    return record;
   }
-  return record;
+
+  return withFirestoreFallback(
+    async () => {
+      const db = getAdminFirestore();
+      if (db) await db.collection(COLLECTION).doc(key).set(record);
+      return record;
+    },
+    () => record
+  );
 }
 
 export async function getUserCredentials(
@@ -96,7 +117,9 @@ export async function upsertGoogleIdentity(input: {
     userId: input.userId,
     passwordHash: existing?.passwordHash ?? "",
     passwordSalt: existing?.passwordSalt ?? "",
-    authProvider: existing?.passwordHash ? existing.authProvider ?? "password" : "google",
+    authProvider: existing?.passwordHash
+      ? (existing.authProvider ?? "password")
+      : "google",
     googleSub: input.googleSub,
     createdAt: existing?.createdAt ?? stamp,
     updatedAt: stamp,
@@ -113,16 +136,29 @@ export async function findCredentialsByGoogleSub(
     if (record.googleSub === sub) return record;
   }
 
-  if (isDemoMode() || !isFirebaseConfigured()) return null;
-  const db = getAdminFirestore();
-  if (!db) return null;
-  const snap = await db
-    .collection(COLLECTION)
-    .where("googleSub", "==", sub)
-    .limit(1)
-    .get();
-  if (snap.empty) return null;
-  return snap.docs[0]!.data() as UserCredentialRecord;
+  if (shouldUseCredentialMemory()) return null;
+
+  return withFirestoreFallback(
+    async () => {
+      const db = getAdminFirestore();
+      if (!db) return null;
+      const snap = await db
+        .collection(COLLECTION)
+        .where("googleSub", "==", sub)
+        .limit(1)
+        .get();
+      if (snap.empty) return null;
+      const record = snap.docs[0]!.data() as UserCredentialRecord;
+      memory.set(record.email, record);
+      return record;
+    },
+    () => {
+      for (const record of memory.values()) {
+        if (record.googleSub === sub) return record;
+      }
+      return null;
+    }
+  );
 }
 
 export async function verifyUserPassword(
