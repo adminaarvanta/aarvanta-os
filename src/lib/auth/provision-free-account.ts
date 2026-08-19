@@ -3,11 +3,12 @@ import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import {
   getUserCredentials,
+  hasUserPassword,
   upsertGoogleIdentity,
   upsertUserPassword,
 } from "@/lib/auth/user-credentials";
 import type { SessionPayload } from "@/lib/auth/session";
-import type { MemberAuthProvider } from "@/types/tenant";
+import type { MemberAuthProvider, WorkspaceMember } from "@/types/tenant";
 
 function slugify(value: string): string {
   return (
@@ -43,28 +44,51 @@ export type ProvisionFreeAccountResult = {
   workspaceId: string;
 };
 
+function pickMembership(
+  memberships: WorkspaceMember[],
+  email: string,
+  userId: string
+): WorkspaceMember | null {
+  const key = email.trim().toLowerCase();
+  return (
+    memberships.find((m) => m.email.trim().toLowerCase() === key) ??
+    memberships.find((m) => m.userId === userId) ??
+    memberships[0] ??
+    null
+  );
+}
+
 /**
- * Create a personal free-tier org + workspace + owner membership.
- * Company name is optional — defaults to "{name}'s workspace".
+ * Ensure a free-tier owner membership exists for an authenticated credential.
+ * Used when login finds a password but no membership (cold-start / partial signup).
  */
-export async function provisionFreeTierAccount(
-  input: ProvisionFreeAccountInput
-): Promise<ProvisionFreeAccountResult> {
+export async function ensureFreeTierMembership(input: {
+  email: string;
+  userId: string;
+  name?: string;
+  phone?: string;
+  country?: string;
+  companyName?: string;
+}): Promise<WorkspaceMember> {
   await ensureDatastoreReady();
 
   const email = input.email.trim().toLowerCase();
-  const existing = await getUserCredentials(email);
-  if (existing) {
-    throw new Error("An account with this email already exists. Please sign in.");
-  }
-
+  const userId = input.userId.trim();
   const repo = getTenantRepository();
-  const now = crmNow();
-  const userId = userIdFromEmail(email);
-  const displayName = input.name.trim() || email.split("@")[0] || "Owner";
+
+  const byUser = await repo.listMembershipsForUser(userId);
+  const existing = pickMembership(byUser, email, userId);
+  if (existing) return existing;
+
+  const byEmail = await repo.listMembershipsForEmail(email);
+  const fromEmail = pickMembership(byEmail, email, userId);
+  if (fromEmail) return fromEmail;
+
+  const displayName = input.name?.trim() || email.split("@")[0] || "Owner";
   const companyLabel =
     input.companyName?.trim() || `${displayName}'s workspace`;
   const orgSlugBase = slugify(companyLabel);
+  const now = crmNow();
   const tenantId = crmNewId("org");
   const companyId = crmNewId("co");
   const orgSlug = `${orgSlugBase}-${tenantId.slice(-6)}`;
@@ -85,16 +109,16 @@ export async function provisionFreeTierAccount(
     defaultCompanyId: companyId,
   });
 
-  const member = await repo.createMember(
+  return repo.createMember(
     {
       userId,
       email,
       name: displayName,
       role: "owner",
-      phone: input.phone.trim(),
-      country: input.country.trim(),
+      phone: input.phone?.trim() || "+0000000000",
+      country: input.country?.trim() || "United Kingdom",
       companyName: input.companyName?.trim() || undefined,
-      authProvider: input.authProvider,
+      authProvider: "password",
       profileComplete: true,
     },
     {
@@ -103,6 +127,86 @@ export async function provisionFreeTierAccount(
       companyId,
     }
   );
+}
+
+/**
+ * Create a personal free-tier org + workspace + owner membership.
+ * Company name is optional — defaults to "{name}'s workspace".
+ *
+ * Reuses an existing membership when the email already has one (e.g. partner
+ * auto-activation) and only adds credentials. Google-only records can finish
+ * signup by setting a password here.
+ */
+export async function provisionFreeTierAccount(
+  input: ProvisionFreeAccountInput
+): Promise<ProvisionFreeAccountResult> {
+  await ensureDatastoreReady();
+
+  const email = input.email.trim().toLowerCase();
+  const existingCreds = await getUserCredentials(email);
+  if (existingCreds && (await hasUserPassword(email))) {
+    throw new Error("An account with this email already exists. Please sign in.");
+  }
+
+  const repo = getTenantRepository();
+  const userId = existingCreds?.userId ?? userIdFromEmail(email);
+  const displayName = input.name.trim() || email.split("@")[0] || "Owner";
+
+  let member =
+    pickMembership(await repo.listMembershipsForUser(userId), email, userId) ??
+    pickMembership(await repo.listMembershipsForEmail(email), email, userId);
+
+  let tenantId: string;
+  let workspaceId: string;
+
+  if (member) {
+    tenantId = member.tenantId;
+    workspaceId = member.workspaceId;
+  } else {
+    const now = crmNow();
+    const companyLabel =
+      input.companyName?.trim() || `${displayName}'s workspace`;
+    const orgSlugBase = slugify(companyLabel);
+    tenantId = crmNewId("org");
+    const companyId = crmNewId("co");
+    const orgSlug = `${orgSlugBase}-${tenantId.slice(-6)}`;
+
+    await repo.upsertOrganization({
+      id: tenantId,
+      name: companyLabel,
+      slug: orgSlug,
+      plan: "free",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const workspace = await repo.createWorkspace({
+      tenantId,
+      name: "Main",
+      slug: "main",
+      defaultCompanyId: companyId,
+    });
+    workspaceId = workspace.id;
+
+    member = await repo.createMember(
+      {
+        userId,
+        email,
+        name: displayName,
+        role: "owner",
+        phone: input.phone.trim(),
+        country: input.country.trim(),
+        companyName: input.companyName?.trim() || undefined,
+        authProvider: input.authProvider,
+        profileComplete: true,
+      },
+      {
+        tenantId,
+        workspaceId: workspace.id,
+        companyId,
+      }
+    );
+  }
 
   if (input.authProvider === "password") {
     if (!input.password || input.password.length < 8) {
@@ -113,11 +217,17 @@ export async function provisionFreeTierAccount(
       userId: member.userId,
       password: input.password,
     });
-  } else {
+  } else if (!existingCreds) {
     await upsertGoogleIdentity({
       email,
       userId: member.userId,
       googleSub: input.googleSub || "",
+    });
+  } else if (input.googleSub && !existingCreds.googleSub) {
+    await upsertGoogleIdentity({
+      email,
+      userId: member.userId,
+      googleSub: input.googleSub,
     });
   }
 
@@ -130,9 +240,9 @@ export async function provisionFreeTierAccount(
         referralCode: input.referralCode,
         email,
         userId: member.userId,
-        tenantId,
-        workspaceId: workspace.id,
-        companyId,
+        tenantId: member.tenantId,
+        workspaceId: member.workspaceId,
+        companyId: member.companyId,
         country: input.country,
       });
       if (result.skippedReason) {
@@ -152,7 +262,7 @@ export async function provisionFreeTierAccount(
         email,
         name: displayName,
         userId: member.userId,
-        tenantId,
+        tenantId: member.tenantId,
         country: input.country,
         company: input.companyName,
       });
@@ -167,7 +277,7 @@ export async function provisionFreeTierAccount(
 
   return {
     organizationId: tenantId,
-    workspaceId: workspace.id,
+    workspaceId,
     session: {
       email,
       name: member.name,
