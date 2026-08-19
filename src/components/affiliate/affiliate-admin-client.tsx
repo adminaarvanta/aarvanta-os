@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import { PeopleTreeView } from "@/components/affiliate/affiliate-people-tree";
 import { Button } from "@/components/ui/button";
 import { CardList, StatGrid } from "@/components/platform/module-page-shell";
@@ -284,26 +286,29 @@ export function AffiliateAdminClient() {
         </h3>
         <p className="mb-3 text-xs text-muted">
           Team members sit under admin@aarvanta.co. New partners attach to the
-          referring member, or to admin when they have no referral.
-          {isPlatform ? " Select a person to manage parent, role, or status." : ""}
+          referring member, or to admin when they have no referral. Select a
+          person to open their details. Use Full map to view the whole tree.
         </p>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="overflow-hidden rounded-xl border border-border bg-surface-elevated">
-            <PeopleTreeView
-              tree={data.tree ?? []}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
-          </div>
-          <SelectedAffiliatePanel
-            affiliate={selected}
-            affiliates={data.affiliates}
-            isPlatform={isPlatform}
-            busy={busy}
-            onPatch={patch}
-            onClear={() => setSelectedId(null)}
+        <div className="overflow-hidden rounded-xl border border-border bg-surface-elevated">
+          <PeopleTreeView
+            tree={data.tree ?? []}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
           />
         </div>
+        {selected ? (
+          <PersonDetailsDialog
+            onClose={() => setSelectedId(null)}
+          >
+            <SelectedAffiliatePanel
+              affiliate={selected}
+              affiliates={data.affiliates}
+              isPlatform={isPlatform}
+              busy={busy}
+              onPatch={patch}
+            />
+          </PersonDetailsDialog>
+        ) : null}
       </section>
 
       {isPlatform && pending.length > 0 ? (
@@ -495,72 +500,100 @@ export function AffiliateAdminClient() {
   );
 }
 
+function PersonDetailsDialog({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[90] flex items-end justify-center p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="person-details-title"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px]"
+        onClick={onClose}
+        aria-label="Close person details"
+      />
+      <div className="relative z-10 max-h-[min(90vh,720px)] w-full max-w-md overflow-y-auto rounded-xl border border-border bg-background shadow-2xl">
+        <div className="absolute right-3 top-3 z-10">
+          <button
+            type="button"
+            className="rounded-md p-1 text-muted hover:bg-surface-muted hover:text-foreground"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function SelectedAffiliatePanel({
   affiliate: a,
   affiliates,
   isPlatform,
   busy,
   onPatch,
-  onClear,
 }: {
-  affiliate: AdminAffiliate | null;
+  affiliate: AdminAffiliate;
   affiliates: AdminAffiliate[];
   isPlatform: boolean;
   busy: boolean;
   onPatch: (body: Record<string, unknown>) => Promise<void>;
-  onClear: () => void;
 }) {
-  const role = a?.role ?? "partner";
-  const [parentId, setParentId] = useState(a?.parentAffiliateId ?? "");
+  const role = a.role ?? "partner";
+  const [parentId, setParentId] = useState(a.parentAffiliateId ?? "");
 
   useEffect(() => {
-    setParentId(a?.parentAffiliateId ?? "");
-  }, [a?.id, a?.parentAffiliateId]);
+    setParentId(a.parentAffiliateId ?? "");
+  }, [a.id, a.parentAffiliateId]);
 
   const parentOptions = useMemo(
     () =>
-      a
-        ? affiliates.filter(
-            (p) =>
-              p.id !== a.id &&
-              p.status !== "rejected" &&
-              p.status !== "suspended"
-          )
-        : [],
-    [affiliates, a]
+      affiliates.filter(
+        (p) =>
+          p.id !== a.id &&
+          p.status !== "rejected" &&
+          p.status !== "suspended"
+      ),
+    [affiliates, a.id]
   );
 
-  const parent = a?.parentAffiliateId
+  const parent = a.parentAffiliateId
     ? affiliates.find((p) => p.id === a.parentAffiliateId)
     : undefined;
 
-  if (!a) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border bg-surface-elevated px-4 py-8 text-center text-sm text-muted">
-        Select a person in the tree to see their profile
-        {isPlatform ? " and hierarchy actions" : ""}.
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-xl border border-border bg-surface-elevated p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">
-            {a.profile.name}
-          </p>
-          <p className="mt-0.5 text-xs text-muted">
-            {a.profile.email}
-          </p>
-        </div>
-        <button
-          type="button"
-          className="shrink-0 text-xs text-muted hover:text-foreground"
-          onClick={onClear}
+    <div className="p-5">
+      <div className="min-w-0 pr-8">
+        <p
+          id="person-details-title"
+          className="text-sm font-semibold text-foreground"
         >
-          Clear
-        </button>
+          {a.profile.name}
+        </p>
+        <p className="mt-0.5 text-xs text-muted">{a.profile.email}</p>
       </div>
 
       <dl className="mt-3 space-y-1.5 text-xs">

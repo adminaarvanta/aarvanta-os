@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Maximize2, Search, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PLATFORM_ROOT_EMAIL } from "@/lib/affiliate/constants";
 import type { Affiliate, AffiliateRole, AffiliateTreeNode } from "@/types/affiliate";
@@ -126,11 +127,13 @@ function useIsDesktop() {
   return desktop;
 }
 
+const LINE = "bg-[#c5ced8] dark:bg-border";
+
 function ConnectorDot({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={`absolute h-2 w-2 rounded-full border border-[#c5ced8] bg-white dark:border-border dark:bg-surface-elevated ${className ?? ""}`}
+      className={`absolute z-[1] h-2 w-2 rounded-full border border-[#c5ced8] bg-white dark:border-border dark:bg-surface-elevated ${className ?? ""}`}
     />
   );
 }
@@ -255,48 +258,51 @@ function OrgBranch({
   const showBar = depth > 0 && siblingCount > 1;
 
   return (
-    <li className="relative flex flex-col items-center px-4">
+    <li className="relative flex flex-col items-center px-5">
       {depth > 0 ? (
-        <div className="relative h-8 w-full">
+        <>
           {showBar ? (
             <span
               aria-hidden
-              className={`absolute top-0 h-px bg-[#c5ced8] dark:bg-border ${
+              className={`absolute top-0 h-[2px] ${LINE} ${
                 isFirst
                   ? "left-1/2 right-0"
                   : isLast
                     ? "left-0 right-1/2"
-                    : "left-0 right-0"
+                    : "inset-x-0"
               }`}
             />
           ) : null}
           <span
             aria-hidden
-            className="absolute left-1/2 top-0 h-8 w-px -translate-x-1/2 bg-[#c5ced8] dark:bg-border"
+            className={`absolute left-1/2 top-0 h-8 w-[2px] -translate-x-1/2 ${LINE}`}
           />
           <ConnectorDot className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2" />
-        </div>
+          <div className="h-8 w-full" />
+        </>
       ) : null}
 
-      <PersonCard
-        affiliate={a}
-        selected={selectedId === a.id}
-        reportCount={node.children.length}
-        dimmed={dimmed}
-        expanded={isOpen}
-        onSelect={onSelect}
-        onToggleReports={
-          hasChildren ? () => onToggle(a.id, defaultOpen) : undefined
-        }
-      />
+      <div className="relative z-10">
+        <PersonCard
+          affiliate={a}
+          selected={selectedId === a.id}
+          reportCount={node.children.length}
+          dimmed={dimmed}
+          expanded={isOpen}
+          onSelect={onSelect}
+          onToggleReports={
+            hasChildren ? () => onToggle(a.id, defaultOpen) : undefined
+          }
+        />
+      </div>
 
       {hasChildren && isOpen ? (
         <>
-          <div className="relative h-8 w-px bg-[#c5ced8] dark:bg-border">
+          <span aria-hidden className={`relative z-0 block h-8 w-[2px] ${LINE}`}>
             <ConnectorDot className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2" />
             <ConnectorDot className="left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2" />
-          </div>
-          <ul className="flex items-start justify-center">
+          </span>
+          <ul className="flex flex-nowrap items-start justify-center">
             {node.children.map((child, i) => (
               <OrgBranch
                 key={child.affiliate.id}
@@ -401,11 +407,31 @@ export function PeopleTreeView({
   const desktop = useIsDesktop();
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [fullMap, setFullMap] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const normalizedQuery = query.trim().toLowerCase();
   const visibleIds = useMemo(
     () => collectVisibleIds(tree, normalizedQuery),
     [tree, normalizedQuery]
   );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!fullMap) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullMap(false);
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [fullMap]);
 
   function toggle(id: string, defaultOpen: boolean) {
     setExpanded((prev) => {
@@ -434,66 +460,119 @@ export function PeopleTreeView({
     );
   }
 
-  return (
-    <div className="flex min-h-[320px] flex-col bg-[#f4f6f8] dark:bg-surface-elevated">
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#e6ebf1] bg-white px-3 py-2.5 dark:border-border-subtle dark:bg-surface-elevated">
-        <label className="relative min-w-[180px] flex-1">
-          <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
-            aria-hidden
-          />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, email, or code"
-            className="h-9 w-full rounded-lg border border-[#e6ebf1] bg-white px-8 text-sm text-slate-900 placeholder:text-slate-400 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/40 dark:border-border dark:bg-surface dark:text-foreground dark:placeholder:text-muted"
-          />
-        </label>
-        <Button type="button" size="sm" variant="secondary" onClick={expandAll}>
-          Expand all
+  const toolbar = (
+    <div className="flex flex-wrap items-center gap-2 border-b border-[#e6ebf1] bg-white px-3 py-2.5 dark:border-border-subtle dark:bg-surface-elevated">
+      <label className="relative min-w-[180px] flex-1">
+        <Search
+          className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+          aria-hidden
+        />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search name, email, or code"
+          className="h-9 w-full rounded-lg border border-[#e6ebf1] bg-white px-8 text-sm text-slate-900 placeholder:text-slate-400 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/40 dark:border-border dark:bg-surface dark:text-foreground dark:placeholder:text-muted"
+        />
+      </label>
+      <Button type="button" size="sm" variant="secondary" onClick={expandAll}>
+        Expand all
+      </Button>
+      <Button type="button" size="sm" variant="ghost" onClick={collapseAll}>
+        Collapse all
+      </Button>
+      {fullMap ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => setFullMap(false)}
+        >
+          <X className="mr-1 h-3.5 w-3.5" aria-hidden />
+          Close map
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={collapseAll}>
-          Collapse all
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => setFullMap(true)}
+        >
+          <Maximize2 className="mr-1 h-3.5 w-3.5" aria-hidden />
+          Full map
         </Button>
-      </div>
-
-      <div className="overflow-auto p-6 sm:p-8">
-        {desktop ? (
-          <ul className="flex min-w-max justify-center">
-            {tree.map((node, i) => (
-              <OrgBranch
-                key={node.affiliate.id}
-                node={node}
-                depth={0}
-                index={i}
-                siblingCount={tree.length}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                expanded={expanded}
-                onToggle={toggle}
-                visibleIds={visibleIds}
-                query={normalizedQuery}
-              />
-            ))}
-          </ul>
-        ) : (
-          <ul className="min-w-[280px] space-y-3">
-            {tree.map((node) => (
-              <ListBranch
-                key={node.affiliate.id}
-                node={node}
-                depth={0}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                expanded={expanded}
-                onToggle={toggle}
-                visibleIds={visibleIds}
-                query={normalizedQuery}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
+      )}
     </div>
+  );
+
+  const canvas = (
+    <div className="min-h-0 flex-1 overflow-auto p-6 sm:p-10">
+      {desktop ? (
+        <ul className="flex min-w-max flex-nowrap justify-center">
+          {tree.map((node, i) => (
+            <OrgBranch
+              key={node.affiliate.id}
+              node={node}
+              depth={0}
+              index={i}
+              siblingCount={tree.length}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              expanded={expanded}
+              onToggle={toggle}
+              visibleIds={visibleIds}
+              query={normalizedQuery}
+            />
+          ))}
+        </ul>
+      ) : (
+        <ul className="min-w-[280px] space-y-3">
+          {tree.map((node) => (
+            <ListBranch
+              key={node.affiliate.id}
+              node={node}
+              depth={0}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              expanded={expanded}
+              onToggle={toggle}
+              visibleIds={visibleIds}
+              query={normalizedQuery}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  const overlay =
+    mounted && fullMap
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[80] flex flex-col bg-[#f4f6f8] dark:bg-background"
+            role="dialog"
+            aria-modal="true"
+            aria-label="People hierarchy map"
+          >
+            {toolbar}
+            {canvas}
+          </div>,
+          document.body
+        )
+      : null;
+
+  return (
+    <>
+      {fullMap ? (
+        <div className="flex min-h-[420px] items-center justify-center bg-[#f4f6f8] px-4 text-sm text-muted dark:bg-surface-elevated">
+          Hierarchy map is open in full screen.
+        </div>
+      ) : (
+        <div className="flex min-h-[420px] flex-col bg-[#f4f6f8] dark:bg-surface-elevated">
+          {toolbar}
+          {canvas}
+        </div>
+      )}
+      {overlay}
+    </>
   );
 }
