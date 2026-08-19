@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Search, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PLATFORM_ROOT_EMAIL } from "@/lib/affiliate/constants";
 import type { Affiliate, AffiliateRole, AffiliateTreeNode } from "@/types/affiliate";
@@ -11,11 +11,30 @@ export type TreeAffiliate = Affiliate & {
   role?: AffiliateRole;
 };
 
+const AVATAR_TONES = [
+  { bg: "bg-sky-100 dark:bg-sky-500/20", fg: "text-sky-800 dark:text-sky-200" },
+  { bg: "bg-emerald-100 dark:bg-emerald-500/20", fg: "text-emerald-800 dark:text-emerald-200" },
+  { bg: "bg-violet-100 dark:bg-violet-500/20", fg: "text-violet-800 dark:text-violet-200" },
+  { bg: "bg-amber-100 dark:bg-amber-500/20", fg: "text-amber-900 dark:text-amber-200" },
+  { bg: "bg-rose-100 dark:bg-rose-500/20", fg: "text-rose-800 dark:text-rose-200" },
+  { bg: "bg-teal-100 dark:bg-teal-500/20", fg: "text-teal-800 dark:text-teal-200" },
+  { bg: "bg-indigo-100 dark:bg-indigo-500/20", fg: "text-indigo-800 dark:text-indigo-200" },
+  { bg: "bg-orange-100 dark:bg-orange-500/20", fg: "text-orange-800 dark:text-orange-200" },
+] as const;
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+}
+
+function avatarTone(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_TONES[hash % AVATAR_TONES.length]!;
 }
 
 function hierarchyLabel(affiliate: TreeAffiliate): string {
@@ -29,17 +48,22 @@ function hierarchyLabel(affiliate: TreeAffiliate): string {
   return "Partner";
 }
 
-function statusClass(status: Affiliate["status"]): string {
+function statusBadgeClass(status: Affiliate["status"]): string {
   switch (status) {
     case "active":
-      return "bg-success/15 text-success";
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200";
     case "pending":
-      return "bg-gold/15 text-gold";
+      return "bg-amber-100 text-amber-800 dark:bg-gold/20 dark:text-gold";
     case "suspended":
-      return "bg-red-500/15 text-red-400";
+      return "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300";
     default:
-      return "bg-surface-muted text-muted";
+      return "bg-slate-100 text-slate-600 dark:bg-surface-muted dark:text-muted";
   }
+}
+
+function shortCode(code: string): string {
+  if (code.length <= 12) return code;
+  return `${code.slice(0, 10)}…`;
 }
 
 function nodeMatches(affiliate: Affiliate, query: string): boolean {
@@ -61,10 +85,7 @@ function collectVisibleIds(
   const ids = new Set<string>();
   if (!query) return ids;
 
-  function walk(
-    node: AffiliateTreeNode,
-    ancestors: string[]
-  ): boolean {
+  function walk(node: AffiliateTreeNode, ancestors: string[]): boolean {
     const id = node.affiliate.id;
     const self = nodeMatches(node.affiliate, query);
     let childHit = false;
@@ -105,71 +126,94 @@ function useIsDesktop() {
   return desktop;
 }
 
+function ConnectorDot({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`absolute h-2 w-2 rounded-full border border-[#c5ced8] bg-white dark:border-border dark:bg-surface-elevated ${className ?? ""}`}
+    />
+  );
+}
+
 export function PersonCard({
   affiliate,
   selected,
   reportCount,
   dimmed,
+  expanded,
   onSelect,
+  onToggleReports,
 }: {
   affiliate: TreeAffiliate;
   selected: boolean;
   reportCount: number;
   dimmed?: boolean;
+  expanded?: boolean;
   onSelect: (id: string) => void;
+  onToggleReports?: () => void;
 }) {
   const label = hierarchyLabel(affiliate);
-  const isOwner = label === "Owner";
-  const isTeam = label === "Team" || isOwner;
+  const tone = avatarTone(affiliate.profile.email || affiliate.id);
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(affiliate.id)}
-      className={`flex w-[220px] max-w-[calc(100vw-3rem)] items-start gap-3 rounded-xl border px-3 py-2.5 text-left shadow-sm transition ${
+    <div
+      className={`flex w-[280px] max-w-[calc(100vw-3rem)] flex-col rounded-2xl border bg-white px-3.5 py-3 text-left shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition dark:bg-surface ${
         selected
-          ? "border-gold bg-gold/10 ring-1 ring-gold/40"
-          : "border-border bg-surface hover:border-gold/35 hover:bg-surface-muted/50"
+          ? "border-gold ring-2 ring-gold/30"
+          : "border-[#e6ebf1] hover:border-[#c5ced8] dark:border-border dark:hover:border-gold/40"
       } ${dimmed ? "opacity-35" : ""}`}
     >
-      <span
-        className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-          isOwner
-            ? "bg-gold/20 text-gold"
-            : isTeam
-              ? "bg-navy/15 text-navy dark:bg-gold/15 dark:text-gold"
-              : "bg-surface-muted text-foreground"
-        }`}
-        aria-hidden
+      <button
+        type="button"
+        onClick={() => onSelect(affiliate.id)}
+        className="flex w-full items-start gap-3 text-left"
       >
-        {initials(affiliate.profile.name)}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-1.5">
-          <span className="truncate text-sm font-semibold text-foreground">
-            {affiliate.profile.name}
+        <span
+          className={`mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${tone.bg} ${tone.fg}`}
+          aria-hidden
+        >
+          {initials(affiliate.profile.name)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-start justify-between gap-2">
+            <span className="truncate text-sm font-semibold text-slate-900 dark:text-foreground">
+              {affiliate.profile.name}
+            </span>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusBadgeClass(affiliate.status)}`}
+            >
+              {affiliate.status}
+            </span>
           </span>
-          <span
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${statusClass(affiliate.status)}`}
+          <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-muted">
+            {label} · {shortCode(affiliate.referralCode)}
+          </span>
+          <span className="mt-0.5 block truncate text-[11px] text-slate-400 dark:text-dim">
+            {affiliate.profile.email}
+            {affiliate.needsPasswordSetup ? " · awaiting password" : ""}
+          </span>
+        </span>
+      </button>
+      {reportCount > 0 ? (
+        onToggleReports ? (
+          <button
+            type="button"
+            onClick={onToggleReports}
+            className="mt-1.5 ml-[60px] inline-flex items-center gap-1 self-start text-[11px] text-slate-500 hover:text-slate-700 dark:text-muted dark:hover:text-foreground"
+            aria-expanded={expanded}
+            aria-label={expanded ? "Collapse reports" : "Expand reports"}
           >
-            {affiliate.status}
-          </span>
-        </span>
-        <span className="mt-0.5 block truncate text-xs text-muted">
-          {label} · {affiliate.referralCode}
-        </span>
-        <span className="mt-0.5 block truncate text-[11px] text-muted">
-          {affiliate.profile.email}
-          {affiliate.needsPasswordSetup ? " · awaiting password" : ""}
-        </span>
-        {reportCount > 0 ? (
-          <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted">
+            <Users className="h-3 w-3" aria-hidden />
+            {reportCount} report{reportCount === 1 ? "" : "s"}
+          </button>
+        ) : (
+          <span className="mt-1.5 ml-[60px] inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-muted">
             <Users className="h-3 w-3" aria-hidden />
             {reportCount} report{reportCount === 1 ? "" : "s"}
           </span>
-        ) : null}
-      </span>
-    </button>
+        )
+      ) : null}
+    </div>
   );
 }
 
@@ -200,76 +244,76 @@ function OrgBranch({
   const hasChildren = node.children.length > 0;
   const defaultOpen = depth < 2;
   const isOpen = query
-    ? visibleIds.has(a.id) && node.children.some((c) => visibleIds.has(c.affiliate.id))
+    ? visibleIds.has(a.id) &&
+      node.children.some((c) => visibleIds.has(c.affiliate.id))
     : a.id in expanded
       ? expanded[a.id]
       : defaultOpen;
   const dimmed = Boolean(query) && !visibleIds.has(a.id);
   const isFirst = index === 0;
   const isLast = index === siblingCount - 1;
+  const showBar = depth > 0 && siblingCount > 1;
 
   return (
-    <li
-      className={`relative flex flex-col items-center px-3 pt-5 ${
-        depth > 0
-          ? "before:absolute before:left-1/2 before:top-0 before:h-5 before:w-px before:-translate-x-1/2 before:bg-border"
-          : ""
-      } ${
-        depth > 0 && siblingCount > 1
-          ? `after:absolute after:top-0 after:h-px after:bg-border ${
-              isFirst
-                ? "after:left-1/2 after:right-0"
-                : isLast
-                  ? "after:left-0 after:right-1/2"
-                  : "after:left-0 after:right-0"
-            }`
-          : ""
-      }`}
-    >
-      <div className="flex items-start gap-1">
-        {hasChildren ? (
-          <button
-            type="button"
-            className="mt-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-muted hover:text-foreground"
-            aria-expanded={isOpen}
-            aria-label={isOpen ? "Collapse reports" : "Expand reports"}
-            onClick={() => onToggle(a.id, defaultOpen)}
-          >
-            {isOpen ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-        ) : (
-          <span className="mt-3 h-7 w-7 shrink-0" aria-hidden />
-        )}
-        <PersonCard
-          affiliate={a}
-          selected={selectedId === a.id}
-          reportCount={node.children.length}
-          dimmed={dimmed}
-          onSelect={onSelect}
-        />
-      </div>
-      {hasChildren && isOpen ? (
-        <ul className="flex items-start justify-center">
-          {node.children.map((child, i) => (
-            <OrgBranch
-              key={child.affiliate.id}
-              node={child}
-              depth={depth + 1}
-              index={i}
-              siblingCount={node.children.length}
-              selectedId={selectedId}
-              onSelect={onSelect}
-              expanded={expanded}
-              onToggle={onToggle}
-              visibleIds={visibleIds}
-              query={query}
+    <li className="relative flex flex-col items-center px-4">
+      {depth > 0 ? (
+        <div className="relative h-8 w-full">
+          {showBar ? (
+            <span
+              aria-hidden
+              className={`absolute top-0 h-px bg-[#c5ced8] dark:bg-border ${
+                isFirst
+                  ? "left-1/2 right-0"
+                  : isLast
+                    ? "left-0 right-1/2"
+                    : "left-0 right-0"
+              }`}
             />
-          ))}
-        </ul>
+          ) : null}
+          <span
+            aria-hidden
+            className="absolute left-1/2 top-0 h-8 w-px -translate-x-1/2 bg-[#c5ced8] dark:bg-border"
+          />
+          <ConnectorDot className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+      ) : null}
+
+      <PersonCard
+        affiliate={a}
+        selected={selectedId === a.id}
+        reportCount={node.children.length}
+        dimmed={dimmed}
+        expanded={isOpen}
+        onSelect={onSelect}
+        onToggleReports={
+          hasChildren ? () => onToggle(a.id, defaultOpen) : undefined
+        }
+      />
+
+      {hasChildren && isOpen ? (
+        <>
+          <div className="relative h-8 w-px bg-[#c5ced8] dark:bg-border">
+            <ConnectorDot className="left-1/2 top-0 -translate-x-1/2 -translate-y-1/2" />
+            <ConnectorDot className="left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2" />
+          </div>
+          <ul className="flex items-start justify-center">
+            {node.children.map((child, i) => (
+              <OrgBranch
+                key={child.affiliate.id}
+                node={child}
+                depth={depth + 1}
+                index={i}
+                siblingCount={node.children.length}
+                selectedId={selectedId}
+                onSelect={onSelect}
+                expanded={expanded}
+                onToggle={onToggle}
+                visibleIds={visibleIds}
+                query={query}
+              />
+            ))}
+          </ul>
+        </>
       ) : null}
     </li>
   );
@@ -298,7 +342,8 @@ function ListBranch({
   const hasChildren = node.children.length > 0;
   const defaultOpen = depth < 2;
   const isOpen = query
-    ? visibleIds.has(a.id) && node.children.some((c) => visibleIds.has(c.affiliate.id))
+    ? visibleIds.has(a.id) &&
+      node.children.some((c) => visibleIds.has(c.affiliate.id))
     : a.id in expanded
       ? expanded[a.id]
       : defaultOpen;
@@ -308,38 +353,23 @@ function ListBranch({
     <li className="relative">
       {depth > 0 ? (
         <span
-          className="absolute -left-5 top-5 h-px w-5 bg-border"
+          className="absolute -left-5 top-7 h-px w-5 bg-[#c5ced8] dark:bg-border"
           aria-hidden
         />
       ) : null}
-      <div className="flex items-start gap-1">
-        {hasChildren ? (
-          <button
-            type="button"
-            className="mt-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-muted hover:text-foreground"
-            aria-expanded={isOpen}
-            aria-label={isOpen ? "Collapse reports" : "Expand reports"}
-            onClick={() => onToggle(a.id, defaultOpen)}
-          >
-            {isOpen ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-        ) : (
-          <span className="mt-3 h-11 w-11 shrink-0" aria-hidden />
-        )}
-        <PersonCard
-          affiliate={a}
-          selected={selectedId === a.id}
-          reportCount={node.children.length}
-          dimmed={dimmed}
-          onSelect={onSelect}
-        />
-      </div>
+      <PersonCard
+        affiliate={a}
+        selected={selectedId === a.id}
+        reportCount={node.children.length}
+        dimmed={dimmed}
+        expanded={isOpen}
+        onSelect={onSelect}
+        onToggleReports={
+          hasChildren ? () => onToggle(a.id, defaultOpen) : undefined
+        }
+      />
       {hasChildren && isOpen ? (
-        <ul className="relative ml-[21px] mt-1 space-y-2 border-l border-border pl-5">
+        <ul className="relative ml-6 mt-3 space-y-3 border-l border-[#c5ced8] pl-5 dark:border-border">
           {node.children.map((child) => (
             <ListBranch
               key={child.affiliate.id}
@@ -405,18 +435,18 @@ export function PeopleTreeView({
   }
 
   return (
-    <div className="flex min-h-[320px] flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle px-3 py-2.5">
+    <div className="flex min-h-[320px] flex-col bg-[#f4f6f8] dark:bg-surface-elevated">
+      <div className="flex flex-wrap items-center gap-2 border-b border-[#e6ebf1] bg-white px-3 py-2.5 dark:border-border-subtle dark:bg-surface-elevated">
         <label className="relative min-w-[180px] flex-1">
           <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted"
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
             aria-hidden
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name, email, or code"
-            className="h-9 w-full rounded-lg border border-border bg-surface px-8 text-sm text-foreground placeholder:text-muted focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/40"
+            className="h-9 w-full rounded-lg border border-[#e6ebf1] bg-white px-8 text-sm text-slate-900 placeholder:text-slate-400 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold/40 dark:border-border dark:bg-surface dark:text-foreground dark:placeholder:text-muted"
           />
         </label>
         <Button type="button" size="sm" variant="secondary" onClick={expandAll}>
@@ -427,7 +457,7 @@ export function PeopleTreeView({
         </Button>
       </div>
 
-      <div className="overflow-auto p-3 sm:p-4">
+      <div className="overflow-auto p-6 sm:p-8">
         {desktop ? (
           <ul className="flex min-w-max justify-center">
             {tree.map((node, i) => (
