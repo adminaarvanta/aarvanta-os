@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CrmContactInsights } from "@/lib/ai/crm-insights";
 
 export function CrmAiInsightsPanel({ contactId }: { contactId: string }) {
   const [insights, setInsights] = useState<CrmContactInsights | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatched, setDispatched] = useState(0);
 
   async function loadInsights() {
     setLoading(true);
@@ -16,14 +18,40 @@ export function CrmAiInsightsPanel({ contactId }: { contactId: string }) {
         method: "POST",
       });
       const data = await res.json();
-      if (res.ok) setInsights(data.insights);
+      if (res.ok) {
+        setInsights(data.insights);
+        setDispatched(0);
+      }
     } finally {
       setLoading(false);
     }
   }
 
+  async function sendToAiTeam() {
+    setDispatching(true);
+    try {
+      const res = await fetch(`/api/contacts/${contactId}/insights`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dispatch: true }),
+      });
+      const data = (await res.json()) as {
+        insights?: CrmContactInsights;
+        dispatched?: string[];
+      };
+      if (res.ok) {
+        if (data.insights) setInsights(data.insights);
+        setDispatched(data.dispatched?.length ?? 0);
+      }
+    } finally {
+      setDispatching(false);
+    }
+  }
+
   useEffect(() => {
-    loadInsights();
+    void loadInsights();
+    // Refresh when the person record changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactId]);
 
   return (
@@ -35,10 +63,12 @@ export function CrmAiInsightsPanel({ contactId }: { contactId: string }) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">AI insights</h3>
-            <p className="text-xs text-muted">Lead summary and suggested actions</p>
+            <p className="text-xs text-muted">
+              Lead summary — send actions to AI Team to run them
+            </p>
           </div>
         </div>
-        <Button type="button" variant="secondary" size="sm" onClick={loadInsights} disabled={loading}>
+        <Button type="button" variant="secondary" size="sm" onClick={() => void loadInsights()} disabled={loading}>
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Refresh"}
         </Button>
       </div>
@@ -61,6 +91,30 @@ export function CrmAiInsightsPanel({ contactId }: { contactId: string }) {
                 </li>
               ))}
             </ul>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={dispatching || insights.suggestedActions.length === 0}
+              onClick={() => void sendToAiTeam()}
+            >
+              {dispatching ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Workflow className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Send to AI Team
+            </Button>
+            {dispatched > 0 ? (
+              <p className="text-xs text-gold">
+                {dispatched} action{dispatched === 1 ? "" : "s"} queued for AI Sales Manager.
+              </p>
+            ) : (
+              <p className="text-xs text-muted">
+                CRM stays read-only until you send work, or the brain picks it up.
+              </p>
+            )}
           </div>
         </div>
       ) : null}

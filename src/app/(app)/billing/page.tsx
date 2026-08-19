@@ -9,16 +9,40 @@ import {
   toClientEntitlements,
 } from "@/lib/billing/entitlements";
 import { BILLING_PLANS, getBillingStore } from "@/lib/data/platform-store";
-import { isStripeConfigured } from "@/lib/stripe/config";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getStripePaymentStore } from "@/lib/data/stripe-payment-store";
+import { getStripeRuntimeStatus, isStripeConfigured } from "@/lib/stripe/config";
+import { resolveStoredStripeCustomerId } from "@/lib/stripe/customer";
+import { listCustomerInvoices } from "@/lib/stripe/webhook-handlers";
+import { getSessionContext } from "@/lib/tenant/context";
+import { can } from "@/lib/tenant/permissions";
 
-export default async function BillingPage() {
-  const scope = await getTenantScope();
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string; session_id?: string }>;
+}) {
+  const params = await searchParams;
+  const ctx = await getSessionContext();
+  const scope = ctx.scope;
   const billingStore = getBillingStore();
-  const [subscriptions, entitlements] = await Promise.all([
+  const stripeStatus = getStripeRuntimeStatus();
+  const [subscriptions, entitlements, payments] = await Promise.all([
     billingStore.list(scope),
     resolveEntitlements(scope),
+    getStripePaymentStore().list(scope),
   ]);
+
+  let invoices: Awaited<ReturnType<typeof listCustomerInvoices>> = [];
+  if (isStripeConfigured()) {
+    const customerId = await resolveStoredStripeCustomerId(scope);
+    if (customerId) {
+      try {
+        invoices = await listCustomerInvoices(customerId);
+      } catch {
+        invoices = [];
+      }
+    }
+  }
 
   const meters = [
     {
@@ -55,6 +79,11 @@ export default async function BillingPage() {
     },
   ];
 
+  const checkoutResult =
+    params.checkout === "success" || params.checkout === "canceled"
+      ? params.checkout
+      : null;
+
   return (
     <ModulePageShell
       icon={CreditCard}
@@ -79,6 +108,16 @@ export default async function BillingPage() {
         meters={meters}
         period={entitlements.period}
         stripeConfigured={isStripeConfigured()}
+        stripeMode={stripeStatus.status === "live" ? stripeStatus.mode : null}
+        canManageBilling={can(ctx.role, "org:billing")}
+        invoices={invoices}
+        payments={payments
+          .slice()
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          .slice(0, 20)}
+        checkoutResult={checkoutResult}
+        checkoutSessionId={params.session_id ?? null}
+        pastDue={entitlements.subscription?.status === "past_due"}
       />
     </ModulePageShell>
   );

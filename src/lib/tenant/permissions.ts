@@ -44,6 +44,7 @@ const ROLE_PERMISSIONS: Record<MemberRole, Permission[]> = {
     "settings:view",
   ],
   admin: [
+    "org:billing",
     "workspace:manage",
     "members:invite",
     "members:manage",

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import { parseJsonBody, unauthorized, authErrorResponse } from "@/lib/api/request";
 import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import { getDomainOrderRepository } from "@/lib/data/domain-order-store";
 import { getStripePaymentStore } from "@/lib/data/stripe-payment-store";
@@ -12,7 +12,8 @@ import {
 } from "@/lib/stripe/checkout";
 import { getHostingPlan } from "@/lib/stripe/catalog";
 import { isStripeConfigured } from "@/lib/stripe/config";
-import { getSessionContext } from "@/lib/tenant/context";
+import { resolveStoredStripeCustomerId } from "@/lib/stripe/customer";
+import { requirePermission } from "@/lib/tenant/context";
 
 const schema = z.discriminatedUnion("kind", [
   z.object({
@@ -39,9 +40,9 @@ const schema = z.discriminatedUnion("kind", [
 export async function POST(req: Request) {
   let session;
   try {
-    session = await getSessionContext();
-  } catch {
-    return unauthorized();
+    session = await requirePermission("org:billing");
+  } catch (error) {
+    return authErrorResponse(error) ?? unauthorized();
   }
 
   const body = await parseJsonBody<unknown>(req);
@@ -111,6 +112,7 @@ export async function POST(req: Request) {
       buildJobId: parsed.data.buildJobId,
       email: session.email,
       name: session.name,
+      stripeCustomerId: await resolveStoredStripeCustomerId(session.scope),
     });
 
     await getDomainOrderRepository().save({
@@ -124,6 +126,8 @@ export async function POST(req: Request) {
       kind: "domain",
       status: "pending",
       stripeCheckoutSessionId: checkout.id,
+      stripeCustomerId:
+        typeof checkout.customer === "string" ? checkout.customer : undefined,
       amount: parsed.data.priceAnnual,
       currency: parsed.data.currency,
       description: `Domain ${parsed.data.domain}`,
@@ -154,6 +158,7 @@ export async function POST(req: Request) {
     domain: parsed.data.domain,
     email: session.email,
     name: session.name,
+    stripeCustomerId: await resolveStoredStripeCustomerId(session.scope),
   });
 
   await getStripePaymentStore().save({
@@ -162,6 +167,8 @@ export async function POST(req: Request) {
     kind: "hosting",
     status: "pending",
     stripeCheckoutSessionId: checkout.id,
+    stripeCustomerId:
+      typeof checkout.customer === "string" ? checkout.customer : undefined,
     amount: hosting.priceMonthly,
     currency: hosting.currency,
     description: hosting.name,

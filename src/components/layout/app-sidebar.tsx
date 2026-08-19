@@ -191,20 +191,26 @@ export function AppSidebar({
                       locked && "text-muted/80 hover:bg-gold/10 hover:text-foreground",
                       !locked &&
                         active &&
+                        !isAiTeam &&
                         "bg-gold/15 text-gold-bright before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-gold",
                       !locked &&
+                        active &&
+                        isAiTeam &&
+                        "bg-accent-cyan/15 text-accent-cyan before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-accent-cyan",
+                      !locked &&
                         !active &&
+                        !isAiTeam &&
                         "text-muted hover:bg-surface-hover hover:text-foreground",
                       isAiTeam &&
                         !locked &&
                         !active &&
-                        "bg-gold/[0.07] text-foreground ring-1 ring-gold/25 hover:bg-gold/15"
+                        "bg-accent-cyan/[0.08] text-foreground ring-1 ring-accent-cyan/30 hover:bg-accent-cyan/15"
                     )}
                   >
                     <Icon
                       className={cn(
                         "h-[18px] w-[18px] shrink-0",
-                        isAiTeam && !locked && "text-gold"
+                        isAiTeam && !locked && "text-accent-cyan"
                       )}
                     />
                     {!collapsed ? (
@@ -213,7 +219,7 @@ export function AppSidebar({
                         {locked ? (
                           <PremiumBadge />
                         ) : showFreeBadge ? (
-                          <span className="rounded-md bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-bright">
+                          <span className="rounded-md bg-accent-cyan/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-cyan">
                             Free
                           </span>
                         ) : badge !== null ? (
@@ -227,7 +233,7 @@ export function AppSidebar({
                         <Lock className="h-3 w-3" aria-hidden />
                       </span>
                     ) : showFreeBadge ? (
-                      <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-gold" />
+                      <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-accent-cyan" />
                     ) : badge !== null ? (
                       <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-gold" />
                     ) : null}

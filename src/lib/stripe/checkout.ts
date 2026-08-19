@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { BILLING_PLANS } from "@/lib/data/platform-demo-seed";
+import { findOrCreateStripeCustomer } from "@/lib/stripe/customer";
 import {
   currencyToStripe,
   getHostingPlan,
@@ -25,8 +26,10 @@ function scopeMeta(scope: TenantScope): Record<string, string> {
 
 function successUrl(kind: StripeCheckoutKind): string {
   const base = getAppBaseUrl();
-  if (kind === "saas_plan") return `${base}/billing?checkout=success`;
-  return `${base}/build?checkout=success`;
+  if (kind === "saas_plan") {
+    return `${base}/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+  }
+  return `${base}/build?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
 }
 
 function cancelUrl(kind: StripeCheckoutKind): string {
@@ -35,21 +38,33 @@ function cancelUrl(kind: StripeCheckoutKind): string {
   return `${base}/build?checkout=canceled`;
 }
 
-async function findOrCreateCustomer(input: {
-  email?: string;
-  name?: string;
-  scope: TenantScope;
-  existingCustomerId?: string;
-}): Promise<string> {
-  const stripe = requireStripe();
-  if (input.existingCustomerId) return input.existingCustomerId;
-
-  const customer = await stripe.customers.create({
-    email: input.email,
-    name: input.name,
-    metadata: scopeMeta(input.scope),
-  });
-  return customer.id;
+function checkoutBaseParams(input: {
+  kind: StripeCheckoutKind;
+  customer: string;
+  metadata: Record<string, string>;
+  discounts?: Stripe.Checkout.SessionCreateParams.Discount[];
+}): Pick<
+  Stripe.Checkout.SessionCreateParams,
+  | "customer"
+  | "success_url"
+  | "cancel_url"
+  | "billing_address_collection"
+  | "customer_update"
+  | "allow_promotion_codes"
+  | "locale"
+  | "metadata"
+> {
+  const discounts = input.discounts ?? [];
+  return {
+    customer: input.customer,
+    success_url: successUrl(input.kind),
+    cancel_url: cancelUrl(input.kind),
+    billing_address_collection: "auto",
+    customer_update: { address: "auto", name: "auto" },
+    allow_promotion_codes: discounts.length === 0,
+    locale: "auto",
+    metadata: input.metadata,
+  };
 }
 
 export async function createSaasCheckoutSession(input: {
@@ -65,9 +80,12 @@ export async function createSaasCheckoutSession(input: {
 }): Promise<Stripe.Checkout.Session> {
   const plan = getSaasPlan(input.planId);
   if (!plan) throw new Error(`Unknown plan: ${input.planId}`);
+  if (plan.priceMonthly <= 0) {
+    throw new Error("Enterprise and custom plans are not billed through Checkout.");
+  }
 
   const stripe = requireStripe();
-  const customer = await findOrCreateCustomer(input);
+  const customer = await findOrCreateStripeCustomer(input);
   const priceId = saasPriceId(input.planId);
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = priceId
@@ -81,7 +99,7 @@ export async function createSaasCheckoutSession(input: {
             recurring: { interval: "month" },
             product_data: {
               name: `Aarvanta OS — ${plan.name}`,
-              description: plan.features.join(" · "),
+              description: plan.features.join(" · ").slice(0, 500),
             },
           },
         },
@@ -109,27 +127,27 @@ export async function createSaasCheckoutSession(input: {
       : {}),
   };
 
+  const metadata = {
+    ...scopeMeta(input.scope),
+    kind: "saas_plan" as const,
+    planId: input.planId,
+    ...affiliateMeta,
+  };
+
   return stripe.checkout.sessions.create({
     mode: "subscription",
-    customer,
     line_items: lineItems,
     ...(discounts.length ? { discounts } : {}),
-    success_url: successUrl("saas_plan"),
-    cancel_url: cancelUrl("saas_plan"),
-    client_reference_id: input.scope.tenantId,
-    metadata: {
-      ...scopeMeta(input.scope),
+    ...checkoutBaseParams({
       kind: "saas_plan",
-      planId: input.planId,
-      ...affiliateMeta,
-    },
+      customer,
+      metadata,
+      discounts,
+    }),
+    client_reference_id: input.scope.tenantId,
+    payment_method_collection: "always",
     subscription_data: {
-      metadata: {
-        ...scopeMeta(input.scope),
-        kind: "saas_plan",
-        planId: input.planId,
-        ...affiliateMeta,
-      },
+      metadata,
     },
   });
 }
@@ -148,11 +166,21 @@ export async function createDomainCheckoutSession(input: {
   stripeCustomerId?: string;
 }): Promise<Stripe.Checkout.Session> {
   const stripe = requireStripe();
-  const customer = await findOrCreateCustomer(input);
+  const customer = await findOrCreateStripeCustomer(input);
+  const metadata = {
+    ...scopeMeta(input.scope),
+    kind: "domain",
+    domain: input.domain,
+    tld: input.tld,
+    orderId: input.orderId,
+    autoRenew: String(input.autoRenew),
+    buildJobId: input.buildJobId ?? "",
+    priceAnnual: String(input.priceAnnual),
+    currency: input.currency,
+  };
 
   return stripe.checkout.sessions.create({
     mode: "payment",
-    customer,
     line_items: [
       {
         quantity: 1,
@@ -166,20 +194,14 @@ export async function createDomainCheckoutSession(input: {
         },
       },
     ],
-    success_url: successUrl("domain"),
-    cancel_url: cancelUrl("domain"),
+    ...checkoutBaseParams({ kind: "domain", customer, metadata }),
     client_reference_id: input.orderId,
-    metadata: {
-      ...scopeMeta(input.scope),
-      kind: "domain",
-      domain: input.domain,
-      tld: input.tld,
-      orderId: input.orderId,
-      autoRenew: String(input.autoRenew),
-      buildJobId: input.buildJobId ?? "",
-      priceAnnual: String(input.priceAnnual),
-      currency: input.currency,
+    invoice_creation: { enabled: true },
+    payment_intent_data: {
+      metadata,
+      ...(input.email ? { receipt_email: input.email } : {}),
     },
+    submit_type: "pay",
   });
 }
 
@@ -196,7 +218,7 @@ export async function createHostingCheckoutSession(input: {
   if (!plan) throw new Error(`Unknown hosting plan: ${input.hostingPlanId}`);
 
   const stripe = requireStripe();
-  const customer = await findOrCreateCustomer(input);
+  const customer = await findOrCreateStripeCustomer(input);
   const priceId = hostingPriceId(input.hostingPlanId);
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = priceId
@@ -216,29 +238,23 @@ export async function createHostingCheckoutSession(input: {
         },
       ];
 
+  const metadata = {
+    ...scopeMeta(input.scope),
+    kind: "hosting",
+    hostingPlanId: input.hostingPlanId,
+    instanceType: plan.instanceType,
+    buildJobId: input.buildJobId ?? "",
+    domain: input.domain ?? "",
+  };
+
   return stripe.checkout.sessions.create({
     mode: "subscription",
-    customer,
     line_items: lineItems,
-    success_url: successUrl("hosting"),
-    cancel_url: cancelUrl("hosting"),
+    ...checkoutBaseParams({ kind: "hosting", customer, metadata }),
     client_reference_id: input.buildJobId ?? input.scope.tenantId,
-    metadata: {
-      ...scopeMeta(input.scope),
-      kind: "hosting",
-      hostingPlanId: input.hostingPlanId,
-      instanceType: plan.instanceType,
-      buildJobId: input.buildJobId ?? "",
-      domain: input.domain ?? "",
-    },
+    payment_method_collection: "always",
     subscription_data: {
-      metadata: {
-        ...scopeMeta(input.scope),
-        kind: "hosting",
-        hostingPlanId: input.hostingPlanId,
-        instanceType: plan.instanceType,
-        buildJobId: input.buildJobId ?? "",
-      },
+      metadata,
     },
   });
 }
@@ -295,10 +311,40 @@ export async function createBillingPortalSession(input: {
   stripeCustomerId: string;
 }): Promise<Stripe.BillingPortal.Session> {
   const stripe = requireStripe();
-  return stripe.billingPortal.sessions.create({
-    customer: input.stripeCustomerId,
-    return_url: `${getAppBaseUrl()}/billing`,
-  });
+  const returnUrl = `${getAppBaseUrl()}/billing`;
+  try {
+    return await stripe.billingPortal.sessions.create({
+      customer: input.stripeCustomerId,
+      return_url: returnUrl,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (!/configuration/i.test(message) && !/no configuration/i.test(message)) {
+      throw error;
+    }
+    const configuration = await stripe.billingPortal.configurations.create({
+      business_profile: {
+        headline: "Aarvanta OS billing",
+      },
+      features: {
+        invoice_history: { enabled: true },
+        payment_method_update: { enabled: true },
+        customer_update: {
+          enabled: true,
+          allowed_updates: ["email", "address", "name", "phone"],
+        },
+        subscription_cancel: {
+          enabled: true,
+          mode: "at_period_end",
+        },
+      },
+    });
+    return stripe.billingPortal.sessions.create({
+      customer: input.stripeCustomerId,
+      return_url: returnUrl,
+      configuration: configuration.id,
+    });
+  }
 }
 
 export function listPublicSaasPlans() {

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BillingPlan, Subscription } from "@/types/platform-modules";
 import type { EntitlementsClient } from "@/lib/billing/entitlements";
 import type { PlanLimits, PublicPlanId } from "@/lib/billing/plan-catalog";
+import type { BillingInvoiceView, StripePaymentRecord } from "@/types/stripe-billing";
 
 type MeterRow = {
   key: string;
@@ -32,6 +33,17 @@ type CatalogCard = {
 
 function formatLimit(value: number | "unlimited"): string {
   return value === "unlimited" ? "Unlimited" : value.toLocaleString();
+}
+
+function formatMoney(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
 }
 
 function UsageBar({ percent }: { percent: number | null }) {
@@ -63,6 +75,13 @@ export function BillingClient({
   meters,
   period,
   stripeConfigured,
+  stripeMode,
+  canManageBilling,
+  invoices,
+  payments,
+  checkoutResult,
+  checkoutSessionId,
+  pastDue,
 }: {
   plans: BillingPlan[];
   catalog: CatalogCard[];
@@ -71,11 +90,63 @@ export function BillingClient({
   meters: MeterRow[];
   period: string;
   stripeConfigured: boolean;
+  stripeMode: "test" | "live" | null;
+  canManageBilling: boolean;
+  invoices: BillingInvoiceView[];
+  payments: StripePaymentRecord[];
+  checkoutResult?: "success" | "canceled" | null;
+  checkoutSessionId?: string | null;
+  pastDue?: boolean;
 }) {
   const router = useRouter();
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const syncedRef = useRef(false);
+
+  useEffect(() => {
+    if (checkoutResult === "canceled") {
+      setInfo("Checkout was canceled. No charge was made.");
+    }
+  }, [checkoutResult]);
+
+  useEffect(() => {
+    if (checkoutResult !== "success" || !checkoutSessionId || syncedRef.current) return;
+    if (!canManageBilling || !stripeConfigured) {
+      setInfo("Payment received. Refreshing your plan…");
+      router.refresh();
+      return;
+    }
+    syncedRef.current = true;
+    setInfo("Confirming payment with Stripe…");
+    void (async () => {
+      try {
+        const res = await fetch("/api/billing/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: checkoutSessionId }),
+        });
+        const data = (await res.json()) as {
+          status?: string;
+          error?: { message?: string };
+        };
+        if (!res.ok) {
+          setError(data.error?.message ?? "Could not confirm payment yet. Webhook will retry.");
+          return;
+        }
+        if (data.status === "paid") {
+          setInfo("Payment confirmed. Your plan is active.");
+        } else if (data.status === "pending") {
+          setInfo("Payment is still processing. This page will update when Stripe confirms.");
+        } else {
+          setInfo("Checkout did not complete.");
+        }
+        router.refresh();
+      } catch {
+        setError("Could not confirm payment yet. If the charge succeeded, wait a few seconds and refresh.");
+      }
+    })();
+  }, [canManageBilling, checkoutResult, checkoutSessionId, router, stripeConfigured]);
 
   async function startCheckout(planId: string) {
     if (planId === "free" || planId === "enterprise") {
@@ -140,6 +211,12 @@ export function BillingClient({
 
   return (
     <div className="space-y-8">
+      {pastDue ? (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          Payment failed. Update your card in Manage billing to keep this plan.
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-foreground">
@@ -158,7 +235,9 @@ export function BillingClient({
           <p className="mt-1 text-xs text-muted">
             Payments via Stripe ·{" "}
             {stripeConfigured ? (
-              <span className="text-foreground">Live keys detected</span>
+              <span className="text-foreground">
+                {stripeMode === "live" ? "Live" : "Test"} mode
+              </span>
             ) : (
               <span className="text-dim">Demo mode (local plan activation)</span>
             )}
@@ -171,9 +250,11 @@ export function BillingClient({
           >
             Start referrals
           </Link>
-          <Button type="button" variant="secondary" onClick={() => void openPortal()}>
-            Manage billing
-          </Button>
+          {canManageBilling ? (
+            <Button type="button" variant="secondary" onClick={() => void openPortal()}>
+              Manage billing
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -277,15 +358,21 @@ export function BillingClient({
                     <Button
                       type="button"
                       onClick={() => void startCheckout(plan.id)}
-                      disabled={busyPlan === plan.id || isCurrent}
+                      disabled={
+                        busyPlan === plan.id ||
+                        isCurrent ||
+                        !canManageBilling
+                      }
                     >
                       {busyPlan === plan.id
                         ? "Working…"
                         : isCurrent
                           ? "Current plan"
-                          : stripeConfigured
-                            ? "Subscribe"
-                            : "Activate (demo)"}
+                          : !canManageBilling
+                            ? "Owner/admin only"
+                            : stripeConfigured
+                              ? "Subscribe"
+                              : "Activate (demo)"}
                     </Button>
                   )}
                 </div>
@@ -296,7 +383,53 @@ export function BillingClient({
         <p className="mt-3 text-[11px] text-dim">
           Annual billing saves 2 months on paid plans. Stripe catalog has{" "}
           {plans.length} paid SKUs; Free is the default with no subscription row.
+          {stripeConfigured
+            ? " Card, wallets, and invoices run through Stripe Checkout and the Customer Portal."
+            : " Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to take live payments."}
         </p>
+      </section>
+
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Invoices</h3>
+        <ul className="space-y-2">
+          {invoices.length === 0 ? (
+            <li className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-muted">
+              {stripeConfigured
+                ? "No Stripe invoices yet."
+                : "Invoices appear here after Stripe is connected."}
+            </li>
+          ) : (
+            invoices.map((invoice) => (
+              <li
+                key={invoice.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface-muted p-3"
+              >
+                <div>
+                  <p className="text-sm text-foreground">
+                    {invoice.number ?? invoice.id} · {invoice.status}
+                  </p>
+                  <p className="mt-1 text-[11px] text-dim">
+                    {formatMoney(
+                      invoice.paid ? invoice.amountPaid : invoice.amountDue,
+                      invoice.currency
+                    )}{" "}
+                    · {new Date(invoice.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                {invoice.hostedInvoiceUrl ? (
+                  <a
+                    href={invoice.hostedInvoiceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-medium text-gold hover:underline"
+                  >
+                    View invoice
+                  </a>
+                ) : null}
+              </li>
+            ))
+          )}
+        </ul>
       </section>
 
       <section>
@@ -331,6 +464,25 @@ export function BillingClient({
           )}
         </ul>
       </section>
+
+      {payments.length > 0 ? (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">
+            Recent checkout
+          </h3>
+          <ul className="space-y-2">
+            {payments.slice(0, 8).map((payment) => (
+              <li
+                key={payment.id}
+                className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-muted"
+              >
+                {payment.description} · {payment.status} ·{" "}
+                {formatMoney(payment.amount, payment.currency)}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

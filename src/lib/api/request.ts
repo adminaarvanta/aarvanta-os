@@ -19,6 +19,18 @@ export function unauthorized() {
   return apiError("UNAUTHORIZED", "Authentication required", 401);
 }
 
+export function forbidden() {
+  return apiError("FORBIDDEN", "You do not have permission to do that", 403);
+}
+
+/** Map session/permission throws from `getSessionContext` / `requirePermission`. */
+export function authErrorResponse(error: unknown): NextResponse | null {
+  const message = error instanceof Error ? error.message : "";
+  if (message === "Unauthorized") return unauthorized();
+  if (message === "Forbidden") return forbidden();
+  return null;
+}
+
 export function planEntitlementResponse(error: {
   code: string;
   message: string;

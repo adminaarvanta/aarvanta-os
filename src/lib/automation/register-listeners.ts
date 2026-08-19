@@ -1,3 +1,4 @@
+import { scheduleBrainEvent } from "@/lib/ai-team/brain";
 import { onDomainEvent } from "@/lib/events/publish";
 import { scheduleProcessHrCase } from "@/lib/hr/process-case";
 import { handleCrmWorkflowEvent } from "@/lib/workflow/trigger-from-events";
@@ -34,6 +35,17 @@ export function registerAutomationListeners(): void {
     "deal.lost",
   ] as const) {
     onDomainEvent(type, (event) => handleCrmWorkflowEvent(event));
+  }
+
+  // CRM ↔ AI Team brain (automatic loop; human-assigned work is left alone)
+  for (const type of [
+    "task.created",
+    "contact.created",
+    "contact.updated",
+    "deal.created",
+    "workforce.execution_completed",
+  ] as const) {
+    onDomainEvent(type, (event) => scheduleBrainEvent(event));
   }
 }
 

@@ -67,6 +67,8 @@ export async function POST(req: Request) {
       title: deal.title,
       value: deal.value,
       pipelineId: deal.pipelineId,
+      contactId: deal.contactId,
+      accountId: deal.accountId,
       ...(approval.required
         ? { approvalRequired: approval.reason, approvalRole: approval.role }
         : {}),

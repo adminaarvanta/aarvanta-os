@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import { authErrorResponse, parseJsonBody } from "@/lib/api/request";
 import {
   recordCommissionForPaidInvoice,
   resolveCheckoutDiscount,
@@ -11,7 +11,8 @@ import { isDemoMode } from "@/lib/config/app-mode";
 import { createSaasCheckoutSession } from "@/lib/stripe/checkout";
 import { getSaasPlan } from "@/lib/stripe/catalog";
 import { isStripeConfigured } from "@/lib/stripe/config";
-import { getSessionContext } from "@/lib/tenant/context";
+import { resolveStoredStripeCustomerId } from "@/lib/stripe/customer";
+import { requirePermission } from "@/lib/tenant/context";
 import type { BillingPlanId } from "@/types/platform-modules";
 
 const schema = z.object({
@@ -21,9 +22,12 @@ const schema = z.object({
 export async function POST(req: Request) {
   let session;
   try {
-    session = await getSessionContext();
-  } catch {
-    return unauthorized();
+    session = await requirePermission("org:billing");
+  } catch (error) {
+    return authErrorResponse(error) ?? NextResponse.json(
+      { error: { code: "CHECKOUT_ERROR", message: "Checkout failed" } },
+      { status: 500 }
+    );
   }
 
   const body = await parseJsonBody<unknown>(req);
@@ -33,6 +37,18 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json(
       { error: { code: "VALIDATION", message: parsed.error.message } },
+      { status: 400 }
+    );
+  }
+
+  if (parsed.data.planId === "enterprise") {
+    return NextResponse.json(
+      {
+        error: {
+          code: "ENTERPRISE_SALES",
+          message: "Enterprise is quoted by sales — use Contact us.",
+        },
+      },
       { status: 400 }
     );
   }
@@ -96,6 +112,7 @@ export async function POST(req: Request) {
     planId: parsed.data.planId,
     email: session.email,
     name: session.name,
+    stripeCustomerId: await resolveStoredStripeCustomerId(session.scope),
     discountPercent: offer?.discountPercent,
     affiliateId: offer?.affiliateId,
     referralCode: offer?.referralCode,

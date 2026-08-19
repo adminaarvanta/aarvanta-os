@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
+import { CrmLoopPanel } from "@/components/crm/crm-loop-panel";
 import {
   CrmAvatar,
   CrmShell,
@@ -16,6 +17,7 @@ import {
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { TaskList } from "@/components/crm/task-list";
 import { StatTile } from "@/components/ui/os/stat-tile";
+import { getBrainLoopSnapshot } from "@/lib/ai-team/brain";
 import { buildCrmBriefing } from "@/lib/crm/briefing";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { activeMemberOptions } from "@/lib/crm/members";
@@ -27,7 +29,7 @@ export default async function CrmOverviewPage() {
   const scope = await getTenantScope();
   const repo = getCrmRepository();
 
-  const [contacts, companies, deals, tasks, pipelines, members] =
+  const [contacts, companies, deals, tasks, pipelines, members, loop] =
     await Promise.all([
       repo.listContacts(scope),
       repo.listCompanies(scope),
@@ -35,6 +37,7 @@ export default async function CrmOverviewPage() {
       repo.listTasks(scope),
       repo.listPipelines(scope),
       getTenantRepository().listMembers(scope),
+      getBrainLoopSnapshot(scope),
     ]);
 
   const memberOptions = activeMemberOptions(members);
@@ -101,6 +104,8 @@ export default async function CrmOverviewPage() {
           </div>
         </div>
       </section>
+
+      <CrmLoopPanel snapshot={loop} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile

@@ -325,7 +325,13 @@ async function finalizeExecution(input: {
     entityType: "workforce_execution",
     entityId: execution.id,
     source: "ai",
-    payload: { reportId: report.id, outcome: input.goal.expectedOutcome },
+    payload: {
+      reportId: report.id,
+      outcome: input.goal.expectedOutcome,
+      relatedContactId: input.goal.relatedContactId,
+      relatedDealId: input.goal.relatedDealId,
+      crmTaskId: execution.crmTaskId,
+    },
   });
 
   return execution;

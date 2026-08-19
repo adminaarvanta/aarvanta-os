@@ -10,7 +10,7 @@ export type AiTeamModule =
 /** Client-safe prompt chips — keep this file free of server/data imports. */
 export const ASK_AI_SUGGESTIONS: Record<AiTeamModule, string[]> = {
   crm: [
-    "Summarize this customer",
+    "What needs my attention?",
     "Prepare follow-up",
     "Create a proposal",
   ],

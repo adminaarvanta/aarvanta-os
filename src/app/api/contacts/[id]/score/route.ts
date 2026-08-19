@@ -54,5 +54,17 @@ export async function POST(
     scope
   );
 
+  const { publishDomainEvent } = await import("@/lib/events/publish");
+  const { aiAgentActor } = await import("@/lib/identity/from-session");
+  await publishDomainEvent({
+    scope,
+    type: "contact.updated",
+    actor: aiAgentActor("sales_manager", "AI Sales Manager"),
+    entityType: "contact",
+    entityId: id,
+    source: "ai",
+    payload: { leadScore: score, reason },
+  });
+
   return NextResponse.json({ contact: updated, score, reason });
 }

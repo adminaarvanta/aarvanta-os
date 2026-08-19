@@ -143,6 +143,44 @@ export function BuildOsClient({
     "assistant"
   );
   const [sharePath, setSharePath] = useState<string | null>(null);
+  const checkoutSyncedRef = useRef(false);
+
+  useEffect(() => {
+    const checkout = searchParams.get("checkout");
+    const sessionId = searchParams.get("session_id");
+    if (checkout === "canceled") {
+      setStatusMessage("Checkout canceled. No charge was made.");
+      return;
+    }
+    if (checkout !== "success" || !sessionId || checkoutSyncedRef.current) return;
+    checkoutSyncedRef.current = true;
+    setStatusMessage("Confirming payment with Stripe…");
+    void (async () => {
+      try {
+        const res = await fetch("/api/billing/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        const data = (await res.json()) as {
+          status?: string;
+          error?: { message?: string };
+        };
+        if (!res.ok) {
+          setError(data.error?.message ?? "Could not confirm payment yet.");
+          return;
+        }
+        setStatusMessage(
+          data.status === "paid"
+            ? "Payment confirmed."
+            : "Payment is still processing."
+        );
+        router.refresh();
+      } catch {
+        setError("Could not confirm payment yet. Refresh in a few seconds.");
+      }
+    })();
+  }, [router, searchParams]);
 
   useEffect(() => {
     jobRef.current = job;

@@ -49,3 +49,16 @@ export type StripePaymentRecord = TenantScope & {
   updatedAt: string;
   paidAt?: string;
 };
+
+export type BillingInvoiceView = {
+  id: string;
+  number: string | null;
+  status: string;
+  amountPaid: number;
+  amountDue: number;
+  currency: string;
+  createdAt: string;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
+  paid: boolean;
+};

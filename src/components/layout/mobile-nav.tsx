@@ -59,6 +59,7 @@ export function MobileNav({ production }: { production: boolean }) {
             const Icon = item.icon;
             const locked = isNavHrefLocked(plan, item.href);
             const active = !locked && isMobileActive(pathname, item.href);
+            const isAiTeam = item.href === "/workforce";
             const href = locked
               ? `/billing?upgrade=${item.href.replace(/^\//, "")}`
               : item.href;
@@ -71,7 +72,15 @@ export function MobileNav({ production }: { production: boolean }) {
                 title={locked ? `${item.label} — upgrade to unlock` : item.label}
                 className={cn(
                   "relative flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium leading-none transition-colors",
-                  locked ? "text-muted" : active ? "text-primary" : "text-muted"
+                  locked
+                    ? "text-muted"
+                    : isAiTeam && active
+                      ? "text-accent-cyan"
+                      : isAiTeam
+                        ? "text-accent-cyan/80"
+                        : active
+                          ? "text-primary"
+                          : "text-muted"
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" aria-hidden />

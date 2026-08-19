@@ -49,7 +49,7 @@ export async function runPostQualificationAutomation(
     scope
   );
 
-  await crm.createTask(
+  const nurtureTask = await crm.createTask(
     {
       title: `Send nurture email: ${name}`,
       description:
@@ -61,6 +61,18 @@ export async function runPostQualificationAutomation(
     },
     scope
   );
+
+  const { publishDomainEvent } = await import("@/lib/events/publish");
+  const { aiAgentActor } = await import("@/lib/identity/from-session");
+  await publishDomainEvent({
+    scope,
+    type: "task.created",
+    actor: aiAgentActor("marketing_manager", "AI Marketing Manager"),
+    entityType: "task",
+    entityId: nurtureTask.id,
+    source: "ai",
+    payload: { assignedAgentType: "marketing_manager", source: "post_qualification" },
+  });
 
   return { marketingSummary: marketingRun.summary };
 }

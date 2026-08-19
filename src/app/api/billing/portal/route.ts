@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { unauthorized } from "@/lib/api/request";
-import { getBillingStore } from "@/lib/data/platform-store";
+import { authErrorResponse } from "@/lib/api/request";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { createBillingPortalSession } from "@/lib/stripe/checkout";
 import { isStripeConfigured } from "@/lib/stripe/config";
-import { getSessionContext } from "@/lib/tenant/context";
+import { resolveStoredStripeCustomerId } from "@/lib/stripe/customer";
+import { requirePermission } from "@/lib/tenant/context";
 
 export async function POST() {
   let session;
   try {
-    session = await getSessionContext();
-  } catch {
-    return unauthorized();
+    session = await requirePermission("org:billing");
+  } catch (error) {
+    return authErrorResponse(error) ?? NextResponse.json(
+      { error: { code: "PORTAL_ERROR", message: "Could not open billing portal" } },
+      { status: 500 }
+    );
   }
 
   if (!isStripeConfigured()) {
@@ -32,8 +35,7 @@ export async function POST() {
     );
   }
 
-  const subscriptions = await getBillingStore().list(session.scope);
-  const customerId = subscriptions.find((s) => s.stripeCustomerId)?.stripeCustomerId;
+  const customerId = await resolveStoredStripeCustomerId(session.scope);
   if (!customerId) {
     return NextResponse.json(
       {

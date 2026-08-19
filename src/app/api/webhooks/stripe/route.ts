@@ -4,7 +4,11 @@ import { getStripeWebhookStore } from "@/lib/data/stripe-payment-store";
 import { requireStripe } from "@/lib/stripe/client";
 import { getStripeWebhookSecret, isStripeConfigured } from "@/lib/stripe/config";
 import {
+  handleCheckoutPaymentFailed,
   handleCheckoutSessionCompleted,
+  handleCheckoutSessionExpired,
+  handleInvoicePaid,
+  handleInvoicePaymentFailed,
   handleSubscriptionUpdated,
 } from "@/lib/stripe/webhook-handlers";
 import type Stripe from "stripe";
@@ -61,7 +65,18 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded":
         await handleCheckoutSessionCompleted(
+          event.data.object as Stripe.Checkout.Session
+        );
+        break;
+      case "checkout.session.async_payment_failed":
+        await handleCheckoutPaymentFailed(
+          event.data.object as Stripe.Checkout.Session
+        );
+        break;
+      case "checkout.session.expired":
+        await handleCheckoutSessionExpired(
           event.data.object as Stripe.Checkout.Session
         );
         break;
@@ -69,6 +84,12 @@ export async function POST(req: Request) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
         await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        break;
+      case "invoice.paid":
+        await handleInvoicePaid(event.data.object as Stripe.Invoice);
+        break;
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
         break;
       default:
         break;

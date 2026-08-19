@@ -128,9 +128,8 @@ export function CreateTaskForm({
       </div>
       {assignedAgentType && (
         <p className="text-xs text-muted">
-          Assigned to an AI agent — open Workforce → Tasks and click{" "}
-          <span className="text-foreground">Complete with agent</span>, or use
-          Process open tasks.
+          Assigned to an AI specialist — the AI Team brain will pick this up
+          automatically. You can still run it yourself from Activity.
         </p>
       )}
       <Button type="submit" size="sm" disabled={busy}>

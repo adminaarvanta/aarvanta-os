@@ -7,18 +7,38 @@ import {
   toClientEntitlements,
 } from "@/lib/billing/entitlements";
 import { getBillingStore } from "@/lib/data/platform-store";
+import { getStripePaymentStore } from "@/lib/data/stripe-payment-store";
 import { apiError } from "@/lib/api/request";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getStripeRuntimeStatus, isStripeConfigured } from "@/lib/stripe/config";
+import { resolveStoredStripeCustomerId } from "@/lib/stripe/customer";
+import { listCustomerInvoices } from "@/lib/stripe/webhook-handlers";
+import { getSessionContext } from "@/lib/tenant/context";
+import { can } from "@/lib/tenant/permissions";
 
 export async function GET() {
   try {
-    const scope = await getTenantScope();
+    const ctx = await getSessionContext();
+    const scope = ctx.scope;
     const store = getBillingStore();
     const entitlements = await resolveEntitlements(scope);
-    const [plans, subscriptions] = await Promise.all([
+    const [plans, subscriptions, payments] = await Promise.all([
       store.listPlans(),
       store.list(scope),
+      getStripePaymentStore().list(scope),
     ]);
+
+    const stripeStatus = getStripeRuntimeStatus();
+    let invoices: Awaited<ReturnType<typeof listCustomerInvoices>> = [];
+    if (isStripeConfigured()) {
+      const customerId = await resolveStoredStripeCustomerId(scope);
+      if (customerId) {
+        try {
+          invoices = await listCustomerInvoices(customerId);
+        } catch (error) {
+          console.warn("[billing] invoice list failed", error);
+        }
+      }
+    }
 
     const meters = [
       {
@@ -73,6 +93,13 @@ export async function GET() {
       entitlements: toClientEntitlements(entitlements),
       meters,
       period: entitlements.period,
+      payments: payments
+        .slice()
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, 20),
+      invoices,
+      canManageBilling: can(ctx.role, "org:billing"),
+      stripe: stripeStatus,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Load failed";

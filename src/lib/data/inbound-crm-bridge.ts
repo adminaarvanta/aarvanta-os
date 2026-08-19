@@ -5,6 +5,8 @@ import {
 } from "@/lib/ai/qualification";
 import { normalizeEmail, normalizePhone } from "@/lib/data/conversation-helpers";
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { publishDomainEvent } from "@/lib/events/publish";
+import { aiAgentActor } from "@/lib/identity/from-session";
 import type { Conversation, TenantScope } from "@/types/communication";
 import type { CrmContact } from "@/types/crm";
 import { contactDisplayName } from "@/types/crm";
@@ -172,16 +174,36 @@ export async function qualifyAndCreateCrmLead(
       scope
     );
 
-    await crm.createTask(
+    const followUp = await crm.createTask(
       {
         title: `Follow up: ${contactDisplayName(contact)}`,
         description: conversation.aiSummary ?? preview,
         contactId: contact.id,
         priority: "high",
         source: "ai",
+        assignedAgentType: "sales_manager",
       },
       scope
     );
+
+    await publishDomainEvent({
+      scope,
+      type: "contact.created",
+      actor: aiAgentActor("sales_manager", "AI Sales Manager"),
+      entityType: "contact",
+      entityId: contact.id,
+      source: "ai",
+      payload: { source: "inbound_qualification" },
+    });
+    await publishDomainEvent({
+      scope,
+      type: "task.created",
+      actor: aiAgentActor("sales_manager", "AI Sales Manager"),
+      entityType: "task",
+      entityId: followUp.id,
+      source: "ai",
+      payload: { assignedAgentType: "sales_manager", source: "inbound_qualification" },
+    });
   } catch (error) {
     console.error(
       `[inbound-crm-bridge:qualify] conversation=${conversation.id}`,

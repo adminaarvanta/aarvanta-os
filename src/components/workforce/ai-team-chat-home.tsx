@@ -115,7 +115,9 @@ export function AiTeamChatHome({
           What should your AI Team do?
         </h2>
         <p className="mt-2 text-sm" style={{ color: "var(--wf-muted)" }}>
-          Describe an outcome — we’ll show a plan before starting a job.
+          Describe an outcome — we’ll show a plan before starting a job. CRM
+          still works on its own; the brain also picks up new people, hot leads,
+          and AI-assigned tasks automatically.
         </p>
       </div>
 

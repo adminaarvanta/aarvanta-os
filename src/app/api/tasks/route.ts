@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     type: "task.created",
     entityType: "task",
     entityId: task.id,
-    payload: { title: task.title, status: task.status },
+    payload: { title: task.title, status: task.status, assignedAgentType: task.assignedAgentType },
   });
 
   return NextResponse.json({ task }, { status: 201 });
