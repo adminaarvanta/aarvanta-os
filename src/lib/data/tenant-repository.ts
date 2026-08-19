@@ -68,6 +68,8 @@ export interface TenantRepository {
   acceptInvitation(token: string): Promise<Invitation | null>;
 
   listMembershipsForUser(userId: string): Promise<WorkspaceMember[]>;
+  /** Active memberships for an email across all organizations (self-serve signup). */
+  listMembershipsForEmail(email: string): Promise<WorkspaceMember[]>;
   createMember(
     input: CreateMemberInput,
     scope: TenantScope

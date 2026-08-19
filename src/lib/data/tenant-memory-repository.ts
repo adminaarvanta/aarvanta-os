@@ -211,6 +211,13 @@ export const tenantMemoryRepository: TenantRepository = {
     return members.filter((m) => m.userId === userId && m.status === "active");
   },
 
+  async listMembershipsForEmail(email) {
+    const key = email.trim().toLowerCase();
+    return members.filter(
+      (m) => m.status === "active" && m.email.trim().toLowerCase() === key
+    );
+  },
+
   async createMember(input, scope) {
     const existing = members.find(
       (m) =>

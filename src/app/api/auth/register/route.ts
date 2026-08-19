@@ -10,7 +10,7 @@ import {
   getSessionCookieOptions,
   SESSION_COOKIE,
 } from "@/lib/auth/session";
-import { getUserCredentials } from "@/lib/auth/user-credentials";
+import { hasUserPassword } from "@/lib/auth/user-credentials";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { ensureDatastoreReady } from "@/lib/data/datastore";
 
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     }
 
     const email = parsed.data.email.trim().toLowerCase();
-    if (await getUserCredentials(email)) {
+    if (await hasUserPassword(email)) {
       return apiError(
         "EMAIL_EXISTS",
         "An account with this email already exists. Please sign in.",

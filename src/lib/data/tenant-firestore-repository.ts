@@ -269,6 +269,17 @@ export const tenantFirestoreRepository: TenantRepository = {
       .filter((m) => m.status === "active");
   },
 
+  async listMembershipsForEmail(email) {
+    const key = email.trim().toLowerCase();
+    const snap = await getDb()
+      .collection(MEMBERS)
+      .where("email", "==", key)
+      .get();
+    return snap.docs
+      .map((doc) => doc.data() as WorkspaceMember)
+      .filter((m) => m.status === "active");
+  },
+
   async createMember(input, scope) {
     const existing = await this.getMemberByUser(input.userId, scope);
     if (existing) return existing;

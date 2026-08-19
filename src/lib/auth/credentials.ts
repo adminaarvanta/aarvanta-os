@@ -1,5 +1,6 @@
 import type { SessionPayload } from "@/lib/auth/session";
 import { verifyUserPassword } from "@/lib/auth/user-credentials";
+import { ensureFreeTierMembership } from "@/lib/auth/provision-free-account";
 import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import type { WorkspaceMember } from "@/types/tenant";
@@ -58,38 +59,57 @@ function sessionFromMembership(
   };
 }
 
+function pickMembership(
+  memberships: WorkspaceMember[],
+  email: string,
+  userId: string
+): WorkspaceMember | null {
+  const key = email.trim().toLowerCase();
+  const preferredWorkspace = process.env.WORKSPACE_ID?.trim();
+  const matches = memberships.filter(
+    (m) =>
+      m.status === "active" &&
+      (m.email.trim().toLowerCase() === key || m.userId === userId)
+  );
+  if (matches.length === 0) return null;
+
+  return (
+    (preferredWorkspace
+      ? matches.find((m) => m.workspaceId === preferredWorkspace)
+      : undefined) ??
+    matches.find((m) => m.email.trim().toLowerCase() === key) ??
+    matches[0] ??
+    null
+  );
+}
+
 async function findActiveMembership(
   userId: string,
   email: string
 ): Promise<WorkspaceMember | null> {
   const repo = getTenantRepository();
-  const byUser = await repo.listMembershipsForUser(userId);
-  const preferredWorkspace = process.env.WORKSPACE_ID?.trim();
-  const fromUser =
-    (preferredWorkspace
-      ? byUser.find((m) => m.workspaceId === preferredWorkspace)
-      : undefined) ??
-    byUser[0] ??
-    null;
+  const normalized = email.trim().toLowerCase();
+
+  const fromUser = pickMembership(
+    await repo.listMembershipsForUser(userId),
+    normalized,
+    userId
+  );
   if (fromUser) return fromUser;
 
-  // Fallback: memberships keyed by email (handles legacy casing / userId drift).
-  const normalized = email.trim().toLowerCase();
+  // Self-serve signups live in their own org — not only TENANT_ID.
+  const fromEmail = pickMembership(
+    await repo.listMembershipsForEmail(normalized),
+    normalized,
+    userId
+  );
+  if (fromEmail) return fromEmail;
+
+  // Legacy fallback: bootstrap tenant from env.
   const tenantId = process.env.TENANT_ID?.trim();
   if (!tenantId) return null;
   const all = await repo.listMembersByTenant(tenantId);
-  const matches = all.filter(
-    (m) =>
-      m.status === "active" &&
-      (m.email.trim().toLowerCase() === normalized || m.userId === userId)
-  );
-  return (
-    (preferredWorkspace
-      ? matches.find((m) => m.workspaceId === preferredWorkspace)
-      : undefined) ??
-    matches[0] ??
-    null
-  );
+  return pickMembership(all, normalized, userId);
 }
 
 /**
@@ -106,9 +126,23 @@ export async function authenticateUser(
   if (creds) {
     let member = await findActiveMembership(creds.userId, normalized);
 
-    // Repair: password exists but membership was lost (cold-start memory bug).
     if (!member) {
       member = await repairMembershipFromInvitation(creds.userId, normalized);
+    }
+
+    if (!member) {
+      try {
+        member = await ensureFreeTierMembership({
+          email: normalized,
+          userId: creds.userId,
+        });
+      } catch (error) {
+        console.warn(
+          "[auth] Could not repair membership for",
+          normalized,
+          error instanceof Error ? error.message : error
+        );
+      }
     }
 
     if (member) {
