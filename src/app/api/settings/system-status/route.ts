@@ -3,7 +3,10 @@ import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { getAllChannelStatuses } from "@/lib/channels/config";
 import { checkGmailSyncAccess } from "@/lib/channels/gmail-client";
 import { getActiveDatastore } from "@/lib/data/datastore";
-import { getProductionReadiness } from "@/lib/config/production-readiness";
+import {
+  getProductionReadiness,
+  withGmailAuthReadiness,
+} from "@/lib/config/production-readiness";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getSessionContext } from "@/lib/tenant/context";
 
@@ -23,6 +26,6 @@ export async function GET() {
     ai: getAiRuntimeStatus(),
     channels: getAllChannelStatuses(),
     emailSync,
-    readiness: getProductionReadiness(),
+    readiness: withGmailAuthReadiness(getProductionReadiness(), emailSync),
   });
 }

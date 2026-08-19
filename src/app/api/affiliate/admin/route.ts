@@ -13,6 +13,7 @@ import {
   approveMaturedEarnings,
   buildTree,
   resendAffiliateActivation,
+  resendPendingAffiliateActivations,
   scopedAffiliatesForManager,
 } from "@/lib/affiliate/service";
 import { affiliateStore } from "@/lib/data/affiliate-store";
@@ -194,6 +195,9 @@ const patchSchema = z.discriminatedUnion("action", [
     action: z.literal("resend_activation"),
     affiliateId: z.string(),
   }),
+  z.object({
+    action: z.literal("resend_all_activations"),
+  }),
 ]);
 
 export async function PATCH(req: Request) {
@@ -273,6 +277,12 @@ export async function PATCH(req: Request) {
     if (data.action === "resend_activation") {
       const result = await resendAffiliateActivation({
         affiliateId: data.affiliateId,
+        actorEmail: access.email,
+      });
+      return NextResponse.json(result);
+    }
+    if (data.action === "resend_all_activations") {
+      const result = await resendPendingAffiliateActivations({
         actorEmail: access.email,
       });
       return NextResponse.json(result);

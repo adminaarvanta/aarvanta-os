@@ -7,6 +7,13 @@ export interface GmailSendResult {
 
 export type GmailSyncAccess = "ok" | "not_configured" | "error";
 
+/** Canonical mailbox — notifications@aarvanta.co was deleted. */
+export const PLATFORM_MAILBOX = "admin@aarvanta.co";
+
+const RETIRED_MAILBOXES = new Set(["notifications@aarvanta.co"]);
+
+let warnedRetiredMailbox = false;
+
 /** Google app passwords are 16 chars; Vercel/env often keep spaces or wrapping quotes. */
 function sanitizeAppPassword(value: string): string {
   return value
@@ -15,15 +22,30 @@ function sanitizeAppPassword(value: string): string {
     .replace(/\s+/g, "");
 }
 
+export function resolveGmailMailbox(_value?: string | null): string {
+  const configured = process.env.GMAIL_USER?.trim() ?? "";
+  if (
+    configured &&
+    RETIRED_MAILBOXES.has(configured.toLowerCase()) &&
+    !warnedRetiredMailbox
+  ) {
+    warnedRetiredMailbox = true;
+    console.warn(
+      `[gmail] ${configured} is retired; sending as ${PLATFORM_MAILBOX}`
+    );
+  }
+  return PLATFORM_MAILBOX;
+}
+
 export function getGmailCredentials(): {
   user: string;
   appPassword: string;
 } | null {
-  const user = process.env.GMAIL_USER?.trim();
   const raw = process.env.GMAIL_APP_PASSWORD;
   const appPassword = raw ? sanitizeAppPassword(raw) : "";
-  if (!user || !appPassword) return null;
-  return { user, appPassword };
+  if (!appPassword) return null;
+  resolveGmailMailbox();
+  return { user: PLATFORM_MAILBOX, appPassword };
 }
 
 /** Stable reason for UI; full SMTP text stays in server logs. */
@@ -39,34 +61,29 @@ export function describeGmailSendFailure(error: unknown): string {
   return "send_failed";
 }
 
-export function getEmailFromAddress(): string | null {
-  return process.env.EMAIL_FROM?.trim() || process.env.GMAIL_USER?.trim() || null;
+export function getEmailFromAddress(): string {
+  return PLATFORM_MAILBOX;
 }
 
 /** Replies land in the same Gmail inbox and are synced via IMAP. */
 export function getEmailReplyToAddress(): string {
-  return (
-    process.env.EMAIL_REPLY_TO?.trim() ||
-    getEmailFromAddress() ||
-    process.env.GMAIL_USER?.trim() ||
-    ""
-  );
+  return PLATFORM_MAILBOX;
 }
 
 export function isGmailConfigured(): boolean {
-  return Boolean(getGmailCredentials() && getEmailFromAddress());
+  return Boolean(getGmailCredentials());
 }
 
 export function getEmailInboundConfig() {
   const from = getEmailFromAddress();
-  const replyTo = getEmailReplyToAddress() || null;
+  const replyTo = getEmailReplyToAddress();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? null;
 
   return {
     from,
     replyTo,
     syncUrl: appUrl ? `${appUrl}/api/cron/sync-email` : null,
-    mailbox: process.env.GMAIL_USER?.trim() ?? null,
+    mailbox: PLATFORM_MAILBOX,
   };
 }
 
@@ -102,10 +119,9 @@ export async function sendGmailEmail(input: {
   messageId?: string;
 }): Promise<GmailSendResult> {
   const creds = getGmailCredentials();
-  if (!creds) throw new Error("Gmail is not configured (GMAIL_USER + GMAIL_APP_PASSWORD).");
+  if (!creds) throw new Error("Gmail is not configured (GMAIL_APP_PASSWORD for admin@aarvanta.co).");
 
   const from = getEmailFromAddress();
-  if (!from) throw new Error("EMAIL_FROM is not configured.");
 
   const domain = from.split("@")[1] ?? "localhost";
   const messageId = input.messageId ?? `<${crypto.randomUUID()}@${domain}>`;

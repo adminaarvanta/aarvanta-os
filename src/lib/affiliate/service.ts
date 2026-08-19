@@ -911,6 +911,67 @@ export async function resendAffiliateActivation(input: {
   return { affiliate: updated, activation: activation.meta };
 }
 
+export type AffiliateActivationResendRow = {
+  affiliateId: string;
+  email: string;
+  name: string;
+  emailSent: boolean;
+  activationUrl?: string;
+  reason?: string;
+};
+
+/** Resend set-password mail (or mint copyable links) for every partner still awaiting a password. */
+export async function resendPendingAffiliateActivations(input: {
+  actorEmail: string;
+}): Promise<{
+  emailed: number;
+  failed: number;
+  results: AffiliateActivationResendRow[];
+}> {
+  const all = await affiliateStore.listAffiliates();
+  const { hasUserPassword } = await import("@/lib/auth/user-credentials");
+  const results: AffiliateActivationResendRow[] = [];
+
+  for (const affiliate of all) {
+    if (affiliate.status === "rejected" || affiliate.status === "suspended") {
+      continue;
+    }
+    const email = affiliate.profile?.email?.trim().toLowerCase();
+    if (!email) continue;
+    if (await hasUserPassword(email)) continue;
+
+    try {
+      const result = await resendAffiliateActivation({
+        affiliateId: affiliate.id,
+        actorEmail: input.actorEmail,
+      });
+      const activation = result.activation;
+      results.push({
+        affiliateId: affiliate.id,
+        email,
+        name: affiliate.profile.name,
+        emailSent: Boolean(activation?.emailSent),
+        activationUrl: activation?.activationUrl,
+        reason: activation?.reason,
+      });
+    } catch (error) {
+      results.push({
+        affiliateId: affiliate.id,
+        email,
+        name: affiliate.profile.name,
+        emailSent: false,
+        reason: error instanceof Error ? error.message : "resend_failed",
+      });
+    }
+  }
+
+  return {
+    emailed: results.filter((row) => row.emailSent).length,
+    failed: results.filter((row) => !row.emailSent).length,
+    results,
+  };
+}
+
 async function membershipEmailMatches(
   userId: string,
   email: string

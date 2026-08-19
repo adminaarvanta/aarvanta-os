@@ -40,12 +40,14 @@ function AffiliateApplyFormInner() {
   const [channels, setChannels] = useState("");
   const [parentReferralCode, setParentReferralCode] = useState(refFromUrl);
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{
     code: string;
     status: string;
     emailSent?: boolean;
     alreadyHasPassword?: boolean;
+    activationUrl?: string;
   } | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
@@ -71,6 +73,7 @@ function AffiliateApplyFormInner() {
         activation?: {
           needed: boolean;
           emailSent: boolean;
+          activationUrl?: string;
         };
         error?: { message?: string };
       };
@@ -84,6 +87,7 @@ function AffiliateApplyFormInner() {
           status: data.affiliate.status,
           emailSent: data.activation?.emailSent,
           alreadyHasPassword: data.activation?.needed === false,
+          activationUrl: data.activation?.activationUrl,
         });
       }
     } catch {
@@ -104,13 +108,47 @@ function AffiliateApplyFormInner() {
           </code>{" "}
           is active.
         </p>
-        <p className="mt-3 text-muted">
-          {done.alreadyHasPassword
-            ? "You already have an Aarvanta password. Sign in and open your affiliate dashboard."
-            : done.emailSent
-              ? "Check your email for a link to create your password. Then sign in and open your affiliate dashboard."
-              : "Check your email for a link to create your password. If it does not arrive, contact Aarvanta to resend it."}
-        </p>
+        {done.alreadyHasPassword ? (
+          <p className="mt-3 text-muted">
+            You already have an Aarvanta password. Sign in and open your
+            affiliate dashboard.
+          </p>
+        ) : done.emailSent ? (
+          <p className="mt-3 text-muted">
+            Check your email for a link to create your password. Then sign in
+            and open your affiliate dashboard.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            <p className="text-muted">
+              We could not email the set-password link. Use this link to create
+              your password:
+            </p>
+            {done.activationUrl ? (
+              <div className="rounded-lg border border-border bg-surface-muted p-3">
+                <p className="break-all font-mono text-xs text-foreground">
+                  {done.activationUrl}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="mt-2"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(done.activationUrl!);
+                    setCopied(true);
+                  }}
+                >
+                  {copied ? "Copied" : "Copy link"}
+                </Button>
+              </div>
+            ) : (
+              <p className="text-muted">
+                Contact Aarvanta to resend a set-password link.
+              </p>
+            )}
+          </div>
+        )}
         <p className="mt-3 text-xs text-muted">
           After you set a password, sign in and open{" "}
           <span className="text-foreground">/affiliate/dashboard</span>.

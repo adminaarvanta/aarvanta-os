@@ -22,16 +22,7 @@ export interface GmailSyncResult {
 }
 
 function ownMailboxAddresses(): Set<string> {
-  const creds = getGmailCredentials();
-  const addresses = [
-    creds?.user,
-    getEmailFromAddress(),
-    process.env.EMAIL_REPLY_TO,
-  ]
-    .filter(Boolean)
-    .map((email) => normalizeEmail(email!));
-
-  return new Set(addresses);
+  return new Set([normalizeEmail(getEmailFromAddress())]);
 }
 
 function headerValue(value: string | string[] | undefined): string | undefined {
@@ -80,7 +71,7 @@ function parseFromAddress(field: unknown): { email: string; name?: string } {
 export async function syncGmailInbox(): Promise<GmailSyncResult> {
   const creds = getGmailCredentials();
   if (!creds) {
-    throw new Error("Gmail is not configured (GMAIL_USER + GMAIL_APP_PASSWORD).");
+    throw new Error("Gmail is not configured (GMAIL_APP_PASSWORD for admin@aarvanta.co).");
   }
 
   const { ImapFlow } = await import("imapflow");

@@ -14,7 +14,10 @@ import {
   checkGmailSyncAccess,
   getEmailInboundConfig,
 } from "@/lib/channels/gmail-client";
-import { getProductionReadiness } from "@/lib/config/production-readiness";
+import {
+  getProductionReadiness,
+  withGmailAuthReadiness,
+} from "@/lib/config/production-readiness";
 import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { getActiveDatastore, ensureDatastoreReady } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
@@ -38,18 +41,10 @@ export async function GET() {
   const ai = getAiRuntimeStatus();
   const gmailSyncStatus = await checkGmailSyncAccess();
   const emailInbound = { ...getEmailInboundConfig(), gmailSyncStatus };
-  const readiness = getProductionReadiness();
-  if (isProductionMode() && gmailSyncStatus === "error") {
-    readiness.warnings.push(
-      "Gmail login rejected — rotate GMAIL_APP_PASSWORD for GMAIL_USER. Outbound mail and IMAP sync fail until then."
-    );
-    readiness.items.push({
-      id: "gmail_auth",
-      label: "Gmail IMAP/SMTP",
-      status: "error",
-      detail: "Login rejected. Rotate GMAIL_APP_PASSWORD.",
-    });
-  }
+  const readiness = withGmailAuthReadiness(
+    getProductionReadiness(),
+    gmailSyncStatus
+  );
 
   if (!isProductionMode()) {
     return NextResponse.json({

@@ -1,5 +1,5 @@
 import { normalizeEmail } from "@/lib/data/conversation-helpers";
-import { getEmailReplyToAddress } from "@/lib/channels/gmail-client";
+import { getEmailReplyToAddress, PLATFORM_MAILBOX } from "@/lib/channels/gmail-client";
 import type { Conversation, TimelineEmail } from "@/types/communication";
 
 export function normalizeEmailSubject(subject: string): string {
@@ -43,8 +43,9 @@ export function parseMessageIdHeader(
 
 function ownEmailAddresses(): Set<string> {
   const addresses = [
-    process.env.EMAIL_FROM,
     getEmailReplyToAddress(),
+    PLATFORM_MAILBOX,
+    process.env.EMAIL_FROM,
     process.env.GMAIL_USER,
   ]
     .filter(Boolean)

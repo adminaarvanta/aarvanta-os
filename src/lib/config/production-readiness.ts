@@ -1,6 +1,7 @@
 import { getAiRuntimeStatus } from "@/lib/ai/config";
 import { isSsoConfigured } from "@/lib/auth/sso-oidc";
 import { getAllChannelStatuses } from "@/lib/channels/config";
+import type { GmailSyncAccess } from "@/lib/channels/gmail-client";
 import {
   getVoiceRelayWssUrl,
   isVoiceRelayConfigured,
@@ -27,6 +28,37 @@ export type ProductionReadiness = {
 
 function has(value: string | undefined): boolean {
   return Boolean(value?.trim());
+}
+
+/**
+ * channels.email=live only means GMAIL_* env is set.
+ * emailSync is the real mailbox-login check for outbound mail.
+ */
+export function withGmailAuthReadiness(
+  readiness: ProductionReadiness,
+  gmailSyncStatus: GmailSyncAccess
+): ProductionReadiness {
+  if (!isProductionMode() || gmailSyncStatus !== "error") return readiness;
+  if (readiness.items.some((item) => item.id === "gmail_auth")) {
+    return readiness;
+  }
+  return {
+    ...readiness,
+    warnings: [
+      ...readiness.warnings,
+      "Gmail login rejected — set GMAIL_APP_PASSWORD for admin@aarvanta.co. channels.email can stay live (env set) while emailSync=error; outbound mail fails until then.",
+    ],
+    items: [
+      ...readiness.items,
+      {
+        id: "gmail_auth",
+        label: "Gmail IMAP/SMTP",
+        status: "error",
+        detail:
+          "Login rejected. Set GMAIL_APP_PASSWORD for admin@aarvanta.co. Do not treat channels.email=live as mail working.",
+      },
+    ],
+  };
 }
 
 /** Non-secret production checklist for /api/health and settings. */

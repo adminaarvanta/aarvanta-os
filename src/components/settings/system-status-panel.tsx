@@ -128,7 +128,26 @@ export function SystemStatusPanel() {
               <dt className="text-[10px] uppercase tracking-wide text-muted">
                 Gmail sync
               </dt>
-              <dd className="mt-1 text-sm text-foreground">{status.emailSync}</dd>
+              <dd className="mt-1 flex flex-wrap items-center gap-2">
+                <StatusPill
+                  variant={
+                    status.emailSync === "ok"
+                      ? "success"
+                      : status.emailSync === "error"
+                        ? "danger"
+                        : "warning"
+                  }
+                >
+                  {status.emailSync}
+                </StatusPill>
+                <span className="text-sm text-muted">
+                  {status.emailSync === "ok"
+                    ? "Mailbox login works — outbound mail can send."
+                    : status.emailSync === "error"
+                      ? "Mailbox login rejected for admin@aarvanta.co. Set GMAIL_APP_PASSWORD to an App password created on that account."
+                      : "GMAIL_APP_PASSWORD not set for admin@aarvanta.co."}
+                </span>
+              </dd>
             </div>
           </dl>
           <div className="mt-4 border-t border-border-subtle pt-4">
@@ -139,14 +158,25 @@ export function SystemStatusPanel() {
               ).map(([channel, channelStatus]) => (
                 <li
                   key={channel}
-                  className="flex items-center justify-between rounded-lg border border-border-subtle px-3 py-2"
+                  className="rounded-lg border border-border-subtle px-3 py-2"
                 >
-                  <span className="text-sm text-foreground">
-                    {CHANNEL_LABELS[channel]}
-                  </span>
-                  <StatusPill variant={channelVariant(channelStatus)}>
-                    {channelStatus}
-                  </StatusPill>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-foreground">
+                      {CHANNEL_LABELS[channel]}
+                    </span>
+                    <StatusPill variant={channelVariant(channelStatus)}>
+                      {channelStatus}
+                    </StatusPill>
+                  </div>
+                  {channel === "email" &&
+                  channelStatus === "live" &&
+                  status.emailSync === "error" ? (
+                    <p className="mt-1 text-xs text-amber-200/90">
+                      Env is set, but mailbox login failed — set-password and
+                      invite emails will not send until GMAIL_APP_PASSWORD is
+                      rotated.
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>

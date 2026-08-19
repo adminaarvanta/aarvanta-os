@@ -141,10 +141,10 @@ Uses your existing Google Workspace / Gmail mailbox. **No third-party email prov
 2. Create an **App password** (Google Account → Security → App passwords) → `GMAIL_APP_PASSWORD`
 3. Set env vars:
    ```bash
-   GMAIL_USER=support@yourdomain.com
+   GMAIL_USER=admin@aarvanta.co
    GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
    CRON_SECRET=your-long-random-secret
-   EMAIL_FROM=support@yourdomain.com
+   EMAIL_FROM=admin@aarvanta.co
    ```
 4. **Inbound sync** — poll Gmail inbox via IMAP (every few minutes):
    - Cron: `GET /api/cron/sync-email` with header `Authorization: Bearer $CRON_SECRET`

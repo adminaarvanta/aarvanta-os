@@ -32,7 +32,7 @@ type AdminPayload = {
 
 function activationEmailFailureCopy(reason?: string): string {
   if (reason === "gmail_auth_rejected") {
-    return "Set-password email not sent — Gmail rejected the mailbox login. Rotate GMAIL_APP_PASSWORD on Vercel, then resend. Copy the activation link below and share it with the partner.";
+    return "Set-password email not sent — Gmail rejected login as admin@aarvanta.co. Set GMAIL_APP_PASSWORD to an App password created on that account, then resend. Copy the activation link below and share it with the partner.";
   }
   if (reason === "email_not_configured") {
     return "Set-password email not sent (Gmail is not configured). Copy the activation link below and share it with the partner.";
@@ -48,6 +48,9 @@ export function AffiliateAdminClient() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [activationUrl, setActivationUrl] = useState<string | null>(null);
+  const [activationLinks, setActivationLinks] = useState<
+    { email: string; url: string; sent: boolean }[]
+  >([]);
   const [busy, setBusy] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -77,6 +80,7 @@ export function AffiliateAdminClient() {
     setError(null);
     setInfo(null);
     setActivationUrl(null);
+    setActivationLinks([]);
     try {
       const res = await fetch("/api/affiliate/admin", {
         method: "PATCH",
@@ -91,12 +95,41 @@ export function AffiliateAdminClient() {
           activationUrl?: string;
           reason?: string;
         };
+        emailed?: number;
+        failed?: number;
+        results?: {
+          email: string;
+          emailSent: boolean;
+          activationUrl?: string;
+          reason?: string;
+        }[];
       };
       if (!res.ok) {
         setError(json.error?.message ?? "Action failed.");
         return;
       }
-      if (json.activation) {
+      if (json.results) {
+        const links = json.results
+          .filter((row) => row.activationUrl)
+          .map((row) => ({
+            email: row.email,
+            url: row.activationUrl!,
+            sent: row.emailSent,
+          }));
+        setActivationLinks(links);
+        const failReason = json.results.find(
+          (row) => !row.emailSent
+        )?.reason;
+        setInfo(
+          json.emailed
+            ? `Set-password email sent to ${json.emailed} partner${json.emailed === 1 ? "" : "s"}.${
+                json.failed
+                  ? ` ${json.failed} not emailed — copy the links below.`
+                  : ""
+              }`
+            : activationEmailFailureCopy(failReason)
+        );
+      } else if (json.activation) {
         const a = json.activation;
         if (!a.needed) {
           setInfo(
@@ -129,11 +162,9 @@ export function AffiliateAdminClient() {
 
   const isPlatform = data.access === "platform";
   const pending = data.affiliates.filter((a) => a.status === "pending");
-  const openPayouts = data.payouts.filter(
-    (p) => p.status === "requested" || p.status === "approved"
-  );
   const selected =
     data.affiliates.find((a) => a.id === selectedId) ?? null;
+  const awaitingPassword = data.affiliates.filter((a) => a.needsPasswordSetup);
 
   return (
     <div className="space-y-8">
@@ -141,7 +172,7 @@ export function AffiliateAdminClient() {
         items={[
           { label: "Affiliates", value: data.affiliates.length },
           { label: "Pending", value: pending.length },
-          { label: "Open payouts", value: openPayouts.length },
+          { label: "Awaiting password", value: awaitingPassword.length },
           {
             label: "Earnings",
             value: data.earnings.filter((e) => e.status === "pending").length,
@@ -165,10 +196,36 @@ export function AffiliateAdminClient() {
         </p>
       ) : null}
       {info ? (
-        <p className="text-sm text-success" role="status">
+        <p
+          className={`text-sm ${
+            /not sent|not emailed/i.test(info)
+              ? "text-amber-200"
+              : "text-success"
+          }`}
+          role="status"
+        >
           {info}
         </p>
       ) : null}
+      {isPlatform && awaitingPassword.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            type="button"
+            onClick={() => void patch({ action: "resend_all_activations" })}
+          >
+            Resend all set-password emails
+          </Button>
+          <p className="text-xs text-muted">
+            {awaitingPassword.length} partner
+            {awaitingPassword.length === 1 ? "" : "s"} still need a password.
+            If Gmail is down, copy the links after resend.
+          </p>
+        </div>
+      ) : null}
+
       {activationUrl ? (
         <div className="rounded-xl border border-border bg-surface-muted p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
@@ -186,6 +243,38 @@ export function AffiliateAdminClient() {
           >
             Copy link
           </Button>
+        </div>
+      ) : null}
+      {activationLinks.length > 0 ? (
+        <div className="space-y-2 rounded-xl border border-border bg-surface-muted p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            Set-password links
+          </p>
+          {activationLinks.map((row) => (
+            <div
+              key={row.email}
+              className="rounded-lg border border-border bg-surface-elevated p-2"
+            >
+              <p className="text-xs text-foreground">
+                {row.email}{" "}
+                <span className="text-muted">
+                  {row.sent ? "(emailed)" : "(not emailed — copy this)"}
+                </span>
+              </p>
+              <p className="mt-1 break-all font-mono text-[11px] text-muted">
+                {row.url}
+              </p>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="mt-2"
+                type="button"
+                onClick={() => void navigator.clipboard.writeText(row.url)}
+              >
+                Copy link
+              </Button>
+            </div>
+          ))}
         </div>
       ) : null}
 
