@@ -2,7 +2,15 @@ import type { PlatformModule } from "@/lib/platform/modules";
 import { CORE_MODULES, PLATFORM_MODULES } from "@/lib/platform/modules";
 
 /** Modules retired from primary nav that should not reappear under More. */
-export const HIDDEN_FROM_ALL_TOOLS = new Set(["help", "projects", "inbox", "launch"]);
+export const HIDDEN_FROM_ALL_TOOLS = new Set([
+  "help",
+  "projects",
+  "inbox",
+  "launch",
+  "whatsapp",
+  "whatsapp-manage",
+  "finance",
+]);
 
 /** All navigable modules, deduped by path. */
 export function getAllToolsModules(): PlatformModule[] {
@@ -25,7 +33,6 @@ export const FREQUENT_TOOL_IDS = [
   "hr",
   "workflows",
   "analytics",
-  "finance",
 ] as const;
 
 export const TOOL_GROUP_ORDER = [

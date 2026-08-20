@@ -191,28 +191,13 @@ export function AppSidebar({
                       locked && "text-muted/80 hover:bg-gold/10 hover:text-foreground",
                       !locked &&
                         active &&
-                        !isAiTeam &&
                         "bg-gold/15 text-gold-bright before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-gold",
                       !locked &&
-                        active &&
-                        isAiTeam &&
-                        "bg-accent-cyan/15 text-accent-cyan before:absolute before:left-0 before:top-1/2 before:h-6 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-accent-cyan",
-                      !locked &&
                         !active &&
-                        !isAiTeam &&
-                        "text-muted hover:bg-surface-hover hover:text-foreground",
-                      isAiTeam &&
-                        !locked &&
-                        !active &&
-                        "bg-accent-cyan/[0.08] text-foreground ring-1 ring-accent-cyan/30 hover:bg-accent-cyan/15"
+                        "text-muted hover:bg-surface-hover hover:text-foreground"
                     )}
                   >
-                    <Icon
-                      className={cn(
-                        "h-[18px] w-[18px] shrink-0",
-                        isAiTeam && !locked && "text-accent-cyan"
-                      )}
-                    />
+                    <Icon className="h-[18px] w-[18px] shrink-0" />
                     {!collapsed ? (
                       <>
                         <span className="flex-1 truncate">{item.label}</span>

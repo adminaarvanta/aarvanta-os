@@ -7,7 +7,6 @@ import {
   Landmark,
   LayoutDashboard,
   LayoutGrid,
-  MessageCircle,
   Phone,
   Settings,
   Sparkles,
@@ -49,13 +48,11 @@ export type OperatingSystemItem = {
 /** Primary sidebar navigation — Command Center design */
 export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
-  { href: "/whatsapp", label: "WhatsApp", icon: MessageCircle, badgeKey: "whatsapp", featureKey: "whatsappChannel" },
   { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
   { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
   { href: "/workforce", label: "AI Team", icon: Sparkles, featureKey: "aiWorkforce" },
   { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
   { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
-  { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
   { href: "/analytics", label: "Insights", icon: BarChart3, featureKey: "analytics" },
   { href: "#all-tools", label: "More", icon: LayoutGrid, featureKey: "ungated" },
 ];
@@ -150,14 +147,6 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
     iconClass: "text-accent-cyan bg-accent-cyan/10",
   },
   {
-    id: "whatsapp",
-    label: "WhatsApp OS",
-    href: "/whatsapp",
-    description: "WhatsApp business messaging",
-    dotClass: "bg-success",
-    iconClass: "text-success bg-success/10",
-  },
-  {
     id: "voice",
     label: "Voice OS",
     href: "/voice",
@@ -190,14 +179,6 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
     iconClass: "text-accent-cyan bg-accent-cyan/10",
   },
   {
-    id: "finance",
-    label: "FinanceOS",
-    href: "/finance",
-    description: "Billing & cashflow",
-    dotClass: "bg-accent-cyan",
-    iconClass: "text-accent-cyan bg-accent-cyan/10",
-  },
-  {
     id: "affiliate",
     label: "PartnerOS",
     href: "/affiliate/dashboard",
@@ -210,14 +191,13 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
 /** Primary mobile bottom tabs — max 4 + More sheet (see MobileNav). */
 export const MOBILE_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
-  { href: "/whatsapp", label: "Chats", icon: MessageCircle, badgeKey: "whatsapp", featureKey: "whatsappChannel" },
   { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
   { href: "/workforce", label: "AI", icon: Sparkles, featureKey: "aiWorkforce" },
+  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
 ];
 
 /** Extra destinations opened from the mobile More sheet. */
 export const MOBILE_NAV_MORE: CommandNavItem[] = [
-  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
   { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
   { href: "/referrals", label: "Referrals", icon: Handshake, featureKey: "ungated" },
   {

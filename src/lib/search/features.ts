@@ -82,7 +82,7 @@ export function searchFeatures(query: string, limit = 8): GlobalSearchResult[] {
       "/crm",
       "/workforce",
       "/knowledge",
-      "/whatsapp",
+      "/voice",
       "/workflows",
       "/dashboard?help=open",
     ];

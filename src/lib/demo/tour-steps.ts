@@ -68,17 +68,6 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
     tip: "Ask Copilot: “What's our pipeline forecast?”",
   },
   {
-    id: "whatsapp",
-    title: "WhatsApp OS",
-    description:
-      "WhatsApp business messaging with inbound webhooks, outbound replies, AI summaries, identity detection, and start-thread by phone.",
-    route: "/whatsapp",
-    target: '[data-demo-tour="nav-whatsapp"], [data-demo-tour="mobile-nav-whatsapp"]',
-    placement: "right",
-    expandSidebar: true,
-    tip: "Open a WhatsApp thread to see identity and AI insights",
-  },
-  {
     id: "voice",
     title: "Voice OS",
     description:

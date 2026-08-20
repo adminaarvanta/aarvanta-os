@@ -16,13 +16,6 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
     group: "Navigate",
   },
   {
-    id: "open_whatsapp",
-    label: "Open WhatsApp OS",
-    keywords: ["whatsapp", "wa", "messaging", "chat"],
-    href: "/whatsapp",
-    group: "Navigate",
-  },
-  {
     id: "open_voice",
     label: "Open Voice OS",
     keywords: ["voice", "call", "phone", "twilio"],
@@ -125,13 +118,6 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
     label: "Open AI Writing Studio",
     keywords: ["writing", "content", "blog", "email", "linkedin"],
     href: "/writing",
-    group: "Navigate",
-  },
-  {
-    id: "open_finance",
-    label: "Open Finance OS",
-    keywords: ["finance", "invoices", "expenses", "cfo"],
-    href: "/finance",
     group: "Navigate",
   },
   {
