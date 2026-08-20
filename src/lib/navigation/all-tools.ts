@@ -1,15 +1,16 @@
 import type { PlatformModule } from "@/lib/platform/modules";
 import { CORE_MODULES, PLATFORM_MODULES } from "@/lib/platform/modules";
 
+/** Modules retired from primary nav that should not reappear under More. */
+export const HIDDEN_FROM_ALL_TOOLS = new Set(["help", "projects", "inbox", "launch"]);
+
 /** All navigable modules, deduped by path. */
 export function getAllToolsModules(): PlatformModule[] {
   const seen = new Set<string>();
-  const merged = [
-    ...CORE_MODULES.filter((m) => m.id !== "help"),
-    ...PLATFORM_MODULES,
-  ];
+  const merged = [...CORE_MODULES, ...PLATFORM_MODULES];
 
   return merged.filter((tool) => {
+    if (HIDDEN_FROM_ALL_TOOLS.has(tool.id)) return false;
     const key = tool.href.split("?")[0];
     if (seen.has(key)) return false;
     seen.add(key);
@@ -19,7 +20,6 @@ export function getAllToolsModules(): PlatformModule[] {
 
 export const FREQUENT_TOOL_IDS = [
   "dashboard",
-  "inbox",
   "crm",
   "workforce",
   "hr",

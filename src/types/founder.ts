@@ -57,7 +57,6 @@ export type FounderCommandId =
   | "open_pipelines"
   | "open_workforce"
   | "open_knowledge"
-  | "open_projects"
   | "open_workflows"
   | "open_team"
   | "open_integrations"
@@ -73,7 +72,6 @@ export type FounderCommandId =
   | "open_platform_coverage"
   | "run_demo"
   | "create_lead"
-  | "create_project"
   | "generate_proposal";
 
 export interface FounderCommand {

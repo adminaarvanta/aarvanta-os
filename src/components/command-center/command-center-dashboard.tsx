@@ -9,7 +9,6 @@ import {
   FileText,
 } from "lucide-react";
 import { OPERATING_SYSTEMS } from "@/lib/navigation/command-center-nav";
-import { BusinessOsMap } from "@/components/command-center/business-os-map";
 import { KpiSparklineCard } from "@/components/command-center/kpi-sparkline-card";
 import type { FounderSnapshot } from "@/types/founder";
 import { cn } from "@/lib/utils";
@@ -162,8 +161,6 @@ export function CommandCenterDashboard({
 
         <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
           <div className="space-y-4">
-            <BusinessOsMap />
-
             <section>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">Operating Systems</h2>

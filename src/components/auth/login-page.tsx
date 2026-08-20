@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import {
   AuthAlert,
   AuthField,
@@ -15,6 +15,7 @@ import {
   GoogleAuthButton,
 } from "@/components/auth/auth-split-layout";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
+import { cn } from "@/lib/utils";
 
 const LOGIN_ERRORS: Record<string, string> = {
   invalid_credentials: "Invalid email or password",
@@ -39,15 +40,24 @@ function LoginFormInner({
         ? "Sign in failed. Please try again."
         : null;
 
+  const [busy, setBusy] = useState(false);
+
   return (
-    <form action="/api/auth/login" method="POST" className="space-y-4">
+    <form
+      action="/api/auth/login"
+      method="POST"
+      className="space-y-4"
+      onSubmit={() => setBusy(true)}
+    >
       <input type="hidden" name="next" value={safeNextPath} />
 
       {googleEnabled ? (
         <>
-          <GoogleAuthButton
-            href={`/api/auth/sso/start?provider=google&next=${encodeURIComponent(safeNextPath)}`}
-          />
+          <div className={cn(busy && "pointer-events-none opacity-60")}>
+            <GoogleAuthButton
+              href={`/api/auth/sso/start?provider=google&next=${encodeURIComponent(safeNextPath)}`}
+            />
+          </div>
           <AuthDivider />
         </>
       ) : null}
@@ -73,7 +83,7 @@ function LoginFormInner({
 
       {error ? <AuthAlert>{error}</AuthAlert> : null}
 
-      <AuthSubmitButton>Sign in to workspace</AuthSubmitButton>
+      <AuthSubmitButton busy={busy}>Sign in to workspace</AuthSubmitButton>
 
       <p className="pt-1 text-center text-sm text-muted">
         New here?{" "}

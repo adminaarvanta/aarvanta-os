@@ -1,5 +1,6 @@
 import { FOUNDER_COMMANDS } from "@/lib/founder/commands";
 import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
+import { HIDDEN_FROM_ALL_TOOLS } from "@/lib/navigation/all-tools";
 import { CORE_MODULES, PLATFORM_MODULES } from "@/lib/platform/modules";
 import type { GlobalSearchResult } from "@/types/search";
 
@@ -45,6 +46,7 @@ export function buildFeatureSearchIndex(): GlobalSearchResult[] {
   }
 
   for (const tool of [...CORE_MODULES, ...PLATFORM_MODULES]) {
+    if (HIDDEN_FROM_ALL_TOOLS.has(tool.id)) continue;
     add(moduleToResult(tool, [tool.group, String(tool.phase)]));
   }
 
@@ -77,11 +79,10 @@ export function searchFeatures(query: string, limit = 8): GlobalSearchResult[] {
   if (!q) {
     const priority = [
       "/dashboard",
-      "/inbox",
       "/crm",
       "/workforce",
       "/knowledge",
-      "/projects",
+      "/whatsapp",
       "/workflows",
       "/dashboard?help=open",
     ];

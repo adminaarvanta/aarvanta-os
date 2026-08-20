@@ -202,12 +202,12 @@ export function AuthSubmitButton({
   return (
     <button
       type="submit"
+      {...props}
       disabled={busy || props.disabled}
       className={cn(
         "relative mt-1 inline-flex h-12 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-[#c4a46a] to-[#a8894f] px-4 text-sm font-semibold text-[#0e1522] shadow-[0_10px_24px_-12px_rgba(168,137,79,0.75)] transition-[transform,filter,box-shadow] hover:brightness-105 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60",
         className
       )}
-      {...props}
     >
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/35" />
       {busy ? "Please wait…" : children}

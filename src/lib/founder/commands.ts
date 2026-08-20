@@ -65,13 +65,6 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
     group: "Navigate",
   },
   {
-    id: "open_projects",
-    label: "Open Projects",
-    keywords: ["projects", "kanban", "tasks"],
-    href: "/projects",
-    group: "Navigate",
-  },
-  {
     id: "open_workflows",
     label: "Open Workflows",
     keywords: ["workflows", "automation", "flows"],
@@ -174,13 +167,6 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
     label: "Create Lead",
     keywords: ["create", "lead", "new lead", "prospect"],
     href: "/crm/leads",
-    group: "Quick actions",
-  },
-  {
-    id: "create_project",
-    label: "Create Project",
-    keywords: ["create", "project", "new project"],
-    href: "/projects",
     group: "Quick actions",
   },
   {
