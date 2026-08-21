@@ -110,13 +110,12 @@ function AffiliateApplyFormInner() {
         </p>
         {done.alreadyHasPassword ? (
           <p className="mt-3 text-muted">
-            You already have an Aarvanta password. Sign in and open your
-            affiliate dashboard.
+            You already have an Aarvanta password. Sign in and open Partners.
           </p>
         ) : done.emailSent ? (
           <p className="mt-3 text-muted">
             Check your email for a link to create your password. Then sign in
-            and open your affiliate dashboard.
+            and open Partners.
           </p>
         ) : (
           <div className="mt-3 space-y-3">
@@ -151,7 +150,7 @@ function AffiliateApplyFormInner() {
         )}
         <p className="mt-3 text-xs text-muted">
           After you set a password, sign in and open{" "}
-          <span className="text-foreground">/affiliate/dashboard</span>.
+          <span className="text-foreground">/partners</span>.
         </p>
       </div>
     );

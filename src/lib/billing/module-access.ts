@@ -32,6 +32,7 @@ export const MODULE_FEATURE_MAP: Record<string, PlanFeatureKey | "ungated"> = {
   organization: "ungated",
   team: "ungated",
   integrations: "ungated",
+  partners: "ungated",
   referrals: "ungated",
   affiliate: "ungated",
   inbox: "unifiedInbox",

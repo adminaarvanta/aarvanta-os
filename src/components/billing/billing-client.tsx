@@ -245,10 +245,10 @@ export function BillingClient({
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/referrals"
+            href="/partners"
             className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground hover:border-gold/40"
           >
-            Start referrals
+            Partners
           </Link>
           {canManageBilling ? (
             <Button type="button" variant="secondary" onClick={() => void openPortal()}>

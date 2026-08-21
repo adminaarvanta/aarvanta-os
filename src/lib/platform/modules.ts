@@ -26,7 +26,6 @@ import {
   Wallet,
   Workflow,
   Handshake,
-  Gift,
 } from "lucide-react";
 
 export type PlatformModule = {
@@ -161,7 +160,7 @@ export const CORE_MODULES: PlatformModule[] = [
   {
     id: "team",
     label: "Team",
-    description: "Directory, channels, notes, activity",
+    description: "People, roles, and collaboration",
     href: "/team",
     icon: Users,
     group: "Core",
@@ -197,7 +196,7 @@ export const CORE_MODULES: PlatformModule[] = [
   {
     id: "settings",
     label: "Settings & RBAC",
-    description: "Organizations, workspaces, roles",
+    description: "Organization name, workspaces, and account",
     href: "/settings",
     icon: Shield,
     group: "Core",
@@ -298,29 +297,20 @@ export const PLATFORM_MODULES: PlatformModule[] = [
   },
   {
     id: "affiliate",
-    label: "Partner & Affiliate",
-    description: "Referral links, commissions, regional caps, payouts",
-    href: "/affiliate/dashboard",
+    label: "Partners",
+    description: "Share links, commissions, regional caps, payouts",
+    href: "/partners",
     icon: Handshake,
     group: "Enterprise",
     phase: "GTM",
   },
   {
     id: "affiliate-admin",
-    label: "Affiliate Admin",
+    label: "Partner Admin",
     description: "Hierarchy tree, approvals, regional rate matrix, payouts",
     href: "/affiliate/admin",
     icon: Handshake,
     group: "Enterprise",
-    phase: "GTM",
-  },
-  {
-    id: "referrals",
-    label: "Referrals",
-    description: "Customer affiliate opt-in and income tracking",
-    href: "/referrals",
-    icon: Gift,
-    group: "Revenue",
     phase: "GTM",
   },
   {

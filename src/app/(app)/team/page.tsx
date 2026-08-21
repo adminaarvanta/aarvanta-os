@@ -1,51 +1,74 @@
 import { Users } from "lucide-react";
 import { TeamClient } from "@/components/team/team-client";
-import { buildDemoTeamChannels } from "@/lib/data/team-demo-seed";
+import { PageFrame, PageScroll } from "@/components/layout/page-scroll";
+import { PageHeader } from "@/components/ui/os/page-header";
 import { getTeamRepository } from "@/lib/data/team-store";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { can } from "@/lib/tenant/permissions";
 import { getSessionContext } from "@/lib/tenant/context";
+import { ensureTenantRecords } from "@/lib/tenant/ensure-tenant-records";
+import { buildOrganizationHierarchy, roleCatalog } from "@/lib/tenant/hierarchy";
 
-export default async function TeamPage() {
+export default async function TeamPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const ctx = await getSessionContext();
+  const { tab } = await searchParams;
   const teamRepo = getTeamRepository();
   const tenantRepo = getTenantRepository();
+  const { organization } = await ensureTenantRecords(ctx);
 
-  const [notes, comments, activity, members, invitations] = await Promise.all([
-    teamRepo.listNotes(ctx.scope),
-    teamRepo.listComments(ctx.scope),
-    teamRepo.listActivity(ctx.scope),
-    tenantRepo.listMembers(ctx.scope),
-    tenantRepo.listInvitations(ctx.scope),
-  ]);
+  const [notes, comments, activity, workspaceMembers, workspaceInvitations, workspaces, tenantMembers, tenantInvitations] =
+    await Promise.all([
+      teamRepo.listNotes(ctx.scope),
+      teamRepo.listComments(ctx.scope),
+      teamRepo.listActivity(ctx.scope),
+      tenantRepo.listMembers(ctx.scope),
+      tenantRepo.listInvitations(ctx.scope),
+      tenantRepo.listWorkspaces(ctx.scope.tenantId),
+      tenantRepo.listMembersByTenant(ctx.scope.tenantId),
+      tenantRepo.listInvitationsByTenant(ctx.scope.tenantId),
+    ]);
 
-  const channels = buildDemoTeamChannels();
+  const hierarchy = buildOrganizationHierarchy({
+    organization,
+    workspaces,
+    members: tenantMembers,
+    invitations: tenantInvitations,
+  });
 
   return (
-    <>
-      <header className="shrink-0 border-b border-border bg-surface-elevated px-4 py-3 sm:px-6 sm:py-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
-          <Users className="h-5 w-5 text-gold" />
-          Team
-        </h2>
-        <p className="text-xs text-muted sm:text-sm">
-          Set up your team, assign CRM work manually, and collaborate with notes and activity.
-        </p>
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+    <PageFrame>
+      <PageHeader
+        icon={Users}
+        title="Team"
+        description="People, roles, and collaboration across this organization."
+      />
+      <PageScroll className="p-4 sm:p-6">
         <TeamClient
-          members={members}
+          members={workspaceMembers}
           notes={notes}
           comments={comments}
           activity={activity}
-          channels={channels}
           currentUserId={ctx.userId}
-          invitations={invitations}
+          invitations={workspaceInvitations}
           canInvite={can(ctx.role, "members:invite")}
           canManageMembers={can(ctx.role, "members:manage")}
+          hierarchy={hierarchy}
+          roles={roleCatalog()}
+          current={{
+            userId: ctx.userId,
+            email: ctx.email,
+            name: ctx.name,
+            role: ctx.role,
+            workspaceId: ctx.scope.workspaceId,
+          }}
+          initialTab={tab}
         />
-      </div>
-    </>
+      </PageScroll>
+    </PageFrame>
   );
 }
 

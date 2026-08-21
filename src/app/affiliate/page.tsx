@@ -11,7 +11,7 @@ export default function AffiliateLandingPage() {
       <header className="mx-auto flex max-w-3xl items-center justify-between px-4 py-6">
         <BrandLogo size="md" />
         <div className="flex gap-3 text-sm">
-          <Link href="/affiliate/dashboard" className="text-gold hover:underline">
+          <Link href="/partners" className="text-gold hover:underline">
             Dashboard
           </Link>
           <Link href="/login" className="text-muted hover:text-foreground">
@@ -41,7 +41,7 @@ export default function AffiliateLandingPage() {
             Apply now
           </Link>
           <Link
-            href="/referrals"
+            href="/partners"
             className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground hover:border-gold/40"
           >
             Existing customer? Opt in

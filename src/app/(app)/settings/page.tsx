@@ -15,13 +15,10 @@ export default async function SettingsPage() {
   const { organization, workspace } = await ensureTenantRecords(ctx);
   const repo = getTenantRepository();
 
-  const [workspaces, members, invitations, workspaceSettings] =
-    await Promise.all([
-      repo.listWorkspaces(ctx.scope.tenantId),
-      repo.listMembers(ctx.scope),
-      repo.listInvitations(ctx.scope),
-      getWorkspaceSettings(ctx.scope.workspaceId),
-    ]);
+  const [workspaces, workspaceSettings] = await Promise.all([
+    repo.listWorkspaces(ctx.scope.tenantId),
+    getWorkspaceSettings(ctx.scope.workspaceId),
+  ]);
 
   await hydrateWorkspaceSettingsCache(ctx.scope.workspaceId);
 
@@ -30,16 +27,13 @@ export default async function SettingsPage() {
       <PageHeader
         icon={Settings}
         title="Settings"
-        description="Organization, workspace, team access, and global automation for this workspace."
+        description="Organization, workspaces, account, and automation for this workspace."
       />
       <PageScroll className="p-4 sm:p-6">
         <SettingsClient
           organization={organization}
           workspace={workspace}
           workspaces={workspaces}
-          members={members}
-          invitations={invitations}
-          currentUserId={ctx.userId}
           currentRole={ctx.role}
           currentEmail={ctx.email}
           currentName={ctx.name}

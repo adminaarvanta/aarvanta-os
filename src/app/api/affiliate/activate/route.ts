@@ -237,7 +237,7 @@ export async function POST(req: Request) {
 
   const response = NextResponse.json({
     ok: true,
-    next: "/affiliate/dashboard",
+    next: "/partners",
   });
 
   if (!isDemoMode() || process.env.AUTH_SECRET) {

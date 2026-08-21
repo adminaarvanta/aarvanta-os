@@ -67,7 +67,7 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
   {
     id: "open_team",
     label: "Open Team",
-    keywords: ["team", "directory", "collaboration", "notes"],
+    keywords: ["team", "directory", "collaboration", "notes", "organization", "roles", "invite"],
     href: "/team",
     group: "Navigate",
   },
@@ -97,6 +97,13 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
     label: "Open Settings",
     keywords: ["settings", "organization", "workspace", "rbac"],
     href: "/settings",
+    group: "Navigate",
+  },
+  {
+    id: "open_partners",
+    label: "Open Partners",
+    keywords: ["partners", "affiliate", "referrals", "commission", "payout"],
+    href: "/partners",
     group: "Navigate",
   },
   {

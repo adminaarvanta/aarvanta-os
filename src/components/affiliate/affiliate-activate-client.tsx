@@ -74,7 +74,7 @@ export function AffiliateActivateClient({ token }: { token: string }) {
         setError(data.error?.message ?? "Could not set password.");
         return;
       }
-      router.push(data.next ?? "/affiliate/dashboard");
+      router.push(data.next ?? "/partners");
       router.refresh();
     } catch {
       setError("Could not set password.");

@@ -4,9 +4,19 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TeamManagementPanel } from "@/components/team/team-management-panel";
-import { ROLE_LABELS, type Invitation, type MemberRole, type WorkspaceMember } from "@/types/tenant";
-import type { ActivityFeedItem, TeamChannel, TeamComment, TeamNote } from "@/types/team";
+import { MemberManagementPanel } from "@/components/team/member-management-panel";
+import {
+  OrgHierarchyClient,
+  RoleCatalogPanel,
+} from "@/components/tenant/org-hierarchy-client";
+import {
+  ROLE_LABELS,
+  type Invitation,
+  type MemberRole,
+  type OrganizationHierarchy,
+  type WorkspaceMember,
+} from "@/types/tenant";
+import type { ActivityFeedItem, TeamComment, TeamNote } from "@/types/team";
 import { formatRelative } from "@/lib/utils";
 
 const roleBadge: Record<string, string> = {
@@ -17,34 +27,79 @@ const roleBadge: Record<string, string> = {
   guest: "bg-surface-muted text-muted/70 ring-border",
 };
 
+export const TEAM_TABS = [
+  "hierarchy",
+  "directory",
+  "manage",
+  "notes",
+  "activity",
+  "roles",
+] as const;
+
+export type TeamTab = (typeof TEAM_TABS)[number];
+
+type RoleCatalogItem = {
+  role: MemberRole;
+  label: string;
+  description: string;
+  permissions: Array<{ id: string; label: string }>;
+};
+
+export function parseTeamTab(raw: string | undefined): TeamTab {
+  if (raw && (TEAM_TABS as readonly string[]).includes(raw)) {
+    return raw as TeamTab;
+  }
+  return "directory";
+}
+
 export function TeamClient({
   members,
   notes,
   comments,
   activity,
-  channels,
   currentUserId,
   invitations,
   canInvite,
   canManageMembers,
+  hierarchy,
+  roles,
+  current,
+  initialTab,
 }: {
   members: WorkspaceMember[];
   notes: TeamNote[];
   comments: TeamComment[];
   activity: ActivityFeedItem[];
-  channels: TeamChannel[];
   currentUserId: string;
   invitations: Invitation[];
   canInvite: boolean;
   canManageMembers: boolean;
+  hierarchy: OrganizationHierarchy;
+  roles: RoleCatalogItem[];
+  current: {
+    userId: string;
+    email: string;
+    name: string;
+    role: MemberRole;
+    workspaceId: string;
+  };
+  initialTab?: string;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<
-    "directory" | "management" | "channels" | "notes" | "activity"
-  >("directory");
+  const canManage = canInvite || canManageMembers;
+  const requested = parseTeamTab(initialTab);
+  const [tab, setTabState] = useState<TeamTab>(
+    requested === "manage" && !canManage ? "directory" : requested
+  );
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+
+  function setTab(next: TeamTab) {
+    setTabState(next);
+    const href = next === "directory" ? "/team" : `/team?tab=${next}`;
+    router.replace(href, { scroll: false });
+  }
 
   async function addNote(e: React.FormEvent) {
     e.preventDefault();
@@ -69,13 +124,12 @@ export function TeamClient({
   }
 
   const tabs = [
+    { id: "hierarchy" as const, label: "Hierarchy" },
     { id: "directory" as const, label: "Directory" },
-    ...(canInvite || canManageMembers
-      ? [{ id: "management" as const, label: "Manage team" }]
-      : []),
-    { id: "channels" as const, label: "Channels" },
-    { id: "notes" as const, label: "Internal Notes" },
-    { id: "activity" as const, label: "Activity Feed" },
+    ...(canManage ? [{ id: "manage" as const, label: "Manage" }] : []),
+    { id: "notes" as const, label: "Notes" },
+    { id: "activity" as const, label: "Activity" },
+    { id: "roles" as const, label: "Roles" },
   ];
 
   return (
@@ -96,6 +150,17 @@ export function TeamClient({
           </button>
         ))}
       </div>
+
+      {tab === "hierarchy" && (
+        <OrgHierarchyClient
+          hierarchy={hierarchy}
+          roles={roles}
+          current={current}
+          canInvite={canInvite}
+          canManageMembers={canManageMembers}
+          showRoleCatalog={false}
+        />
+      )}
 
       {tab === "directory" && (
         <ul className="grid gap-3 sm:grid-cols-2">
@@ -123,44 +188,14 @@ export function TeamClient({
         </ul>
       )}
 
-      {tab === "management" && (
-        <TeamManagementPanel
+      {tab === "manage" && canManage && (
+        <MemberManagementPanel
           members={members}
           invitations={invitations}
           currentUserId={currentUserId}
           canInvite={canInvite}
           canManageMembers={canManageMembers}
         />
-      )}
-
-      {tab === "channels" && (
-        <ul className="space-y-3">
-          {channels.map((channel) => (
-            <li
-              key={channel.id}
-              className="rounded-xl border border-border bg-surface-elevated p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium text-foreground">{channel.name}</p>
-                  <p className="mt-0.5 text-xs text-muted">{channel.description}</p>
-                  <p className="mt-2 text-sm text-muted">
-                    {channel.lastMessagePreview}
-                  </p>
-                  <p className="mt-1 text-[10px] text-muted/70">
-                    {channel.memberCount} members ·{" "}
-                    {formatRelative(channel.lastMessageAt)}
-                  </p>
-                </div>
-                {channel.unreadCount > 0 && (
-                  <Badge className="bg-gold/20 text-gold-bright ring-gold/40">
-                    {channel.unreadCount} new
-                  </Badge>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
       )}
 
       {tab === "notes" && (
@@ -255,6 +290,8 @@ export function TeamClient({
           ))}
         </ul>
       )}
+
+      {tab === "roles" && <RoleCatalogPanel roles={roles} />}
     </div>
   );
 }

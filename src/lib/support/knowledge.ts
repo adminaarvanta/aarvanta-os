@@ -114,8 +114,15 @@ export const SUPPORT_DESTINATIONS: SupportDestination[] = [
     id: "team",
     title: "Team",
     href: "/team",
-    keywords: ["team", "invite", "members", "roles"],
-    blurb: "Manage people on your workspace.",
+    keywords: ["team", "invite", "members", "roles", "organization", "hierarchy"],
+    blurb: "People, roles, invitations, and collaboration.",
+  },
+  {
+    id: "partners",
+    title: "Partners",
+    href: "/partners",
+    keywords: ["partners", "affiliate", "referrals", "commission", "payout"],
+    blurb: "Share Aarvanta and track partner commissions.",
   },
   {
     id: "billing",

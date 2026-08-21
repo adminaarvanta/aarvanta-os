@@ -48,7 +48,7 @@ const quickActions = [
   { label: "Add New Lead", href: "/crm/leads", icon: Target },
   { label: "Create Workflow", href: "/workflows", icon: Workflow },
   { label: "Generate Report", href: "/analytics", icon: FileText },
-  { label: "Invite Team Member", href: "/settings", icon: UserPlus },
+  { label: "Invite Team Member", href: "/team?tab=manage", icon: UserPlus },
 ];
 
 const activityFeed = [

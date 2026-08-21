@@ -12,13 +12,10 @@ import { SectionHeader } from "@/components/ui/os/section-header";
 import { PERMISSION_LABELS, permissionsForRole } from "@/lib/tenant/permissions";
 import type { Permission } from "@/lib/tenant/permissions";
 import {
-  MEMBER_ROLES,
   ROLE_LABELS,
-  type Invitation,
   type MemberRole,
   type Organization,
   type Workspace,
-  type WorkspaceMember,
 } from "@/types/tenant";
 import type { WorkspaceSettings } from "@/types/workspace-settings";
 
@@ -26,9 +23,6 @@ type SettingsClientProps = {
   organization: Organization;
   workspace: Workspace;
   workspaces: Workspace[];
-  members: WorkspaceMember[];
-  invitations: Invitation[];
-  currentUserId: string;
   currentRole: MemberRole;
   currentEmail: string;
   currentName: string;
@@ -49,9 +43,6 @@ export function SettingsClient({
   organization,
   workspace,
   workspaces,
-  members,
-  invitations,
-  currentUserId,
   currentRole,
   currentEmail,
   currentName,
@@ -62,133 +53,12 @@ export function SettingsClient({
   const router = useRouter();
   const [orgName, setOrgName] = useState(organization.name);
   const [orgPlan, setOrgPlan] = useState(organization.plan);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<MemberRole>("member");
   const [newWorkspace, setNewWorkspace] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const canManageOrg = permissions.includes("org:manage");
   const canManageWorkspace = permissions.includes("workspace:manage");
-  const canInvite = permissions.includes("members:invite");
-  const canManageMembers = permissions.includes("members:manage");
-
-  async function inviteMember(e: React.FormEvent) {
-    e.preventDefault();
-    if (!inviteEmail.trim()) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/tenant/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
-      });
-      const data = (await res.json()) as {
-        error?: { message?: string };
-        emailSent?: boolean;
-        acceptUrl?: string;
-        acceptPath?: string;
-        emailError?: string;
-      };
-      if (res.ok) {
-        setInviteEmail("");
-        if (data.emailSent) {
-          setMessage(
-            `Invitation emailed. They can also use: ${data.acceptUrl ?? data.acceptPath}`
-          );
-        } else {
-          setMessage(
-            `Invite created, but email failed (${data.emailError ?? "unavailable"}). Copy and share: ${data.acceptUrl ?? data.acceptPath ?? ""}`
-          );
-          if (data.acceptUrl && typeof navigator !== "undefined") {
-            void navigator.clipboard.writeText(data.acceptUrl).catch(() => undefined);
-          }
-        }
-        router.refresh();
-      } else {
-        setMessage(data.error?.message ?? "Invite failed.");
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function revokeInvite(id: string) {
-    setBusy(true);
-    try {
-      await fetch(`/api/tenant/invitations/${id}`, { method: "DELETE" });
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function resendInvite(id: string) {
-    setBusy(true);
-    setMessage(null);
-    try {
-      const res = await fetch(`/api/tenant/invitations/${id}`, {
-        method: "POST",
-      });
-      const data = (await res.json()) as {
-        error?: { message?: string };
-        emailSent?: boolean;
-        acceptUrl?: string;
-        emailError?: string;
-      };
-      if (!res.ok) {
-        setMessage(data.error?.message ?? "Could not resend invite.");
-        return;
-      }
-      if (data.emailSent) {
-        setMessage("Invitation email resent.");
-      } else {
-        setMessage(
-          `Email not sent (${data.emailError ?? "unavailable"}). Share: ${data.acceptUrl ?? "invite link"}`
-        );
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function copyInviteLink(token: string) {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/invite/${token}`
-        : `/invite/${token}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setMessage("Invite link copied.");
-    } catch {
-      setMessage(`Invite link: ${url}`);
-    }
-  }
-
-  async function updateRole(memberId: string, role: MemberRole) {
-    setBusy(true);
-    try {
-      await fetch(`/api/tenant/members/${memberId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role }),
-      });
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function removeMember(memberId: string) {
-    setBusy(true);
-    try {
-      await fetch(`/api/tenant/members/${memberId}`, { method: "DELETE" });
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function createWorkspace(e: React.FormEvent) {
     e.preventDefault();
@@ -259,27 +129,21 @@ export function SettingsClient({
 
       <Panel>
         <SectionHeader
-          title="Partner & Affiliate"
-          description="Share your referral link, track leads and commissions, request payouts."
+          title="Partners"
+          description="Share your partner link, track leads and commissions, request payouts."
         />
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
-            href="/referrals"
+            href="/partners"
             className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black hover:bg-gold-bright"
           >
-            Start referrals
+            Open Partners
           </Link>
           <Link
             href="/affiliate"
             className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground hover:border-gold/40"
           >
-            Partner apply page
-          </Link>
-          <Link
-            href="/affiliate/dashboard"
-            className="inline-flex items-center justify-center rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground hover:border-gold/40"
-          >
-            Affiliate dashboard
+            Public apply page
           </Link>
         </div>
       </Panel>
@@ -321,13 +185,13 @@ export function SettingsClient({
       <Panel>
         <SectionHeader
           title="Organization"
-          description={`${organization.name} — manage plan here, or view the full user hierarchy`}
+          description={`${organization.name} — name, plan, and a link to manage people`}
         />
         <p className="mt-2 text-xs text-muted">
-          <a href="/organization" className="font-medium text-gold hover:text-gold-bright">
-            Open organization hierarchy
-          </a>{" "}
-          to see every workspace user by Owner / Admin / Manager / Member / Guest.
+          <Link href="/team" className="font-medium text-gold hover:text-gold-bright">
+            Manage team
+          </Link>{" "}
+          for directory, invitations, roles, and hierarchy.
         </p>
         {canManageOrg ? (
           <form onSubmit={saveOrganization} className="mt-4 space-y-3">
@@ -415,163 +279,18 @@ export function SettingsClient({
         )}
       </Panel>
 
-      <Panel padding="none">
-        <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
-          <SectionHeader
-            title="Team directory"
-            description={`${members.length} member${members.length === 1 ? "" : "s"} in this workspace`}
-            className="mb-0"
-          />
-        </div>
-        <ul className="divide-y divide-border-subtle px-4 sm:px-5">
-          {members.map((member) => (
-            <li
-              key={member.id}
-              className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-4 last:pb-4"
-            >
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {member.name}
-                  {member.userId === currentUserId && (
-                    <span className="ml-2 text-xs text-muted">(you)</span>
-                  )}
-                </p>
-                <p className="text-xs text-muted">{member.email}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {canManageMembers && member.role !== "owner" && member.userId !== currentUserId ? (
-                  <select
-                    value={member.role}
-                    onChange={(e) => updateRole(member.id, e.target.value as MemberRole)}
-                    disabled={busy}
-                    className="rounded-lg border border-border bg-surface-muted px-2 py-1 text-xs text-foreground"
-                  >
-                    {MEMBER_ROLES.filter((r) => r !== "owner").map((role) => (
-                      <option key={role} value={role}>
-                        {ROLE_LABELS[role]}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <Badge className={roleBadgeClass[member.role]}>
-                    {ROLE_LABELS[member.role]}
-                  </Badge>
-                )}
-                {canManageMembers && member.role !== "owner" && member.userId !== currentUserId && (
-                  <button
-                    type="button"
-                    onClick={() => removeMember(member.id)}
-                    disabled={busy}
-                    className="text-xs text-red-400 hover:text-red-300"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Panel>
-
-      <Panel padding="none">
-        <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
-          <SectionHeader
-            title="Invitations"
-            description="We email the invite link when Gmail is configured. You can also copy or resend."
-            className="mb-0"
-          />
-        </div>
-        <div className="px-4 py-4 sm:px-5">
-          {canInvite && (
-            <form onSubmit={inviteMember} className="flex flex-wrap gap-2">
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="colleague@company.com"
-                className="min-w-[200px] flex-1 rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
-              />
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
-              >
-                {MEMBER_ROLES.filter((r) => r !== "owner").map((role) => (
-                  <option key={role} value={role}>
-                    {ROLE_LABELS[role]}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" disabled={busy}>
-                Invite
-              </Button>
-            </form>
-          )}
-          <ul className="mt-4 space-y-2">
-            {invitations.length === 0 && (
-              <p className="text-sm text-muted">No pending invitations.</p>
-            )}
-            {invitations.map((inv) => (
-              <li
-                key={inv.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2"
-              >
-                <div>
-                  <p className="text-sm text-foreground">{inv.email}</p>
-                  <p className="text-xs text-muted">
-                    {ROLE_LABELS[inv.role]} · invited by {inv.invitedByName}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    className={
-                      inv.status === "pending"
-                        ? "bg-gold/10 text-gold-bright ring-gold/35"
-                        : "bg-surface-muted text-muted ring-border"
-                    }
-                  >
-                    {inv.status}
-                  </Badge>
-                  {canInvite && inv.status === "pending" && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => void copyInviteLink(inv.token)}
-                        disabled={busy}
-                        className="text-xs text-gold hover:text-gold-bright"
-                      >
-                        Copy link
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void resendInvite(inv.id)}
-                        disabled={busy}
-                        className="text-xs text-gold hover:text-gold-bright"
-                      >
-                        Resend email
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => revokeInvite(inv.id)}
-                        disabled={busy}
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
-                        Revoke
-                      </button>
-                    </>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Panel>
-
       <Panel>
         <SectionHeader
-          title="Role permissions"
+          title="Your permissions"
           description={`Your role (${ROLE_LABELS[currentRole]}) grants ${permissions.length} permissions.`}
         />
+        <p className="mt-2 text-xs text-muted">
+          See the full catalog for every role on{" "}
+          <Link href="/team?tab=roles" className="font-medium text-gold hover:text-gold-bright">
+            Team → Roles
+          </Link>
+          .
+        </p>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {permissionsForRole(currentRole).map((perm) => (
             <li

@@ -88,19 +88,19 @@ export const SPEC_PHASES: Array<{
         id: "multi-tenant",
         phase: 5,
         name: "Multi-Tenant",
-        href: "/organization",
+        href: "/team?tab=hierarchy",
         status: "complete",
         summary:
-          "Org → Workspace hierarchy for all users; Owner/Admin/Manager/Member/Guest RBAC; invitations with accept links.",
+          "Org → Workspace hierarchy for all users; Owner/Admin/Manager/Member/Guest RBAC; invitations with accept links. Opened from Team.",
       },
       {
         id: "team",
         phase: 6,
-        name: "Team Collaboration",
+        name: "Team",
         href: "/team",
-        status: "partial",
+        status: "complete",
         summary:
-          "Directory, notes, comments, @mentions, activity feed, internal channels (demo). Slack-style DMs/voice planned.",
+          "Hierarchy, directory, invitations, roles, notes, and activity. HR People and AI Team remain separate apps.",
       },
       {
         id: "integrations",
@@ -465,11 +465,11 @@ export const SPEC_PHASES: Array<{
       {
         id: "partner-affiliate",
         phase: "GTM",
-        name: "Partner & Affiliate System",
+        name: "Partners",
         status: "partial",
-        href: "/affiliate/dashboard",
+        href: "/partners",
         summary:
-          "Dual-channel affiliates, referral tracking, CPA + commission ledger, regional caps, payouts. See docs/AFFILIATE_PRD.md.",
+          "One partner hub for customer opt-in and enrolled dashboards. Tracking, CPA + commission ledger, regional caps, payouts. See docs/AFFILIATE_PRD.md.",
       },
     ] as SpecModule[],
   },

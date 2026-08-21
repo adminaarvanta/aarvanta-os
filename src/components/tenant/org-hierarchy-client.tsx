@@ -35,6 +35,7 @@ type OrgHierarchyClientProps = {
   };
   canInvite: boolean;
   canManageMembers: boolean;
+  showRoleCatalog?: boolean;
 };
 
 const roleBadgeClass: Record<MemberRole, string> = {
@@ -150,12 +151,45 @@ function InvitationRow({
   );
 }
 
+export function RoleCatalogPanel({ roles }: { roles: RoleCatalogItem[] }) {
+  return (
+    <Panel className="p-5">
+      <h3 className="text-base font-semibold text-foreground">Role permissions</h3>
+      <p className="mt-1 text-xs text-muted">
+        What each user type can do in this organization.
+      </p>
+      <ul className="mt-4 space-y-3">
+        {roles.map((item) => (
+          <li
+            key={item.role}
+            className="rounded-xl border border-border bg-surface-muted/40 p-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <Badge className={`ring-1 ${roleBadgeClass[item.role]}`}>
+                {item.label}
+              </Badge>
+              <span className="text-[10px] text-dim">
+                {item.permissions.length} permissions
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-muted">{item.description}</p>
+            <p className="mt-2 text-[10px] leading-relaxed text-dim">
+              {item.permissions.map((p) => p.label).join(" · ")}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
 export function OrgHierarchyClient({
   hierarchy,
   roles,
   current,
   canInvite,
   canManageMembers,
+  showRoleCatalog = true,
 }: OrgHierarchyClientProps) {
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(
     current.workspaceId || hierarchy.workspaces[0]?.workspace.id || ""
@@ -239,7 +273,13 @@ export function OrgHierarchyClient({
       </Panel>
 
       {activeBranch ? (
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div
+          className={
+            showRoleCatalog
+              ? "grid gap-4 lg:grid-cols-[1.2fr_0.8fr]"
+              : "grid gap-4"
+          }
+        >
           <Panel className="p-5">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -253,10 +293,10 @@ export function OrgHierarchyClient({
               </div>
               {(canInvite || canManageMembers) && (
                 <Link
-                  href="/settings"
+                  href="/team?tab=manage"
                   className="text-xs font-medium text-gold hover:text-gold-bright"
                 >
-                  Manage in Settings
+                  Manage team
                 </Link>
               )}
             </div>
@@ -316,41 +356,7 @@ export function OrgHierarchyClient({
             ) : null}
           </Panel>
 
-          <Panel className="p-5">
-            <h3 className="text-base font-semibold text-foreground">
-              Role permissions
-            </h3>
-            <p className="mt-1 text-xs text-muted">
-              What each PRD user type can do in this organization.
-            </p>
-            <ul className="mt-4 space-y-3">
-              {roles.map((item) => (
-                <li
-                  key={item.role}
-                  className="rounded-xl border border-border bg-surface-muted/40 p-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge className={`ring-1 ${roleBadgeClass[item.role]}`}>
-                      {item.label}
-                    </Badge>
-                    <span className="text-[10px] text-dim">
-                      {item.permissions.length} permissions
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs text-muted">{item.description}</p>
-                  <p className="mt-2 line-clamp-2 text-[10px] leading-relaxed text-dim">
-                    {item.permissions
-                      .slice(0, 4)
-                      .map((p) => p.label)
-                      .join(" · ")}
-                    {item.permissions.length > 4
-                      ? ` · +${item.permissions.length - 4} more`
-                      : ""}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </Panel>
+          {showRoleCatalog ? <RoleCatalogPanel roles={roles} /> : null}
         </div>
       ) : null}
     </div>

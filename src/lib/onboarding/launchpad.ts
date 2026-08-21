@@ -81,7 +81,7 @@ export async function buildLaunchpadSnapshot(
       id: "invite",
       title: "Invite a teammate",
       description: "Share the workspace with someone who will use it with you.",
-      href: "/settings",
+      href: "/team?tab=manage",
       done: members.length > 1 || invitations.length > 0,
     },
   ];

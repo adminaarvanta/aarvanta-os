@@ -21,7 +21,7 @@ export function affiliateActivationUrl(token: string): string {
 }
 
 export function affiliateDashboardUrl(): string {
-  return `${appBaseUrl()}/affiliate/dashboard`;
+  return `${appBaseUrl()}/partners`;
 }
 
 function escapeHtml(value: string) {

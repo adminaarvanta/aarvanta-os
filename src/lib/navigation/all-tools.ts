@@ -10,6 +10,7 @@ export const HIDDEN_FROM_ALL_TOOLS = new Set([
   "whatsapp",
   "whatsapp-manage",
   "finance",
+  "affiliate-admin",
 ]);
 
 /** All navigable modules, deduped by path. */
