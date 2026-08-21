@@ -126,11 +126,6 @@ function buildSeries(
 
 function sparkFromSeries(values: number[]): number[] {
   if (values.length === 0) return [0];
-  // Ensure sparklines always have some shape in sparse demo data
-  const max = Math.max(...values, 0);
-  if (max === 0) {
-    return values.map((_, i) => Math.max(1, Math.round((Math.sin(i) + 1.2) * 3)));
-  }
   return values;
 }
 
@@ -394,7 +389,7 @@ export async function buildAnalyticsSnapshot(
     aiUsage: {
       agentRuns: agentRuns.length,
       workflowRuns: workflowRuns.length,
-      knowledgeQueries: 42,
+      knowledgeQueries: 0,
       tokensEstimate: agentRuns.length * 1200 + workflowRuns.length * 800,
       changePct: agentsPeriod + agentsPrior > 0 ? aiChange : fallbackDelta(seriesAgents),
     },
@@ -438,9 +433,15 @@ export async function buildAnalyticsSnapshot(
       agentRuns: sparkFromSeries(seriesAgents),
       financeNet: sparkFromSeries(
         series.map((_, i) => {
-          // Approximate net as a gentle curve from invoice/expense totals across buckets
-          const weight = (i + 1) / series.length;
-          return Math.round(financeNet * weight * (0.4 + 0.6 * weight));
+          const bucketStart = new Date(window.start.getTime() + i * window.bucketMs);
+          const bucketEnd = new Date(bucketStart.getTime() + window.bucketMs);
+          const invoiceSum = invoices
+            .filter((inv) => inRange(inv.createdAt, bucketStart, bucketEnd))
+            .reduce((s, inv) => s + inv.amount, 0);
+          const expenseSum = expenses
+            .filter((exp) => inRange(exp.date, bucketStart, bucketEnd))
+            .reduce((s, exp) => s + exp.amount, 0);
+          return invoiceSum - expenseSum;
         })
       ),
     },
@@ -448,15 +449,15 @@ export async function buildAnalyticsSnapshot(
     overdueTasks: overdueCombined,
     recentAgentRuns,
     metrics: [
-      { label: "Hot leads", value: hotLeads, changePct: revenueChange || 15 },
+      { label: "Hot leads", value: hotLeads, changePct: revenueChange },
       {
         label: "Pipeline value",
         value: pipelineValue,
         unit: "GBP",
-        changePct: pipelineChange || 9,
+        changePct: pipelineChange,
       },
-      { label: "Open deals", value: openDeals.length, changePct: pipelineChange || 5 },
-      { label: "AI agent runs", value: agentRuns.length, changePct: aiChange || 22 },
+      { label: "Open deals", value: openDeals.length, changePct: pipelineChange },
+      { label: "AI agent runs", value: agentRuns.length, changePct: aiChange },
       { label: "Employees", value: employees.length },
       { label: "Candidates", value: candidates.length },
     ],

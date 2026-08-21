@@ -123,7 +123,7 @@ export async function seedCrmSampleData(
   };
 }
 
-/** Seed only when CRM has no contacts (production first-run). */
+/** Seed only when CRM has no contacts. Opt-in via the CRM sample button or API — not automatic. */
 export async function ensureCrmSampleSeed(scope: TenantScope): Promise<void> {
   const contacts = await getCrmRepository().listContacts(scope);
   if (contacts.length > 0) return;

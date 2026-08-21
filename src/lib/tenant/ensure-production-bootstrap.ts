@@ -2,9 +2,7 @@ import { isProductionMode } from "@/lib/config/app-mode";
 import { ensureDatastoreReady, isMemoryDatastore } from "@/lib/data/datastore";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { WORKFLOW_TEMPLATES } from "@/lib/data/workflow-demo-seed";
-import { ensureCrmSampleSeed } from "@/lib/demo/seed-crm-sample";
 import { ensureSalesPipeline } from "@/lib/demo/crm-bootstrap";
-import { ensureHrPlatformSeed } from "@/lib/hr/ensure-platform-seed";
 import { getProductionTenantScope } from "@/lib/tenant/context";
 import { ensureTenantRecords } from "@/lib/tenant/ensure-tenant-records";
 import type { MemberRole } from "@/types/tenant";
@@ -72,8 +70,6 @@ async function runProductionBootstrap(): Promise<void> {
     const ctx = productionBootstrapContext();
     await ensureTenantRecords(ctx);
     await ensureSalesPipeline(ctx.scope);
-    await ensureCrmSampleSeed(ctx.scope);
-    await ensureHrPlatformSeed(ctx.scope);
     await ensureWorkflowBootstrap(ctx.scope);
     try {
       const { ensurePlatformAffiliateHierarchy } = await import(

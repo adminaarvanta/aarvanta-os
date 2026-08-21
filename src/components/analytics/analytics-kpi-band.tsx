@@ -83,6 +83,7 @@ function KpiCard({
   sparkId: string;
 }) {
   const styles = TONE_STYLES[tone];
+  const showSpark = spark.some((n) => n !== 0);
   const body = (
     <div
       className={`flex h-full min-h-[148px] flex-col justify-between rounded-xl border border-border border-l-[6px] ${styles.border} ${styles.wash} p-5 transition-colors hover:brightness-[0.98] dark:hover:brightness-110`}
@@ -97,9 +98,11 @@ function KpiCard({
           </p>
           <p className="mt-1 min-h-[1rem] text-xs text-muted">{sub ?? "\u00a0"}</p>
         </div>
-        <div className="w-28 shrink-0 self-start pt-1">
-          <Sparkline data={spark} stroke={styles.stroke} fillId={sparkId} />
-        </div>
+        {showSpark ? (
+          <div className="w-28 shrink-0 self-start pt-1">
+            <Sparkline data={spark} stroke={styles.stroke} fillId={sparkId} />
+          </div>
+        ) : null}
       </div>
       <p
         className={`mt-3 min-h-[1.25rem] text-sm font-semibold ${
@@ -141,7 +144,11 @@ export function AnalyticsKpiBand({ snapshot }: { snapshot: AnalyticsSnapshot }) 
       <KpiCard
         label="Revenue"
         value={fmt(snapshot.revenue.total)}
-        change={snapshot.revenue.changePct}
+        change={
+          snapshot.revenue.total === 0 && snapshot.revenue.changePct === 0
+            ? undefined
+            : snapshot.revenue.changePct
+        }
         tone="revenue"
         spark={snapshot.sparklines.revenue}
         sparkId="spark-rev"
@@ -151,7 +158,11 @@ export function AnalyticsKpiBand({ snapshot }: { snapshot: AnalyticsSnapshot }) 
         label="Pipeline"
         value={fmt(snapshot.pipeline.pipelineValue)}
         sub={`${snapshot.pipeline.openDeals} open deals`}
-        change={snapshot.pipeline.changePct}
+        change={
+          snapshot.pipeline.pipelineValue === 0 && snapshot.pipeline.changePct === 0
+            ? undefined
+            : snapshot.pipeline.changePct
+        }
         tone="pipeline"
         spark={snapshot.sparklines.pipeline}
         sparkId="spark-pipe"
@@ -161,7 +172,11 @@ export function AnalyticsKpiBand({ snapshot }: { snapshot: AnalyticsSnapshot }) 
         label="Agent runs"
         value={String(snapshot.aiUsage.agentRuns)}
         sub={`${snapshot.aiUsage.workflowRuns} workflows`}
-        change={snapshot.aiUsage.changePct}
+        change={
+          snapshot.aiUsage.agentRuns === 0 && snapshot.aiUsage.changePct === 0
+            ? undefined
+            : snapshot.aiUsage.changePct
+        }
         tone="ai"
         spark={snapshot.sparklines.agentRuns}
         sparkId="spark-agents"

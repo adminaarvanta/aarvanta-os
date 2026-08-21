@@ -30,6 +30,7 @@ export interface FounderSnapshot {
   workforce: {
     recentRuns: number;
     pendingWorkflowApprovals: number;
+    recentActivity: Array<{ id: string; title: string; time: string }>;
   };
   focus: string[];
 }

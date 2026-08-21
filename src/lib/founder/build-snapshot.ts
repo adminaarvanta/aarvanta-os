@@ -4,6 +4,7 @@ import { getProjectRepository } from "@/lib/data/project-store";
 import { getRepository } from "@/lib/data/repository";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { getWorkforceRepository } from "@/lib/data/workforce-store";
+import { getAgentDefinition, isAgentType } from "@/lib/workforce/agents";
 import { contactDisplayName } from "@/types/crm";
 import type { FounderSnapshot } from "@/types/founder";
 import type { TenantScope } from "@/types/communication";
@@ -116,6 +117,29 @@ export async function buildFounderSnapshot(
     workforce: {
       recentRuns: workforce.length,
       pendingWorkflowApprovals: pendingApprovals,
+      recentActivity: [...workforce]
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+        .slice(0, 5)
+        .map((run) => {
+          const agentName = isAgentType(run.agentType)
+            ? getAgentDefinition(run.agentType).name
+            : "AI Agent";
+          const summary = run.summary.trim() || `${agentName} run`;
+          return {
+            id: run.id,
+            title: summary.length > 80 ? `${summary.slice(0, 77)}…` : summary,
+            time: new Date(run.createdAt).toLocaleString("en-GB", {
+              day: "numeric",
+              month: "short",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            }),
+          };
+        }),
     },
     focus,
   };

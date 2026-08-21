@@ -1,3 +1,4 @@
+import { isDemoMode } from "@/lib/config/app-mode";
 import { getHrStore } from "@/lib/data/platform-store";
 import {
   buildDemoHrCandidates,
@@ -6,8 +7,10 @@ import {
 } from "@/lib/data/platform-demo-seed";
 import type { TenantScope } from "@/types/communication";
 
-/** Seed HR roster for workspaces that have no employees yet (e.g. production bootstrap). */
+/** Seed HR roster for demo workspaces that have no employees yet. Production stays empty. */
 export async function ensureHrPlatformSeed(scope: TenantScope): Promise<void> {
+  if (!isDemoMode()) return;
+
   const hrStore = getHrStore();
   const [employees, candidates, jobs] = await Promise.all([
     hrStore.listEmployees(scope),

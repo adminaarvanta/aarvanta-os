@@ -15,22 +15,6 @@ import type { LaunchpadItem } from "@/lib/onboarding/launchpad";
 import type { FounderSnapshot } from "@/types/founder";
 import { cn } from "@/lib/utils";
 
-function MiniSparkline({ color }: { color: string }) {
-  const points = "0,18 12,14 24,16 36,8 48,10 60,4 72,6 84,2";
-  return (
-    <svg viewBox="0 0 84 20" className="h-5 w-full" preserveAspectRatio="none">
-      <polyline
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        points={points}
-      />
-    </svg>
-  );
-}
-
 function formatNow() {
   const now = new Date();
   return now.toLocaleString("en-GB", {
@@ -49,13 +33,6 @@ const quickActions = [
   { label: "Create Workflow", href: "/workflows", icon: Workflow },
   { label: "Generate Report", href: "/analytics", icon: FileText },
   { label: "Invite Team Member", href: "/team?tab=manage", icon: UserPlus },
-];
-
-const activityFeed = [
-  { title: "AI Agent: Lead Scoring Completed", time: "7:45 AM" },
-  { title: "AI Agent: New Lead Assigned", time: "7:42 AM" },
-  { title: "AI Agent: Follow-up Email Sent", time: "7:41 AM" },
-  { title: "AI Agent: Analytics Report Generated", time: "7:40 AM" },
 ];
 
 export function CommandCenterDashboard({
@@ -83,41 +60,39 @@ export function CommandCenterDashboard({
     )
   );
 
+  const currency = snapshot.revenue.currency || "GBP";
+  const money = (n: number) =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(n);
+
   const kpis = [
     {
-      label: "Revenue",
-      value: `£${snapshot.revenue.pipelineValue.toLocaleString()}`,
-      delta: "0%",
-      color: "#ea580c",
-      sparkColor: "#fb923c",
+      label: "Pipeline",
+      value: money(snapshot.revenue.pipelineValue),
+      sub: `${snapshot.revenue.openDeals} open deal${snapshot.revenue.openDeals === 1 ? "" : "s"}`,
     },
     {
-      label: "Pipeline Value",
-      value: `£${snapshot.revenue.weightedForecast.toLocaleString()}`,
-      delta: "0%",
-      color: "#7c3aed",
-      sparkColor: "#a78bfa",
+      label: "Forecast",
+      value: money(snapshot.revenue.weightedForecast),
+      sub: "Weighted pipeline",
     },
     {
-      label: "New Leads",
+      label: "Hot leads",
       value: String(snapshot.sales.hotLeads),
-      delta: "0%",
-      color: "#2563eb",
-      sparkColor: "#60a5fa",
+      sub: `${snapshot.sales.totalContacts} contact${snapshot.sales.totalContacts === 1 ? "" : "s"}`,
     },
     {
-      label: "Conversions",
+      label: "Open deals",
       value: String(snapshot.revenue.openDeals),
-      delta: "0%",
-      color: "#16a34a",
-      sparkColor: "#4ade80",
+      sub: money(snapshot.revenue.pipelineValue),
     },
     {
-      label: "Tasks Overdue",
+      label: "Overdue tasks",
       value: String(snapshot.projects.overdueTasks),
-      delta: "0%",
-      color: "#dc2626",
-      sparkColor: "#f87171",
+      sub: `${snapshot.projects.openTasks} open`,
     },
   ];
 
@@ -135,9 +110,6 @@ export function CommandCenterDashboard({
           </div>
           <div className="text-right">
             <p className="text-xs font-medium text-muted">{formatNow()}</p>
-            <div className="mt-2 w-32">
-              <MiniSparkline color="#2563eb" />
-            </div>
           </div>
         </div>
 
@@ -214,22 +186,30 @@ export function CommandCenterDashboard({
             {setupGuide ? null : (
             <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
               <h3 className="font-semibold text-foreground">AI Activity Feed</h3>
-              <ul className="mt-3 space-y-3">
-                {activityFeed.map((item) => (
-                  <li key={item.title} className="flex gap-3 text-sm">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <div>
-                      <p className="text-foreground">{item.title}</p>
-                      <p className="text-xs text-muted">{item.time}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {snapshot.workforce.recentActivity.length > 0 ? (
+                <ul className="mt-3 space-y-3">
+                  {snapshot.workforce.recentActivity.map((item) => (
+                    <li key={item.id} className="flex gap-3 text-sm">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <div>
+                        <p className="text-foreground">{item.title}</p>
+                        <p className="text-xs text-muted">{item.time}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-muted">
+                  No AI activity yet. Assign a task in AI Team to get started.
+                </p>
+              )}
               <Link
-                href="/communications"
+                href="/workforce"
                 className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
               >
-                View all activity
+                {snapshot.workforce.recentActivity.length > 0
+                  ? "View all activity"
+                  : "Open AI Team"}
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
