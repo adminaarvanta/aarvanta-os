@@ -62,6 +62,7 @@ export type FounderCommandId =
   | "open_communications"
   | "open_analytics"
   | "open_settings"
+  | "open_partners"
   | "open_platform"
   | "open_billing"
   | "open_writing"
