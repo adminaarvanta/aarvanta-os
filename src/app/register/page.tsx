@@ -13,11 +13,11 @@ export default async function RegisterPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
-  const nextPath = sanitizeNextPath(next ?? "/dashboard");
+  const nextPath = sanitizeNextPath(next ?? "/onboarding");
 
   if (!isDemoMode()) {
     const session = await getSessionFromCookies().catch(() => null);
-    if (session) redirect(nextPath);
+    if (session) redirect(sanitizeNextPath(next ?? "/dashboard"));
   }
 
   return (

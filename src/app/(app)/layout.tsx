@@ -3,9 +3,11 @@ import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getRepository } from "@/lib/data/repository";
 import { isProductionMode } from "@/lib/config/app-mode";
 import { getTenantRepository } from "@/lib/data/tenant-store";
+import { isOnboardingPending, shouldShowLaunchpad } from "@/lib/onboarding/catalog";
 import { getSessionContext } from "@/lib/tenant/context";
 import { ROLE_LABELS } from "@/types/tenant";
 import type { EntitlementsClient } from "@/lib/billing/entitlements";
+import { redirect } from "next/navigation";
 
 export default async function AppLayout({
   children,
@@ -19,6 +21,8 @@ export default async function AppLayout({
   let userRole = "Owner";
   let userId: string | null = null;
   let hasSeenWalkthrough = false;
+  let showLaunchpad = false;
+  let pendingOnboarding = false;
   let whatsappUnread = 0;
   let voiceUnread = 0;
   let entitlements: EntitlementsClient | null = null;
@@ -32,6 +36,7 @@ export default async function AppLayout({
     );
     const bootstrapped = await ensureTenantRecords(ctx);
     await ensureProductionBootstrap();
+    pendingOnboarding = isOnboardingPending(bootstrapped.organization);
     const workspaces = await repo.listWorkspaces(ctx.scope.tenantId);
     tenant = {
       organization: bootstrapped.organization,
@@ -42,6 +47,7 @@ export default async function AppLayout({
     userRole = ROLE_LABELS[ctx.role] ?? ctx.role;
     userId = ctx.userId;
     hasSeenWalkthrough = Boolean(ctx.member?.hasSeenWalkthrough);
+    showLaunchpad = shouldShowLaunchpad(bootstrapped.organization);
     const conversations = await getRepository().listConversations(ctx.scope);
     const { unreadForChannel } = await import("@/lib/channels/filter-conversations");
     whatsappUnread = unreadForChannel(conversations, "whatsapp");
@@ -84,6 +90,10 @@ export default async function AppLayout({
     };
   }
 
+  if (pendingOnboarding) {
+    redirect("/onboarding");
+  }
+
   return (
     <AppShell
       production={production}
@@ -92,6 +102,7 @@ export default async function AppLayout({
       userRole={userRole}
       userId={userId}
       hasSeenWalkthrough={hasSeenWalkthrough}
+      showLaunchpad={showLaunchpad}
       whatsappUnread={whatsappUnread}
       voiceUnread={voiceUnread}
       entitlements={entitlements}

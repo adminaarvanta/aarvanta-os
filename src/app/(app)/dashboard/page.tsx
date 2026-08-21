@@ -1,13 +1,32 @@
 import { CommandCenterDashboard } from "@/components/command-center/command-center-dashboard";
 import { buildFounderSnapshot } from "@/lib/founder/build-snapshot";
+import { shouldShowLaunchpad } from "@/lib/onboarding/catalog";
+import { buildLaunchpadSnapshot } from "@/lib/onboarding/launchpad";
+import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext } from "@/lib/tenant/context";
 
 export default async function DashboardPage() {
   const ctx = await getSessionContext();
-  const snapshot = await buildFounderSnapshot(ctx.scope);
+  const [snapshot, org, launchpad] = await Promise.all([
+    buildFounderSnapshot(ctx.scope),
+    getTenantRepository().getOrganization(ctx.scope.tenantId),
+    buildLaunchpadSnapshot(ctx.scope),
+  ]);
 
   return (
-    <CommandCenterDashboard userName={ctx.name || ctx.email} snapshot={snapshot} />
+    <CommandCenterDashboard
+      userName={ctx.name || ctx.email}
+      snapshot={snapshot}
+      setupGuide={
+        shouldShowLaunchpad(org)
+          ? {
+              firstName: (ctx.name || ctx.email).split(" ")[0] || "there",
+              items: launchpad.items,
+              percent: launchpad.percent,
+            }
+          : null
+      }
+    />
   );
 }
 

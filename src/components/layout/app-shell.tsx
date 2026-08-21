@@ -15,6 +15,7 @@ export function AppShell({
   userRole,
   userId,
   hasSeenWalkthrough = false,
+  showLaunchpad = false,
   whatsappUnread,
   voiceUnread,
   entitlements,
@@ -30,6 +31,7 @@ export function AppShell({
   userRole?: string;
   userId?: string | null;
   hasSeenWalkthrough?: boolean;
+  showLaunchpad?: boolean;
   whatsappUnread?: number;
   voiceUnread?: number;
   entitlements?: EntitlementsClient | null;
@@ -38,7 +40,8 @@ export function AppShell({
   const autoStartWalkthrough =
     production &&
     entitlements?.planId === "free" &&
-    !hasSeenWalkthrough;
+    !hasSeenWalkthrough &&
+    !showLaunchpad;
 
   return (
     <PlanProvider value={entitlements ?? null}>

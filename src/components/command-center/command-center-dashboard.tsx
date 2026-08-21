@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { OPERATING_SYSTEMS } from "@/lib/navigation/command-center-nav";
 import { KpiSparklineCard } from "@/components/command-center/kpi-sparkline-card";
+import { SetupGuideCard } from "@/components/onboarding/setup-guide-card";
+import type { LaunchpadItem } from "@/lib/onboarding/launchpad";
 import type { FounderSnapshot } from "@/types/founder";
 import { cn } from "@/lib/utils";
 
@@ -59,9 +61,15 @@ const activityFeed = [
 export function CommandCenterDashboard({
   userName,
   snapshot,
+  setupGuide = null,
 }: {
   userName: string;
   snapshot: FounderSnapshot;
+  setupGuide?: {
+    firstName: string;
+    items: LaunchpadItem[];
+    percent: number;
+  } | null;
 }) {
   const firstName = userName.split(" ")[0] ?? userName;
   const aiScore = Math.min(
@@ -139,6 +147,14 @@ export function CommandCenterDashboard({
           ))}
         </div>
 
+        {setupGuide ? (
+          <SetupGuideCard
+            firstName={setupGuide.firstName}
+            items={setupGuide.items}
+            percent={setupGuide.percent}
+          />
+        ) : null}
+
         <Link
           href="/workforce"
           className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent-cyan/40 bg-gradient-to-r from-accent-cyan/12 via-accent-cyan/5 to-transparent px-5 py-4 transition-colors hover:border-accent-cyan/60"
@@ -195,6 +211,7 @@ export function CommandCenterDashboard({
           </div>
 
           <div className="space-y-4">
+            {setupGuide ? null : (
             <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
               <h3 className="font-semibold text-foreground">AI Activity Feed</h3>
               <ul className="mt-3 space-y-3">
@@ -216,6 +233,7 @@ export function CommandCenterDashboard({
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
+            )}
 
             <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
               <div className="flex items-center justify-between">

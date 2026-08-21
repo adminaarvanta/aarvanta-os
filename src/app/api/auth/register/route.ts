@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       });
     });
 
-    const nextPath = sanitizeNextPath(parsed.data.next ?? "/dashboard");
+    const nextPath = sanitizeNextPath(parsed.data.next ?? "/onboarding");
     const response = NextResponse.json({
       ok: true,
       next: nextPath,

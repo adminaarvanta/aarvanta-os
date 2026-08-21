@@ -10,8 +10,8 @@ const VALID_PROVIDERS: SsoProvider[] = ["entra", "google", "okta", "onelogin"];
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const provider = (url.searchParams.get("provider") ?? "google") as SsoProvider;
-  const next = url.searchParams.get("next") ?? "/dashboard";
   const intent = url.searchParams.get("intent") === "register" ? "register" : "login";
+  const next = url.searchParams.get("next") ?? (intent === "register" ? "/onboarding" : "/dashboard");
 
   const fromQuery = url.searchParams.get("ref")?.trim() || "";
   const cookieStore = await cookies();

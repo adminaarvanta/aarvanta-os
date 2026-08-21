@@ -21,7 +21,7 @@ export interface TenantRepository {
   upsertOrganization(org: Organization): Promise<Organization>;
   updateOrganization(
     id: string,
-    patch: Partial<Pick<Organization, "name" | "plan">>
+    patch: Partial<Pick<Organization, "name" | "plan" | "onboarding">>
   ): Promise<Organization | null>;
 
   listWorkspaces(tenantId: string): Promise<Workspace[]>;

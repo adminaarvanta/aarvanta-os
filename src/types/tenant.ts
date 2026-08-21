@@ -7,6 +7,33 @@ export type InvitationStatus = "pending" | "accepted" | "expired" | "revoked";
 
 export type MemberStatus = "active" | "suspended";
 
+export type OnboardingStatus = "pending" | "complete";
+
+export type OnboardingUseCase =
+  | "own_business"
+  | "agency"
+  | "internal_team"
+  | "exploring";
+
+export type CustomerCountRange =
+  | "1-10"
+  | "11-50"
+  | "51-200"
+  | "200+"
+  | "none_yet";
+
+/** Post-signup profile collected by `/onboarding`. Absent on legacy orgs. */
+export interface OrganizationOnboarding {
+  status: OnboardingStatus;
+  website?: string;
+  useCase?: OnboardingUseCase;
+  industry?: string;
+  customerCountRange?: CustomerCountRange;
+  tools?: string[];
+  completedAt?: string;
+  launchpadDismissedAt?: string;
+}
+
 export interface Organization {
   id: string;
   name: string;
@@ -14,6 +41,7 @@ export interface Organization {
   plan: "free" | "starter" | "growth" | "scale" | "enterprise";
   createdAt: string;
   updatedAt: string;
+  onboarding?: OrganizationOnboarding;
 }
 
 export interface Workspace {

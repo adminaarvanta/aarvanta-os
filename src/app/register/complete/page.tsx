@@ -9,6 +9,6 @@ export default async function RegisterCompletePage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
-  const nextPath = sanitizeNextPath(next ?? "/dashboard");
+  const nextPath = sanitizeNextPath(next ?? "/onboarding");
   return <RegisterCompleteShell nextPath={nextPath} />;
 }

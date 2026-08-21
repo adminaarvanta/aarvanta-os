@@ -100,6 +100,7 @@ export async function ensureFreeTierMembership(input: {
     plan: "free",
     createdAt: now,
     updatedAt: now,
+    onboarding: { status: "pending" },
   });
 
   const workspace = await repo.createWorkspace({
@@ -178,6 +179,7 @@ export async function provisionFreeTierAccount(
       plan: "free",
       createdAt: now,
       updatedAt: now,
+      onboarding: { status: "pending" },
     });
 
     const workspace = await repo.createWorkspace({

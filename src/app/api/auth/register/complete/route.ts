@@ -91,7 +91,7 @@ export async function POST(req: Request) {
     );
 
     const nextPath = sanitizeNextPath(
-      parsed.data.next ?? pending.next ?? "/dashboard"
+      parsed.data.next ?? pending.next ?? "/onboarding"
     );
     const response = NextResponse.json({
       ok: true,
