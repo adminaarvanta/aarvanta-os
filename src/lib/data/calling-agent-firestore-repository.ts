@@ -85,7 +85,13 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async updateAgent(id, patch, scope) {
     const existing = await getScoped<VoiceAgent>(COLLECTIONS.agents, id, scope);
     if (!existing) return null;
-    const updated = { ...existing, ...patch, updatedAt: crmNow() };
+    const { clonedVoice, ...rest } = patch;
+    const updated: VoiceAgent = { ...existing, ...rest, updatedAt: crmNow() };
+    if (clonedVoice) {
+      updated.clonedVoice = clonedVoice;
+    } else if ("clonedVoice" in patch) {
+      delete updated.clonedVoice;
+    }
     return save(COLLECTIONS.agents, updated);
   },
 

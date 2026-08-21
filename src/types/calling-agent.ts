@@ -101,6 +101,18 @@ export interface VoiceAgentFlowConfig {
   entryStage: ConversationStageId;
 }
 
+export type ClonedVoiceStatus = "ready" | "failed";
+
+/** Instant Voice Clone attached to a Voice Agent (ElevenLabs). */
+export interface ClonedVoice {
+  elevenLabsVoiceId: string;
+  name: string;
+  status: ClonedVoiceStatus;
+  consentAt: string;
+  createdAt: string;
+  previewText?: string;
+}
+
 export interface VoiceAgent extends TenantScope {
   id: string;
   name: string;
@@ -108,6 +120,7 @@ export interface VoiceAgent extends TenantScope {
   ttsProvider?: string;
   ttsVoice?: string;
   greetingName?: string;
+  clonedVoice?: ClonedVoice;
   flowConfig: VoiceAgentFlowConfig;
   createdAt: string;
   updatedAt: string;

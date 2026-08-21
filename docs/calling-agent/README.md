@@ -23,6 +23,7 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 ## Env
 
 - Twilio + `VOICE_RELAY_*` (see `docs/VOICE_RELAY.md`)
+- `ELEVENLABS_API_KEY` — Instant Voice Clone upload + live cloned TTS (optional; catalog voices work without it)
 - `CRON_SECRET` — protects `/api/cron/call-campaigns` (every minute) and `/api/cron/meeting-reminders`
 - `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` (or SSO Google client vars) for FreeBusy + event create
 - `NEXT_PUBLIC_APP_URL` — OAuth redirect + TwiML

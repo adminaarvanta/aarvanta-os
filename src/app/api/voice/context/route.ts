@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
+import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getKnowledgeRepository } from "@/lib/data/knowledge-store";
@@ -57,6 +59,7 @@ export async function POST(req: Request) {
   const scope = getWebhookTenantScope();
   const settings = await getWorkspaceSettings(scope.workspaceId);
   const businessName = settings.businessName?.trim() || "Aarvanta";
+  const voicePrefs = resolveVoiceCallingConfig(settings);
 
   const knowledgeRepo = getKnowledgeRepository();
   const chunks = await knowledgeRepo.listChunks(scope);
@@ -147,6 +150,14 @@ export async function POST(req: Request) {
     )
     .join("\n");
 
+  const clonedVoiceId = liveClonedVoiceId(agent);
+  const recordingNotice =
+    clonedVoiceId &&
+    voicePrefs.callRecordingEnabled &&
+    voicePrefs.callRecordingAnnounce
+      ? voicePrefs.recordingNotice
+      : "";
+
   return NextResponse.json({
     businessName,
     knowledgeDigest,
@@ -164,5 +175,7 @@ export async function POST(req: Request) {
     sessionId: parsed.data.sessionId,
     campaignId: parsed.data.campaignId,
     queueId: parsed.data.queueId,
+    clonedVoiceId: clonedVoiceId ?? "",
+    recordingNotice,
   });
 }

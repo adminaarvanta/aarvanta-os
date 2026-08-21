@@ -31,6 +31,8 @@ TWILIO_AUTH_TOKEN=...          # same as Vercel
 VOICE_RELAY_WSS_URL=wss://YOUR-HOST/voice-relay/ws   # must match nginx + Vercel exactly
 AARVANTA_VOICE_CALLBACK_URL=https://os.aarvanta.co/api/webhooks/voice-relay
 VOICE_RELAY_CALLBACK_SECRET=generate-a-long-random-string
+# Custom clones (same key as Vercel). Leave unset to keep catalog TTS only.
+ELEVENLABS_API_KEY=
 # Optional — defaults to …/api/voice/context derived from callback URL
 # AARVANTA_VOICE_CONTEXT_URL=https://os.aarvanta.co/api/voice/context
 
@@ -46,7 +48,7 @@ After pulling code that updates `services/voice-relay/app.py`:
 sudo bash services/voice-relay/deploy/install-on-ec2.sh   # or rsync + pip install
 sudo systemctl restart voice-relay
 curl https://YOUR-HOST/voice-relay/health
-# Expect version >= 1.3.0, maxReplyTokens 160, contextConfigured true
+# Expect version >= 1.6.0, clonedTts true when ELEVENLABS_API_KEY is set
 ```
 
 Add nginx (path proxy or `voice.aarvanta.co`) from `deploy/nginx-voice-relay.conf`, then:
@@ -63,6 +65,8 @@ VOICE_RELAY_CALLBACK_SECRET=same-as-ec2
 # VOICE_RELAY_BUDGET_MODE=true
 VOICE_RELAY_TTS_PROVIDER=ElevenLabs
 VOICE_RELAY_TTS_VOICE=EXAVITQu4vr4xnSDxMaL
+# Custom Voice Agent clones (upload on /voice/agents/:id/flow)
+ELEVENLABS_API_KEY=
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=+17167032574
@@ -121,7 +125,7 @@ Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
 
 ### 6. Health
 - `https://os.aarvanta.co/api/health` → Voice Relay item **ok**
-- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.5.0"`, `"contextConfigured": true`, `"toolsEnabled": true`
+- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.6.0"`, `"contextConfigured": true`, `"toolsEnabled": true`, `"clonedTts": true` when `ELEVENLABS_API_KEY` is set
 
 ## Voiceover (TTS) & cost
 
@@ -131,6 +135,18 @@ There is **no fully free** two-way PSTN AI on Twilio. Conversation Relay is **~$
 |------|----------|-------------|----------------|
 | **Budget (cheapest)** | `VOICE_RELAY_BUDGET_MODE=true` | No — one-shot Polly `<Say>` | Call minutes only |
 | **Amazon / Google / ElevenLabs** | Voice OS → Voice configuration (or env) | Yes | Relay $0.07/min + call minutes |
+| **Custom clone** | Voice Agents → upload samples | Yes | Relay fee **plus** ElevenLabs TTS characters |
+
+### Custom Voice Agent clone
+
+Twilio ConversationRelay can only speak **catalog** ElevenLabs/Google/Amazon voices. A clone from uploaded audio lives in the Aarvanta ElevenLabs account, so the EC2 relay synthesizes MP3s and sends ConversationRelay `{ type: "play", source }`.
+
+1. On **`/voice/agents/:id/flow`**, upload 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
+2. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
+3. Redeploy the relay (`version` ≥ **1.6.0**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy).
+4. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live calls still use the workspace catalog voice.
+
+Agents without a ready clone keep the workspace Voice settings (Sarah/Rachel/etc.).
 
 ### Voice configuration (Voice OS UI)
 

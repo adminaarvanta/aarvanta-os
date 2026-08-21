@@ -19,14 +19,16 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Any
 from urllib import request as urlrequest
 from urllib.error import HTTPError, URLError
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from openai import OpenAI
+from pathlib import Path
 
 load_dotenv()
 
@@ -71,7 +73,10 @@ REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.55
 REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.35"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
-SERVICE_VERSION = "1.5.2"
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
+TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
+TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
+SERVICE_VERSION = "1.6.0"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -288,6 +293,82 @@ def execute_booking_tool(
 
 async def send_text(ws: WebSocket, token: str, *, last: bool) -> None:
     await ws.send_json({"type": "text", "token": token, "last": last, "interruptible": True})
+
+
+async def send_play(ws: WebSocket, source: str) -> None:
+    await ws.send_json(
+        {
+            "type": "play",
+            "source": source,
+            "loop": 1,
+            "interruptible": True,
+            "preemptible": True,
+        }
+    )
+
+
+def resolve_tts_public_base() -> str:
+    explicit = os.getenv("VOICE_RELAY_TTS_PUBLIC_BASE", "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+    wss = VOICE_RELAY_WSS_URL.rstrip("/")
+    if wss.endswith("/ws"):
+        http = wss[:-3].replace("wss://", "https://").replace("ws://", "http://")
+        return f"{http.rstrip('/')}/tts"
+    return ""
+
+
+def _cleanup_tts_dir() -> None:
+    if not TTS_DIR.is_dir():
+        return
+    cutoff = time.time() - TTS_TTL_SECONDS
+    for path in TTS_DIR.glob("*.mp3"):
+        try:
+            if path.stat().st_mtime < cutoff:
+                path.unlink(missing_ok=True)
+        except OSError:
+            continue
+
+
+def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
+    """ElevenLabs TTS → short-lived public MP3 URL for ConversationRelay play."""
+    if not ELEVENLABS_API_KEY or not voice_id or not text.strip():
+        return None
+    public_base = resolve_tts_public_base()
+    if not public_base:
+        log.warning("cloned TTS skipped — VOICE_RELAY_WSS_URL / TTS public base unset")
+        return None
+    TTS_DIR.mkdir(parents=True, exist_ok=True)
+    _cleanup_tts_dir()
+    payload = json.dumps(
+        {"text": text.strip(), "model_id": "eleven_flash_v2_5"}
+    ).encode("utf-8")
+    req = urlrequest.Request(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+        data=payload,
+        headers={
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+        },
+        method="POST",
+    )
+    try:
+        with urlrequest.urlopen(req, timeout=20) as resp:
+            audio = resp.read()
+    except (HTTPError, URLError, TimeoutError) as exc:
+        log.warning("elevenlabs tts failed: %s", exc)
+        return None
+    if not audio:
+        return None
+    token = hashlib.sha256(f"{voice_id}:{time.time()}:{text[:48]}".encode()).hexdigest()[:24]
+    filename = f"{token}.mp3"
+    (TTS_DIR / filename).write_bytes(audio)
+    return f"{public_base}/{filename}"
+
+
+def _speech_seconds(text: str) -> float:
+    return max(1.2, min(8.0, len(text) / 13.0 + 0.4))
 
 
 async def end_session(ws: WebSocket, handoff: str = "completed") -> None:
@@ -520,6 +601,19 @@ async def _speak_stream(ws: WebSocket, reply: str) -> None:
     await send_text(ws, buffer if buffer else " ", last=True)
 
 
+async def speak(ws: WebSocket, reply: str, call_context: dict[str, Any] | None = None) -> None:
+    """Speak via cloned ElevenLabs play, or catalog ConversationRelay TTS."""
+    text = _cap_reply((reply or "").strip() or "Sorry — could you repeat that?")
+    cloned = str((call_context or {}).get("clonedVoiceId") or "").strip()
+    if cloned:
+        url = await asyncio.to_thread(synthesize_cloned_mp3, cloned, text)
+        if url:
+            await send_play(ws, url)
+            return
+        log.warning("cloned TTS failed — falling back to catalog voice")
+    await _speak_stream(ws, text)
+
+
 async def stream_reply(
     ws: WebSocket,
     history: list[dict[str, str]],
@@ -528,13 +622,13 @@ async def stream_reply(
     call_context: dict[str, Any] | None = None,
 ) -> str:
     history.append({"role": "user", "content": user_text})
+    ctx = call_context or {}
     if not openai_client:
         reply = "Thanks for calling. Please try again later."
         history.append({"role": "assistant", "content": reply})
-        await send_text(ws, reply, last=True)
+        await speak(ws, reply, ctx)
         return reply
 
-    ctx = call_context or {}
     tools_enabled = bool(resolve_api_base() and AARVANTA_CALLBACK_SECRET)
     # OpenAI message list may include tool rounds (not just plain chat turns).
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}, *history]
@@ -561,7 +655,7 @@ async def stream_reply(
 
         if tool_calls and tools_enabled:
             if not filler_sent:
-                await send_text(ws, "One moment — checking the calendar.", last=True)
+                await speak(ws, "One moment — checking the calendar.", ctx)
                 filler_sent = True
 
             assistant_msg: dict[str, Any] = {
@@ -607,24 +701,27 @@ async def stream_reply(
         reply = (choice.content or "").strip() or "Sorry — could you repeat that?"
         reply = _dedupe_against_history(reply, history)
         reply = _cap_reply(reply)
-        await _speak_stream(ws, reply)
+        await speak(ws, reply, ctx)
         history.append({"role": "assistant", "content": reply})
         if len(history) > 16:
             del history[:-16]
         return reply
 
     reply = "Sorry — I had trouble with the calendar. Can we try another time?"
-    await send_text(ws, reply, last=True)
+    await speak(ws, reply, ctx)
     history.append({"role": "assistant", "content": reply})
     return reply
 
 
-async def say_goodbye_and_hangup(ws: WebSocket, transcript: list[dict[str, str]]) -> None:
+async def say_goodbye_and_hangup(
+    ws: WebSocket,
+    transcript: list[dict[str, str]],
+    call_context: dict[str, Any] | None = None,
+) -> None:
     goodbye = "Sounds good. Take care — goodbye."
-    await send_text(ws, goodbye, last=True)
+    await speak(ws, goodbye, call_context)
     transcript.append({"role": "assistant", "content": goodbye})
-    # Brief pause so ElevenLabs can start speaking before Twilio tears down
-    await asyncio.sleep(1.2)
+    await asyncio.sleep(_speech_seconds(goodbye))
     await end_session(ws, json.dumps({"reason": "caller_ended"}))
 
 
@@ -697,8 +794,19 @@ async def health() -> JSONResponse:
             "frequencyPenalty": REPLY_FREQUENCY_PENALTY,
             "presencePenalty": REPLY_PRESENCE_PENALTY,
             "brand": BRAND_NAME,
+            "clonedTts": bool(ELEVENLABS_API_KEY and resolve_tts_public_base()),
         }
     )
+
+
+@app.get("/tts/{filename}")
+async def tts_file(filename: str) -> FileResponse | PlainTextResponse:
+    if not re.fullmatch(r"[a-f0-9]{16,64}\.mp3", filename):
+        return PlainTextResponse("not found", status_code=404)
+    path = TTS_DIR / filename
+    if not path.is_file():
+        return PlainTextResponse("not found", status_code=404)
+    return FileResponse(path, media_type="audio/mpeg")
 
 
 @app.get("/")
@@ -775,11 +883,12 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     ),
                     "voiceAgentName": str(context.get("voiceAgentName") or "Ava"),
                     "timezone": "America/New_York",
+                    "clonedVoiceId": str(context.get("clonedVoiceId") or "").strip(),
                 }
                 session["callContext"] = call_context
                 direction = str(params.get("direction") or "").lower()
                 log.info(
-                    "setup callSid=%s from=%s direction=%s brand=%s knowledge=%s contact=%s tools=%s",
+                    "setup callSid=%s from=%s direction=%s brand=%s knowledge=%s contact=%s tools=%s clone=%s",
                     session.get("callSid"),
                     session.get("from"),
                     direction or "-",
@@ -787,7 +896,14 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     "yes" if knowledge_digest else "no",
                     call_context.get("contactId") or "-",
                     "yes" if resolve_api_base() and AARVANTA_CALLBACK_SECRET else "no",
+                    "yes" if call_context.get("clonedVoiceId") else "no",
                 )
+                notice = str(context.get("recordingNotice") or "").strip()
+                if notice and call_context.get("clonedVoiceId"):
+                    try:
+                        await speak(websocket, notice, call_context)
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("recording notice play failed: %s", exc)
                 # Always open with a spoken greeting (inbound + outbound).
                 opening_instruction = (
                     OUTBOUND_OPENING_INSTRUCTION
@@ -820,7 +936,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
                             f"Hi, thanks for calling {BRAND_NAME}. "
                             f"This is {agent_name} — how can I help?"
                         )
-                    await send_text(websocket, fallback, last=True)
+                    await speak(websocket, fallback, call_context)
                     transcript.append({"role": "assistant", "content": fallback})
                 continue
 
@@ -834,7 +950,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
 
                 if is_end_intent(prompt, awaiting_confirm=offered_hangup):
                     log.info("end intent detected — goodbye + hangup")
-                    await say_goodbye_and_hangup(websocket, transcript)
+                    await say_goodbye_and_hangup(websocket, transcript, call_context)
                     break
 
                 try:
@@ -844,12 +960,12 @@ async def conversation_relay(websocket: WebSocket) -> None:
                 except Exception as exc:  # noqa: BLE001
                     log.exception("OpenAI failed: %s", exc)
                     reply = "Sorry, I am having trouble right now."
-                    await send_text(websocket, reply, last=True)
+                    await speak(websocket, reply, call_context)
                 transcript.append({"role": "assistant", "content": reply})
 
                 # If the model said goodbye, hang up after TTS starts
                 if re.search(r"\b(goodbye|bye for now|have a (good|great) day)\b", reply, re.I):
-                    await asyncio.sleep(1.2)
+                    await asyncio.sleep(_speech_seconds(reply))
                     await end_session(websocket, json.dumps({"reason": "assistant_ended"}))
                     break
 

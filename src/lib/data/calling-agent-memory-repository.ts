@@ -60,7 +60,18 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async updateAgent(id, patch, scope) {
     const idx = agents.findIndex((a) => a.id === id && inCrmScope(a, scope));
     if (idx < 0) return null;
-    agents[idx] = { ...agents[idx], ...patch, updatedAt: crmNow() };
+    const { clonedVoice, ...rest } = patch;
+    const next: VoiceAgent = {
+      ...agents[idx],
+      ...rest,
+      updatedAt: crmNow(),
+    };
+    if (clonedVoice) {
+      next.clonedVoice = clonedVoice;
+    } else if ("clonedVoice" in patch) {
+      delete next.clonedVoice;
+    }
+    agents[idx] = next;
     return agents[idx];
   },
 

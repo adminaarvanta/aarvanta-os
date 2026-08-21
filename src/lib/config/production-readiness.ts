@@ -239,6 +239,18 @@ export function getProductionReadiness(): ProductionReadiness {
         status: "ok",
         detail: "ConversationRelay WebSocket configured",
       });
+      if (!process.env.ELEVENLABS_API_KEY?.trim()) {
+        warnings.push(
+          "ELEVENLABS_API_KEY not set — Voice Agent custom clones stay demo/catalog-only"
+        );
+        items.push({
+          id: "elevenlabs_clone",
+          label: "Custom voice clone",
+          status: "warning",
+          detail:
+            "Set ELEVENLABS_API_KEY on Vercel and the EC2 voice-relay to clone and speak custom voices",
+        });
+      }
     }
   } else if (
     process.env.TWILIO_ACCOUNT_SID?.trim() &&

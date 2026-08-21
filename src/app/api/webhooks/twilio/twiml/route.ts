@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 import { isVoiceRelayBudgetMode } from "@/lib/channels/voice-relay-tts";
+import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
 
@@ -70,6 +72,21 @@ async function twimlResponse(req: Request) {
   const settings = await getWorkspaceSettings(scope.workspaceId);
   const voice = resolveVoiceCallingConfig(settings);
 
+  const calling = getCallingAgentRepository();
+  let agent = voiceAgentId
+    ? await calling.getAgent(voiceAgentId, scope)
+    : null;
+  if (!agent && campaignId) {
+    const campaign = await calling.getCampaign(campaignId, scope);
+    if (campaign) {
+      agent = await calling.getAgent(campaign.voiceAgentId, scope);
+    }
+  }
+  if (!agent) {
+    agent = (await calling.listAgents(scope))[0] ?? null;
+  }
+  const clonedOnCall = Boolean(liveClonedVoiceId(agent));
+
   const businessName = settings.businessName?.trim() || "Aarvanta";
   const defaultWelcome =
     direction === "inbound"
@@ -82,7 +99,11 @@ async function twimlResponse(req: Request) {
     mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
   let welcome = direction === "inbound" ? defaultWelcome : "";
-  if (voice.callRecordingEnabled && voice.callRecordingAnnounce) {
+  if (clonedOnCall) {
+    // Cloned playback is ConversationRelay `play` from the EC2 relay.
+    // Skip catalog welcomeGreeting so the first spoken audio is the clone.
+    welcome = "";
+  } else if (voice.callRecordingEnabled && voice.callRecordingAnnounce) {
     welcome = welcome
       ? `${voice.recordingNotice} ${welcome}`
       : voice.recordingNotice;

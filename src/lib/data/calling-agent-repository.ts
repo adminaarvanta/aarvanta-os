@@ -100,7 +100,7 @@ export interface CallingAgentRepository {
         | "greetingName"
         | "flowConfig"
       >
-    >,
+    > & { clonedVoice?: VoiceAgent["clonedVoice"] | null },
     scope: TenantScope
   ): Promise<VoiceAgent | null>;
 

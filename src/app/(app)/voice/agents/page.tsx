@@ -25,8 +25,12 @@ export default async function VoiceAgentsPage() {
             <p className="font-semibold text-foreground">{agent.name}</p>
             <p className="mt-1 text-xs text-muted">
               {agent.language}
-              {agent.ttsProvider ? ` · ${agent.ttsProvider}` : ""} ·{" "}
-              {agent.flowConfig.stages.length} stages
+              {agent.clonedVoice?.status === "ready"
+                ? " · Custom clone"
+                : agent.ttsProvider
+                  ? ` · ${agent.ttsProvider}`
+                  : ""}{" "}
+              · {agent.flowConfig.stages.length} stages
             </p>
             <Link
               href={`/voice/agents/${agent.id}/flow`}

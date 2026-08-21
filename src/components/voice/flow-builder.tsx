@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AgentVoiceCloneCard } from "@/components/voice/agent-voice-clone-card";
 import type {
   ConversationStageId,
   VoiceAgent,
@@ -45,6 +46,7 @@ export function FlowBuilder({ agent }: { agent: VoiceAgent }) {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
+      <AgentVoiceCloneCard agent={agent} />
       <p className="text-sm text-muted">
         Stage machine for {agent.name}. Edit objectives and review allowed
         branches — the voice relay follows this order on campaign calls.
