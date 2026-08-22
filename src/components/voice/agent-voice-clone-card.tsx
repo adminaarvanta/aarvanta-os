@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { setPrimaryVoiceAgent } from "@/components/voice/set-primary-voice-agent";
 import {
   isDefaultCatalogAgent,
   isDemoClonedVoiceId,
@@ -49,7 +50,13 @@ function formatClock(seconds: number): string {
 const MIN_RECOMMENDED_SEC = 45;
 const MAX_RECORD_SEC = 180;
 
-export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
+export function AgentVoiceCloneCard({
+  agent,
+  isPrimary = false,
+}: {
+  agent: VoiceAgent;
+  isPrimary?: boolean;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
@@ -60,9 +67,10 @@ export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
   const previewUrlRef = useRef<string | null>(null);
 
   const [consent, setConsent] = useState(false);
-  const [busy, setBusy] = useState<"upload" | "preview" | "remove" | null>(
-    null
-  );
+  const [setAsPrimary, setSetAsPrimary] = useState(!isPrimary);
+  const [busy, setBusy] = useState<
+    "upload" | "preview" | "remove" | "primary" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [demoNote, setDemoNote] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -132,6 +140,7 @@ export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
     try {
       const form = new FormData();
       form.set("consent", "true");
+      form.set("setPrimary", setAsPrimary ? "true" : "false");
       for (const file of files.slice(0, 3)) form.append("files", file);
       const res = await fetch(`/api/voice/agents/${agent.id}/voice`, {
         method: "POST",
@@ -244,6 +253,19 @@ export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
     }
   }
 
+  async function onSetPrimary() {
+    setBusy("primary");
+    setError(null);
+    try {
+      await setPrimaryVoiceAgent(agent.id);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not set primary");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function onRemove() {
     setBusy("remove");
     setError(null);
@@ -305,8 +327,14 @@ export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
           <h3 className="text-sm font-semibold text-foreground">Custom voice</h3>
           <p className="mt-0.5 text-xs text-muted">
             Record or upload a sample of the person this agent should sound
-            like. Used only on this agent’s calls.
+            like. Set it as primary so Dialer, inbound, and scheduled calls use
+            this voice.
           </p>
+          {isPrimary ? (
+            <p className="mt-1 text-[11px] font-medium text-[var(--chart-ai)]">
+              Primary agent for real calls
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -348,6 +376,9 @@ export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
           ) : (
             <p className="mt-1 text-xs text-muted">
               Cloned {new Date(cloned.createdAt).toLocaleString()}
+              {isPrimary
+                ? " · this agent is primary for Dialer, inbound, and scheduled calls."
+                : " · set as primary so real calls use this clone."}
             </p>
           )}
         </div>
@@ -362,6 +393,20 @@ export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
           Preview
         </audio>
       ) : null}
+
+      <label className="mt-3 flex items-start gap-2 text-xs text-foreground">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={setAsPrimary || isPrimary}
+          onChange={(e) => setSetAsPrimary(e.target.checked)}
+          disabled={busy !== null || recording || isPrimary}
+        />
+        <span>
+          Use this agent as the default for Dialer, inbound, and scheduled
+          calls.
+        </span>
+      </label>
 
       <label className="mt-3 flex items-start gap-2 text-xs text-foreground">
         <input
@@ -482,6 +527,17 @@ export function AgentVoiceCloneCard({ agent }: { agent: VoiceAgent }) {
             onClick={() => void onPreview()}
           >
             {busy === "preview" ? "Generating…" : "Play clone preview"}
+          </Button>
+        ) : null}
+        {ready && !isPrimary ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={busy !== null || recording}
+            onClick={() => void onSetPrimary()}
+          >
+            {busy === "primary" ? "Setting…" : "Set as primary for real calls"}
           </Button>
         ) : null}
         {cloned ? (

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
@@ -118,9 +119,10 @@ export async function POST(req: Request) {
     }
   }
 
-  const agent = voiceAgentId
-    ? await calling.getAgent(voiceAgentId, scope)
-    : (await calling.listAgents(scope))[0];
+  const agent = await resolveCallVoiceAgent(scope, {
+    voiceAgentId,
+    campaignId: parsed.data.campaignId,
+  });
 
   if (contactId) {
     const contact = await getCrmRepository().getContact(contactId, scope);

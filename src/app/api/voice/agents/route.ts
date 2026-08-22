@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
+import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
 
 const createSchema = z.object({
@@ -20,8 +21,14 @@ export async function GET() {
     return unauthorized();
   }
 
-  const agents = await getCallingAgentRepository().listAgents(scope);
-  return NextResponse.json({ agents });
+  const [agents, settings] = await Promise.all([
+    getCallingAgentRepository().listAgents(scope),
+    getWorkspaceSettings(scope.workspaceId),
+  ]);
+  return NextResponse.json({
+    agents,
+    primaryAgentId: settings.voicePrimaryAgentId ?? null,
+  });
 }
 
 export async function POST(req: Request) {

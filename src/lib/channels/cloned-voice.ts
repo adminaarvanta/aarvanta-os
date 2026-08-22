@@ -20,6 +20,29 @@ export function demoClonedVoiceId(agentId: string): string {
   return `${DEMO_CLONE_PREFIX}${agentId}`;
 }
 
+/** UI: agent has a saved clone (including demo stubs). */
+export function hasCustomVoiceSample(
+  agent: VoiceAgent | null | undefined
+): boolean {
+  return agent?.clonedVoice?.status === "ready";
+}
+
+/**
+ * Pick which agent Dialer / inbound / campaigns should default to.
+ * Prefers the workspace primary, then any agent with a custom clone.
+ */
+export function pickPreferredVoiceAgent(
+  agents: VoiceAgent[],
+  primaryId?: string | null
+): VoiceAgent | undefined {
+  const primary = primaryId?.trim();
+  if (primary) {
+    const match = agents.find((a) => a.id === primary);
+    if (match) return match;
+  }
+  return agents.find((a) => hasCustomVoiceSample(a)) ?? agents[0];
+}
+
 /**
  * ElevenLabs voice id to speak on live calls. Undefined when the agent has
  * no clone, the clone failed, or it is a demo stub (catalog TTS still used).

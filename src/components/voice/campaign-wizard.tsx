@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  hasCustomVoiceSample,
+  pickPreferredVoiceAgent,
+} from "@/lib/channels/cloned-voice";
 import { contactDisplayName, type ContactTag, type CrmContact } from "@/types/crm";
 import {
   DEFAULT_RETRY_POLICY,
@@ -37,13 +41,21 @@ const inputClass =
 
 async function ensureVoiceAgents(
   existing: VoiceAgent[]
-): Promise<{ agents: VoiceAgent[]; error?: string }> {
+): Promise<{ agents: VoiceAgent[]; primaryAgentId?: string; error?: string }> {
   if (existing.length > 0) return { agents: existing };
 
   const listRes = await fetch("/api/voice/agents");
   if (listRes.ok) {
-    const data = (await listRes.json()) as { agents: VoiceAgent[] };
-    if (data.agents.length > 0) return { agents: data.agents };
+    const data = (await listRes.json()) as {
+      agents: VoiceAgent[];
+      primaryAgentId?: string | null;
+    };
+    if (data.agents.length > 0) {
+      return {
+        agents: data.agents,
+        primaryAgentId: data.primaryAgentId ?? undefined,
+      };
+    }
   } else if (listRes.status === 401) {
     return { agents: [], error: "Sign in required to load voice agents." };
   }
@@ -70,8 +82,10 @@ async function ensureVoiceAgents(
 
 export function CampaignWizard({
   initialAgents = [],
+  initialPrimaryAgentId,
 }: {
   initialAgents?: VoiceAgent[];
+  initialPrimaryAgentId?: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -92,7 +106,12 @@ export function CampaignWizard({
   const [tags, setTags] = useState<ContactTag[]>(["prospect", "hot_lead"]);
   const [minLeadScore, setMinLeadScore] = useState(50);
   const [industries, setIndustries] = useState("");
-  const [voiceAgentId, setVoiceAgentId] = useState(initialAgents[0]?.id ?? "");
+  const [voiceAgentId, setVoiceAgentId] = useState(
+    pickPreferredVoiceAgent(initialAgents, initialPrimaryAgentId)?.id ?? ""
+  );
+  const [primaryAgentId, setPrimaryAgentId] = useState(
+    initialPrimaryAgentId ?? ""
+  );
   const [timezone, setTimezone] = useState("America/New_York");
   const [dailyCallLimit, setDailyCallLimit] = useState(40);
   const [weekendCalling, setWeekendCalling] = useState(false);
@@ -144,11 +163,17 @@ export function CampaignWizard({
       const result = await ensureVoiceAgents(initialAgents);
       if (cancelled) return;
       setAgents(result.agents);
+      if (result.primaryAgentId) setPrimaryAgentId(result.primaryAgentId);
       setVoiceAgentId((current) => {
         if (current && result.agents.some((a) => a.id === current)) {
           return current;
         }
-        return result.agents[0]?.id ?? "";
+        return (
+          pickPreferredVoiceAgent(
+            result.agents,
+            result.primaryAgentId ?? initialPrimaryAgentId
+          )?.id ?? ""
+        );
       });
       if (result.error) setError(result.error);
       setAgentsLoading(false);
@@ -156,7 +181,7 @@ export function CampaignWizard({
     return () => {
       cancelled = true;
     };
-  }, [initialAgents]);
+  }, [initialAgents, initialPrimaryAgentId]);
 
   useEffect(() => {
     void (async () => {
@@ -504,7 +529,8 @@ export function CampaignWizard({
       {step === 2 && (
         <div className="space-y-3">
           <p className="text-sm text-muted">
-            Who should place the calls? Pick a voice agent persona and script.
+            Who should place the calls? Pick a voice agent persona. Agents with
+            a custom clone or marked primary speak that voice on live calls.
           </p>
           {agentsLoading ? (
             <p className="text-sm text-muted">Loading agents…</p>
@@ -524,7 +550,14 @@ export function CampaignWizard({
                     setError(null);
                     const result = await ensureVoiceAgents([]);
                     setAgents(result.agents);
-                    if (result.agents[0]) setVoiceAgentId(result.agents[0].id);
+                    if (result.primaryAgentId) {
+                      setPrimaryAgentId(result.primaryAgentId);
+                    }
+                    const preferred = pickPreferredVoiceAgent(
+                      result.agents,
+                      result.primaryAgentId ?? initialPrimaryAgentId
+                    );
+                    if (preferred) setVoiceAgentId(preferred.id);
                     if (result.error) setError(result.error);
                     setBusy(false);
                   })();
@@ -537,6 +570,8 @@ export function CampaignWizard({
             <ul className="space-y-2">
               {agents.map((a) => {
                 const selected = voiceAgentId === a.id;
+                const cloned = hasCustomVoiceSample(a);
+                const primary = a.id === primaryAgentId;
                 return (
                   <li key={a.id}>
                     <button
@@ -560,8 +595,20 @@ export function CampaignWizard({
                         ) : null}
                       </span>
                       <span>
-                        <span className="block font-semibold text-foreground">
-                          {a.name}
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-foreground">
+                            {a.name}
+                          </span>
+                          {primary ? (
+                            <span className="rounded-full bg-[var(--chart-ai-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase text-[var(--chart-ai)]">
+                              Primary
+                            </span>
+                          ) : null}
+                          {cloned ? (
+                            <span className="rounded-full bg-[rgba(168,137,79,0.16)] px-2 py-0.5 text-[10px] font-semibold uppercase text-gold-dark dark:text-gold-bright">
+                              Custom clone
+                            </span>
+                          ) : null}
                         </span>
                         <span className="mt-0.5 block text-xs text-muted">
                           {a.language}

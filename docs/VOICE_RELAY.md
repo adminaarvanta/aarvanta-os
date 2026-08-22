@@ -143,11 +143,12 @@ Twilio ConversationRelay can only speak **catalog** ElevenLabs/Google/Amazon voi
 
 1. Create a **new** Voice Agent at **`/voice/agents`** (do not clone onto the default Ava persona).
 2. On that agent’s flow page, upload **or record** 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
-3. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
-4. Redeploy the relay (`version` ≥ **1.6.0**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy).
-5. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live calls still use the workspace catalog voice.
+3. Leave **Use this agent as the default for Dialer, inbound, and scheduled calls** checked (or later click **Set as primary** / pick it under Voice settings → Primary Voice Agent). Campaigns can still choose a different agent.
+4. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
+5. Redeploy the relay (`version` ≥ **1.6.0**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy).
+6. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live cloned speech still needs production + the API key. The primary agent’s **script/flow** is used on Dialer/inbound even in demo.
 
-Agents without a ready clone keep the workspace Voice settings (Sarah/Rachel/etc.).
+Agents without a ready clone keep the workspace Voice settings (Sarah/Rachel/etc.). Live calls resolve the agent in this order: explicit Dialer/campaign id → workspace primary → first agent with a custom clone → first agent.
 
 ### Voice configuration (Voice OS UI)
 
@@ -156,9 +157,10 @@ In **`/voice`** (and compact on **`/calling`**), operators can set:
 - **Provider** — ElevenLabs, Google, or Amazon Polly
 - **Language** — e.g. `en-US`, `en-GB`, `hi-IN` (passed to ConversationRelay + relay LLM prompt)
 - **Voice** — curated list (default **Sarah**), or paste a **custom Twilio/ElevenLabs voice ID**. Prefer Sarah/Rachel for natural reception; Mark (fast) uses `flash_v2_5` (lower latency, flatter).
+- **Primary Voice Agent** — persona used for inbound, Dialer, and scheduled calls when none is specified. A custom clone on that agent is what speaks on live calls.
 - **Record calls** — opt-in (default off); optional spoken consent notice
 
-Prefs persist on the workspace (`voiceTtsProvider`, `voiceId`, `voiceLanguage`, `voiceCustomId`, `callRecordingEnabled`, `callRecordingAnnounce`). Env vars remain the fallback when prefs are unset:
+Prefs persist on the workspace (`voiceTtsProvider`, `voiceId`, `voiceLanguage`, `voiceCustomId`, `voicePrimaryAgentId`, `callRecordingEnabled`, `callRecordingAnnounce`). Env vars remain the fallback when prefs are unset:
 
 ```bash
 VOICE_RELAY_TTS_PROVIDER=ElevenLabs

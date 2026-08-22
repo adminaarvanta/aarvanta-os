@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError, unauthorized } from "@/lib/api/request";
 import { handlePlanError } from "@/lib/billing/api-guard";
 import { requireFeature } from "@/lib/billing/consume";
+import { promoteVoiceAgentAfterClone } from "@/lib/calling/resolve-voice-agent";
 import { demoClonedVoiceId } from "@/lib/channels/cloned-voice";
 import {
   collectCloneFiles,
@@ -20,11 +21,17 @@ export const maxDuration = 60;
 
 type Params = { params: Promise<{ id: string }> };
 
-function consentGiven(form: FormData): boolean {
-  const raw = form.get("consent");
-  if (typeof raw !== "string") return false;
+function formFlag(form: FormData, key: string): boolean | undefined {
+  const raw = form.get(key);
+  if (typeof raw !== "string") return undefined;
   const v = raw.trim().toLowerCase();
-  return v === "true" || v === "1" || v === "on" || v === "yes";
+  if (v === "true" || v === "1" || v === "on" || v === "yes") return true;
+  if (v === "false" || v === "0" || v === "off" || v === "no") return false;
+  return undefined;
+}
+
+function consentGiven(form: FormData): boolean {
+  return formFlag(form, "consent") === true;
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -93,6 +100,11 @@ export async function POST(req: Request, { params }: Params) {
       previewText: "Demo clone — live calls still use the workspace catalog voice.",
     };
     const updated = await repo.updateAgent(id, { clonedVoice }, ctx.scope);
+    await promoteVoiceAgentAfterClone(
+      ctx.scope.workspaceId,
+      id,
+      formFlag(form, "setPrimary")
+    );
     return NextResponse.json({ agent: updated, demo: true });
   }
 
@@ -126,6 +138,11 @@ export async function POST(req: Request, { params }: Params) {
       createdAt: now,
     };
     const updated = await repo.updateAgent(id, { clonedVoice }, ctx.scope);
+    await promoteVoiceAgentAfterClone(
+      ctx.scope.workspaceId,
+      id,
+      formFlag(form, "setPrimary")
+    );
     return NextResponse.json({
       agent: updated,
       demo: false,

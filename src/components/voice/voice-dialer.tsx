@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CalendarClock, Phone, PhoneOutgoing, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  hasCustomVoiceSample,
+  pickPreferredVoiceAgent,
+} from "@/lib/channels/cloned-voice";
 import { formatRelative } from "@/lib/utils";
+import type { VoiceAgent } from "@/types/calling-agent";
 import { contactDisplayName, type CrmContact } from "@/types/crm";
 
 export type CallLogItem = {
@@ -46,6 +51,9 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
   const [name, setName] = useState("");
   const [message, setMessage] = useState(DEFAULT_BRIEFING);
   const [scheduledAt, setScheduledAt] = useState("");
+  const [agents, setAgents] = useState<VoiceAgent[]>([]);
+  const [voiceAgentId, setVoiceAgentId] = useState("");
+  const [primaryAgentId, setPrimaryAgentId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -58,6 +66,30 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
         if (!res.ok) return;
         const data = (await res.json()) as { contacts: CrmContact[] };
         setContacts(data.contacts ?? []);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/voice/agents");
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          agents: VoiceAgent[];
+          primaryAgentId?: string | null;
+        };
+        const list = data.agents ?? [];
+        setAgents(list);
+        setPrimaryAgentId(data.primaryAgentId ?? "");
+        setVoiceAgentId(
+          (current) =>
+            current ||
+            pickPreferredVoiceAgent(list, data.primaryAgentId)?.id ||
+            ""
+        );
       } catch {
         /* ignore */
       }
@@ -123,6 +155,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
             contactName: name.trim() || undefined,
             message: message.trim(),
             scheduledAt: new Date(scheduledAt).toISOString(),
+            voiceAgentId: voiceAgentId || undefined,
           }),
         });
         const data = (await res.json()) as {
@@ -151,6 +184,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
           contactName: name.trim() || undefined,
           contactId: contactId || undefined,
           message: message.trim(),
+          voiceAgentId: voiceAgentId || undefined,
         }),
       });
       const data = (await res.json()) as {
@@ -272,6 +306,24 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
               ? "Select a CRM person (or enter a number). The AI uses the briefing for context — not read word-for-word. Recording + transcript attach when enabled."
               : "Schedule for later. Due calls are dialed by the scheduler cron."}
           </p>
+          {agents.length > 0 ? (
+            <label className="block text-xs text-muted">
+              Voice Agent
+              <select
+                className={`${inputClass} mt-1`}
+                value={voiceAgentId}
+                onChange={(e) => setVoiceAgentId(e.target.value)}
+              >
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name}
+                    {agent.id === primaryAgentId ? " · primary" : ""}
+                    {hasCustomVoiceSample(agent) ? " · custom clone" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <input
               className={inputClass}

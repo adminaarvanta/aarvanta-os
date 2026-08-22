@@ -10,7 +10,13 @@ import type {
   VoiceAgentFlowConfig,
 } from "@/types/calling-agent";
 
-export function FlowBuilder({ agent }: { agent: VoiceAgent }) {
+export function FlowBuilder({
+  agent,
+  isPrimary = false,
+}: {
+  agent: VoiceAgent;
+  isPrimary?: boolean;
+}) {
   const router = useRouter();
   const [flow, setFlow] = useState<VoiceAgentFlowConfig>(agent.flowConfig);
   const [busy, setBusy] = useState(false);
@@ -46,7 +52,7 @@ export function FlowBuilder({ agent }: { agent: VoiceAgent }) {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      <AgentVoiceCloneCard agent={agent} />
+      <AgentVoiceCloneCard agent={agent} isPrimary={isPrimary} />
       <p className="text-sm text-muted">
         Stage machine for {agent.name}. Edit objectives and review allowed
         branches — the voice relay follows this order on campaign calls.

@@ -7,7 +7,7 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 | Route | Purpose |
 |-------|---------|
 | `/voice` | Mission control dashboard |
-| `/voice/agents` | Personas — create a new agent, then clone a custom voice on that agent (Ava stays on the catalog voice) |
+| `/voice/agents` | Personas — create a new agent, clone a custom voice, set one as **primary** for Dialer / inbound / scheduled calls |
 | `/voice/campaigns` | Campaign list + 6-step wizard |
 | `/voice/live` | Live call monitor |
 | `/voice/queue` | Kanban queue |
@@ -15,8 +15,8 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 | `/voice/calendar` | Slot picker + Google Calendar connect |
 | `/voice/history` | Conversation replay |
 | `/voice/insights` | Funnel + performance + insights |
-| `/voice/dialer` | Manual dialer (CRM person picker + Call now / Schedule) |
-| `/voice/settings` | Voice TTS / recording prefs |
+| `/voice/dialer` | Manual dialer (CRM person picker + Voice Agent + Call now / Schedule) |
+| `/voice/settings` | Voice TTS / recording prefs + primary Voice Agent |
 
 `/calling` redirects to `/voice/settings`.
 

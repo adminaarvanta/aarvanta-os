@@ -34,6 +34,8 @@ export type WorkspaceSettings = {
   callRecordingEnabled?: boolean;
   /** Speak a short recording notice when recording is on (default true). */
   callRecordingAnnounce?: boolean;
+  /** Voice Agent used for inbound, Dialer, and scheduled calls when none is specified. */
+  voicePrimaryAgentId?: string;
   updatedAt: string;
 };
 
@@ -57,5 +59,6 @@ export type WorkspaceSettingsPatch = Partial<
     | "voiceCustomId"
     | "callRecordingEnabled"
     | "callRecordingAnnounce"
+    | "voicePrimaryAgentId"
   >
 >;

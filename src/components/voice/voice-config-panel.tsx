@@ -10,6 +10,7 @@ import {
   voicesForProvider,
 } from "@/lib/channels/voice-catalog";
 import type { ConversationRelayTtsProvider } from "@/lib/channels/voice-relay-tts";
+import type { VoiceAgent } from "@/types/calling-agent";
 import type { WorkspaceSettings } from "@/types/workspace-settings";
 
 const PROVIDERS: Array<{ id: ConversationRelayTtsProvider; label: string }> = [
@@ -29,6 +30,7 @@ type VoicePrefs = Pick<
   | "voiceCustomId"
   | "callRecordingEnabled"
   | "callRecordingAnnounce"
+  | "voicePrimaryAgentId"
 >;
 
 function prefsFromSettings(s: WorkspaceSettings | null): VoicePrefs {
@@ -44,6 +46,7 @@ function prefsFromSettings(s: WorkspaceSettings | null): VoicePrefs {
       : s?.voiceId ?? defaultVoiceIdFor(provider, language),
     callRecordingEnabled: Boolean(s?.callRecordingEnabled),
     callRecordingAnnounce: s?.callRecordingAnnounce !== false,
+    voicePrimaryAgentId: s?.voicePrimaryAgentId,
   };
 }
 
@@ -56,6 +59,7 @@ export function VoiceConfigPanel({
 }) {
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<VoicePrefs>(() => prefsFromSettings(null));
+  const [agents, setAgents] = useState<VoiceAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -64,10 +68,29 @@ export function VoiceConfigPanel({
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch("/api/settings");
-        if (!res.ok) return;
-        const data = (await res.json()) as { settings: WorkspaceSettings };
-        if (!cancelled) setPrefs(prefsFromSettings(data.settings));
+        const [settingsRes, agentsRes] = await Promise.all([
+          fetch("/api/settings"),
+          fetch("/api/voice/agents"),
+        ]);
+        if (settingsRes.ok) {
+          const data = (await settingsRes.json()) as { settings: WorkspaceSettings };
+          if (!cancelled) setPrefs(prefsFromSettings(data.settings));
+        }
+        if (agentsRes.ok) {
+          const data = (await agentsRes.json()) as {
+            agents: VoiceAgent[];
+            primaryAgentId?: string | null;
+          };
+          if (!cancelled) {
+            setAgents(data.agents ?? []);
+            if (data.primaryAgentId) {
+              setPrefs((prev) => ({
+                ...prev,
+                voicePrimaryAgentId: data.primaryAgentId ?? undefined,
+              }));
+            }
+          }
+        }
       } catch {
         /* ignore */
       } finally {
@@ -104,6 +127,7 @@ export function VoiceConfigPanel({
         voiceCustomId: next.voiceCustomId?.trim() || "",
         callRecordingEnabled: Boolean(next.callRecordingEnabled),
         callRecordingAnnounce: next.callRecordingAnnounce !== false,
+        voicePrimaryAgentId: next.voicePrimaryAgentId ?? "",
       };
       const res = await fetch("/api/voice/config", {
         method: "PATCH",
@@ -184,9 +208,9 @@ export function VoiceConfigPanel({
               </p>
               {!compact ? (
                 <p className="mt-0.5 text-xs text-muted">
-                  Provider, language, and recording for AI calls. Applied to the next dial.
-                  Prefer Sarah or Rachel for a natural voice; avoid budget mode (one-shot Polly)
-                  when you want two-way AI.
+                  Provider, language, and recording for catalog TTS. Pick a
+                  primary Voice Agent so Dialer, inbound, and scheduled calls
+                  use that persona (and its custom clone, if any).
                 </p>
               ) : (
                 <p className="mt-0.5 text-[11px] text-muted">
@@ -254,6 +278,27 @@ export function VoiceConfigPanel({
             <option value={CUSTOM_VOICE_OPTION_ID}>Custom voice ID…</option>
           </select>
         </label>
+
+        {agents.length > 0 ? (
+          <label className={`block text-xs text-muted ${compact ? "sm:col-span-2" : ""}`}>
+            Primary Voice Agent
+            <select
+              className={`${selectClass} mt-1`}
+              value={prefs.voicePrimaryAgentId ?? ""}
+              onChange={(e) =>
+                patch({ voicePrimaryAgentId: e.target.value || undefined })
+              }
+            >
+              <option value="">Auto (first custom clone)</option>
+              {agents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name}
+                  {agent.clonedVoice?.status === "ready" ? " · custom clone" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
 
       {isCustom ? (

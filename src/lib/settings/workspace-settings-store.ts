@@ -58,6 +58,10 @@ export async function saveWorkspaceSettingsRecord(
     updatedAt: crmNow(),
   };
 
+  if (!next.voicePrimaryAgentId?.trim()) {
+    delete next.voicePrimaryAgentId;
+  }
+
   if (isMemoryDatastore()) {
     memory.set(workspaceId, next);
     return next;

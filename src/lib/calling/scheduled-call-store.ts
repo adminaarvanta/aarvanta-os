@@ -14,6 +14,7 @@ export type ScheduledCall = TenantScope & {
   status: ScheduledCallStatus;
   conversationId?: string;
   error?: string;
+  voiceAgentId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,6 +57,7 @@ export async function createScheduledCall(
     contactName?: string;
     message: string;
     scheduledAt: string;
+    voiceAgentId?: string;
   },
   scope: TenantScope
 ): Promise<ScheduledCall> {
@@ -68,6 +70,7 @@ export async function createScheduledCall(
     message: input.message,
     scheduledAt: input.scheduledAt,
     status: "scheduled",
+    voiceAgentId: input.voiceAgentId,
     createdAt: now,
     updatedAt: now,
   };

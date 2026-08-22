@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { deliverOutbound } from "@/lib/channels/deliver";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import { normalizePhone } from "@/lib/data/conversation-helpers";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
@@ -15,6 +16,7 @@ const schema = z.object({
   contactName: z.string().optional(),
   contactId: z.string().optional(),
   message: z.string().min(1).max(2000),
+  voiceAgentId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -69,8 +71,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const agents = await calling.listAgents(scope);
-  const agent = agents[0];
+  const agent = await resolveCallVoiceAgent(scope, {
+    voiceAgentId: parsed.data.voiceAgentId,
+  });
   const memorySummary = crmContact
     ? await buildCallMemorySummary(crmContact.id, scope)
     : undefined;

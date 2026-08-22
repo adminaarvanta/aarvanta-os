@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody, unauthorized } from "@/lib/api/request";
+import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import {
   getWorkspaceSettings,
   setWorkspaceSettings,
@@ -14,6 +15,7 @@ const patchSchema = z.object({
   voiceCustomId: z.string().max(200).optional().nullable(),
   callRecordingEnabled: z.boolean().optional(),
   callRecordingAnnounce: z.boolean().optional(),
+  voicePrimaryAgentId: z.string().max(80).optional().nullable(),
 });
 
 export async function GET() {
@@ -28,6 +30,7 @@ export async function GET() {
         voiceCustomId: settings.voiceCustomId,
         callRecordingEnabled: settings.callRecordingEnabled ?? false,
         callRecordingAnnounce: settings.callRecordingAnnounce !== false,
+        voicePrimaryAgentId: settings.voicePrimaryAgentId,
       },
     });
   } catch {
@@ -47,6 +50,17 @@ export async function PATCH(req: Request) {
     }
 
     const d = parsed.data;
+    const primaryId = d.voicePrimaryAgentId?.trim() || undefined;
+    if (primaryId) {
+      const agent = await getCallingAgentRepository().getAgent(
+        primaryId,
+        ctx.scope
+      );
+      if (!agent) {
+        return apiError("NOT_FOUND", "Voice agent not found", 404);
+      }
+    }
+
     const settings = await setWorkspaceSettings(ctx.scope.workspaceId, {
       ...(d.voiceTtsProvider != null ? { voiceTtsProvider: d.voiceTtsProvider } : {}),
       ...(d.voiceLanguage != null ? { voiceLanguage: d.voiceLanguage } : {}),
@@ -61,6 +75,9 @@ export async function PATCH(req: Request) {
         : {}),
       ...(d.callRecordingAnnounce != null
         ? { callRecordingAnnounce: d.callRecordingAnnounce }
+        : {}),
+      ...(d.voicePrimaryAgentId !== undefined
+        ? { voicePrimaryAgentId: primaryId }
         : {}),
     });
 

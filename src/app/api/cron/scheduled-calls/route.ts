@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deliverOutbound } from "@/lib/channels/deliver";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import {
   listDueScheduledCalls,
   updateScheduledCall,
@@ -60,8 +61,9 @@ export async function GET(req: Request) {
         contacts.find(
           (c) => c.phone && normalizePhone(c.phone) === normalized
         ) ?? null;
-      const agents = await calling.listAgents(scope);
-      const agent = agents[0];
+      const agent = await resolveCallVoiceAgent(scope, {
+        voiceAgentId: item.voiceAgentId,
+      });
       const memorySummary = crmContact
         ? await buildCallMemorySummary(crmContact.id, scope)
         : undefined;

@@ -15,6 +15,7 @@ const schema = z.object({
   contactName: z.string().optional(),
   message: z.string().min(1).max(2000),
   scheduledAt: z.string().min(1),
+  voiceAgentId: z.string().optional(),
 });
 
 export async function GET() {
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
       contactName: parsed.data.contactName?.trim() || undefined,
       message: parsed.data.message.trim(),
       scheduledAt: scheduledAt.toISOString(),
+      voiceAgentId: parsed.data.voiceAgentId?.trim() || undefined,
     },
     ctx.scope
   );

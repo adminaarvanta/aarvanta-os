@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 import { isVoiceRelayBudgetMode } from "@/lib/channels/voice-relay-tts";
-import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
 
@@ -72,20 +72,13 @@ async function twimlResponse(req: Request) {
   const settings = await getWorkspaceSettings(scope.workspaceId);
   const voice = resolveVoiceCallingConfig(settings);
 
-  const calling = getCallingAgentRepository();
-  let agent = voiceAgentId
-    ? await calling.getAgent(voiceAgentId, scope)
-    : null;
-  if (!agent && campaignId) {
-    const campaign = await calling.getCampaign(campaignId, scope);
-    if (campaign) {
-      agent = await calling.getAgent(campaign.voiceAgentId, scope);
-    }
-  }
-  if (!agent) {
-    agent = (await calling.listAgents(scope))[0] ?? null;
-  }
+  const agent = await resolveCallVoiceAgent(scope, {
+    voiceAgentId,
+    campaignId,
+  });
+  const resolvedAgentId = agent?.id ?? "";
   const clonedOnCall = Boolean(liveClonedVoiceId(agent));
+  const language = agent?.language?.trim() || voice.language;
 
   const businessName = settings.businessName?.trim() || "Aarvanta";
   const defaultWelcome =
@@ -115,7 +108,7 @@ async function twimlResponse(req: Request) {
         conversationId,
         goal,
         businessName,
-        language: voice.language,
+        language,
         provider: voice.provider,
         voiceId: voice.voice,
         elevenlabsTextNormalization: voice.elevenlabsTextNormalization,
@@ -123,7 +116,7 @@ async function twimlResponse(req: Request) {
         queueId,
         sessionId,
         contactId,
-        voiceAgentId,
+        voiceAgentId: resolvedAgentId,
       })
     : buildSayTwiml(
         (brief || welcome || defaultWelcome).slice(0, 280),
