@@ -2,6 +2,15 @@ import type { VoiceAgent } from "@/types/calling-agent";
 
 const DEMO_CLONE_PREFIX = "demo_";
 
+/** Seeded catalog persona — keep on workspace TTS; clone a newly created agent instead. */
+export const DEFAULT_CATALOG_AGENT_ID = "voice_agent_ava";
+
+export function isDefaultCatalogAgent(
+  agent: Pick<VoiceAgent, "id"> | null | undefined
+): boolean {
+  return agent?.id === DEFAULT_CATALOG_AGENT_ID;
+}
+
 /** Voice IDs that should never be sent to the EC2 relay / ElevenLabs TTS. */
 export function isDemoClonedVoiceId(voiceId: string): boolean {
   return voiceId.startsWith(DEMO_CLONE_PREFIX);

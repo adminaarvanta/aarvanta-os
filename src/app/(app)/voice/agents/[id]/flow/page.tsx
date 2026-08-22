@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FlowBuilder } from "@/components/voice/flow-builder";
 import { VoicePageShell } from "@/components/voice/voice-ui";
+import { isDefaultCatalogAgent } from "@/lib/channels/cloned-voice";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getTenantScope } from "@/lib/tenant/context";
 
@@ -12,11 +13,16 @@ export default async function AgentFlowPage({ params }: Params) {
   const scope = await getTenantScope();
   const agent = await getCallingAgentRepository().getAgent(id, scope);
   if (!agent) notFound();
+  const catalogDefault = isDefaultCatalogAgent(agent);
 
   return (
     <VoicePageShell
       title={`${agent.name} · Script / Flow`}
-      subtitle="Stage-based conversation design for the AI employee"
+      subtitle={
+        catalogDefault
+          ? "Default catalog agent — create a new agent to clone a custom voice."
+          : "Clone a custom voice for this persona, then tune the conversation flow."
+      }
       tone="navy"
       actions={
         <Link

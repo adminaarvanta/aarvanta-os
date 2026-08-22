@@ -7,7 +7,7 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 | Route | Purpose |
 |-------|---------|
 | `/voice` | Mission control dashboard |
-| `/voice/agents` | Voice agent personas + flow builder |
+| `/voice/agents` | Personas — create a new agent, then clone a custom voice on that agent (Ava stays on the catalog voice) |
 | `/voice/campaigns` | Campaign list + 6-step wizard |
 | `/voice/live` | Live call monitor |
 | `/voice/queue` | Kanban queue |

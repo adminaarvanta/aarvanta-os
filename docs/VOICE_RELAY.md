@@ -141,10 +141,11 @@ There is **no fully free** two-way PSTN AI on Twilio. Conversation Relay is **~$
 
 Twilio ConversationRelay can only speak **catalog** ElevenLabs/Google/Amazon voices. A clone from uploaded audio lives in the Aarvanta ElevenLabs account, so the EC2 relay synthesizes MP3s and sends ConversationRelay `{ type: "play", source }`.
 
-1. On **`/voice/agents/:id/flow`**, upload 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
-2. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
-3. Redeploy the relay (`version` ≥ **1.6.0**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy).
-4. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live calls still use the workspace catalog voice.
+1. Create a **new** Voice Agent at **`/voice/agents`** (do not clone onto the default Ava persona).
+2. On that agent’s flow page, upload **or record** 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
+3. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
+4. Redeploy the relay (`version` ≥ **1.6.0**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy).
+5. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live calls still use the workspace catalog voice.
 
 Agents without a ready clone keep the workspace Voice settings (Sarah/Rachel/etc.).
 
