@@ -509,6 +509,7 @@ export function buildDemoFinanceInvoices(): FinanceInvoice[] {
       amount: 18000,
       currency: "GBP",
       status: "sent",
+      description: "Implementation and support",
       dueDate: isoDaysFromNow(14),
       createdAt: now,
     },
@@ -520,6 +521,8 @@ export function buildDemoFinanceInvoices(): FinanceInvoice[] {
       amount: 22000,
       currency: "GBP",
       status: "paid",
+      description: "Retainer — Q2",
+      paidAt: isoDaysFromNow(-6),
       dueDate: isoDaysFromNow(-6),
       createdAt: now,
     },
@@ -536,6 +539,7 @@ export function buildDemoFinanceExpenses(): FinanceExpense[] {
       amount: 2400,
       currency: "GBP",
       date: isoDaysFromNow(-20),
+      accountCode: "3200",
       receiptUrl: "https://example.com/receipts/aws-may.pdf",
     },
     {
@@ -546,6 +550,7 @@ export function buildDemoFinanceExpenses(): FinanceExpense[] {
       amount: 860,
       currency: "GBP",
       date: isoDaysFromNow(-12),
+      accountCode: "3000",
       receiptUrl: "https://example.com/receipts/travel-q2.pdf",
     },
   ];

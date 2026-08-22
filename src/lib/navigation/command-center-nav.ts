@@ -53,6 +53,7 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/workforce", label: "AI Team", icon: Sparkles, featureKey: "aiWorkforce" },
   { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
   { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
+  { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
   { href: "/analytics", label: "Insights", icon: BarChart3, featureKey: "analytics" },
   { href: "#all-tools", label: "More", icon: LayoutGrid, featureKey: "ungated" },
 ];
@@ -180,6 +181,8 @@ export const MOBILE_NAV: CommandNavItem[] = [
 
 /** Extra destinations opened from the mobile More sheet. */
 export const MOBILE_NAV_MORE: CommandNavItem[] = [
+  { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
+  { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
   { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
   { href: "/partners", label: "Partners", icon: Handshake, featureKey: "ungated" },
   { href: "/settings", label: "Settings", icon: Settings, featureKey: "ungated" },

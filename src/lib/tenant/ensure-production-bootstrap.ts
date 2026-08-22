@@ -72,6 +72,15 @@ async function runProductionBootstrap(): Promise<void> {
     await ensureSalesPipeline(ctx.scope);
     await ensureWorkflowBootstrap(ctx.scope);
     try {
+      const { ensureFinanceStack } = await import("@/lib/finance/ensure-platform-seed");
+      await ensureFinanceStack(ctx.scope);
+    } catch (error) {
+      console.warn(
+        "[bootstrap] Finance chart of accounts skipped:",
+        error instanceof Error ? error.message : error
+      );
+    }
+    try {
       const { ensurePlatformAffiliateHierarchy } = await import(
         "@/lib/affiliate/platform-hierarchy"
       );

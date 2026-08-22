@@ -446,6 +446,9 @@ export function getFinanceStore() {
     createChartOfAccount(item: CreateInput<ChartOfAccount>) {
       return chartOfAccountsStore.create(item);
     },
+    setChartOfAccount(item: ChartOfAccount) {
+      return chartOfAccountsStore.set(item);
+    },
     listJournalEntries(scope: TenantScope) {
       return journalEntriesStore.list(scope);
     },

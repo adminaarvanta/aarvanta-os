@@ -120,6 +120,8 @@ export async function executeBusinessAction(
       }
 
       case "create_invoice": {
+        const { ensureFinanceStack } = await import("@/lib/finance/ensure-platform-seed");
+        await ensureFinanceStack(scope);
         const clientName =
           typeof context.clientName === "string" ? context.clientName : "Client";
         const amount =
@@ -130,7 +132,7 @@ export async function executeBusinessAction(
           clientName,
           amount,
           currency: typeof context.currency === "string" ? context.currency : "GBP",
-          status: "draft",
+          status: "sent",
           dueDate: crmNow().slice(0, 10),
           createdAt: crmNow(),
         });

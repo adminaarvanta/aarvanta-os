@@ -9,7 +9,6 @@ export const HIDDEN_FROM_ALL_TOOLS = new Set([
   "launch",
   "whatsapp",
   "whatsapp-manage",
-  "finance",
   "affiliate-admin",
 ]);
 

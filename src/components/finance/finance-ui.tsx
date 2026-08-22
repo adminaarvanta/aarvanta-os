@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export function FinanceShell({
@@ -148,6 +148,39 @@ export function FinancePanel({
       </div>
       {children}
     </section>
+  );
+}
+
+export function FinanceField({
+  className,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={cn(
+        "rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-[color:var(--finance-accent)]",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function FinanceSelect({
+  className,
+  children,
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={cn(
+        "rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-[color:var(--finance-accent)]",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </select>
   );
 }
 

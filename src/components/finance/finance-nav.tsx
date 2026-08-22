@@ -7,6 +7,7 @@ import {
   PieChart,
   Receipt,
   Scale,
+  Users,
   Wallet,
   WalletCards,
 } from "lucide-react";
@@ -18,6 +19,7 @@ export const FINANCE_TABS = [
   { href: "/finance", label: "Overview", exact: true, icon: LayoutDashboard },
   { href: "/finance/invoices", label: "Invoices", icon: Receipt },
   { href: "/finance/expenses", label: "Expenses", icon: WalletCards },
+  { href: "/finance/customers", label: "Customers", icon: Users },
   { href: "/finance/ledger", label: "Ledger", icon: BookOpen },
   { href: "/finance/reports", label: "Reports", icon: PieChart },
   { href: "/finance/accounts", label: "Accounts", icon: Scale },

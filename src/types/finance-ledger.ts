@@ -48,3 +48,11 @@ export type BalanceSheetReport = {
   equity: number;
   lines: Array<{ code: string; name: string; type: string; amount: number }>;
 };
+
+export type CashSummaryReport = {
+  asOf: string;
+  currency: string;
+  cashIn: number;
+  cashOut: number;
+  cashOnHand: number;
+};

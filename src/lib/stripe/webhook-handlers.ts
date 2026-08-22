@@ -5,7 +5,7 @@ import { getDomainOrderRepository } from "@/lib/data/domain-order-store";
 import { getFinanceStore } from "@/lib/data/platform-store";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
 import { getStripePaymentStore } from "@/lib/data/stripe-payment-store";
-import { postInvoiceToLedger } from "@/lib/finance/ledger";
+import { postInvoicePaymentToLedger, postInvoiceToLedger } from "@/lib/finance/ledger";
 import {
   getDomainRegistrar,
   isLiveDomainRegistrar,
@@ -388,6 +388,10 @@ async function postPaidInvoiceToFinance(invoice: Stripe.Invoice, scope: TenantSc
 
   try {
     await postInvoiceToLedger(scope, created);
+    await postInvoicePaymentToLedger(scope, {
+      ...created,
+      paidAt: crmNow(),
+    });
   } catch (error) {
     console.warn("[stripe] finance ledger post skipped", error);
   }

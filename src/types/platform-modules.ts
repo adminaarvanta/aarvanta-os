@@ -217,6 +217,11 @@ export interface FinanceInvoice extends TenantScope {
   status: "draft" | "sent" | "paid" | "overdue";
   dueDate: string;
   createdAt: string;
+  /** What the invoice is for (QuickBooks-style memo / product line). */
+  description?: string;
+  /** Inclusive of VAT when true (default for UK invoices). */
+  vatIncluded?: boolean;
+  paidAt?: string;
 }
 
 export interface FinanceExpense extends TenantScope {
@@ -227,6 +232,10 @@ export interface FinanceExpense extends TenantScope {
   currency: string;
   date: string;
   receiptUrl?: string;
+  /** Chart-of-accounts code the spend posts to. */
+  accountCode?: string;
+  notes?: string;
+  vatIncluded?: boolean;
 }
 
 export interface FinanceBudget extends TenantScope {

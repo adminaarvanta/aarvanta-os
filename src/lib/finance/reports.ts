@@ -1,7 +1,10 @@
 import { getFinanceStore } from "@/lib/data/platform-store";
+import { FINANCE_ACCOUNTS } from "@/lib/finance/accounts";
+import { todayIsoDate } from "@/lib/finance/format";
 import type { TenantScope } from "@/types/communication";
 import type {
   BalanceSheetReport,
+  CashSummaryReport,
   JournalEntry,
   ProfitAndLossReport,
   TrialBalanceRow,
@@ -90,7 +93,7 @@ export async function buildBalanceSheet(scope: TenantScope): Promise<BalanceShee
   const equity = trial.filter((r) => r.type === "equity").reduce((s, r) => s + r.balance, 0);
 
   return {
-    asOf: crmNowDate(),
+    asOf: todayIsoDate(),
     currency: "GBP",
     assets,
     liabilities,
@@ -106,6 +109,14 @@ export async function buildBalanceSheet(scope: TenantScope): Promise<BalanceShee
   };
 }
 
-function crmNowDate(): string {
-  return new Date().toISOString().slice(0, 10);
+export async function buildCashSummary(scope: TenantScope): Promise<CashSummaryReport> {
+  const trial = await buildTrialBalance(scope);
+  const bank = trial.find((row) => row.accountCode === FINANCE_ACCOUNTS.bank);
+  return {
+    asOf: todayIsoDate(),
+    currency: "GBP",
+    cashIn: bank?.debit ?? 0,
+    cashOut: bank?.credit ?? 0,
+    cashOnHand: bank?.balance ?? 0,
+  };
 }

@@ -253,7 +253,7 @@ export const PLATFORM_MODULES: PlatformModule[] = [
   {
     id: "finance",
     label: "Finance OS",
-    description: "Ledger, P&L, balance sheet, invoices, budgets, AI CFO",
+    description: "Invoices, expenses, cash, P&L, and a working ledger",
     href: "/finance",
     icon: Wallet,
     group: "Revenue",

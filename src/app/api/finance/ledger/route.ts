@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody } from "@/lib/api/request";
 import { postJournalEntry } from "@/lib/finance/ledger";
+import { ensureFinanceStack } from "@/lib/finance/ensure-platform-seed";
 import { requirePermission } from "@/lib/tenant/context";
 import { getFinanceStore } from "@/lib/data/platform-store";
 
@@ -22,6 +23,7 @@ const journalSchema = z.object({
 export async function GET() {
   try {
     const ctx = await requirePermission("finance:read");
+    await ensureFinanceStack(ctx.scope);
     const entries = await getFinanceStore().listJournalEntries(ctx.scope);
     return NextResponse.json({ entries });
   } catch (error) {
@@ -34,6 +36,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const ctx = await requirePermission("finance:write");
+    await ensureFinanceStack(ctx.scope);
     const body = await parseJsonBody<unknown>(req);
     if (body instanceof NextResponse) return body;
 
