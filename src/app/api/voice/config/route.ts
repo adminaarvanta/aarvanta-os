@@ -11,7 +11,7 @@ import { getSessionContext } from "@/lib/tenant/context";
 const patchSchema = z.object({
   voiceTtsProvider: z.enum(["ElevenLabs", "Amazon", "Google"]).optional(),
   voiceId: z.string().max(200).optional().nullable(),
-  voiceLanguage: z.string().min(2).max(16).optional(),
+  voiceLanguage: z.string().min(2).max(24).optional(),
   voiceCustomId: z.string().max(200).optional().nullable(),
   callRecordingEnabled: z.boolean().optional(),
   callRecordingAnnounce: z.boolean().optional(),
