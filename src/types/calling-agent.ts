@@ -39,6 +39,39 @@ export type CallOutcome =
   | "failed"
   | "completed";
 
+/** Post-call next step the Voice OS loop should take. */
+export type CallNextAction =
+  | "none"
+  | "qualify_lead"
+  | "callback"
+  | "follow_up"
+  | "meeting"
+  | "send_info";
+
+export type DefaultScheduleSlotId =
+  | "next_morning"
+  | "next_afternoon"
+  | "in_2_hours"
+  | "tomorrow_same";
+
+export interface DefaultScheduleSlot {
+  id: DefaultScheduleSlotId;
+  label: string;
+  enabled: boolean;
+}
+
+export interface CallConclusion {
+  outcome: CallOutcome;
+  nextAction: CallNextAction;
+  promisedAt?: string;
+  slotId?: DefaultScheduleSlotId;
+  infoToSend?: string;
+  notes?: string;
+}
+
+/** CRM tasks the voice cron executes by placing a call. Not a workforce AgentType. */
+export const VOICE_TASK_AGENT = "voice_agent";
+
 export type ConversationStageId =
   | "greeting"
   | "permission"
@@ -186,6 +219,8 @@ export interface CallSession extends TenantScope {
   campaignId?: string;
   contactId?: string;
   voiceAgentId?: string;
+  scheduledCallId?: string;
+  crmTaskId?: string;
   callSid?: string;
   conversationId?: string;
   status: "ringing" | "in_progress" | "completed" | "failed";
@@ -200,6 +235,7 @@ export interface CallSession extends TenantScope {
   recordingUrl?: string;
   recordingSid?: string;
   outcome?: CallOutcome;
+  conclusion?: CallConclusion;
   callScore?: number;
   currentStage?: ConversationStageId;
   qualification?: QualificationFlags;
@@ -256,6 +292,17 @@ export const DEFAULT_WORKING_HOURS: WorkingHoursWindow[] = [
   { dayOfWeek: 4, start: "09:00", end: "17:00" },
   { dayOfWeek: 5, start: "09:00", end: "17:00" },
 ];
+
+export const DEFAULT_SCHEDULE_SLOTS: DefaultScheduleSlot[] = [
+  { id: "next_morning", label: "Next business morning (10:00)", enabled: true },
+  { id: "next_afternoon", label: "Next business afternoon (14:00)", enabled: true },
+  { id: "in_2_hours", label: "In 2 hours (inside working hours)", enabled: true },
+  { id: "tomorrow_same", label: "Tomorrow at the same time", enabled: true },
+];
+
+export const DEFAULT_CALLBACK_TIMEZONE = "America/New_York";
+export const DEFAULT_MORNING_HOUR = 10;
+export const DEFAULT_AFTERNOON_HOUR = 14;
 
 export const DEFAULT_FLOW_CONFIG: VoiceAgentFlowConfig = {
   entryStage: "greeting",

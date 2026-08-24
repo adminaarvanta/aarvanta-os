@@ -613,7 +613,7 @@ export function CampaignWizard({
                         <span className="mt-0.5 block text-xs text-muted">
                           {a.language}
                           {a.ttsProvider ? ` · ${a.ttsProvider}` : ""} ·{" "}
-                          {a.flowConfig.stages.length} stages
+                          {a.flowConfig.stages.length}-step playbook
                         </span>
                       </span>
                     </button>
@@ -653,7 +653,9 @@ export function CampaignWizard({
             Allow weekend calling
           </label>
           <p className="text-xs text-muted">
-            Default window: Mon–Fri 09:00–17:00 in campaign timezone.
+            Default window: Mon–Fri 09:00–17:00 in campaign timezone. If a customer
+            says “call me later” without a time, Voice settings default slots
+            (next morning / afternoon) are used.
           </p>
         </div>
       )}

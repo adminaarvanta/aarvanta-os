@@ -36,6 +36,16 @@ export type WorkspaceSettings = {
   callRecordingAnnounce?: boolean;
   /** Voice Agent used for inbound, Dialer, and scheduled calls when none is specified. */
   voicePrimaryAgentId?: string;
+  /** IANA timezone for default callback slots. */
+  voiceCallbackTimezone?: string;
+  /** Hour (0–23) for the “next morning” slot. */
+  voiceMorningHour?: number;
+  /** Hour (0–23) for the “next afternoon” slot. */
+  voiceAfternoonHour?: number;
+  /** Which default callback slots are enabled. */
+  voiceScheduleSlotIds?: Array<
+    "next_morning" | "next_afternoon" | "in_2_hours" | "tomorrow_same"
+  >;
   updatedAt: string;
 };
 
@@ -60,5 +70,9 @@ export type WorkspaceSettingsPatch = Partial<
     | "callRecordingEnabled"
     | "callRecordingAnnounce"
     | "voicePrimaryAgentId"
+    | "voiceCallbackTimezone"
+    | "voiceMorningHour"
+    | "voiceAfternoonHour"
+    | "voiceScheduleSlotIds"
   >
 >;

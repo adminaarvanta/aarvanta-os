@@ -8,6 +8,13 @@ import {
 } from "@/lib/settings/workspace-settings";
 import { getSessionContext } from "@/lib/tenant/context";
 
+const slotIdSchema = z.enum([
+  "next_morning",
+  "next_afternoon",
+  "in_2_hours",
+  "tomorrow_same",
+]);
+
 const patchSchema = z.object({
   voiceTtsProvider: z.enum(["ElevenLabs", "Amazon", "Google"]).optional(),
   voiceId: z.string().max(200).optional().nullable(),
@@ -16,6 +23,10 @@ const patchSchema = z.object({
   callRecordingEnabled: z.boolean().optional(),
   callRecordingAnnounce: z.boolean().optional(),
   voicePrimaryAgentId: z.string().max(80).optional().nullable(),
+  voiceCallbackTimezone: z.string().min(1).max(80).optional(),
+  voiceMorningHour: z.number().int().min(0).max(23).optional(),
+  voiceAfternoonHour: z.number().int().min(0).max(23).optional(),
+  voiceScheduleSlotIds: z.array(slotIdSchema).optional(),
 });
 
 export async function GET() {
@@ -31,6 +42,10 @@ export async function GET() {
         callRecordingEnabled: settings.callRecordingEnabled ?? false,
         callRecordingAnnounce: settings.callRecordingAnnounce !== false,
         voicePrimaryAgentId: settings.voicePrimaryAgentId,
+        voiceCallbackTimezone: settings.voiceCallbackTimezone,
+        voiceMorningHour: settings.voiceMorningHour,
+        voiceAfternoonHour: settings.voiceAfternoonHour,
+        voiceScheduleSlotIds: settings.voiceScheduleSlotIds,
       },
     });
   } catch {
@@ -78,6 +93,16 @@ export async function PATCH(req: Request) {
         : {}),
       ...(d.voicePrimaryAgentId !== undefined
         ? { voicePrimaryAgentId: primaryId }
+        : {}),
+      ...(d.voiceCallbackTimezone != null
+        ? { voiceCallbackTimezone: d.voiceCallbackTimezone.trim() }
+        : {}),
+      ...(d.voiceMorningHour != null ? { voiceMorningHour: d.voiceMorningHour } : {}),
+      ...(d.voiceAfternoonHour != null
+        ? { voiceAfternoonHour: d.voiceAfternoonHour }
+        : {}),
+      ...(d.voiceScheduleSlotIds != null
+        ? { voiceScheduleSlotIds: d.voiceScheduleSlotIds }
         : {}),
     });
 

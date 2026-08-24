@@ -18,6 +18,14 @@ export async function syncCallOutcomeToCrm(
   const description = [
     session.summary,
     session.outcome ? `Outcome: ${session.outcome}` : null,
+    session.conclusion?.nextAction && session.conclusion.nextAction !== "none"
+      ? `Next: ${session.conclusion.nextAction}${
+          session.conclusion.promisedAt
+            ? ` at ${session.conclusion.promisedAt}`
+            : ""
+        }`
+      : null,
+    session.conclusion?.notes ? `Conclusion: ${session.conclusion.notes}` : null,
     session.sentiment ? `Sentiment: ${session.sentiment}` : null,
     session.callScore != null ? `Score: ${session.callScore}/5` : null,
     session.recordingUrl ? `Recording: ${session.recordingUrl}` : null,

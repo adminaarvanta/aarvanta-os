@@ -153,6 +153,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
           body: JSON.stringify({
             phone: phone.trim(),
             contactName: name.trim() || undefined,
+            contactId: contactId || undefined,
             message: message.trim(),
             scheduledAt: new Date(scheduledAt).toISOString(),
             voiceAgentId: voiceAgentId || undefined,

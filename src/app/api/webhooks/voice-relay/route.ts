@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
 import { finalizeCallSession } from "@/lib/calling/session-outcomes";
+import { applyCallConclusion } from "@/lib/calling/apply-call-conclusion";
 import { syncCallOutcomeToCrm } from "@/lib/calling/crm-sync";
 import { getRepository } from "@/lib/data/repository";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
@@ -22,6 +23,10 @@ const schema = z.object({
   queueId: z.string().optional(),
   contactId: z.string().optional(),
   outcome: z.string().optional(),
+  nextAction: z.string().optional(),
+  promisedAt: z.string().optional(),
+  infoToSend: z.string().optional(),
+  conclusionNotes: z.string().optional(),
   sentiment: z.enum(["positive", "neutral", "negative"]).optional(),
   intent: z.string().optional(),
   intentConfidence: z.number().optional(),
@@ -127,6 +132,12 @@ export async function POST(req: Request) {
     })),
     summary,
     outcome: parsed.data.outcome as never,
+    conclusion: {
+      nextAction: parsed.data.nextAction,
+      promisedAt: parsed.data.promisedAt,
+      infoToSend: parsed.data.infoToSend,
+      notes: parsed.data.conclusionNotes,
+    },
     sentiment: parsed.data.sentiment,
     intent: parsed.data.intent,
     intentConfidence: parsed.data.intentConfidence,
@@ -136,6 +147,7 @@ export async function POST(req: Request) {
   if (session) {
     try {
       await syncCallOutcomeToCrm(session, scope);
+      await applyCallConclusion(session, scope);
     } catch (err) {
       console.error("[voice-relay] CRM sync failed", err);
     }

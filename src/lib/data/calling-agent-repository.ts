@@ -56,6 +56,8 @@ export type CreateSessionInput = {
   campaignId?: string;
   contactId?: string;
   voiceAgentId?: string;
+  scheduledCallId?: string;
+  crmTaskId?: string;
   callSid?: string;
   conversationId?: string;
   status?: CallSession["status"];

@@ -14,6 +14,7 @@ import {
 import { CrmTimeline } from "@/components/crm/crm-timeline";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
 import { ScoreContactButton } from "@/components/crm/score-contact-button";
+import { VoiceLoopPanel } from "@/components/crm/voice-loop-panel";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { activeMemberOptions, memberNameByUserId } from "@/lib/crm/members";
 import { getRepository } from "@/lib/data/repository";
@@ -100,6 +101,8 @@ export default async function ContactDetailPage({
       />
 
       <CrmAiInsightsPanel contactId={contact.id} />
+
+      <VoiceLoopPanel contactId={contact.id} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <CrmSection title="Details">

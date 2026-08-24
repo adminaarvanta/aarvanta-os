@@ -137,6 +137,9 @@ export interface CrmRepository {
         | "assignedTo"
         | "assignedAgentType"
         | "agentRunId"
+        | "scheduledCallId"
+        | "callSessionId"
+        | "voiceAgentId"
       >
     >,
     scope: TenantScope
@@ -213,6 +216,9 @@ export type CreateTaskInput = {
   assignedTo?: string;
   assignedAgentType?: string;
   agentRunId?: string;
+  scheduledCallId?: string;
+  callSessionId?: string;
+  voiceAgentId?: string;
   source?: TaskSource;
 };
 

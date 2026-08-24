@@ -76,7 +76,7 @@ TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-SERVICE_VERSION = "1.6.0"
+SERVICE_VERSION = "1.7.0"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -494,8 +494,11 @@ def build_system_prompt(
     entry = str(ctx.get("entryStage") or "greeting").strip()
     if flow:
         parts.append(
-            "CONVERSATION STAGE MACHINE — start at "
-            f"'{entry}' and advance only via allowed transitions:\n{flow[:2500]}\n"
+            "CONVERSATION PLAYBOOK — start at "
+            f"'{entry}'. These are coaching notes, NOT a script to read aloud. "
+            "Paraphrase in your own short spoken sentences. Advance when the "
+            "caller's intent matches a next step:\n"
+            f"{flow[:2500]}\n"
             "Capture qualification quietly: interested, current solution, company size, "
             "urgency, decision maker. If they decline a meeting, ask if a future "
             "follow-up is okay, then close politely."
@@ -725,6 +728,45 @@ async def say_goodbye_and_hangup(
     await end_session(ws, json.dumps({"reason": "caller_ended"}))
 
 
+def infer_call_conclusion(turns: list[dict[str, str]], summary: str, outcome: str) -> dict[str, Any]:
+    text = f"{summary} " + " ".join(t.get("content", "") for t in turns)
+    blob = text.lower()
+    next_action = "none"
+    info_to_send = None
+    if outcome == "meeting_booked":
+        next_action = "meeting"
+    elif outcome in {"not_interested", "wrong_number", "spam", "already_using_competitor"}:
+        next_action = "none"
+    elif outcome in {"callback_requested", "bad_timing"} or re.search(
+        r"\b(call back|callback|call me (back|later|tomorrow)|another time)\b", blob
+    ):
+        next_action = "callback"
+    elif re.search(r"\b(send|email|share)\b", blob) and re.search(
+        r"\b(info|information|details|deck|one-?pager|overview|pricing)\b", blob
+    ):
+        next_action = "send_info"
+        match = re.search(
+            r"(?:send|email|share)\s+(?:me\s+)?(?:the\s+)?(.{8,120}?)(?:\.|$)",
+            text,
+            re.I,
+        )
+        if match:
+            info_to_send = match.group(1).strip()[:400]
+    elif outcome == "need_follow_up" or "follow up" in blob or "follow-up" in blob:
+        next_action = "follow_up"
+    elif re.search(r"\b(interested|sounds good|tell me more)\b", blob):
+        next_action = "qualify_lead"
+
+    promised_at = None
+    notes = (summary or "")[:500] or None
+    return {
+        "nextAction": next_action,
+        "promisedAt": promised_at,
+        "infoToSend": info_to_send,
+        "notes": notes,
+    }
+
+
 def post_transcript(session: dict[str, Any], turns: list[dict[str, str]], summary: str) -> None:
     if not AARVANTA_CALLBACK_URL or not AARVANTA_CALLBACK_SECRET:
         return
@@ -742,21 +784,30 @@ def post_transcript(session: dict[str, Any], turns: list[dict[str, str]], summar
     elif "call back" in text_blob or "callback" in text_blob:
         outcome = "callback_requested"
     sentiment = "positive" if outcome == "meeting_booked" else "neutral"
+    conclusion = infer_call_conclusion(turns, summary, outcome)
     payload = {
-        "callSid": session.get("callSid"),
-        "from": session.get("from"),
-        "to": session.get("to"),
-        "conversationId": params.get("conversationId"),
-        "direction": params.get("direction"),
-        "sessionId": params.get("sessionId"),
-        "campaignId": params.get("campaignId"),
-        "queueId": params.get("queueId"),
-        "contactId": params.get("contactId"),
-        "turns": turns,
-        "summary": summary,
-        "outcome": outcome,
-        "sentiment": sentiment,
-        "intent": "Interested" if outcome == "meeting_booked" else None,
+        key: value
+        for key, value in {
+            "callSid": session.get("callSid"),
+            "from": session.get("from"),
+            "to": session.get("to"),
+            "conversationId": params.get("conversationId"),
+            "direction": params.get("direction"),
+            "sessionId": params.get("sessionId"),
+            "campaignId": params.get("campaignId"),
+            "queueId": params.get("queueId"),
+            "contactId": params.get("contactId"),
+            "turns": turns,
+            "summary": summary,
+            "outcome": outcome,
+            "sentiment": sentiment,
+            "intent": "Interested" if outcome == "meeting_booked" else None,
+            "nextAction": conclusion["nextAction"],
+            "promisedAt": conclusion["promisedAt"],
+            "infoToSend": conclusion["infoToSend"],
+            "conclusionNotes": conclusion["notes"],
+        }.items()
+        if value is not None
     }
     data = json.dumps(payload).encode("utf-8")
     req = urlrequest.Request(

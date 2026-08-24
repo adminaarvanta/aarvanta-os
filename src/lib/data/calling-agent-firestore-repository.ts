@@ -241,6 +241,8 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
       voiceAgentId: input.voiceAgentId,
       callSid: input.callSid,
       conversationId: input.conversationId,
+      scheduledCallId: input.scheduledCallId,
+      crmTaskId: input.crmTaskId,
       status: input.status ?? "ringing",
       startedAt: now,
       transcript: [],

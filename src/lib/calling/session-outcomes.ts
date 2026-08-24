@@ -1,4 +1,5 @@
 import { nextAttemptAtForOutcome } from "@/lib/calling/retry-policy";
+import { inferCallConclusion, isCallOutcome } from "@/lib/calling/call-conclusion";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { crmNow } from "@/lib/data/crm-helpers";
 import type { TenantScope } from "@/types/communication";
@@ -17,6 +18,12 @@ export async function finalizeCallSession(input: {
   turns: CallTranscriptTurn[];
   summary?: string;
   outcome?: CallOutcome;
+  conclusion?: {
+    nextAction?: string;
+    promisedAt?: string;
+    infoToSend?: string;
+    notes?: string;
+  };
   sentiment?: CallSession["sentiment"];
   intent?: string;
   intentConfidence?: number;
@@ -44,8 +51,18 @@ export async function finalizeCallSession(input: {
   }
 
   const outcome =
-    input.outcome ??
+    (input.outcome && isCallOutcome(input.outcome) ? input.outcome : undefined) ??
     inferOutcomeFromTranscript(input.turns, input.summary);
+
+  const conclusion = inferCallConclusion({
+    outcome,
+    summary: input.summary,
+    turns: input.turns,
+    nextAction: input.conclusion?.nextAction,
+    promisedAt: input.conclusion?.promisedAt,
+    infoToSend: input.conclusion?.infoToSend,
+    notes: input.conclusion?.notes,
+  });
 
   if (!session) {
     session = await repo.createSession(
@@ -72,8 +89,9 @@ export async function finalizeCallSession(input: {
       durationSeconds,
       transcript: input.turns.length ? input.turns : session.transcript,
       summary: input.summary ?? session.summary,
-      outcome,
-      sentiment: input.sentiment ?? inferSentiment(input.summary, outcome),
+      outcome: conclusion.outcome,
+      conclusion,
+      sentiment: input.sentiment ?? inferSentiment(input.summary, conclusion.outcome),
       intent: input.intent,
       intentConfidence: input.intentConfidence,
       qualification: input.qualification ?? session.qualification,
@@ -87,26 +105,41 @@ export async function finalizeCallSession(input: {
     input.scope
   );
 
-  if (updated?.queueId && outcome) {
+  if (updated?.queueId) {
     const queueItem = await repo.getQueueItem(updated.queueId, input.scope);
     const campaign = updated.campaignId
       ? await repo.getCampaign(updated.campaignId, input.scope)
       : null;
     if (queueItem && campaign) {
-      const next = nextAttemptAtForOutcome(
-        outcome,
-        campaign.retryPolicy,
-        queueItem.attemptCount
-      );
-      await repo.updateQueueItem(
-        queueItem.id,
-        {
-          status: next.retry ? "pending" : next.status,
-          nextAttemptAt: next.nextAttemptAt,
-          lastOutcome: outcome,
-        },
-        input.scope
-      );
+      const usesFollowUpSchedule =
+        conclusion.nextAction === "callback" ||
+        conclusion.nextAction === "follow_up" ||
+        conclusion.nextAction === "qualify_lead";
+      if (usesFollowUpSchedule) {
+        await repo.updateQueueItem(
+          queueItem.id,
+          {
+            status: "callback_requested",
+            lastOutcome: conclusion.outcome,
+          },
+          input.scope
+        );
+      } else {
+        const next = nextAttemptAtForOutcome(
+          conclusion.outcome,
+          campaign.retryPolicy,
+          queueItem.attemptCount
+        );
+        await repo.updateQueueItem(
+          queueItem.id,
+          {
+            status: next.retry ? "pending" : next.status,
+            nextAttemptAt: next.nextAttemptAt,
+            lastOutcome: conclusion.outcome,
+          },
+          input.scope
+        );
+      }
     }
   }
 

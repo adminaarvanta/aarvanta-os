@@ -107,6 +107,10 @@ export interface CrmTask extends TenantScope {
   assignedTo?: string;
   assignedAgentType?: string;
   agentRunId?: string;
+  /** Voice OS scheduled follow-up this task executes. */
+  scheduledCallId?: string;
+  callSessionId?: string;
+  voiceAgentId?: string;
   source: TaskSource;
   createdAt: string;
   updatedAt: string;
