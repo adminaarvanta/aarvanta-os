@@ -11,6 +11,7 @@ import { getRepository } from "@/lib/data/repository";
 import { getTenantScope } from "@/lib/tenant/context";
 import { getSessionFromCookies } from "@/lib/auth/session";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 import type { Conversation, TimelineEmail } from "@/types/communication";
 
 function lastEmailSubject(conversation: Conversation): string | undefined {
@@ -68,6 +69,12 @@ export async function POST(
   try {
     let conversation: Conversation | null = null;
     const { channel, content, subject } = parsed.data;
+    if (channel === "whatsapp" && !canAccessWhatsAppOs(session?.email)) {
+      return NextResponse.json(
+        { error: { message: "WhatsApp OS is not available for this account." } },
+        { status: 403 }
+      );
+    }
     const hasEmailThread = conversationHasEmailThread(existing);
     const emailSubject =
       channel === "email"

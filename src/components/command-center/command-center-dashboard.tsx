@@ -8,7 +8,7 @@ import {
   Workflow,
   FileText,
 } from "lucide-react";
-import { OPERATING_SYSTEMS } from "@/lib/navigation/command-center-nav";
+import { operatingSystems } from "@/lib/navigation/command-center-nav";
 import { KpiSparklineCard } from "@/components/command-center/kpi-sparkline-card";
 import { SetupGuideCard } from "@/components/onboarding/setup-guide-card";
 import type { LaunchpadItem } from "@/lib/onboarding/launchpad";
@@ -39,6 +39,7 @@ export function CommandCenterDashboard({
   userName,
   snapshot,
   setupGuide = null,
+  showWhatsApp = false,
 }: {
   userName: string;
   snapshot: FounderSnapshot;
@@ -47,6 +48,7 @@ export function CommandCenterDashboard({
     items: LaunchpadItem[];
     percent: number;
   } | null;
+  showWhatsApp?: boolean;
 }) {
   const firstName = userName.split(" ")[0] ?? userName;
   const aiScore = Math.min(
@@ -154,7 +156,7 @@ export function CommandCenterDashboard({
                 <h2 className="text-lg font-semibold text-foreground">Operating Systems</h2>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {OPERATING_SYSTEMS.map((os) => (
+                {operatingSystems(showWhatsApp).map((os) => (
                   <Link
                     key={os.id}
                     href={os.href}

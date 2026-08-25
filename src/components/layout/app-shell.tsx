@@ -18,6 +18,7 @@ export function AppShell({
   showLaunchpad = false,
   whatsappUnread,
   voiceUnread,
+  showWhatsAppNav = false,
   entitlements,
   children,
 }: {
@@ -34,6 +35,7 @@ export function AppShell({
   showLaunchpad?: boolean;
   whatsappUnread?: number;
   voiceUnread?: number;
+  showWhatsAppNav?: boolean;
   entitlements?: EntitlementsClient | null;
   children: React.ReactNode;
 }) {
@@ -60,6 +62,7 @@ export function AppShell({
               userRole={userRole}
               whatsappUnread={whatsappUnread}
               voiceUnread={voiceUnread}
+              showWhatsAppNav={showWhatsAppNav}
             >
               <PlanAwareMain>{children}</PlanAwareMain>
             </AppShellFrame>

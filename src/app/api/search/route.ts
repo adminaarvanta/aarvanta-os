@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/request";
+import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 import { runGlobalSearch } from "@/lib/search/global-search";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getSessionContext } from "@/lib/tenant/context";
 
 export async function GET(req: Request) {
   try {
-    const scope = await getTenantScope();
+    const ctx = await getSessionContext();
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q") ?? "";
     const limit = Math.min(
@@ -13,7 +14,9 @@ export async function GET(req: Request) {
       40
     );
 
-    const results = await runGlobalSearch(scope, query, limit);
+    const results = await runGlobalSearch(ctx.scope, query, limit, {
+      includeWhatsApp: canAccessWhatsAppOs(ctx.email),
+    });
     return NextResponse.json({ query, results });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Search failed";

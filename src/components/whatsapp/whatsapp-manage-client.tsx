@@ -160,17 +160,17 @@ export function WhatsAppManageClient() {
         >
           Demo / simulate mode — changes stay in Aarvanta and are not sent to
           Meta. Set{" "}
-          <code className="text-amber-100">APP_MODE=production</code>,{" "}
-          <code className="text-amber-100">WHATSAPP_BUSINESS_ACCOUNT_ID</code>,
-          token, and phone number ID for a live App Review recording.
+          <code className="text-amber-100">APP_MODE=production</code> with a
+          live access token and phone number ID for an App Review recording.
         </p>
       ) : null}
       {data.status === "not_configured" ? (
         <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
           WhatsApp management is not configured. Add{" "}
-          <code>WHATSAPP_BUSINESS_ACCOUNT_ID</code>,{" "}
-          <code>WHATSAPP_ACCESS_TOKEN</code>, and{" "}
-          <code>WHATSAPP_PHONE_NUMBER_ID</code>.
+          <code>WHATSAPP_ACCESS_TOKEN</code> and{" "}
+          <code>WHATSAPP_PHONE_NUMBER_ID</code>
+          . Optionally set <code>WHATSAPP_BUSINESS_ACCOUNT_ID</code> if Graph
+          cannot resolve the WABA automatically.
         </p>
       ) : null}
       {data.status === "live" ? (

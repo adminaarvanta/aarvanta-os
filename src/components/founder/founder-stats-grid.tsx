@@ -13,7 +13,13 @@ import {
 import { StatTile } from "@/components/ui/os/stat-tile";
 import type { FounderSnapshot } from "@/types/founder";
 
-export function FounderStatsGrid({ snapshot }: { snapshot: FounderSnapshot }) {
+export function FounderStatsGrid({
+  snapshot,
+  showWhatsApp = false,
+}: {
+  snapshot: FounderSnapshot;
+  showWhatsApp?: boolean;
+}) {
   const cards = [
     {
       label: "Pipeline",
@@ -29,13 +35,17 @@ export function FounderStatsGrid({ snapshot }: { snapshot: FounderSnapshot }) {
       icon: Target,
       href: "/crm/leads",
     },
-    {
-      label: "WhatsApp",
-      value: String(snapshot.inbox.totalConversations),
-      sub: `${snapshot.inbox.urgentCount} urgent`,
-      icon: MessageCircle,
-      href: "/whatsapp",
-    },
+    ...(showWhatsApp
+      ? [
+          {
+            label: "WhatsApp",
+            value: String(snapshot.inbox.totalConversations),
+            sub: `${snapshot.inbox.urgentCount} urgent`,
+            icon: MessageCircle,
+            href: "/whatsapp",
+          },
+        ]
+      : []),
     {
       label: "Projects",
       value: String(snapshot.projects.active),

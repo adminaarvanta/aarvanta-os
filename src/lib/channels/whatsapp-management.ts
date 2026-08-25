@@ -1,6 +1,6 @@
 import {
-  getWhatsAppBusinessAccountId,
   getWhatsAppPhoneNumberId,
+  resolveWhatsAppBusinessAccountId,
   shouldUseLiveWhatsAppManagement,
   whatsappGraphFetch,
 } from "@/lib/channels/whatsapp-graph";
@@ -119,12 +119,21 @@ const DEMO_PHONES: WhatsAppPhoneNumber[] = [
 let demoTemplates = [...DEMO_TEMPLATES];
 let demoProfile: WhatsAppBusinessProfile = { ...DEMO_PROFILE };
 
+async function requireWhatsAppBusinessAccountId(): Promise<string> {
+  const wabaId = await resolveWhatsAppBusinessAccountId();
+  if (!wabaId) {
+    throw new Error(
+      "Could not resolve WhatsApp Business Account ID. Set WHATSAPP_BUSINESS_ACCOUNT_ID, or grant the access token whatsapp_business_management on the WABA that owns WHATSAPP_PHONE_NUMBER_ID."
+    );
+  }
+  return wabaId;
+}
+
 export async function listMessageTemplates(): Promise<WhatsAppMessageTemplate[]> {
   if (!shouldUseLiveWhatsAppManagement()) {
     return demoTemplates;
   }
-  const wabaId = getWhatsAppBusinessAccountId();
-  if (!wabaId) throw new Error("WHATSAPP_BUSINESS_ACCOUNT_ID is not set.");
+  const wabaId = await requireWhatsAppBusinessAccountId();
 
   const data = await whatsappGraphFetch<{
     data?: WhatsAppMessageTemplate[];
@@ -195,8 +204,7 @@ export async function createMessageTemplate(input: {
     return created;
   }
 
-  const wabaId = getWhatsAppBusinessAccountId();
-  if (!wabaId) throw new Error("WHATSAPP_BUSINESS_ACCOUNT_ID is not set.");
+  const wabaId = await requireWhatsAppBusinessAccountId();
 
   const created = await whatsappGraphFetch<{
     id: string;
@@ -232,8 +240,7 @@ export async function deleteMessageTemplate(name: string): Promise<void> {
     return;
   }
 
-  const wabaId = getWhatsAppBusinessAccountId();
-  if (!wabaId) throw new Error("WHATSAPP_BUSINESS_ACCOUNT_ID is not set.");
+  const wabaId = await requireWhatsAppBusinessAccountId();
 
   await whatsappGraphFetch(`/${wabaId}/message_templates?name=${encodeURIComponent(trimmed)}`, {
     method: "DELETE",
@@ -287,8 +294,7 @@ export async function listPhoneNumbers(): Promise<WhatsAppPhoneNumber[]> {
   if (!shouldUseLiveWhatsAppManagement()) {
     return DEMO_PHONES;
   }
-  const wabaId = getWhatsAppBusinessAccountId();
-  if (!wabaId) throw new Error("WHATSAPP_BUSINESS_ACCOUNT_ID is not set.");
+  const wabaId = await requireWhatsAppBusinessAccountId();
 
   const data = await whatsappGraphFetch<{ data?: WhatsAppPhoneNumber[] }>(
     `/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating,code_verification_status,platform_type,throughput`

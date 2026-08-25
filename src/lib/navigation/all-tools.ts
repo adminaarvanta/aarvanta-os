@@ -12,13 +12,21 @@ export const HIDDEN_FROM_ALL_TOOLS = new Set([
   "affiliate-admin",
 ]);
 
+const WHATSAPP_TOOL_IDS = new Set(["whatsapp", "whatsapp-manage"]);
+
 /** All navigable modules, deduped by path. */
-export function getAllToolsModules(): PlatformModule[] {
+export function getAllToolsModules(options?: {
+  includeWhatsApp?: boolean;
+}): PlatformModule[] {
   const seen = new Set<string>();
   const merged = [...CORE_MODULES, ...PLATFORM_MODULES];
 
   return merged.filter((tool) => {
-    if (HIDDEN_FROM_ALL_TOOLS.has(tool.id)) return false;
+    if (HIDDEN_FROM_ALL_TOOLS.has(tool.id)) {
+      if (!(options?.includeWhatsApp && WHATSAPP_TOOL_IDS.has(tool.id))) {
+        return false;
+      }
+    }
     const key = tool.href.split("?")[0];
     if (seen.has(key)) return false;
     seen.add(key);

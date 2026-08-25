@@ -6,7 +6,7 @@ import { Lock, LogOut, MoreHorizontal, X } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import {
   MOBILE_NAV,
-  MOBILE_NAV_MORE,
+  mobileMoreNav,
 } from "@/lib/navigation/command-center-nav";
 import { cn } from "@/lib/utils";
 import { isNavHrefLocked, usePlan } from "@/components/billing/plan-context";
@@ -22,13 +22,19 @@ function isMobileActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-export function MobileNav({ production }: { production: boolean }) {
+export function MobileNav({
+  production,
+  showWhatsAppNav = false,
+}: {
+  production: boolean;
+  showWhatsAppNav?: boolean;
+}) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const plan = usePlan();
   // Keep all primary tabs visible; locked ones show a lock icon.
   const primary = MOBILE_NAV.slice(0, 4);
-  const moreItems = MOBILE_NAV_MORE;
+  const moreItems = mobileMoreNav(showWhatsAppNav);
 
   const moreActive = moreItems.some((item) =>
     isMobileActive(pathname, item.href)

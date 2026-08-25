@@ -16,6 +16,7 @@ export function AppShellFrame({
   userRole,
   whatsappUnread,
   voiceUnread,
+  showWhatsAppNav,
   children,
 }: {
   production: boolean;
@@ -28,6 +29,7 @@ export function AppShellFrame({
   userRole?: string;
   whatsappUnread?: number;
   voiceUnread?: number;
+  showWhatsAppNav?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -53,12 +55,13 @@ export function AppShellFrame({
           userRole={userRole}
           whatsappUnread={whatsappUnread}
           voiceUnread={voiceUnread}
+          showWhatsAppNav={showWhatsAppNav}
         />
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
           {!hideHeader ? <AppHeader /> : null}
           {children}
         </main>
-        <MobileNav production={production} />
+        <MobileNav production={production} showWhatsAppNav={showWhatsAppNav} />
       </div>
       <SupportAssistant />
       <DemoTourOverlay />

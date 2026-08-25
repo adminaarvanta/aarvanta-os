@@ -10,7 +10,7 @@ import { PendingLink } from "@/components/layout/navigation-provider";
 import { AllToolsPanel } from "@/components/layout/all-tools-panel";
 import { useSidebarCollapse } from "@/components/layout/sidebar-collapse";
 import {
-  COMMAND_CENTER_NAV,
+  commandCenterNav,
   SIDEBAR_BRAND,
   SIDEBAR_SHORTCUTS,
 } from "@/lib/navigation/command-center-nav";
@@ -42,6 +42,7 @@ export function AppSidebar({
   userRole = "Owner",
   whatsappUnread = 0,
   voiceUnread = 0,
+  showWhatsAppNav = false,
 }: {
   production: boolean;
   tenant?: {
@@ -53,6 +54,7 @@ export function AppSidebar({
   userRole?: string;
   whatsappUnread?: number;
   voiceUnread?: number;
+  showWhatsAppNav?: boolean;
 }) {
   const pathname = usePathname();
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -60,7 +62,7 @@ export function AppSidebar({
   const plan = usePlan();
   const tour = useDemoTourOptional();
   // Main tabs always visible — locked ones show a Pro badge.
-  const navItems = COMMAND_CENTER_NAV;
+  const navItems = commandCenterNav(showWhatsAppNav);
   const shortcuts = SIDEBAR_SHORTCUTS.filter((item) =>
     isNavHrefVisible(plan, item.href)
   );
@@ -362,6 +364,7 @@ export function AppSidebar({
         pathname={pathname}
         tenant={tenant}
         sidebarCollapsed={collapsed}
+        includeWhatsApp={showWhatsAppNav}
       />
     </>
   );

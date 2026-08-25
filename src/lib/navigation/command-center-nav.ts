@@ -7,6 +7,7 @@ import {
   Landmark,
   LayoutDashboard,
   LayoutGrid,
+  MessageCircle,
   Phone,
   Settings,
   Sparkles,
@@ -57,6 +58,27 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/analytics", label: "Insights", icon: BarChart3, featureKey: "analytics" },
   { href: "#all-tools", label: "More", icon: LayoutGrid, featureKey: "ungated" },
 ];
+
+/**
+ * Super-admin-only WhatsApp OS. Email-gated (not plan-gated) via
+ * `canAccessWhatsAppOs` — currently `admin@aarvanta.co`.
+ */
+export const WHATSAPP_NAV_ITEM: CommandNavItem = {
+  href: "/whatsapp",
+  label: "WhatsApp",
+  icon: MessageCircle,
+  badgeKey: "whatsapp",
+  featureKey: "ungated",
+};
+
+export const WHATSAPP_OS_ITEM: OperatingSystemItem = {
+  id: "whatsapp",
+  label: "WhatsApp OS",
+  href: "/whatsapp",
+  description: "Business inbox, templates & profile",
+  dotClass: "bg-success",
+  iconClass: "text-success bg-success/10",
+};
 
 /**
  * Sidebar shortcuts — unique destinations not already in primary nav.
@@ -195,3 +217,34 @@ export const SIDEBAR_BRAND = {
   href: "/dashboard",
   icon: Globe2,
 };
+
+function insertAfterHref<T extends { href: string }>(
+  items: T[],
+  afterHref: string,
+  extra: T
+): T[] {
+  const idx = items.findIndex((item) => item.href === afterHref);
+  const at = idx === -1 ? 1 : idx + 1;
+  return [...items.slice(0, at), extra, ...items.slice(at)];
+}
+
+export function commandCenterNav(showWhatsApp: boolean): CommandNavItem[] {
+  if (!showWhatsApp) return COMMAND_CENTER_NAV;
+  return insertAfterHref(COMMAND_CENTER_NAV, "/voice", WHATSAPP_NAV_ITEM);
+}
+
+export function mobileMoreNav(showWhatsApp: boolean): CommandNavItem[] {
+  if (!showWhatsApp) return MOBILE_NAV_MORE;
+  return [WHATSAPP_NAV_ITEM, ...MOBILE_NAV_MORE];
+}
+
+export function operatingSystems(showWhatsApp: boolean): OperatingSystemItem[] {
+  if (!showWhatsApp) return OPERATING_SYSTEMS;
+  const idx = OPERATING_SYSTEMS.findIndex((item) => item.id === "voice");
+  const at = idx === -1 ? 0 : idx + 1;
+  return [
+    ...OPERATING_SYSTEMS.slice(0, at),
+    WHATSAPP_OS_ITEM,
+    ...OPERATING_SYSTEMS.slice(at),
+  ];
+}

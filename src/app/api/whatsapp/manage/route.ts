@@ -12,11 +12,14 @@ import {
   listMessageTemplates,
   updateBusinessProfile,
 } from "@/lib/channels/whatsapp-management";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getSessionContext } from "@/lib/tenant/context";
+import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 
-async function requireScope() {
+async function requireWhatsAppOs() {
   try {
-    return await getTenantScope();
+    const ctx = await getSessionContext();
+    if (!canAccessWhatsAppOs(ctx.email)) return null;
+    return ctx.scope;
   } catch {
     return null;
   }
@@ -44,7 +47,7 @@ function graphErrorResponse(err: unknown) {
 }
 
 export async function GET() {
-  if (!(await requireScope())) return unauthorized();
+  if (!(await requireWhatsAppOs())) return unauthorized();
 
   try {
     const snapshot = await getWhatsAppManagementSnapshot();
@@ -90,7 +93,7 @@ const patchSchema = z.discriminatedUnion("action", [
 ]);
 
 export async function PATCH(req: Request) {
-  if (!(await requireScope())) return unauthorized();
+  if (!(await requireWhatsAppOs())) return unauthorized();
 
   const body = await parseJsonBody<unknown>(req);
   if (body instanceof NextResponse) return body;

@@ -30,13 +30,14 @@ function rankMatch(values: Array<string | undefined>, query: string): number {
 export async function runGlobalSearch(
   scope: TenantScope,
   query: string,
-  limit = 20
+  limit = 20,
+  options?: { includeWhatsApp?: boolean }
 ): Promise<GlobalSearchResult[]> {
   const q = query.trim();
   const featureLimit = Math.min(8, limit);
   const recordLimit = Math.max(limit - featureLimit, 8);
 
-  const features = searchFeatures(q, featureLimit);
+  const features = searchFeatures(q, featureLimit, options);
 
   if (!q) {
     return features;
