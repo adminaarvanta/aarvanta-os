@@ -106,19 +106,24 @@ export function CrmShell({
   children: ReactNode;
 }) {
   return (
-    <>
-      <header className="shrink-0 border-b border-border/80 bg-surface-elevated/85 px-4 py-4 backdrop-blur-md sm:px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(26,47,89,0.14),_transparent_42%),radial-gradient(ellipse_at_top_right,_rgba(168,137,79,0.14),_transparent_38%),radial-gradient(ellipse_at_bottom,_rgba(47,127,146,0.10),_transparent_46%)]"
+      />
+      <header className="relative shrink-0 overflow-hidden border-b border-border/70 bg-surface-elevated/70 px-4 py-4 backdrop-blur-md sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#1a2f59]/8 via-transparent to-[#2f7f92]/10" />
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             {back}
             <div className="flex items-start gap-3">
               {lead ?? (
-                <span className="mt-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/12 text-gold ring-1 ring-gold/20 sm:flex">
+                <span className="mt-0.5 hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_8px_20px_rgba(26,47,89,0.28)] ring-1 ring-gold/35 sm:flex">
                   <Handshake className="h-5 w-5" aria-hidden />
                 </span>
               )}
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">
                   CRM OS
                 </p>
                 <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -140,14 +145,14 @@ export function CrmShell({
         </div>
       </header>
       <CrmNav />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background p-4 sm:p-6">
+      <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
         <div
           className={cn("space-y-6", wide ? "max-w-none" : "mx-auto max-w-6xl")}
         >
           {children}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

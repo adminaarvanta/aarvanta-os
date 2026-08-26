@@ -30,7 +30,7 @@ export function WorkflowBuilder() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error?.message ?? "Failed to generate workflow");
+        throw new Error(data.error?.message ?? "Couldn’t create that. Try again.");
       }
       router.push(`/workflows/${data.workflow.id}`);
       router.refresh();
@@ -42,30 +42,28 @@ export function WorkflowBuilder() {
   }
 
   return (
-    <FlowPanel
-      className="!p-5"
-      style={{
-        background:
-          "linear-gradient(135deg, var(--flow-accent-soft) 0%, #FFFFFF 55%, var(--flow-cyan-soft) 100%)",
-      }}
-    >
+    <FlowPanel className="overflow-hidden !p-0">
+      <div className="h-1.5 bg-gradient-to-r from-violet-500 via-cyan-500 to-emerald-500" />
+      <div
+        className="p-5"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--flow-accent-soft) 0%, var(--flow-panel) 52%, var(--flow-cyan-soft) 100%)",
+        }}
+      >
       <div className="flex items-center gap-2">
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-lg"
-          style={{ background: "var(--flow-accent)", color: "#fff" }}
-        >
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 text-white shadow-[0_6px_14px_rgba(109,94,246,0.28)]">
           <Sparkles className="h-4 w-4" />
         </div>
         <h3
           className="text-sm font-semibold"
           style={{ color: "var(--flow-ink)" }}
         >
-          Describe a BDM play
+          Want something else?
         </h3>
       </div>
       <p className="mt-2 text-xs" style={{ color: "var(--flow-muted)" }}>
-        Example: “When a lead scores hot, send WhatsApp and create a follow-up
-        task” — then edit steps.
+        Type it the way you’d tell an assistant. We’ll set it up, then you can tweak it.
       </p>
       <form
         onSubmit={handleGenerate}
@@ -74,7 +72,7 @@ export function WorkflowBuilder() {
         <input
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
-          placeholder="e.g. WhatsApp intro to a new prospect, then book a discovery call"
+          placeholder="e.g. Call people back if they miss us, and send an email"
           className={flowInputClass}
           style={{ borderColor: "var(--flow-line)", color: "var(--flow-ink)" }}
         />
@@ -83,7 +81,7 @@ export function WorkflowBuilder() {
           disabled={loading || !intent.trim()}
           className="shrink-0"
         >
-          {loading ? "Building…" : "Build playbook"}
+          {loading ? "Creating…" : "Create it"}
         </FlowPrimaryButton>
       </form>
       {error ? (
@@ -95,6 +93,7 @@ export function WorkflowBuilder() {
           {error}
         </p>
       ) : null}
+      </div>
     </FlowPanel>
   );
 }

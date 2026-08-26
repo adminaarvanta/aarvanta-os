@@ -57,10 +57,10 @@ export function CrmNav() {
 
   return (
     <nav
-      className="shrink-0 overflow-x-auto border-b border-border/80 bg-surface-elevated/70 backdrop-blur-md [-webkit-overflow-scrolling:touch]"
+      className="relative shrink-0 overflow-x-auto border-b border-border/70 bg-surface-elevated/55 px-3 py-2.5 backdrop-blur-md [-webkit-overflow-scrolling:touch] sm:px-6"
       aria-label="CRM sections"
     >
-      <div className="flex min-w-max gap-0.5 px-2 sm:px-4">
+      <div className="flex min-w-max gap-1.5">
         {links.map((link) => {
           const active = isActive(pathname, link.href, link.exact);
           const Icon = link.icon;
@@ -70,26 +70,14 @@ export function CrmNav() {
               href={link.href}
               pendingClassName="opacity-60"
               className={cn(
-                "group relative flex items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors",
-                active ? "text-gold-bright" : "text-muted hover:text-foreground"
+                "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition",
+                active
+                  ? "bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_6px_16px_rgba(26,47,89,0.28)] ring-1 ring-gold/30"
+                  : "border border-border/80 bg-surface-elevated/80 text-muted hover:border-gold/40 hover:text-foreground"
               )}
             >
-              <Icon
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform",
-                  active && "scale-110"
-                )}
-                aria-hidden
-              />
+              <Icon className="h-3.5 w-3.5" aria-hidden />
               {link.label}
-              <span
-                className={cn(
-                  "absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-all",
-                  active
-                    ? "bg-gold opacity-100"
-                    : "bg-transparent opacity-0 group-hover:bg-border group-hover:opacity-100"
-                )}
-              />
             </PendingLink>
           );
         })}

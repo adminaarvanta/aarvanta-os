@@ -12,7 +12,6 @@ import {
   Settings,
   Sparkles,
   Wallet,
-  Workflow,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -51,8 +50,7 @@ export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
   { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
   { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
-  { href: "/workforce", label: "AI Team", icon: Sparkles, featureKey: "aiWorkforce" },
-  { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
+  { href: "/automation", label: "Automation", icon: Sparkles, featureKey: "workflows" },
   { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
   { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
   { href: "/analytics", label: "Insights", icon: BarChart3, featureKey: "analytics" },
@@ -197,7 +195,7 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
 export const MOBILE_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
   { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
-  { href: "/workforce", label: "AI", icon: Sparkles, featureKey: "aiWorkforce" },
+  { href: "/automation", label: "Auto", icon: Sparkles, featureKey: "workflows" },
   { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
 ];
 

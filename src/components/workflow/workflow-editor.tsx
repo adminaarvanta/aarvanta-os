@@ -29,9 +29,9 @@ import {
 } from "@/components/workflow/workflow-shell";
 
 const TRIGGER_OPTIONS: Array<{ type: WorkflowTriggerType; label: string }> = [
-  { type: "manual", label: "I run it (pick a contact/deal)" },
-  { type: "crm_lead_scored", label: "When a lead is scored" },
-  { type: "deal_updated", label: "When a deal is updated" },
+  { type: "manual", label: "I pick a person" },
+  { type: "crm_lead_scored", label: "When a new lead looks interested" },
+  { type: "deal_updated", label: "When a deal changes" },
 ];
 
 const STEP_TYPES: Array<{
@@ -545,6 +545,65 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                       })
                     }
                   />
+                )}
+
+                {actionType === "schedule_call" && (
+                  <>
+                    <select
+                      className={flowInputClass}
+                      style={inputStyle}
+                      value={String(selected.config.scheduleSlotId ?? "next_morning")}
+                      onChange={(e) =>
+                        updateStep(selected.id, {
+                          config: {
+                            ...selected.config,
+                            scheduleSlotId: e.target.value,
+                          },
+                        })
+                      }
+                    >
+                      <option value="next_morning">Next morning</option>
+                      <option value="next_afternoon">Next afternoon</option>
+                      <option value="in_2_hours">In 2 hours</option>
+                      <option value="tomorrow_same">Tomorrow same time</option>
+                    </select>
+                    <select
+                      className={flowInputClass}
+                      style={inputStyle}
+                      value={String(selected.config.scheduleKind ?? "scheduled")}
+                      onChange={(e) =>
+                        updateStep(selected.id, {
+                          config: {
+                            ...selected.config,
+                            scheduleKind: e.target.value,
+                          },
+                        })
+                      }
+                    >
+                      <option value="scheduled">Scheduled call email</option>
+                      <option value="callback">Callback email</option>
+                      <option value="missed">Missed-call retry email</option>
+                    </select>
+                    <textarea
+                      className={flowInputClass}
+                      style={inputStyle}
+                      rows={3}
+                      placeholder="Call brief — used by Voice OS"
+                      value={String(
+                        selected.config.callMessage ??
+                          selected.config.messageTemplate ??
+                          ""
+                      )}
+                      onChange={(e) =>
+                        updateStep(selected.id, {
+                          config: {
+                            ...selected.config,
+                            callMessage: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </>
                 )}
 
                 {(actionType === "send_whatsapp" ||

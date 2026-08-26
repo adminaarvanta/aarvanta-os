@@ -15,11 +15,15 @@ async function runMatchingWorkflows(
     leadScore?: number;
     dealValue?: number;
     notes?: string;
-  }
+  },
+  filter?: (workflow: { trigger: { config?: Record<string, unknown> } }) => boolean
 ) {
   const workflows = await getWorkflowRepository().listWorkflows(scope);
   const matches = workflows.filter(
-    (wf) => wf.enabled && wf.trigger.type === triggerType
+    (wf) =>
+      wf.enabled &&
+      wf.trigger.type === triggerType &&
+      (filter ? filter(wf) : true)
   );
 
   for (const workflow of matches) {
@@ -74,13 +78,35 @@ export async function handleCrmWorkflowEvent(event: DomainEvent): Promise<void> 
         leadScore = contact.leadScore;
       }
     }
-    await runMatchingWorkflows(scope, "deal_updated", {
-      contactId: deal.contactId,
-      dealId: deal.id,
-      contactName,
-      leadScore,
-      dealValue: deal.value,
-      notes: deal.notes,
-    });
+    const eventHint =
+      event.type === "deal.won"
+        ? "won"
+        : event.type === "deal.lost"
+          ? "lost"
+          : event.type === "deal.created"
+            ? "created"
+            : "updated";
+    await runMatchingWorkflows(
+      scope,
+      "deal_updated",
+      {
+        contactId: deal.contactId,
+        dealId: deal.id,
+        contactName,
+        leadScore,
+        dealValue: deal.value,
+        notes: deal.notes,
+      },
+      (wf) => {
+        const wantStatus = wf.trigger.config?.dealStatus;
+        if (wantStatus === "won") {
+          return eventHint === "won" || deal.status === "won";
+        }
+        if (wantStatus === "open") {
+          return deal.status === "open" && eventHint === "updated";
+        }
+        return true;
+      }
+    );
   }
 }

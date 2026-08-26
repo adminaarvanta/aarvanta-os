@@ -5,7 +5,7 @@ import { PendingLink } from "@/components/layout/navigation-provider";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/workforce", label: "Chat", exact: true },
+  { href: "/automation?view=ask", label: "Chat", exact: false },
   { href: "/workforce/jobs", label: "Jobs", exact: false },
   { href: "/workforce/waiting", label: "Waiting for You", exact: false },
   { href: "/workforce/activity", label: "Activity", exact: false },

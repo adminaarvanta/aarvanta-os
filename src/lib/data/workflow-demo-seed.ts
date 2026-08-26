@@ -4,14 +4,227 @@ import type { Workflow } from "@/types/workflow";
 
 const now = crmNow();
 
-/**
- * BDM playbooks — linear automations a Business Development Manager would run:
- * qualify → outreach → follow-up → meeting → handoff.
- */
-export const WORKFLOW_TEMPLATES: Omit<
+export type WorkflowTemplateDraft = Omit<
   Workflow,
   keyof typeof DEMO_TENANT | "id" | "createdAt" | "updatedAt"
->[] = [
+>;
+
+export const AUTOMATION_PRESET_IDS = [
+  "schedule_team_call",
+  "ai_voice_followup",
+  "new_lead_chase",
+  "missed_call_callback",
+  "quiet_deal_followup",
+  "deal_won_next_steps",
+] as const;
+
+export type AutomationPresetId = (typeof AUTOMATION_PRESET_IDS)[number];
+
+/**
+ * Default 2×3 Automation home — what most sales/services teams actually automate.
+ * Demo workspaces get these enabled. Production tenants get them via ensureAutomationPresets.
+ */
+export const AUTOMATION_PRESETS: WorkflowTemplateDraft[] = [
+  {
+    name: "Schedule a call with the team",
+    description: "Book a call, email them to confirm, and put a reminder on your list.",
+    enabled: true,
+    templateId: "schedule_team_call",
+    trigger: { type: "manual", label: "Manual run (pick a person)" },
+    tags: ["meeting", "crm"],
+    steps: [
+      {
+        id: "step_meeting",
+        type: "action",
+        label: "Log team call",
+        config: {
+          actionType: "book_meeting",
+          meetingTitle: "Call with the team",
+          meetingNotes: "Confirm time, attendees, and agenda with the customer.",
+        },
+      },
+      {
+        id: "step_email",
+        type: "action",
+        label: "Send confirmation email",
+        config: {
+          actionType: "send_email",
+          emailSubject: "Your call with our team",
+          messageTemplate:
+            "Hi {{name}},\n\nLooking forward to our call. Reply if you need a different time.\n\n— Aarvanta",
+        },
+      },
+    ],
+  },
+  {
+    name: "AI voice follow-up",
+    description: "We'll call them for you and email the time.",
+    enabled: true,
+    templateId: "ai_voice_followup",
+    trigger: { type: "manual", label: "Manual run (pick a person)" },
+    tags: ["voice", "crm"],
+    steps: [
+      {
+        id: "step_call",
+        type: "action",
+        label: "Schedule AI voice call",
+        config: {
+          actionType: "schedule_call",
+          scheduleSlotId: "next_morning",
+          scheduleKind: "scheduled",
+          callMessage:
+            "Follow up from CRM — continue the conversation and confirm next steps.",
+        },
+      },
+    ],
+  },
+  {
+    name: "Chase a new lead",
+    description: "When someone looks interested, we follow up the same day.",
+    enabled: true,
+    templateId: "new_lead_chase",
+    trigger: { type: "crm_lead_scored", label: "When a lead is scored" },
+    tags: ["crm", "outreach"],
+    steps: [
+      {
+        id: "step_condition",
+        type: "condition",
+        label: "Only if score ≥ 70",
+        config: { field: "leadScore", operator: "gte", value: 70 },
+      },
+      {
+        id: "step_tag",
+        type: "action",
+        label: "Tag as hot lead",
+        config: { actionType: "tag_contact", tag: "hot_lead" },
+      },
+      {
+        id: "step_agent",
+        type: "agent",
+        label: "AI Sales Manager qualifies & suggests next moves",
+        config: { agentType: "sales_manager", applyActions: true },
+      },
+      {
+        id: "step_draft",
+        type: "action",
+        label: "Draft outreach",
+        config: {
+          actionType: "draft_outreach",
+          messageTemplate:
+            "Hi {{name}}, thanks for connecting — I help teams hire an AI workforce without adding headcount. Open to a 15-min intro this week?",
+        },
+      },
+      {
+        id: "step_task",
+        type: "action",
+        label: "Create same-day follow-up task",
+        config: {
+          actionType: "create_task",
+          title: "Chase hot lead today",
+          priority: "high",
+          description: "Use the outreach draft on the contact timeline.",
+        },
+      },
+    ],
+  },
+  {
+    name: "Call back missed calls",
+    description:
+      "If a call doesn't connect, we book a callback and email them. Turn this off to stop automatic callbacks.",
+    enabled: true,
+    templateId: "missed_call_callback",
+    trigger: { type: "manual", label: "Manual run (or Voice OS on hang-up)" },
+    tags: ["voice", "callback"],
+    steps: [
+      {
+        id: "step_call",
+        type: "action",
+        label: "Schedule callback",
+        config: {
+          actionType: "schedule_call",
+          scheduleSlotId: "next_afternoon",
+          scheduleKind: "callback",
+          callMessage: "Callback as requested — continue from the last conversation.",
+        },
+      },
+    ],
+  },
+  {
+    name: "Follow up quiet deals",
+    description: "When a deal goes quiet, we nudge them and remind you.",
+    enabled: true,
+    templateId: "quiet_deal_followup",
+    trigger: {
+      type: "deal_updated",
+      label: "When an open deal is updated",
+      config: { dealStatus: "open" },
+    },
+    tags: ["crm", "pipeline"],
+    steps: [
+      {
+        id: "step_task",
+        type: "action",
+        label: "Create follow-up task",
+        config: {
+          actionType: "create_task",
+          title: "Nudge quiet deal",
+          priority: "medium",
+          description: "Deal went quiet — check in and move the next step.",
+        },
+      },
+      {
+        id: "step_email",
+        type: "action",
+        label: "Send follow-up email",
+        config: {
+          actionType: "send_email",
+          emailSubject: "Checking in",
+          messageTemplate:
+            "Hi {{name}},\n\nWanted to check in on next steps. Happy to jump on a quick call if useful.\n\n— Aarvanta",
+        },
+      },
+    ],
+  },
+  {
+    name: "After you win a deal",
+    description: "Send a welcome email and start onboarding.",
+    enabled: true,
+    templateId: "deal_won_next_steps",
+    trigger: {
+      type: "deal_updated",
+      label: "When a deal is won",
+      config: { dealStatus: "won" },
+    },
+    tags: ["crm", "handoff"],
+    steps: [
+      {
+        id: "step_task",
+        type: "action",
+        label: "Create onboarding task",
+        config: {
+          actionType: "create_task",
+          title: "Kick off onboarding",
+          priority: "high",
+          description: "Deal won — send welcome pack and book kickoff.",
+        },
+      },
+      {
+        id: "step_email",
+        type: "action",
+        label: "Send welcome email",
+        config: {
+          actionType: "send_email",
+          emailSubject: "Welcome — next steps",
+          messageTemplate:
+            "Hi {{name}},\n\nThrilled to be working together. We'll send onboarding details shortly.\n\n— Aarvanta",
+        },
+      },
+    ],
+  },
+];
+
+/** Older BDM gallery — still installable from “More playbooks”, not the home grid. */
+export const LEGACY_WORKFLOW_TEMPLATES: WorkflowTemplateDraft[] = [
   {
     name: "Hot lead chase",
     description:
@@ -214,8 +427,14 @@ export const WORKFLOW_TEMPLATES: Omit<
   },
 ];
 
+/** Installable templates: presets first, then older BDM playbooks. */
+export const WORKFLOW_TEMPLATES: WorkflowTemplateDraft[] = [
+  ...AUTOMATION_PRESETS,
+  ...LEGACY_WORKFLOW_TEMPLATES,
+];
+
 export function buildDemoWorkflowSeed(): Workflow[] {
-  return WORKFLOW_TEMPLATES.map((template, index) => ({
+  return AUTOMATION_PRESETS.map((template, index) => ({
     ...DEMO_TENANT,
     ...template,
     id: `wf_${template.templateId ?? index}`,

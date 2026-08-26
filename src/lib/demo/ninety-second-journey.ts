@@ -96,7 +96,7 @@ export async function runNinetySecondJourney(
   const steps: DemoJourneyStep[] = [];
   const links: DemoJourneyResult["links"] = {
     communications: "/communications",
-    workforce: "/workforce",
+    workforce: "/automation",
   };
 
   const repo = getRepository();

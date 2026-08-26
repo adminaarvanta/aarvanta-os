@@ -90,6 +90,7 @@ export default async function AppLayout({
         typeof free.limits.aiCredits === "number" ? free.limits.aiCredits : 0,
       creditsPercent: 0,
       isSuperAdmin: false,
+      demoMode: !production,
     };
   }
 

@@ -49,10 +49,10 @@ export const SUPPORT_DESTINATIONS: SupportDestination[] = [
   },
   {
     id: "workforce",
-    title: "AI Team",
-    href: "/workforce",
-    keywords: ["ai", "agents", "workforce", "employees", "copilot", "team"],
-    blurb: "Your AI team — chat, jobs, approvals, and specialists.",
+    title: "Automation",
+    href: "/automation",
+    keywords: ["ai", "agents", "workforce", "employees", "copilot", "team", "automation"],
+    blurb: "Presets, AI Team asks, and workflow runs.",
   },
   {
     id: "projects",
@@ -63,10 +63,10 @@ export const SUPPORT_DESTINATIONS: SupportDestination[] = [
   },
   {
     id: "workflows",
-    title: "Workflows",
-    href: "/workflows",
-    keywords: ["workflows", "automation", "automate", "rules"],
-    blurb: "Automate repetitive business processes.",
+    title: "Automation presets",
+    href: "/automation",
+    keywords: ["workflows", "automation", "automate", "rules", "presets"],
+    blurb: "Turn on the six plays most teams need, or describe a new one.",
   },
   {
     id: "hr",
@@ -163,10 +163,10 @@ export const SUPPORT_FAQS: SupportFaq[] = [
       "Click the language icon in the top header and pick any language. The whole OS will refresh in that language.",
   },
   {
-    question: "What is the AI Team?",
+    question: "What is Automation?",
     answer:
-      "AI Team is your team of AI employees (CEO, sales, marketing, HR, finance, and more). Open Chat to start a job, or Settings to browse employees.",
-    href: "/workforce",
+      "Automation is your preset grid plus the AI Team chat. Turn on a play, edit it, or ask the team to do a job once. Voice calling stays in Voice.",
+    href: "/automation",
   },
   {
     question: "Where can I find help docs?",

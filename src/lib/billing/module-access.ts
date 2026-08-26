@@ -42,6 +42,7 @@ export const MODULE_FEATURE_MAP: Record<string, PlanFeatureKey | "ungated"> = {
   calling: "voiceAi",
   crm: "crm",
   workforce: "aiWorkforce",
+  automation: "workflows",
   projects: "projects",
   workflows: "workflows",
   hr: "hr",

@@ -51,9 +51,9 @@ export async function buildLaunchpadSnapshot(
     },
     {
       id: "workforce",
-      title: "Meet your AI Team",
-      description: "Open AI Team and assign a first task in under a minute.",
-      href: "/workforce",
+      title: "Meet Automation",
+      description: "Turn on a preset or ask the AI Team to do a job once.",
+      href: "/automation",
       done: runs.length > 0,
     },
     {
@@ -74,7 +74,7 @@ export async function buildLaunchpadSnapshot(
       id: "workflows",
       title: "Create an automation",
       description: "Turn a follow-up or handoff into a repeatable workflow.",
-      href: "/workflows",
+      href: "/automation",
       done: workflows.length > 0,
     },
     {

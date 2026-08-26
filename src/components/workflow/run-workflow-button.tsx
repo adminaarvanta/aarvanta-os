@@ -7,7 +7,7 @@ import { FlowPrimaryButton } from "@/components/workflow/workflow-shell";
 
 export function RunWorkflowButton({
   workflowId,
-  label = "Run workflow",
+  label = "Try it",
 }: {
   workflowId: string;
   label?: string;

@@ -8,32 +8,32 @@ const INTENT_KEYWORDS: Array<{
   templateId: string;
 }> = [
   {
-    keywords: ["hot", "score", "qualify", "nurture", "chase"],
-    templateId: "hot_lead_chase",
+    keywords: ["missed", "callback", "no-answer", "no answer", "didn't pick", "call back"],
+    templateId: "missed_call_callback",
   },
   {
-    keywords: ["whatsapp", "outreach", "message", "intro", "prospect"],
-    templateId: "first_outreach_whatsapp",
+    keywords: ["voice", "outbound call", "ai call", "dial", "two-way", "2-way"],
+    templateId: "ai_voice_followup",
   },
   {
-    keywords: ["meeting", "call", "discovery", "book", "demo"],
-    templateId: "book_discovery",
+    keywords: ["schedule a call", "team call", "book", "meeting", "discovery", "calendly"],
+    templateId: "schedule_team_call",
   },
   {
-    keywords: ["stage", "pipeline", "follow-up", "follow up", "deal update"],
-    templateId: "deal_followup",
+    keywords: ["hot", "score", "qualify", "nurture", "chase", "new lead", "speed to lead"],
+    templateId: "new_lead_chase",
   },
   {
-    keywords: ["proposal", "handoff", "approval", "send proposal"],
-    templateId: "proposal_handoff",
+    keywords: ["quiet", "stall", "stale", "no update", "went quiet", "pipeline stall"],
+    templateId: "quiet_deal_followup",
   },
   {
-    keywords: ["email", "send email"],
-    templateId: "book_discovery",
+    keywords: ["won", "win a deal", "closed-won", "closed won", "onboarding", "deal won", "handoff after", "welcome"],
+    templateId: "deal_won_next_steps",
   },
 ];
 
-function buildBdmCustomSteps(intent: string): WorkflowStep[] {
+function buildCustomSteps(intent: string): WorkflowStep[] {
   const lower = intent.toLowerCase();
   const steps: WorkflowStep[] = [];
 
@@ -46,12 +46,26 @@ function buildBdmCustomSteps(intent: string): WorkflowStep[] {
     });
   }
 
-  steps.push({
-    id: crmNewId("step"),
-    type: "agent",
-    label: "AI Sales Manager (BDM assist)",
-    config: { agentType: "sales_manager", applyActions: true },
-  });
+  if (lower.includes("voice") || lower.includes("callback")) {
+    steps.push({
+      id: crmNewId("step"),
+      type: "action",
+      label: "Schedule AI voice call",
+      config: {
+        actionType: "schedule_call",
+        scheduleSlotId: "next_morning",
+        scheduleKind: lower.includes("callback") ? "callback" : "scheduled",
+        callMessage: intent.slice(0, 160),
+      },
+    });
+  } else {
+    steps.push({
+      id: crmNewId("step"),
+      type: "agent",
+      label: "AI Sales Manager assist",
+      config: { agentType: "sales_manager", applyActions: true },
+    });
+  }
 
   if (lower.includes("whatsapp")) {
     steps.push({
@@ -74,7 +88,10 @@ function buildBdmCustomSteps(intent: string): WorkflowStep[] {
         messageTemplate: `Hi {{name}},\n\n${intent.slice(0, 200)}\n\n— Aarvanta`,
       },
     });
-  } else if (lower.includes("meeting") || lower.includes("call")) {
+  } else if (
+    !lower.includes("voice") &&
+    (lower.includes("meeting") || lower.includes("book"))
+  ) {
     steps.push({
       id: crmNewId("step"),
       type: "action",
@@ -85,7 +102,7 @@ function buildBdmCustomSteps(intent: string): WorkflowStep[] {
         meetingNotes: intent.slice(0, 160),
       },
     });
-  } else {
+  } else if (!lower.includes("voice") && !lower.includes("callback")) {
     steps.push({
       id: crmNewId("step"),
       type: "action",
@@ -129,17 +146,17 @@ export function generateWorkflowFromIntent(intent: string): CreateWorkflowInput 
     ? WORKFLOW_TEMPLATES.find((t) => t.templateId === match.templateId)
     : undefined;
 
-  const name = template?.name ?? `BDM: ${intent.slice(0, 48)}`;
-  const steps = template?.steps ?? buildBdmCustomSteps(intent);
+  const name = template?.name ?? intent.slice(0, 48);
+  const steps = template?.steps ?? buildCustomSteps(intent);
 
   return {
     name,
     description:
-      template?.description ?? `BDM automation generated for: ${intent}`,
+      template?.description ?? `Automation generated for: ${intent}`,
     enabled: true,
     templateId: template?.templateId,
     trigger: template?.trigger ?? { type: "manual", label: "Manual run" },
     steps: steps.map((step) => ({ ...step, id: crmNewId("step") })),
-    tags: [...(template?.tags ?? ["bdm"]), "ai-generated"],
+    tags: [...(template?.tags ?? ["custom"]), "ai-generated"],
   };
 }

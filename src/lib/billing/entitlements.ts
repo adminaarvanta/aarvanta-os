@@ -10,6 +10,7 @@ import type { PlanFeatureKey } from "@/lib/billing/module-access";
 import { isCurrentUserSuperAdmin } from "@/lib/billing/super-admin";
 import { getPeriodUsage } from "@/lib/billing/usage-store";
 import { getBillingStore } from "@/lib/data/platform-store";
+import { isDemoMode } from "@/lib/config/app-mode";
 import type { TenantScope } from "@/types/communication";
 import type { Subscription, UsageMetric } from "@/types/platform-modules";
 
@@ -172,6 +173,8 @@ export type EntitlementsClient = {
   creditsRemaining: number | "unlimited";
   creditsPercent: number | null;
   isSuperAdmin: boolean;
+  /** Demo app — skip explore banners so people can try the product. */
+  demoMode: boolean;
   /** Build OS draft jobs used (workspace lifetime count). */
   buildDraftsUsed?: number;
 };
@@ -191,6 +194,7 @@ export function toClientEntitlements(
     creditsRemaining: remainingForMetric(e, "ai_credits"),
     creditsPercent: usagePercent(e, "ai_credits"),
     isSuperAdmin: e.isSuperAdmin,
+    demoMode: isDemoMode(),
     buildDraftsUsed: extras?.buildDraftsUsed,
   };
 }

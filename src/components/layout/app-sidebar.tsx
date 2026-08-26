@@ -24,8 +24,12 @@ function isActive(pathname: string, href: string) {
   const path = href.split("?")[0];
   if (path === "/dashboard") return pathname.startsWith("/dashboard");
   if (path === "/crm") return pathname.startsWith("/crm");
-  if (path === "/workforce") {
-    return pathname === "/workforce" || pathname.startsWith("/workforce/");
+  if (path === "/automation") {
+    return (
+      pathname.startsWith("/automation") ||
+      pathname.startsWith("/workforce") ||
+      pathname.startsWith("/workflows")
+    );
   }
   if (path === "/analytics") return pathname.startsWith("/analytics");
   return pathname.startsWith(path);
@@ -176,9 +180,9 @@ export function AppSidebar({
                 );
               }
 
-              const isAiTeam = item.href === "/workforce";
+              const isAutomation = item.href === "/automation";
               const showFreeBadge =
-                isAiTeam && plan?.planId === "free" && !locked;
+                isAutomation && plan?.planId === "free" && !locked;
 
               return (
                 <li key={item.href}>

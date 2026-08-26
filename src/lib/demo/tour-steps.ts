@@ -91,11 +91,11 @@ export const DEMO_TOUR_STEPS: DemoTourStep[] = [
   },
   {
     id: "workforce",
-    title: "AI Workforce",
+    title: "Automation",
     description:
-      "Seven AI executives — Sales, Marketing, COO, HR, and more. Each has memory, chat, and the ability to create tasks.",
-    route: "/workforce",
-    target: '[data-demo-tour="nav-workforce"], [data-demo-tour="mobile-nav-workforce"]',
+      "Six ready-made plays, an AI Team chat for one-off jobs, and Voice OS calls from CRM.",
+    route: "/automation",
+    target: '[data-demo-tour="nav-automation"], [data-demo-tour="mobile-nav-automation"]',
     placement: "right",
     expandSidebar: true,
     tip: "Open Sales Manager after running the live demo",
@@ -230,11 +230,11 @@ export const FREE_TOUR_STEPS: DemoTourStep[] = [
   },
   {
     id: "workforce",
-    title: "AI Team",
+    title: "Automation",
     description:
-      "Explore mode on Free includes 1 AI employee with chat and tasks. Upgrade later for a full AI workforce.",
-    route: "/workforce",
-    target: '[data-demo-tour="nav-workforce"], [data-demo-tour="mobile-nav-workforce"]',
+      "Turn on a preset, ask the AI Team once, or edit a play. Explore mode on Free includes 1 AI employee.",
+    route: "/automation",
+    target: '[data-demo-tour="nav-automation"], [data-demo-tour="mobile-nav-automation"]',
     placement: "right",
     expandSidebar: true,
   },

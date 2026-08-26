@@ -73,9 +73,11 @@ export default async function CrmOverviewPage() {
         />
       }
     >
-      <section className="overflow-hidden rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/12 via-surface-elevated to-surface-elevated p-5">
+      <section className="overflow-hidden rounded-2xl border border-gold/30 bg-surface-elevated shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div className="h-1.5 bg-gradient-to-r from-[#1a2f59] via-[#a8894f] to-[#2f7f92]" />
+        <div className="bg-gradient-to-br from-gold/14 via-surface-elevated to-cyan-500/[0.08] p-5">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold/20 text-gold ring-1 ring-gold/30">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#a8894f] to-[#2f7f92] text-white shadow-[0_6px_14px_rgba(168,137,79,0.28)]">
             <Sparkles className="h-4 w-4" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
@@ -103,6 +105,7 @@ export default async function CrmOverviewPage() {
             </ul>
           </div>
         </div>
+        </div>
       </section>
 
       <CrmLoopPanel snapshot={loop} />
@@ -114,6 +117,7 @@ export default async function CrmOverviewPage() {
           icon={Users}
           href="/crm/people"
           sub="In your workspace"
+          tone="navy"
         />
         <StatTile
           label="Companies"
@@ -121,6 +125,7 @@ export default async function CrmOverviewPage() {
           icon={Building2}
           href="/crm/companies"
           sub="Accounts"
+          tone="cyan"
         />
         <StatTile
           label="Open deals"
@@ -128,6 +133,7 @@ export default async function CrmOverviewPage() {
           icon={Kanban}
           href="/crm/sales"
           sub={formatCrmMoney(pipelineValue)}
+          tone="gold"
         />
         <StatTile
           label="Hot leads"
@@ -135,11 +141,14 @@ export default async function CrmOverviewPage() {
           icon={Target}
           href="/crm/people?facet=leads"
           sub="Score 70+"
+          tone="rose"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-border/80 bg-surface-elevated p-5">
+        <section className="overflow-hidden rounded-2xl border border-gold/25 bg-surface-elevated">
+          <div className="h-1.5 bg-gradient-to-r from-[#a8894f] to-[#2f7f92]" />
+          <div className="bg-gradient-to-br from-gold/10 via-surface-elevated to-cyan-500/[0.08] p-5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-foreground">
               Pipeline forecast
@@ -156,7 +165,7 @@ export default async function CrmOverviewPage() {
           </p>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-muted">
             <div
-              className="h-full rounded-full bg-gold"
+              className="h-full rounded-full bg-gradient-to-r from-[#a8894f] to-[#2f7f92]"
               style={{ width: `${coverage}%` }}
             />
           </div>
@@ -164,9 +173,12 @@ export default async function CrmOverviewPage() {
             {pipelines.length} pipeline{pipelines.length !== 1 ? "s" : ""}
             {pipelines.length > 0 ? `: ${pipelines.map((p) => p.name).join(", ")}` : ""}
           </p>
+          </div>
         </section>
 
-        <section className="rounded-2xl border border-border/80 bg-surface-elevated p-5">
+        <section className="overflow-hidden rounded-2xl border border-sky-400/25 bg-surface-elevated">
+          <div className="h-1.5 bg-gradient-to-r from-[#1a2f59] to-sky-500" />
+          <div className="bg-gradient-to-br from-sky-500/[0.08] via-surface-elevated to-surface-elevated p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-foreground">Top people</h2>
             <Link
@@ -208,6 +220,7 @@ export default async function CrmOverviewPage() {
               </p>
             ) : null}
           </ul>
+          </div>
         </section>
       </div>
 

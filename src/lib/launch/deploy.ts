@@ -247,7 +247,7 @@ export async function deployLaunchSession(
       kind: "buddy",
       id: buddy.buddyId,
       label: buddy.name,
-      href: "/workforce",
+      href: "/automation?view=ask",
     });
   }
 

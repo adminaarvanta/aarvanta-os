@@ -19,6 +19,13 @@ function tourNavId(href: string) {
 function isMobileActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname.startsWith("/dashboard");
   if (href === "/crm") return pathname.startsWith("/crm");
+  if (href === "/automation") {
+    return (
+      pathname.startsWith("/automation") ||
+      pathname.startsWith("/workforce") ||
+      pathname.startsWith("/workflows")
+    );
+  }
   return pathname.startsWith(href);
 }
 

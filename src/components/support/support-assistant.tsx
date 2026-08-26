@@ -30,7 +30,7 @@ const STARTER: ChatMessage = {
   links: [
     { title: "Inbox", href: "/inbox" },
     { title: "CRM", href: "/crm" },
-    { title: "AI Workforce", href: "/workforce" },
+    { title: "Automation", href: "/automation" },
     { title: "Knowledge Hub", href: "/knowledge" },
   ],
 };

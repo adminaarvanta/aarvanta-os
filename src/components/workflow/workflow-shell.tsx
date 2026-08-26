@@ -98,7 +98,7 @@ export function FlowPanel({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-white p-5 shadow-[0_1px_3px_rgba(14,21,37,0.04)]",
+        "rounded-xl border bg-[var(--flow-panel)] p-5 shadow-[0_1px_3px_rgba(14,21,37,0.04)]",
         className
       )}
       style={{ borderColor: "var(--flow-line)", ...style }}

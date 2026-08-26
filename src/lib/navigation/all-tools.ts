@@ -39,7 +39,6 @@ export const FREQUENT_TOOL_IDS = [
   "crm",
   "workforce",
   "hr",
-  "workflows",
   "analytics",
 ] as const;
 

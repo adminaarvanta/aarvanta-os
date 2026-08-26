@@ -63,11 +63,11 @@ export function WorkflowNav({
         style={{ borderColor: "var(--flow-line)" }}
       >
         <PendingLink
-          href="/workflows"
+          href="/automation"
           pendingClassName="opacity-60"
           className="whitespace-nowrap border-b-2 border-[var(--flow-accent)] px-3 py-2.5 text-sm font-medium text-[var(--flow-accent)]"
         >
-          Playbooks
+          Automation
         </PendingLink>
       </div>
     </nav>

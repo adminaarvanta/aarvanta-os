@@ -75,8 +75,8 @@ export function AnalyticsDetailLists({ snapshot }: { snapshot: AnalyticsSnapshot
         title="Recent agent runs"
         items={snapshot.recentAgentRuns}
         empty="No agent runs yet."
-        viewAllHref="/workforce"
-        viewAllLabel="Workforce"
+        viewAllHref="/automation?view=ask"
+        viewAllLabel="Automation"
       />
     </div>
   );

@@ -76,10 +76,10 @@ export function WorkflowTestRunPanel({
           className="text-sm font-semibold"
           style={{ color: "var(--flow-ink)" }}
         >
-          Test run
+          Try it with someone
         </h3>
         <p className="mt-1 text-xs" style={{ color: "var(--flow-muted)" }}>
-          Pick sample CRM context, then execute the playbook.
+          Pick a person, then we’ll do this for them.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -123,7 +123,7 @@ export function WorkflowTestRunPanel({
           ) : (
             <Play className="h-3.5 w-3.5" />
           )}
-          {busy ? "Running…" : "Test run"}
+          {busy ? "Working…" : "Do it now"}
         </FlowPrimaryButton>
         {error && (
           <p className="text-xs" style={{ color: "var(--flow-danger)" }}>

@@ -45,9 +45,9 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
   },
   {
     id: "open_workforce",
-    label: "Open AI Team",
-    keywords: ["ai", "agents", "workforce", "employees", "team"],
-    href: "/workforce",
+    label: "Open Automation",
+    keywords: ["ai", "agents", "workforce", "employees", "team", "automation"],
+    href: "/automation",
     group: "Navigate",
   },
   {
@@ -59,9 +59,9 @@ export const FOUNDER_COMMANDS: FounderCommand[] = [
   },
   {
     id: "open_workflows",
-    label: "Open Workflows",
-    keywords: ["workflows", "automation", "flows"],
-    href: "/workflows",
+    label: "Open Automation presets",
+    keywords: ["workflows", "automation", "flows", "presets"],
+    href: "/automation",
     group: "Navigate",
   },
   {

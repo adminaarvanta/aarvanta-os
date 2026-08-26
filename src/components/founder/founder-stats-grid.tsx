@@ -68,7 +68,7 @@ export function FounderStatsGrid({
           ? `${snapshot.workforce.pendingWorkflowApprovals} approvals pending`
           : "Recent agent runs",
       icon: Sparkles,
-      href: "/workforce",
+      href: "/automation",
     },
   ];
 
@@ -80,7 +80,7 @@ export function FounderStatsGrid({
 
       {snapshot.workforce.pendingWorkflowApprovals > 0 && (
         <Link
-          href="/workflows"
+          href="/automation?view=runs"
           className="flex items-center gap-2 rounded-xl border border-gold/35 bg-navy/40 px-4 py-3 text-sm text-gold-bright transition-colors hover:border-gold/50 sm:col-span-2 xl:col-span-3"
         >
           <Workflow className="h-4 w-4 shrink-0" />

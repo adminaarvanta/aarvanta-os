@@ -40,6 +40,25 @@ export function usePathAccess(pathname: string): {
   explore: boolean;
 } {
   const plan = usePlan();
+  if (plan?.demoMode) {
+    const key = featureKeyForPath(pathname);
+    return { key, access: "ungated", locked: false, explore: false };
+  }
+  if (pathname.split("/").filter(Boolean)[0] === "automation") {
+    if (!plan) {
+      return { key: "workflows", access: "ungated", locked: false, explore: false };
+    }
+    const access =
+      plan.features.workflows !== "none"
+        ? plan.features.workflows
+        : plan.features.aiWorkforce;
+    return {
+      key: "workflows",
+      access,
+      locked: access === "none",
+      explore: access === "explore",
+    };
+  }
   const key = featureKeyForPath(pathname);
   if (!key || key === "ungated" || !plan) {
     return { key, access: "ungated", locked: false, explore: false };
@@ -63,11 +82,22 @@ export function isModuleLocked(
   return plan.features[key] === "none";
 }
 
+function automationHref(href: string) {
+  const path = href.split("?")[0];
+  return path === "/automation";
+}
+
 export function isNavHrefVisible(
   plan: EntitlementsClient | null,
   href: string
 ): boolean {
   if (!plan || href === "#all-tools") return true;
+  if (plan.demoMode) return true;
+  if (automationHref(href)) {
+    return (
+      plan.features.workflows !== "none" || plan.features.aiWorkforce !== "none"
+    );
+  }
   const key = featureKeyForPath(href);
   if (!key || key === "ungated") return true;
   return plan.features[key] !== "none";
@@ -79,6 +109,12 @@ export function isNavHrefLocked(
   href: string
 ): boolean {
   if (!plan || href === "#all-tools") return false;
+  if (plan.demoMode) return false;
+  if (automationHref(href)) {
+    return (
+      plan.features.workflows === "none" && plan.features.aiWorkforce === "none"
+    );
+  }
   const key = featureKeyForPath(href);
   if (!key || key === "ungated") return false;
   return plan.features[key] === "none";

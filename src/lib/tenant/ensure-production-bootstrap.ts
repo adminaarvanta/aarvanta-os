@@ -1,7 +1,6 @@
 import { isProductionMode } from "@/lib/config/app-mode";
 import { ensureDatastoreReady, isMemoryDatastore } from "@/lib/data/datastore";
-import { getWorkflowRepository } from "@/lib/data/workflow-store";
-import { WORKFLOW_TEMPLATES } from "@/lib/data/workflow-demo-seed";
+import { ensureAutomationPresets } from "@/lib/workflow/ensure-presets";
 import { ensureSalesPipeline } from "@/lib/demo/crm-bootstrap";
 import { getProductionTenantScope } from "@/lib/tenant/context";
 import { ensureTenantRecords } from "@/lib/tenant/ensure-tenant-records";
@@ -28,24 +27,7 @@ function productionBootstrapContext() {
 }
 
 async function ensureWorkflowBootstrap(scope: TenantScope): Promise<void> {
-  const repo = getWorkflowRepository();
-  const workflows = await repo.listWorkflows(scope);
-  if (workflows.length > 0) return;
-
-  for (const template of WORKFLOW_TEMPLATES) {
-    await repo.createWorkflow(
-      {
-        name: template.name,
-        description: template.description,
-        enabled: template.enabled,
-        templateId: template.templateId,
-        trigger: template.trigger,
-        tags: template.tags,
-        steps: template.steps,
-      },
-      scope
-    );
-  }
+  await ensureAutomationPresets(scope);
 }
 
 /** Idempotent first-run setup for empty production Firestore workspaces. */

@@ -23,7 +23,7 @@ export const SPEC_PHASES: Array<{
         id: "workforce",
         phase: 1,
         name: "AI Workforce",
-        href: "/workforce",
+        href: "/automation",
         status: "complete",
         summary:
           "7 AI employees with profiles, memory, chat, tasks, runs, shared memory, and collaboration.",
@@ -65,10 +65,10 @@ export const SPEC_PHASES: Array<{
         id: "workflows",
         phase: "1c",
         name: "Workflow Automation",
-        href: "/workflows",
+        href: "/automation",
         status: "partial",
         summary:
-          "BDM playbooks: lead score/deal triggers, WhatsApp/email outreach, CRM tags & stages, tasks, meetings, AI assist, approvals.",
+          "Six research-backed presets, NL generate, Voice OS schedule_call, CRM triggers, AI Team ask.",
       },
       {
         id: "founder",

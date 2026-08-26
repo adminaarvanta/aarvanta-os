@@ -36,21 +36,23 @@ export async function POST(
   }
 
   if (!workflow.enabled) {
-    return NextResponse.json({ error: "Workflow is disabled" }, { status: 400 });
+    return NextResponse.json({ error: "Turn this on first." }, { status: 400 });
   }
 
-  try {
-    const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");
-    await requireFeature(scope, "workflows", "lite");
-    const agentSteps = workflow.steps.filter((s) => s.type === "agent").length;
-    if (agentSteps > 0) {
-      await consumeCredits(scope, "workflow_ai_step", agentSteps);
+  if (!(await import("@/lib/config/app-mode")).isDemoMode()) {
+    try {
+      const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");
+      await requireFeature(scope, "workflows", "lite");
+      const agentSteps = workflow.steps.filter((s) => s.type === "agent").length;
+      if (agentSteps > 0) {
+        await consumeCredits(scope, "workflow_ai_step", agentSteps);
+      }
+    } catch (error) {
+      const { handlePlanError } = await import("@/lib/billing/api-guard");
+      const planRes = handlePlanError(error);
+      if (planRes) return planRes;
+      throw error;
     }
-  } catch (error) {
-    const { handlePlanError } = await import("@/lib/billing/api-guard");
-    const planRes = handlePlanError(error);
-    if (planRes) return planRes;
-    throw error;
   }
 
   let context = defaultDemoContext(workflow.templateId);

@@ -55,7 +55,7 @@ const NotificationsMenu = dynamic(
 
 const quickActions = [
   { label: "Add New Lead", href: "/crm/leads", icon: Target },
-  { label: "Create Workflow", href: "/workflows", icon: Workflow },
+  { label: "Create Workflow", href: "/automation", icon: Workflow },
   { label: "Generate Report", href: "/analytics", icon: FileText },
   { label: "Open Partners", href: "/partners", icon: Handshake },
   { label: "Invite Team Member", href: "/team?tab=manage", icon: UserPlus },

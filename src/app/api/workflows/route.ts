@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { WORKFLOW_TEMPLATES } from "@/lib/data/workflow-demo-seed";
+import { ensureAutomationPresets } from "@/lib/workflow/ensure-presets";
 import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 
@@ -41,7 +42,7 @@ export async function GET() {
     return unauthorized();
   }
 
-  const workflows = await getWorkflowRepository().listWorkflows(scope);
+  const workflows = await ensureAutomationPresets(scope);
   return NextResponse.json({ workflows, templates: WORKFLOW_TEMPLATES });
 }
 

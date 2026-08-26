@@ -50,7 +50,7 @@ export function buildDemoNotifications(): AppNotification[] {
       title: "Proposal approval pending",
       body: "Workflow run awaiting your approval for Northstar Digital proposal.",
       read: true,
-      actionUrl: "/workflows",
+      actionUrl: "/automation?view=runs",
       source: "workflows",
       createdAt: now,
     },

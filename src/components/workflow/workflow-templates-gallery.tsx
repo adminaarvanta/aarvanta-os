@@ -27,6 +27,36 @@ const PLAYBOOK_VISUAL: Record<
   string,
   { icon: LucideIcon; soft: string; fg: string }
 > = {
+  schedule_team_call: {
+    icon: Calendar,
+    soft: "var(--flow-amber-soft)",
+    fg: "var(--flow-amber)",
+  },
+  ai_voice_followup: {
+    icon: Calendar,
+    soft: "var(--flow-accent-soft)",
+    fg: "var(--flow-accent)",
+  },
+  new_lead_chase: {
+    icon: Target,
+    soft: "var(--flow-rose-soft)",
+    fg: "var(--flow-rose)",
+  },
+  missed_call_callback: {
+    icon: MessageCircle,
+    soft: "var(--flow-cyan-soft)",
+    fg: "var(--flow-cyan)",
+  },
+  quiet_deal_followup: {
+    icon: GitBranch,
+    soft: "var(--flow-wait-soft)",
+    fg: "var(--flow-wait)",
+  },
+  deal_won_next_steps: {
+    icon: FileCheck,
+    soft: "var(--flow-emerald-soft)",
+    fg: "var(--flow-emerald)",
+  },
   hot_lead_chase: {
     icon: Target,
     soft: "var(--flow-rose-soft)",
@@ -92,10 +122,10 @@ export function WorkflowTemplatesGallery({ templates }: { templates: Template[] 
           className="text-sm font-semibold"
           style={{ color: "var(--flow-ink)" }}
         >
-          BDM playbooks
+          Extra ideas
         </h3>
         <p className="mt-1 text-xs" style={{ color: "var(--flow-muted)" }}>
-          One-click install — then customize messages, stages, and approvals.
+          Add one of these if the six above don’t cover it. You can change the wording after.
         </p>
       </div>
       {error && (
@@ -153,7 +183,7 @@ export function WorkflowTemplatesGallery({ templates }: { templates: Template[] 
                 >
                   {busyId === template.templateId
                     ? "Installing…"
-                    : "Use this playbook"}
+                    : "Use this"}
                 </FlowPrimaryButton>
               </FlowPanel>
             </li>

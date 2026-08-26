@@ -334,6 +334,44 @@ async function executeActionStep(
     return { output: `Meeting logged + task: ${task.title}` };
   }
 
+  if (config.actionType === "schedule_call") {
+    const { scheduleVoiceFollowUp } = await import(
+      "@/lib/calling/schedule-voice-follow-up"
+    );
+    const { resolveScheduleSlot, slotsFromSettings } = await import(
+      "@/lib/calling/schedule-slots"
+    );
+    const { getWorkspaceSettings } = await import(
+      "@/lib/settings/workspace-settings"
+    );
+    const contactInfo = await resolveContactPhoneEmail(scope, context);
+    const settings = await getWorkspaceSettings(scope.workspaceId);
+    const slotOptions = slotsFromSettings(settings);
+    const slotId = config.scheduleSlotId ?? "next_morning";
+    const { at } = resolveScheduleSlot(slotId, slotOptions);
+    const message =
+      fillTemplate(
+        config.callMessage ??
+          config.messageTemplate ??
+          "Follow-up AI voice call from CRM automation.",
+        context
+      ) || "Follow-up AI voice call.";
+    const { call, task } = await scheduleVoiceFollowUp(
+      {
+        phone: contactInfo.phone,
+        contactId: context.contactId,
+        contactName: contactInfo.name,
+        message,
+        scheduledAt: at,
+        kind: config.scheduleKind ?? "scheduled",
+      },
+      scope
+    );
+    return {
+      output: `Scheduled AI call ${call.id} + task: ${task.title}`,
+    };
+  }
+
   return { output: config.alertMessage ?? "Action completed." };
 }
 
@@ -646,6 +684,9 @@ export async function approveWorkflowRun(
 export function defaultDemoContext(templateId?: string): WorkflowRunContext {
   if (
     templateId === "hot_lead_chase" ||
+    templateId === "new_lead_chase" ||
+    templateId === "quiet_deal_followup" ||
+    templateId === "deal_won_next_steps" ||
     templateId === "deal_followup" ||
     templateId === "proposal_handoff" ||
     templateId === "proposal_approval"

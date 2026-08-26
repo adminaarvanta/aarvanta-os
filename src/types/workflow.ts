@@ -1,3 +1,4 @@
+import type { DefaultScheduleSlotId } from "@/types/calling-agent";
 import type { TenantScope } from "@/types/communication";
 import type { AgentType } from "@/types/workforce";
 import type { ContactTag } from "@/types/crm";
@@ -32,7 +33,8 @@ export type WorkflowActionType =
   | "send_whatsapp"
   | "send_email"
   | "book_meeting"
-  | "draft_outreach";
+  | "draft_outreach"
+  | "schedule_call";
 
 export interface WorkflowTrigger {
   type: WorkflowTriggerType;
@@ -137,6 +139,10 @@ export interface ActionStepConfig {
   /** book_meeting */
   meetingTitle?: string;
   meetingNotes?: string;
+  /** schedule_call — Voice OS scheduled 2-way call */
+  scheduleSlotId?: DefaultScheduleSlotId;
+  callMessage?: string;
+  scheduleKind?: "scheduled" | "callback" | "missed";
 }
 
 export interface DelayStepConfig {
@@ -155,4 +161,5 @@ export const WORKFLOW_ACTION_LABELS: Record<WorkflowActionType, string> = {
   send_email: "Send email",
   book_meeting: "Book meeting (log + task)",
   draft_outreach: "Draft outreach message",
+  schedule_call: "Schedule AI voice call",
 };

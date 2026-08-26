@@ -260,8 +260,18 @@ export async function applyCallConclusion(
         ? `Follow up as lead: ${name}`
         : `Follow up with ${name}`;
 
+  const { isAutomationPresetEnabled } = await import(
+    "@/lib/workflow/ensure-presets"
+  );
+  const callbackPresetOn = await isAutomationPresetEnabled(
+    scope,
+    "missed_call_callback"
+  );
+  const allowSchedule =
+    conclusion.nextAction !== "callback" || callbackPresetOn;
+
   let scheduledCallId: string | undefined;
-  if (when && contact.phone) {
+  if (when && contact.phone && allowSchedule) {
     const scheduled = await createScheduledCall(
       {
         phone: contact.phone,
@@ -311,7 +321,7 @@ export async function applyCallConclusion(
     await updateScheduledCall(scheduledCallId, { crmTaskId: task.id }, scope);
   }
 
-  if (when) {
+  if (when && allowSchedule) {
     await sendCallScheduledEmail({
       contact,
       scope,

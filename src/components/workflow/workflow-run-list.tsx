@@ -17,7 +17,7 @@ export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {
   if (!runs.length) {
     return (
       <p className="px-3 py-4 text-sm" style={{ color: "var(--flow-muted)" }}>
-        No runs yet.
+        No activity yet. Try one of your automations.
       </p>
     );
   }
@@ -28,7 +28,7 @@ export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {
         <li key={run.id} style={{ borderColor: "var(--flow-line)" }}>
           <Link
             href={`/workflows/runs/${run.id}`}
-            className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 transition hover:bg-[#F8F9FC]"
+            className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
           >
             <div>
               <p
@@ -43,7 +43,13 @@ export function WorkflowRunList({ runs }: { runs: WorkflowRun[] }) {
               </p>
             </div>
             <FlowChip tone={statusTone[run.status]}>
-              {run.status.replace("_", " ")}
+              {run.status === "completed"
+                ? "Done"
+                : run.status === "failed"
+                  ? "Couldn’t"
+                  : run.status === "awaiting_approval"
+                    ? "Needs you"
+                    : "Working"}
             </FlowChip>
           </Link>
         </li>

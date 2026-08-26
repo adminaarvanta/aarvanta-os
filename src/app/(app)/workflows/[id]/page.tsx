@@ -44,11 +44,11 @@ export default async function WorkflowDetailPage({
         subtitle={
           <div className="space-y-1.5">
             <Link
-              href="/workflows"
+              href="/automation"
               className="text-xs font-medium hover:underline"
               style={{ color: "var(--flow-accent)" }}
             >
-              ← Playbooks
+              ← All automations
             </Link>
             {workflow.description ? (
               <p style={{ color: "var(--flow-muted)" }}>{workflow.description}</p>

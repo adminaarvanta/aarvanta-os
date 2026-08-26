@@ -92,11 +92,11 @@ export function searchFeatures(
     const priority = [
       "/dashboard",
       "/crm",
-      "/workforce",
+      "/automation",
       "/knowledge",
       "/voice",
       ...(options?.includeWhatsApp ? ["/whatsapp"] : []),
-      "/workflows",
+      "/automation?view=ask",
       "/dashboard?help=open",
     ];
     const picked: GlobalSearchResult[] = [];
