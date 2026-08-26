@@ -16,7 +16,7 @@ export function WorkflowList({ workflows }: { workflows: Workflow[] }) {
     return (
       <FlowPanel>
         <p className="text-sm" style={{ color: "var(--flow-muted)" }}>
-          No automations yet. Turn one on above, or tell us what you need.
+          No automations yet. Create one above, or tell us what you need.
         </p>
       </FlowPanel>
     );

@@ -35,10 +35,6 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (!workflow.enabled) {
-    return NextResponse.json({ error: "Turn this on first." }, { status: 400 });
-  }
-
   if (!(await import("@/lib/config/app-mode")).isDemoMode()) {
     try {
       const { consumeCredits, requireFeature } = await import("@/lib/billing/consume");

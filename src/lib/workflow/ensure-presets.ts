@@ -1,18 +1,34 @@
 import {
   AUTOMATION_PRESETS,
   AUTOMATION_PRESET_IDS,
+  isAutomationBackground,
 } from "@/lib/data/workflow-demo-seed";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import type { TenantScope } from "@/types/communication";
 import type { Workflow } from "@/types/workflow";
 
+async function alignUntouchedBackgroundPresets(scope: TenantScope) {
+  const repo = getWorkflowRepository();
+  const existing = await repo.listWorkflows(scope);
+  for (const workflow of existing) {
+    if (!isAutomationBackground(workflow.templateId)) continue;
+    if (workflow.createdAt !== workflow.updatedAt) continue;
+    const template = AUTOMATION_PRESETS.find(
+      (item) => item.templateId === workflow.templateId
+    );
+    if (!template || workflow.enabled === template.enabled) continue;
+    await repo.updateWorkflow(workflow.id, { enabled: template.enabled }, scope);
+  }
+}
+
 export async function isAutomationPresetEnabled(
   scope: TenantScope,
   templateId: string
 ): Promise<boolean> {
+  await alignUntouchedBackgroundPresets(scope);
   const workflows = await getWorkflowRepository().listWorkflows(scope);
   const match = workflows.find((workflow) => workflow.templateId === templateId);
-  return match ? match.enabled : true;
+  return match?.enabled ?? false;
 }
 
 /** Create any of the six Automation home presets that are missing for this workspace. */
@@ -43,6 +59,8 @@ export async function ensureAutomationPresets(
       scope
     );
   }
+
+  await alignUntouchedBackgroundPresets(scope);
 
   const refreshed = await repo.listWorkflows(scope);
   const order = new Map(

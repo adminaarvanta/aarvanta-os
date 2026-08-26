@@ -88,6 +88,20 @@ export function CrmBackLink({
   );
 }
 
+export function CrmAtmosphere({ children }: { children: ReactNode }) {
+  return (
+    <div className="crm-os relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(26,47,89,0.16),_transparent_42%),radial-gradient(ellipse_at_top_right,_rgba(168,137,79,0.14),_transparent_38%),radial-gradient(ellipse_at_bottom,_rgba(47,127,146,0.10),_transparent_46%)]"
+      />
+      <div className="relative flex min-h-0 flex-1 flex-col bg-background/40">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function CrmShell({
   title,
   description,
@@ -106,19 +120,15 @@ export function CrmShell({
   children: ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(26,47,89,0.14),_transparent_42%),radial-gradient(ellipse_at_top_right,_rgba(168,137,79,0.14),_transparent_38%),radial-gradient(ellipse_at_bottom,_rgba(47,127,146,0.10),_transparent_46%)]"
-      />
-      <header className="relative shrink-0 overflow-hidden border-b border-border/70 bg-surface-elevated/70 px-4 py-4 backdrop-blur-md sm:px-6">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#1a2f59]/8 via-transparent to-[#2f7f92]/10" />
-        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <>
+      <header className="relative shrink-0 overflow-hidden px-5 pb-4 pt-5 sm:px-8">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#1a2f59]/10 via-transparent to-[#2f7f92]/10" />
+        <div className="relative mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             {back}
-            <div className="flex items-start gap-3">
+            <div className="flex min-w-0 items-start gap-3">
               {lead ?? (
-                <span className="mt-0.5 hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_8px_20px_rgba(26,47,89,0.28)] ring-1 ring-gold/35 sm:flex">
+                <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_8px_20px_rgba(26,47,89,0.28)] ring-1 ring-gold/35">
                   <Handshake className="h-5 w-5" aria-hidden />
                 </span>
               )}
@@ -130,7 +140,7 @@ export function CrmShell({
                   {title}
                 </h1>
                 {description ? (
-                  <div className="mt-1 max-w-2xl text-sm text-muted">
+                  <div className="mt-1 max-w-xl text-sm text-muted">
                     {description}
                   </div>
                 ) : null}
@@ -145,14 +155,14 @@ export function CrmShell({
         </div>
       </header>
       <CrmNav />
-      <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
         <div
-          className={cn("space-y-6", wide ? "max-w-none" : "mx-auto max-w-6xl")}
+          className={cn("space-y-6", wide ? "max-w-none" : "mx-auto max-w-5xl")}
         >
           {children}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

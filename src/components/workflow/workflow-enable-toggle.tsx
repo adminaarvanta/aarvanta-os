@@ -4,7 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Workflow } from "@/types/workflow";
 
-export function WorkflowEnableToggle({ workflow }: { workflow: Workflow }) {
+export function WorkflowEnableToggle({
+  workflow,
+  labels = { on: "On", off: "Off" },
+}: {
+  workflow: Workflow;
+  labels?: { on: string; off: string };
+}) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(workflow.enabled);
   const [busy, setBusy] = useState(false);
@@ -33,14 +39,16 @@ export function WorkflowEnableToggle({ workflow }: { workflow: Workflow }) {
       type="button"
       role="switch"
       aria-checked={enabled}
-      aria-label={`${workflow.name} is ${enabled ? "on" : "off"}`}
+      aria-label={`${workflow.name} is ${enabled ? labels.on : labels.off}`}
       onClick={() => void toggle()}
       disabled={busy}
       className="inline-flex items-center gap-2 rounded-full px-1 py-0.5 text-xs font-semibold transition disabled:opacity-60"
     >
       <span
         className="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors"
-        style={{ background: enabled ? "var(--flow-ok)" : "#D1D5DB" }}
+        style={{
+          background: enabled ? "var(--flow-ok)" : "color-mix(in srgb, var(--flow-muted) 35%, transparent)",
+        }}
       >
         <span
           className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-[left]"
@@ -48,7 +56,7 @@ export function WorkflowEnableToggle({ workflow }: { workflow: Workflow }) {
         />
       </span>
       <span style={{ color: enabled ? "var(--flow-ok)" : "var(--flow-muted)" }}>
-        {busy ? "…" : enabled ? "On" : "Off"}
+        {busy ? "…" : enabled ? labels.on : labels.off}
       </span>
     </button>
   );

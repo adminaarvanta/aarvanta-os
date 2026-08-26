@@ -56,11 +56,8 @@ export function CrmNav() {
   const pathname = usePathname();
 
   return (
-    <nav
-      className="relative shrink-0 overflow-x-auto border-b border-border/70 bg-surface-elevated/55 px-3 py-2.5 backdrop-blur-md [-webkit-overflow-scrolling:touch] sm:px-6"
-      aria-label="CRM sections"
-    >
-      <div className="flex min-w-max gap-1.5">
+    <nav className="shrink-0 px-5 sm:px-8" aria-label="CRM sections">
+      <div className="mx-auto flex max-w-5xl gap-1.5 overflow-x-auto pb-1">
         {links.map((link) => {
           const active = isActive(pathname, link.href, link.exact);
           const Icon = link.icon;
@@ -72,7 +69,7 @@ export function CrmNav() {
               className={cn(
                 "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition",
                 active
-                  ? "bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_6px_16px_rgba(26,47,89,0.28)] ring-1 ring-gold/30"
+                  ? "bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_6px_16px_rgba(26,47,89,0.28)]"
                   : "border border-border/80 bg-surface-elevated/80 text-muted hover:border-gold/40 hover:text-foreground"
               )}
             >

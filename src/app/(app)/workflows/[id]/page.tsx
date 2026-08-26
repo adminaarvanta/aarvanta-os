@@ -14,6 +14,7 @@ import {
   FlowPanel,
 } from "@/components/workflow/workflow-shell";
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { isAutomationBackground } from "@/lib/data/workflow-demo-seed";
 import { getWorkflowRepository } from "@/lib/data/workflow-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
@@ -61,7 +62,14 @@ export default async function WorkflowDetailPage({
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <WorkflowEnableToggle workflow={workflow} />
+            <WorkflowEnableToggle
+              workflow={workflow}
+              labels={
+                isAutomationBackground(workflow.templateId)
+                  ? { on: "Automatic", off: "Off" }
+                  : { on: "On", off: "Off" }
+              }
+            />
             <DeleteWorkflowButton workflowId={workflow.id} />
           </div>
         }

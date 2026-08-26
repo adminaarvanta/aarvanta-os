@@ -51,7 +51,7 @@ export function WorkflowTestRunPanel({
             ? data.error
             : typeof data.error === "object" && data.error?.message
               ? data.error.message
-              : "Run failed — is the workflow enabled?"
+              : "Couldn’t run this. Try again."
         );
         return;
       }

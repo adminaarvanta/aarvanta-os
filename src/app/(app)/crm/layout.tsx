@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { PageFrame } from "@/components/layout/page-scroll";
+import { CrmAtmosphere } from "@/components/crm/crm-shell";
 
 export default function CrmLayout({ children }: { children: ReactNode }) {
-  return <PageFrame>{children}</PageFrame>;
+  return <CrmAtmosphere>{children}</CrmAtmosphere>;
 }

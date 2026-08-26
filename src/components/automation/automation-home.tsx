@@ -22,6 +22,7 @@ import {
   FlowSecondaryButton,
   flowInputClass,
 } from "@/components/workflow/workflow-shell";
+import { isAutomationBackground } from "@/lib/workflow/preset-kinds";
 import type { Workflow } from "@/types/workflow";
 
 type Template = Omit<
@@ -78,12 +79,12 @@ const PRESET_VISUAL: Record<
 };
 
 const WHEN: Record<string, string> = {
-  schedule_team_call: "You pick a person, then we do it.",
-  ai_voice_followup: "You pick a person, then we call them.",
-  new_lead_chase: "Happens by itself when a new lead looks interested.",
-  missed_call_callback: "Happens by itself after a missed call. You can also try it now.",
-  quiet_deal_followup: "Happens by itself when a deal goes quiet.",
-  deal_won_next_steps: "Happens by itself when you win a deal.",
+  schedule_team_call: "When you ask",
+  ai_voice_followup: "When you ask",
+  new_lead_chase: "When a new lead looks interested",
+  missed_call_callback: "After a missed call — you can also try it now",
+  quiet_deal_followup: "When a deal goes quiet",
+  deal_won_next_steps: "When you win a deal",
 };
 
 function friendlyError(raw: string): string {
@@ -92,7 +93,7 @@ function friendlyError(raw: string): string {
     return "You can set this up on Free. Upgrade to run it for a real person.";
   }
   if (lower.includes("disabled") || lower.includes("turn this on")) {
-    return "Turn this on first, then try again.";
+    return "Switch Automatic on first, then try again.";
   }
   if (lower.includes("no phone")) {
     return "This person has no phone number. Add one in CRM, then try again.";
@@ -119,19 +120,51 @@ export function AutomationHome({
 }) {
   const [showLegacy, setShowLegacy] = useState(false);
 
+  const askNow = presets.filter((w) => !isAutomationBackground(w.templateId));
+  const background = presets.filter((w) => isAutomationBackground(w.templateId));
+
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <p className="text-sm leading-relaxed text-muted">
-        Flip a switch to turn something on. That’s all most teams need.
+        Ask us to do something now. Switch Automatic on only for the ones that
+        should keep going without you.
       </p>
 
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {presets.map((workflow) => (
-          <li key={workflow.id} className="min-h-0">
-            <PresetCard workflow={workflow} contacts={contacts} />
-          </li>
-        ))}
-      </ul>
+      {askNow.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold tracking-tight text-foreground">
+            When you ask
+          </h2>
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {askNow.map((workflow) => (
+              <li key={workflow.id} className="min-h-0">
+                <PresetCard workflow={workflow} contacts={contacts} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {background.length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
+              Happens by itself
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              These start off. Nothing emails or calls on its own until you switch
+              Automatic on.
+            </p>
+          </div>
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {background.map((workflow) => (
+              <li key={workflow.id} className="min-h-0">
+                <PresetCard workflow={workflow} contacts={contacts} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <WorkflowBuilder />
 
@@ -186,6 +219,7 @@ function PresetCard({
   const visual =
     PRESET_VISUAL[workflow.templateId ?? ""] ?? PRESET_VISUAL.new_lead_chase!;
   const Icon = visual.icon;
+  const background = isAutomationBackground(workflow.templateId);
   const canTryNow = workflow.trigger.type === "manual";
   const [pickerOpen, setPickerOpen] = useState(false);
   const [contactId, setContactId] = useState(contacts[0]?.id ?? "");
@@ -265,7 +299,19 @@ function PresetCard({
         >
           <Icon className="h-5 w-5" />
         </div>
-        <WorkflowEnableToggle workflow={workflow} />
+        {background ? (
+          <WorkflowEnableToggle
+            workflow={workflow}
+            labels={{ on: "Automatic", off: "Off" }}
+          />
+        ) : (
+          <span
+            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            style={{ background: visual.soft, color: visual.fg }}
+          >
+            When you ask
+          </span>
+        )}
       </div>
       <p className="mt-3 text-[15px] font-semibold tracking-tight text-foreground">
         {workflow.name}
@@ -273,15 +319,14 @@ function PresetCard({
       <p className="mt-1 text-xs leading-relaxed text-muted">
         {workflow.description}
       </p>
-      <p
-        className="mt-3 inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold leading-relaxed"
-        style={{ background: visual.soft, color: visual.fg }}
-      >
-        {WHEN[workflow.templateId ?? ""] ??
-          (canTryNow
-            ? "You pick a person, then we do it."
-            : "Happens by itself. Leave this on.")}
-      </p>
+      {background ? (
+        <p
+          className="mt-3 inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold leading-relaxed"
+          style={{ background: visual.soft, color: visual.fg }}
+        >
+          {WHEN[workflow.templateId ?? ""] ?? "When the matching event happens"}
+        </p>
+      ) : null}
       <div className="flex-1" />
       {done ? (
         <p className="mt-2 text-xs leading-relaxed" style={{ color: "var(--flow-ok)" }}>
@@ -363,8 +408,7 @@ function PresetCard({
           {canTryNow ? (
             <button
               type="button"
-              disabled={!workflow.enabled}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-cyan-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_4px_12px_rgba(109,94,246,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-cyan-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_4px_12px_rgba(109,94,246,0.28)] transition hover:brightness-110"
               onClick={() => {
                 setPickerOpen(true);
                 setError(null);

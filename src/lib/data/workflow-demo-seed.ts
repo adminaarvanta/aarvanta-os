@@ -2,6 +2,13 @@ import { DEMO_TENANT } from "@/lib/tenant/demo-context";
 import { crmNow } from "@/lib/data/crm-helpers";
 import type { Workflow } from "@/types/workflow";
 
+export {
+  AUTOMATION_BACKGROUND_IDS,
+  AUTOMATION_PRESET_IDS,
+  isAutomationBackground,
+} from "@/lib/workflow/preset-kinds";
+export type { AutomationPresetId } from "@/lib/workflow/preset-kinds";
+
 const now = crmNow();
 
 export type WorkflowTemplateDraft = Omit<
@@ -9,20 +16,9 @@ export type WorkflowTemplateDraft = Omit<
   keyof typeof DEMO_TENANT | "id" | "createdAt" | "updatedAt"
 >;
 
-export const AUTOMATION_PRESET_IDS = [
-  "schedule_team_call",
-  "ai_voice_followup",
-  "new_lead_chase",
-  "missed_call_callback",
-  "quiet_deal_followup",
-  "deal_won_next_steps",
-] as const;
-
-export type AutomationPresetId = (typeof AUTOMATION_PRESET_IDS)[number];
-
 /**
- * Default 2×3 Automation home — what most sales/services teams actually automate.
- * Demo workspaces get these enabled. Production tenants get them via ensureAutomationPresets.
+ * Default Automation home — ask-now presets are ready; background ones start off
+ * so a team has to opt in before we email or call on our own.
  */
 export const AUTOMATION_PRESETS: WorkflowTemplateDraft[] = [
   {
@@ -81,7 +77,7 @@ export const AUTOMATION_PRESETS: WorkflowTemplateDraft[] = [
   {
     name: "Chase a new lead",
     description: "When someone looks interested, we follow up the same day.",
-    enabled: true,
+    enabled: false,
     templateId: "new_lead_chase",
     trigger: { type: "crm_lead_scored", label: "When a lead is scored" },
     tags: ["crm", "outreach"],
@@ -130,8 +126,8 @@ export const AUTOMATION_PRESETS: WorkflowTemplateDraft[] = [
   {
     name: "Call back missed calls",
     description:
-      "If a call doesn't connect, we book a callback and email them. Turn this off to stop automatic callbacks.",
-    enabled: true,
+      "If a call doesn't connect, we book a callback and email them.",
+    enabled: false,
     templateId: "missed_call_callback",
     trigger: { type: "manual", label: "Manual run (or Voice OS on hang-up)" },
     tags: ["voice", "callback"],
@@ -152,7 +148,7 @@ export const AUTOMATION_PRESETS: WorkflowTemplateDraft[] = [
   {
     name: "Follow up quiet deals",
     description: "When a deal goes quiet, we nudge them and remind you.",
-    enabled: true,
+    enabled: false,
     templateId: "quiet_deal_followup",
     trigger: {
       type: "deal_updated",
@@ -188,7 +184,7 @@ export const AUTOMATION_PRESETS: WorkflowTemplateDraft[] = [
   {
     name: "After you win a deal",
     description: "Send a welcome email and start onboarding.",
-    enabled: true,
+    enabled: false,
     templateId: "deal_won_next_steps",
     trigger: {
       type: "deal_updated",

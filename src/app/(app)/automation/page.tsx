@@ -104,7 +104,7 @@ export default async function AutomationPage({
     <>
       <AutomationHeader
         title="Your automations"
-        subtitle="Turn on what you need. That’s it."
+        subtitle="Ask us to do something now, or switch on the ones that should keep going by themselves."
       />
       <AutomationNav active="presets" />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
