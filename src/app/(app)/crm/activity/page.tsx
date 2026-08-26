@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { CreateTaskForm } from "@/components/crm/create-task-form";
 import { CrmImportForm } from "@/components/crm/crm-import-form";
-import { CrmShell, CrmToolbar } from "@/components/crm/crm-shell";
+import { CrmSection, CrmShell, CrmToolbar, type CrmAccent } from "@/components/crm/crm-shell";
 import { SeedCrmSampleButton } from "@/components/crm/seed-crm-sample-button";
 import { TaskFilters } from "@/components/crm/task-filters";
 import { TaskList } from "@/components/crm/task-list";
@@ -32,10 +32,38 @@ export default async function ActivityPage({
   const inProgress = tasks.filter((t) => t.status === "in_progress");
   const done = tasks.filter((t) => t.status === "done");
 
-  const columns = [
-    { title: "To do", hint: "Not started", tasks: todo },
-    { title: "In progress", hint: "Being worked", tasks: inProgress },
-    { title: "Done", hint: "Closed", tasks: done },
+  const columns: Array<{
+    title: string;
+    hint: string;
+    accent: CrmAccent;
+    tasks: typeof todo;
+    emptyTitle: string;
+    emptyDescription: string;
+  }> = [
+    {
+      title: "To do",
+      hint: "Not started",
+      accent: "rose",
+      tasks: todo,
+      emptyTitle: "Nothing to start",
+      emptyDescription: "Create a follow-up or import tasks to fill this column.",
+    },
+    {
+      title: "In progress",
+      hint: "Being worked",
+      accent: "cyan",
+      tasks: inProgress,
+      emptyTitle: "Nothing in motion",
+      emptyDescription: "Click a to-do to start working it.",
+    },
+    {
+      title: "Done",
+      hint: "Closed",
+      accent: "emerald",
+      tasks: done,
+      emptyTitle: "Nothing closed yet",
+      emptyDescription: "Completed work lands here.",
+    },
   ];
 
   return (
@@ -57,23 +85,24 @@ export default async function ActivityPage({
 
       <div className="grid gap-4 lg:grid-cols-3">
         {columns.map((column) => (
-          <section
+          <CrmSection
             key={column.title}
-            className="rounded-2xl border border-border/80 bg-surface-muted/40 p-3"
-          >
-            <div className="mb-3 flex items-center justify-between px-1">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  {column.title}
-                </h2>
-                <p className="text-[11px] text-muted">{column.hint}</p>
-              </div>
+            title={column.title}
+            accent={column.accent}
+            action={
               <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold tabular-nums ring-1 ring-border">
                 {column.tasks.length}
               </span>
-            </div>
-            <TaskList tasks={column.tasks} members={memberOptions} />
-          </section>
+            }
+          >
+            <p className="-mt-1 mb-3 text-[11px] text-muted">{column.hint}</p>
+            <TaskList
+              tasks={column.tasks}
+              members={memberOptions}
+              emptyTitle={column.emptyTitle}
+              emptyDescription={column.emptyDescription}
+            />
+          </CrmSection>
         ))}
       </div>
     </CrmShell>

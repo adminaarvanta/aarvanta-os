@@ -54,7 +54,7 @@ export default async function CompanyDetailPage({
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <CrmSection title="Details">
+        <CrmSection title="Details" accent="navy">
           <CrmDetailList
             items={[
               {
@@ -96,7 +96,7 @@ export default async function CompanyDetailPage({
         </CrmSection>
 
         <div className="lg:col-span-2">
-          <CrmSection title="People">
+          <CrmSection title="People" accent="cyan">
             {contacts.length === 0 ? (
               <p className="text-sm text-muted">No contacts linked.</p>
             ) : (
@@ -130,7 +130,7 @@ export default async function CompanyDetailPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <CrmSection title="Deals">
+        <CrmSection title="Deals" accent="gold">
           {deals.length === 0 ? (
             <p className="text-sm text-muted">No deals linked.</p>
           ) : (
@@ -152,7 +152,7 @@ export default async function CompanyDetailPage({
           )}
         </CrmSection>
 
-        <CrmSection title="Activities">
+        <CrmSection title="Activities" accent="emerald">
           <CrmTimeline items={activities} />
         </CrmSection>
       </div>

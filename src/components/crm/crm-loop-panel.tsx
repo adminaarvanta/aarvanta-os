@@ -4,9 +4,9 @@ import type { BrainLoopSnapshot } from "@/lib/ai-team/brain";
 
 export function CrmLoopPanel({ snapshot }: { snapshot: BrainLoopSnapshot }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-violet-400/25 bg-surface-elevated shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+    <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-violet-400/25 bg-surface-elevated shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
       <div className="h-1.5 bg-gradient-to-r from-violet-500 via-gold to-cyan-500" />
-      <div className="bg-gradient-to-br from-violet-500/[0.08] via-surface-elevated to-gold/10 p-5">
+      <div className="flex-1 bg-gradient-to-br from-violet-500/[0.08] via-surface-elevated to-gold/10 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 text-white shadow-[0_6px_14px_rgba(109,94,246,0.28)]">

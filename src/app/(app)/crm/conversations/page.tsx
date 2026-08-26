@@ -37,8 +37,17 @@ export default async function ConversationsPage() {
       {linked.length === 0 ? (
         <CrmEmptyState
           icon={MessageSquare}
+          accent="cyan"
           title="No linked conversations"
           description="Qualify inbox threads or link people to start a relationship timeline."
+          action={
+            <Link
+              href="/inbox"
+              className="inline-flex items-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black shadow-sm shadow-gold/20 hover:bg-gold-bright"
+            >
+              Open Inbox
+            </Link>
+          }
         />
       ) : (
         <ul className="space-y-2">
@@ -51,7 +60,7 @@ export default async function ConversationsPage() {
               <li key={conv.id}>
                 <Link
                   href={`/inbox/${conv.id}`}
-                  className="flex items-start gap-3 rounded-2xl border border-border/80 bg-surface-elevated px-4 py-3 transition hover:border-gold/40"
+                  className="flex items-start gap-3 rounded-2xl border border-border/80 bg-surface-elevated px-4 py-3 transition hover:border-gold/40 hover:bg-sky-500/[0.04]"
                 >
                   <CrmAvatar name={name} seed={person?.id ?? conv.id} />
                   <div className="min-w-0 flex-1">
@@ -59,16 +68,23 @@ export default async function ConversationsPage() {
                       <p className="truncate font-medium text-foreground">
                         {name}
                       </p>
-                      <time className="shrink-0 text-[11px] text-muted">
-                        {new Date(conv.lastActivityAt).toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </time>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {conv.unreadCount > 0 ? (
+                          <span className="rounded-full bg-gold px-2 py-0.5 text-[11px] font-semibold tabular-nums text-black">
+                            {conv.unreadCount} new
+                          </span>
+                        ) : null}
+                        <time className="text-[11px] text-muted">
+                          {new Date(conv.lastActivityAt).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      </div>
                     </div>
-                    <p className="mt-0.5 text-xs text-muted">
+                    <p className="mt-0.5 text-xs font-medium text-foreground/80">
                       {conv.timelineEventCount ?? conv.timeline.length} events
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">

@@ -27,13 +27,13 @@ export function LeadScoreBadge({
       ? "text-emerald-600 dark:text-emerald-400"
       : score >= 50
         ? "text-amber-700 dark:text-amber-300"
-        : "text-muted";
+        : "text-sky-700 dark:text-sky-300";
   const bar =
     score >= 80
       ? "bg-emerald-500"
       : score >= 50
         ? "bg-amber-500"
-        : "bg-foreground/30";
+        : "bg-sky-500";
 
   return (
     <span

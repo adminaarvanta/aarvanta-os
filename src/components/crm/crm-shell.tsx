@@ -108,7 +108,6 @@ export function CrmShell({
   actions,
   back,
   lead,
-  wide,
   children,
 }: {
   title: string;
@@ -116,6 +115,7 @@ export function CrmShell({
   actions?: ReactNode;
   back?: ReactNode;
   lead?: ReactNode;
+  /** @deprecated Full-bleed is the default. Kept so existing callers still type-check. */
   wide?: boolean;
   children: ReactNode;
 }) {
@@ -123,7 +123,7 @@ export function CrmShell({
     <>
       <header className="relative shrink-0 overflow-hidden px-5 pb-4 pt-5 sm:px-8">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#1a2f59]/10 via-transparent to-[#2f7f92]/10" />
-        <div className="relative mx-auto flex max-w-5xl flex-wrap items-start justify-between gap-3">
+        <div className="relative flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             {back}
             <div className="flex min-w-0 items-start gap-3">
@@ -140,7 +140,7 @@ export function CrmShell({
                   {title}
                 </h1>
                 {description ? (
-                  <div className="mt-1 max-w-xl text-sm text-muted">
+                  <div className="mt-1 max-w-2xl text-sm text-muted">
                     {description}
                   </div>
                 ) : null}
@@ -156,11 +156,7 @@ export function CrmShell({
       </header>
       <CrmNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
-        <div
-          className={cn("space-y-6", wide ? "max-w-none" : "mx-auto max-w-5xl")}
-        >
-          {children}
-        </div>
+        <div className="space-y-6">{children}</div>
       </div>
     </>
   );
@@ -198,21 +194,64 @@ export function CrmFacet({
   );
 }
 
+const SECTION_ACCENTS = {
+  gold: {
+    bar: "from-[#a8894f] to-[#2f7f92]",
+    wash: "from-gold/10 via-surface-elevated to-surface-elevated",
+    icon: "bg-gold/15 text-gold",
+  },
+  navy: {
+    bar: "from-[#1a2f59] to-sky-500",
+    wash: "from-sky-500/[0.10] via-surface-elevated to-surface-elevated",
+    icon: "bg-sky-500/15 text-sky-700 dark:text-sky-200",
+  },
+  cyan: {
+    bar: "from-[#2f7f92] to-cyan-400",
+    wash: "from-cyan-500/[0.10] via-surface-elevated to-surface-elevated",
+    icon: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-200",
+  },
+  rose: {
+    bar: "from-rose-500 to-orange-400",
+    wash: "from-rose-500/[0.08] via-surface-elevated to-surface-elevated",
+    icon: "bg-rose-500/15 text-rose-700 dark:text-rose-200",
+  },
+  emerald: {
+    bar: "from-emerald-500 to-teal-400",
+    wash: "from-emerald-500/[0.10] via-surface-elevated to-surface-elevated",
+    icon: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200",
+  },
+  violet: {
+    bar: "from-violet-500 to-cyan-500",
+    wash: "from-violet-500/[0.08] via-surface-elevated to-gold/8",
+    icon: "bg-violet-500/15 text-violet-700 dark:text-violet-200",
+  },
+} as const;
+
+export type CrmAccent = keyof typeof SECTION_ACCENTS;
+
 export function CrmEmptyState({
   icon: Icon,
   title,
   description,
   action,
+  accent = "gold",
 }: {
   icon?: LucideIcon;
   title: string;
   description: string;
   action?: ReactNode;
+  accent?: CrmAccent;
 }) {
+  const palette = SECTION_ACCENTS[accent];
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface-elevated/50 px-6 py-14 text-center">
       {Icon ? (
-        <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-gold/10 text-gold">
+        <span
+          className={cn(
+            "mb-3 flex h-11 w-11 items-center justify-center rounded-2xl",
+            palette.icon
+          )}
+        >
           <Icon className="h-5 w-5" aria-hidden />
         </span>
       ) : null}
@@ -227,16 +266,25 @@ export function CrmSection({
   title,
   action,
   flush,
+  accent,
   children,
 }: {
   title: string;
   action?: ReactNode;
   flush?: boolean;
+  accent?: CrmAccent;
   children: ReactNode;
 }) {
+  const palette = accent ? SECTION_ACCENTS[accent] : null;
   return (
     <section className="overflow-hidden rounded-2xl border border-border/80 bg-surface-elevated shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+      {palette ? <div className={`h-1.5 bg-gradient-to-r ${palette.bar}`} /> : null}
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3",
+          palette && `bg-gradient-to-r ${palette.wash}`
+        )}
+      >
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {action}
       </div>
@@ -245,9 +293,34 @@ export function CrmSection({
   );
 }
 
+const TAG_TONES: Record<string, string> = {
+  hot_lead: "bg-rose-500/12 text-rose-700 ring-rose-500/25 dark:text-rose-200",
+  "hot lead": "bg-rose-500/12 text-rose-700 ring-rose-500/25 dark:text-rose-200",
+  customer: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25 dark:text-emerald-200",
+  vip: "bg-gold/15 text-gold ring-gold/30",
+  prospect: "bg-sky-500/12 text-sky-700 ring-sky-500/25 dark:text-sky-200",
+  whatsapp: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25 dark:text-emerald-200",
+  email: "bg-amber-500/12 text-amber-800 ring-amber-500/25 dark:text-amber-200",
+  voice: "bg-violet-500/12 text-violet-700 ring-violet-500/25 dark:text-violet-200",
+  sms: "bg-cyan-500/12 text-cyan-700 ring-cyan-500/25 dark:text-cyan-200",
+  positive: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25 dark:text-emerald-200",
+  negative: "bg-rose-500/12 text-rose-700 ring-rose-500/25 dark:text-rose-200",
+  mixed: "bg-amber-500/12 text-amber-800 ring-amber-500/25 dark:text-amber-200",
+};
+
 export function CrmTag({ children }: { children: ReactNode }) {
+  const key = String(children).trim().toLowerCase().replace(/\s+/g, "_");
+  const tone =
+    TAG_TONES[key] ??
+    TAG_TONES[String(children).trim().toLowerCase()] ??
+    "bg-surface-muted text-muted ring-border";
   return (
-    <span className="inline-flex items-center rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-medium capitalize text-muted ring-1 ring-border">
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ring-1",
+        tone
+      )}
+    >
       {children}
     </span>
   );

@@ -55,6 +55,7 @@ export function PeopleDirectory({
       {filtered.length === 0 ? (
         <CrmEmptyState
           icon={Users}
+          accent="navy"
           title={people.length === 0 ? "No people yet" : "No matches"}
           description={
             people.length === 0
@@ -71,7 +72,7 @@ export function PeopleDirectory({
               <Link
                 key={person.id}
                 href={`/crm/contacts/${person.id}`}
-                className="flex items-start gap-3 rounded-2xl border border-border/80 bg-surface-elevated p-3.5 transition-colors active:bg-surface-muted"
+                className="flex items-start gap-3 rounded-2xl border border-border/80 bg-surface-elevated p-3 transition-colors hover:bg-sky-500/[0.06] active:bg-surface-muted"
               >
                 <CrmAvatar name={person.name} seed={person.id} />
                 <div className="min-w-0 flex-1">
@@ -98,25 +99,25 @@ export function PeopleDirectory({
             ))}
           </div>
 
-          <div className="hidden overflow-hidden rounded-2xl border border-border/80 bg-surface-elevated md:block">
+          <div className="hidden max-h-[min(72vh,44rem)] overflow-auto rounded-2xl border border-border/80 bg-surface-elevated md:block">
             <table className="w-full min-w-[720px] text-sm">
-              <thead className="border-b border-border bg-surface-muted/70 text-left text-[11px] uppercase tracking-wide text-muted">
+              <thead className="sticky top-0 z-10 border-b border-border bg-surface-elevated text-left text-[11px] uppercase tracking-wide text-muted shadow-[0_1px_0_rgba(15,23,42,0.06)]">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Person</th>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Owner</th>
-                  <th className="px-4 py-3 font-medium">Score</th>
-                  <th className="px-4 py-3 font-medium">Tags</th>
+                  <th className="px-4 py-2.5 font-medium">Person</th>
+                  <th className="px-4 py-2.5 font-medium">Company</th>
+                  <th className="px-4 py-2.5 font-medium">Email</th>
+                  <th className="px-4 py-2.5 font-medium">Owner</th>
+                  <th className="px-4 py-2.5 font-medium">Score</th>
+                  <th className="px-4 py-2.5 font-medium">Tags</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/80">
                 {filtered.map((person) => (
                   <tr
                     key={person.id}
-                    className="transition-colors hover:bg-surface-muted/40"
+                    className="transition-colors hover:bg-sky-500/[0.06]"
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2">
                       <Link
                         href={`/crm/contacts/${person.id}`}
                         className="flex items-center gap-3"
@@ -134,13 +135,13 @@ export function PeopleDirectory({
                         </span>
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-muted">{person.companyName}</td>
-                    <td className="px-4 py-3 text-muted">{person.email ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted">{person.ownerName}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2 text-muted">{person.companyName}</td>
+                    <td className="px-4 py-2 text-muted">{person.email ?? "—"}</td>
+                    <td className="px-4 py-2 text-muted">{person.ownerName}</td>
+                    <td className="px-4 py-2">
                       <LeadScoreBadge score={person.score} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2">
                       <div className="flex flex-wrap gap-1">
                         {person.tags.slice(0, 3).map((tag) => (
                           <CrmTag key={tag}>{tag.replace(/_/g, " ")}</CrmTag>

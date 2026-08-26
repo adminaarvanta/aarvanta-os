@@ -28,9 +28,13 @@ const priorityTone = {
 export function TaskList({
   tasks: initialTasks,
   members,
+  emptyTitle = "Nothing here yet",
+  emptyDescription,
 }: {
   tasks: CrmTask[];
   members: MemberOption[];
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState(initialTasks);
@@ -100,9 +104,12 @@ export function TaskList({
 
   if (tasks.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-3 py-8 text-center text-sm text-muted">
-        Nothing here yet.
-      </p>
+      <div className="rounded-xl border border-dashed border-border px-3 py-8 text-center">
+        <p className="text-sm font-medium text-foreground">{emptyTitle}</p>
+        {emptyDescription ? (
+          <p className="mt-1 text-xs text-muted">{emptyDescription}</p>
+        ) : null}
+      </div>
     );
   }
 

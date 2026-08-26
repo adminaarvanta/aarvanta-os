@@ -15,7 +15,6 @@ import { activeMemberOptions, memberNameByUserId } from "@/lib/crm/members";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
-import { Badge } from "@/components/ui/badge";
 
 export default async function DealDetailPage({
   params,
@@ -69,26 +68,24 @@ export default async function DealDetailPage({
         <StatTile
           label="Value"
           value={formatCrmMoney(deal.value, deal.currency)}
+          tone="gold"
         />
-        <StatTile label="Probability" value={`${deal.probability}%`} />
-        <div className="rounded-xl border border-border bg-surface-elevated p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted">
-            Status
-          </p>
-          <div className="mt-3">
-            <Badge
-              className={
-                deal.status === "won"
-                  ? "bg-accent-cyan/15 text-accent-cyan ring-accent-cyan/30"
-                  : deal.status === "lost"
-                    ? "bg-danger/15 text-danger ring-danger/45"
-                    : "bg-surface-muted text-foreground ring-border"
-              }
-            >
-              {deal.status}
-            </Badge>
-          </div>
-        </div>
+        <StatTile
+          label="Probability"
+          value={`${deal.probability}%`}
+          tone="cyan"
+        />
+        <StatTile
+          label="Status"
+          value={deal.status.charAt(0).toUpperCase() + deal.status.slice(1)}
+          tone={
+            deal.status === "won"
+              ? "emerald"
+              : deal.status === "lost"
+                ? "rose"
+                : "navy"
+          }
+        />
       </div>
 
       <DealDetailPanel
@@ -98,7 +95,7 @@ export default async function DealDetailPage({
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <CrmSection title="Details">
+        <CrmSection title="Details" accent="navy">
           <CrmDetailList
             items={[
               {
@@ -142,7 +139,7 @@ export default async function DealDetailPage({
           ) : null}
         </CrmSection>
 
-        <CrmSection title="Tasks">
+        <CrmSection title="Tasks" accent="rose">
           {tasks.length === 0 ? (
             <p className="text-sm text-muted">No tasks linked.</p>
           ) : (
@@ -163,7 +160,7 @@ export default async function DealDetailPage({
         </CrmSection>
       </div>
 
-      <CrmSection title="Activities">
+      <CrmSection title="Activities" accent="emerald">
         <CrmTimeline items={activities} />
       </CrmSection>
     </CrmShell>

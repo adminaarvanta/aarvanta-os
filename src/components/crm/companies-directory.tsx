@@ -9,6 +9,13 @@ import {
   formatCrmMoney,
 } from "@/components/crm/crm-shell";
 
+const COMPANY_BARS = [
+  "from-[#1a2f59] to-sky-500",
+  "from-[#a8894f] to-[#2f7f92]",
+  "from-[#2f7f92] to-cyan-400",
+  "from-emerald-500 to-teal-400",
+] as const;
+
 export type CompanyRow = {
   id: string;
   name: string;
@@ -51,6 +58,7 @@ export function CompaniesDirectory({ companies }: { companies: CompanyRow[] }) {
       {filtered.length === 0 ? (
         <CrmEmptyState
           icon={Building2}
+          accent="cyan"
           title={companies.length === 0 ? "No companies yet" : "No matches"}
           description={
             companies.length === 0
@@ -59,13 +67,17 @@ export function CompaniesDirectory({ companies }: { companies: CompanyRow[] }) {
           }
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((company) => (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          {filtered.map((company, index) => (
             <Link
               key={company.id}
               href={`/crm/companies/${company.id}`}
-              className="group rounded-2xl border border-border/80 bg-surface-elevated p-4 transition-all hover:border-gold/35 hover:shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+              className="group overflow-hidden rounded-2xl border border-border/80 bg-surface-elevated transition-all hover:border-gold/35 hover:shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
             >
+              <div
+                className={`h-1.5 bg-gradient-to-r ${COMPANY_BARS[index % COMPANY_BARS.length]}`}
+              />
+              <div className="p-4">
               <div className="flex items-start gap-3">
                 <CrmAvatar name={company.name} seed={company.id} />
                 <div className="min-w-0 flex-1">
@@ -92,7 +104,7 @@ export function CompaniesDirectory({ companies }: { companies: CompanyRow[] }) {
                 </div>
                 <div>
                   <dt className="text-muted">Revenue</dt>
-                  <dd className="mt-0.5 font-medium text-gold">
+                  <dd className="mt-0.5 text-base font-semibold tabular-nums text-gold">
                     {formatCrmMoney(company.revenue)}
                   </dd>
                 </div>
@@ -101,9 +113,12 @@ export function CompaniesDirectory({ companies }: { companies: CompanyRow[] }) {
                     <Users className="h-3 w-3" aria-hidden />
                     People
                   </dt>
-                  <dd className="mt-0.5 text-foreground">{company.contactCount}</dd>
+                  <dd className="mt-0.5 text-base font-semibold tabular-nums text-foreground">
+                    {company.contactCount}
+                  </dd>
                 </div>
               </dl>
+              </div>
             </Link>
           ))}
         </div>

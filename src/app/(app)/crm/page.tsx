@@ -11,6 +11,7 @@ import { AskAiButton } from "@/components/ai-team/ask-ai-button";
 import { CrmLoopPanel } from "@/components/crm/crm-loop-panel";
 import {
   CrmAvatar,
+  CrmSection,
   CrmShell,
   formatCrmMoney,
 } from "@/components/crm/crm-shell";
@@ -73,42 +74,44 @@ export default async function CrmOverviewPage() {
         />
       }
     >
-      <section className="overflow-hidden rounded-2xl border border-gold/30 bg-surface-elevated shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-        <div className="h-1.5 bg-gradient-to-r from-[#1a2f59] via-[#a8894f] to-[#2f7f92]" />
-        <div className="bg-gradient-to-br from-gold/14 via-surface-elevated to-cyan-500/[0.08] p-5">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#a8894f] to-[#2f7f92] text-white shadow-[0_6px_14px_rgba(168,137,79,0.28)]">
-            <Sparkles className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-foreground">
-              AI sales briefing
-            </h2>
-            <p className="mt-0.5 text-xs text-muted">
-              Start here before opening the rest of the board.
-            </p>
-            <ul className="mt-3 space-y-2">
-              {briefing.map((line, index) => (
-                <li key={line.text}>
-                  <Link
-                    href={line.href}
-                    className="group flex items-start gap-3 rounded-xl border border-border/80 bg-background/70 px-3 py-2.5 text-sm text-foreground transition hover:border-gold/40 hover:bg-surface-muted"
-                  >
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 text-[11px] font-semibold text-gold">
-                      {index + 1}
-                    </span>
-                    <span className="min-w-0 flex-1">{line.text}</span>
-                    <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted transition group-hover:text-gold" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+      <div className="grid gap-4 xl:grid-cols-2 xl:items-stretch">
+        <section className="h-full overflow-hidden rounded-2xl border border-gold/30 bg-surface-elevated shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="h-1.5 bg-gradient-to-r from-[#1a2f59] via-[#a8894f] to-[#2f7f92]" />
+          <div className="bg-gradient-to-br from-gold/14 via-surface-elevated to-cyan-500/[0.08] p-5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#a8894f] to-[#2f7f92] text-white shadow-[0_6px_14px_rgba(168,137,79,0.28)]">
+              <Sparkles className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-foreground">
+                AI sales briefing
+              </h2>
+              <p className="mt-0.5 text-xs text-muted">
+                Start here before opening the rest of the board.
+              </p>
+              <ul className="mt-3 space-y-2">
+                {briefing.map((line, index) => (
+                  <li key={line.text}>
+                    <Link
+                      href={line.href}
+                      className="group flex items-start gap-3 rounded-xl border border-border/80 bg-background/70 px-3 py-2.5 text-sm text-foreground transition hover:border-gold/40 hover:bg-surface-muted"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 text-[11px] font-semibold text-gold">
+                        {index + 1}
+                      </span>
+                      <span className="min-w-0 flex-1">{line.text}</span>
+                      <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted transition group-hover:text-gold" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <CrmLoopPanel snapshot={loop} />
+        <CrmLoopPanel snapshot={loop} />
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
@@ -224,18 +227,25 @@ export default async function CrmOverviewPage() {
         </section>
       </div>
 
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Open work</h2>
+      <CrmSection
+        title="Open work"
+        accent="gold"
+        action={
           <Link
             href="/crm/activity"
             className="text-xs font-medium text-gold hover:underline"
           >
             View all ({openTasks.length})
           </Link>
-        </div>
-        <TaskList tasks={openTasks.slice(0, 5)} members={memberOptions} />
-      </section>
+        }
+      >
+        <TaskList
+          tasks={openTasks.slice(0, 5)}
+          members={memberOptions}
+          emptyTitle="No open work"
+          emptyDescription="Follow-ups and tasks you still need to do will show up here."
+        />
+      </CrmSection>
     </CrmShell>
   );
 }

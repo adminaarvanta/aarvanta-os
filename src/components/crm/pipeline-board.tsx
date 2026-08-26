@@ -9,6 +9,33 @@ import { formatCrmMoney } from "@/components/crm/crm-shell";
 import { MemberSelect } from "@/components/shared/member-select";
 import { cn } from "@/lib/utils";
 
+const STAGE_ACCENTS = [
+  {
+    bar: "from-[#1a2f59] to-sky-500",
+    wash: "from-sky-500/[0.12] via-surface-muted/80 to-surface-muted/60",
+  },
+  {
+    bar: "from-[#a8894f] to-[#2f7f92]",
+    wash: "from-gold/12 via-surface-muted/80 to-surface-muted/60",
+  },
+  {
+    bar: "from-[#2f7f92] to-cyan-400",
+    wash: "from-cyan-500/[0.12] via-surface-muted/80 to-surface-muted/60",
+  },
+  {
+    bar: "from-violet-500 to-cyan-500",
+    wash: "from-violet-500/[0.10] via-surface-muted/80 to-surface-muted/60",
+  },
+  {
+    bar: "from-emerald-500 to-teal-400",
+    wash: "from-emerald-500/[0.12] via-surface-muted/80 to-surface-muted/60",
+  },
+  {
+    bar: "from-rose-500 to-orange-400",
+    wash: "from-rose-500/[0.10] via-surface-muted/80 to-surface-muted/60",
+  },
+] as const;
+
 export function PipelineBoard({
   pipeline,
   deals: initialDeals,
@@ -117,15 +144,22 @@ export function PipelineBoard({
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
-        {stages.map((stage) => {
+        {stages.map((stage, index) => {
           const columnDeals = openDeals.filter((d) => d.stageId === stage.id);
           const columnValue = columnDeals.reduce((sum, d) => sum + d.value, 0);
+          const accent = STAGE_ACCENTS[index % STAGE_ACCENTS.length]!;
           return (
             <div
               key={stage.id}
-              className="w-[min(86vw,18.5rem)] shrink-0 rounded-2xl border border-border/80 bg-surface-muted/60 sm:w-72"
+              className="min-w-[16rem] flex-1 overflow-hidden rounded-2xl border border-border/80 bg-surface-muted/60"
             >
-              <div className="flex items-start justify-between gap-2 px-3 py-3">
+              <div className={`h-1.5 bg-gradient-to-r ${accent.bar}`} />
+              <div
+                className={cn(
+                  "flex items-start justify-between gap-2 bg-gradient-to-r px-3 py-3",
+                  accent.wash
+                )}
+              >
                 <div className="min-w-0">
                   <h3 className="truncate text-sm font-semibold text-foreground">
                     {stage.name}
@@ -152,21 +186,25 @@ export function PipelineBoard({
                       moving === deal.id && "opacity-60"
                     )}
                   >
+                    <p className="text-sm font-semibold tabular-nums text-gold">
+                      {formatCrmMoney(deal.value, deal.currency)}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-muted">
+                      {members.find((m) => m.userId === deal.ownerId)?.name ??
+                        "Unassigned"}
+                    </p>
                     <Link
                       href={`/crm/deals/${deal.id}`}
-                      className="text-sm font-medium leading-snug text-foreground hover:text-gold"
+                      className="mt-1.5 block text-sm font-medium leading-snug text-foreground hover:text-gold"
                     >
                       {deal.title}
                     </Link>
-                    <p className="mt-1 text-sm font-semibold tabular-nums text-gold">
-                      {formatCrmMoney(deal.value, deal.currency)}
-                    </p>
                     {contactName(deal.contactId) ? (
                       <p className="mt-1 truncate text-xs text-muted">
                         {contactName(deal.contactId)}
                       </p>
                     ) : null}
-                    <div className="mt-2 space-y-1.5">
+                    <div className="mt-2 space-y-1.5 opacity-80">
                       <MemberSelect
                         members={members}
                         value={deal.ownerId ?? ""}
@@ -175,7 +213,7 @@ export function PipelineBoard({
                         className="text-xs py-1"
                       />
                       <select
-                        className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground outline-none focus:border-gold"
+                        className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-muted outline-none focus:border-gold focus:text-foreground"
                         value={deal.stageId}
                         disabled={moving === deal.id}
                         aria-label="Move deal to stage"

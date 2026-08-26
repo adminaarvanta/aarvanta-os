@@ -105,7 +105,7 @@ export default async function ContactDetailPage({
       <VoiceLoopPanel contactId={contact.id} />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <CrmSection title="Details">
+        <CrmSection title="Details" accent="navy">
           <CrmDetailList
             items={[
               {
@@ -143,7 +143,7 @@ export default async function ContactDetailPage({
         </CrmSection>
 
         <div className="lg:col-span-2">
-          <CrmSection title="Communication history">
+          <CrmSection title="Communication history" accent="cyan">
             {linkedConversations.length === 0 ? (
               <p className="text-sm text-muted">No linked inbox conversations.</p>
             ) : (
@@ -171,7 +171,7 @@ export default async function ContactDetailPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <CrmSection title="Opportunities">
+        <CrmSection title="Opportunities" accent="gold">
           {deals.length === 0 ? (
             <p className="text-sm text-muted">No deals linked.</p>
           ) : (
@@ -193,7 +193,7 @@ export default async function ContactDetailPage({
           )}
         </CrmSection>
 
-        <CrmSection title="Tasks">
+        <CrmSection title="Tasks" accent="rose">
           {tasks.length === 0 ? (
             <p className="text-sm text-muted">No tasks linked.</p>
           ) : (
@@ -212,7 +212,7 @@ export default async function ContactDetailPage({
         </CrmSection>
       </div>
 
-      <CrmSection title="Activities">
+      <CrmSection title="Activities" accent="emerald">
         <CrmTimeline items={activities} />
       </CrmSection>
     </CrmShell>

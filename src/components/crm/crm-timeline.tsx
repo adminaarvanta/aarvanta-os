@@ -3,9 +3,21 @@ import { Calendar, Phone, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TYPE_META = {
-  call: { icon: Phone, label: "Call" },
-  meeting: { icon: Calendar, label: "Meeting" },
-  note: { icon: StickyNote, label: "Note" },
+  call: {
+    icon: Phone,
+    label: "Call",
+    wash: "bg-violet-500/15 text-violet-700 dark:text-violet-200",
+  },
+  meeting: {
+    icon: Calendar,
+    label: "Meeting",
+    wash: "bg-sky-500/15 text-sky-700 dark:text-sky-200",
+  },
+  note: {
+    icon: StickyNote,
+    label: "Note",
+    wash: "bg-amber-500/15 text-amber-800 dark:text-amber-200",
+  },
 } as const;
 
 export function CrmTimeline({
@@ -38,7 +50,8 @@ export function CrmTimeline({
           <li key={item.id} className="flex gap-3 border-b border-border-subtle pb-3 last:border-0 last:pb-0">
             <span
               className={cn(
-                "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/10 text-gold"
+                "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                meta.wash
               )}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden />

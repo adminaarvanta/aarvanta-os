@@ -57,7 +57,7 @@ export function CrmNav() {
 
   return (
     <nav className="shrink-0 px-5 sm:px-8" aria-label="CRM sections">
-      <div className="mx-auto flex max-w-5xl gap-1.5 overflow-x-auto pb-1">
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
         {links.map((link) => {
           const active = isActive(pathname, link.href, link.exact);
           const Icon = link.icon;
