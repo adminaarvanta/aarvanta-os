@@ -98,6 +98,32 @@
         { "fieldPath": "workspaceId", "order": "ASCENDING" },
         { "fieldPath": "companyId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "email_campaigns",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "workspaceId", "order": "ASCENDING" },
+        { "fieldPath": "companyId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "email_send_queue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tenantId", "order": "ASCENDING" },
+        { "fieldPath": "workspaceId", "order": "ASCENDING" },
+        { "fieldPath": "companyId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "email_send_queue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

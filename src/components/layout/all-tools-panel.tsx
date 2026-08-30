@@ -68,6 +68,7 @@ export function AllToolsPanel({
   tenant,
   sidebarCollapsed = false,
   includeWhatsApp = false,
+  includeOutreach = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -79,13 +80,14 @@ export function AllToolsPanel({
   } | null;
   sidebarCollapsed?: boolean;
   includeWhatsApp?: boolean;
+  includeOutreach?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const plan = usePlan();
   const allModules = useMemo(
-    () => getAllToolsModules({ includeWhatsApp }),
-    [includeWhatsApp]
+    () => getAllToolsModules({ includeWhatsApp, includeOutreach }),
+    [includeWhatsApp, includeOutreach]
   );
   const filtered = useMemo(() => filterTools(allModules, query), [allModules, query]);
   const frequent = useMemo(() => getFrequentTools(allModules), [allModules]);

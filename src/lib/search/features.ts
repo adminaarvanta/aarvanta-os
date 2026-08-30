@@ -5,6 +5,7 @@ import { CORE_MODULES, PLATFORM_MODULES } from "@/lib/platform/modules";
 import type { GlobalSearchResult } from "@/types/search";
 
 const WHATSAPP_TOOL_IDS = new Set(["whatsapp", "whatsapp-manage"]);
+const OUTREACH_TOOL_IDS = new Set(["outreach"]);
 
 function moduleToResult(
   module: { id: string; label: string; description: string; href: string },
@@ -79,14 +80,20 @@ const WHATSAPP_FEATURE_INDEX = [...CORE_MODULES, ...PLATFORM_MODULES]
   .filter((tool) => WHATSAPP_TOOL_IDS.has(tool.id))
   .map((tool) => moduleToResult(tool, [tool.group, String(tool.phase)]));
 
+const OUTREACH_FEATURE_INDEX = [...CORE_MODULES, ...PLATFORM_MODULES]
+  .filter((tool) => OUTREACH_TOOL_IDS.has(tool.id))
+  .map((tool) => moduleToResult(tool, [tool.group, String(tool.phase), "brevo", "email"]));
+
 export function searchFeatures(
   query: string,
   limit = 8,
-  options?: { includeWhatsApp?: boolean }
+  options?: { includeWhatsApp?: boolean; includeOutreach?: boolean }
 ): GlobalSearchResult[] {
-  const index = options?.includeWhatsApp
-    ? [...FEATURE_INDEX, ...WHATSAPP_FEATURE_INDEX]
-    : FEATURE_INDEX;
+  const extras = [
+    ...(options?.includeWhatsApp ? WHATSAPP_FEATURE_INDEX : []),
+    ...(options?.includeOutreach ? OUTREACH_FEATURE_INDEX : []),
+  ];
+  const index = extras.length ? [...FEATURE_INDEX, ...extras] : FEATURE_INDEX;
   const q = query.trim().toLowerCase();
   if (!q) {
     const priority = [
@@ -96,6 +103,7 @@ export function searchFeatures(
       "/knowledge",
       "/voice",
       ...(options?.includeWhatsApp ? ["/whatsapp"] : []),
+      ...(options?.includeOutreach ? ["/outreach"] : []),
       "/automation?view=ask",
       "/dashboard?help=open",
     ];

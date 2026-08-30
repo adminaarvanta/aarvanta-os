@@ -16,7 +16,7 @@ Aarvanta OS replaced Resend with **Gmail IMAP + SMTP** so email uses the Google 
 | Provider | Free tier | Inbound to unified inbox | Outbound SMTP | Keeps Google MX | Best for |
 |----------|-----------|--------------------------|---------------|-----------------|----------|
 | **Gmail / Google Workspace** | Included with Workspace | IMAP sync | App password | Yes | **Aarvanta (chosen)** |
-| Brevo (Sendinblue) | 300 emails/day | No real inbox sync | API | If send-only | Marketing blasts only |
+| Brevo (Sendinblue) | 300 emails/day | No real inbox sync | API | If send-only | **Email OS outreach** (super admin) — [setup](BREVO_SETUP.md) |
 | Mailgun | Trial then paid | Webhooks only | Yes | Often needs DNS | Developers, not inbox |
 | Amazon SES | ~62k/mo from EC2 | No | Very cheap | DNS required | High volume, not inbox |
 | Zoho Mail (free) | 1 user | IMAP | Yes | Replaces Google MX | New companies without Workspace |

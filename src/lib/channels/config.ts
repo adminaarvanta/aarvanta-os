@@ -97,11 +97,13 @@ export function getPublicWebhookUrls() {
       whatsapp: null as string | null,
       twilio: null as string | null,
       twilioTwiml: null as string | null,
+      brevo: null as string | null,
     };
   }
   return {
     whatsapp: `${base}/api/webhooks/whatsapp`,
     twilio: `${base}/api/webhooks/twilio`,
     twilioTwiml: `${base}/api/webhooks/twilio/twiml`,
+    brevo: `${base}/api/webhooks/brevo`,
   };
 }

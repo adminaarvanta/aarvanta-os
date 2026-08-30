@@ -32,16 +32,18 @@ function isMobileActive(pathname: string, href: string) {
 export function MobileNav({
   production,
   showWhatsAppNav = false,
+  showOutreachNav = false,
 }: {
   production: boolean;
   showWhatsAppNav?: boolean;
+  showOutreachNav?: boolean;
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const plan = usePlan();
   // Keep all primary tabs visible; locked ones show a lock icon.
   const primary = MOBILE_NAV.slice(0, 4);
-  const moreItems = mobileMoreNav(showWhatsAppNav);
+  const moreItems = mobileMoreNav(showWhatsAppNav, showOutreachNav);
 
   const moreActive = moreItems.some((item) =>
     isMobileActive(pathname, item.href)

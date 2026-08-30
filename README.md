@@ -156,6 +156,19 @@ Uses your existing Google Workspace / Gmail mailbox. **No third-party email prov
 
 **Dev simulation:** `POST /api/webhooks/email` with `{ "simulate": true, "from": "...", "text": "..." }` — no Gmail needed in demo mode.
 
+### 9b. Email Outreach (Brevo — super admin)
+
+Marketing / CRM outreach is a separate **Email OS** at `/outreach`. It is visible only to super admins (`admin@aarvanta.co`, `AUTH_EMAIL`, `SUPER_ADMIN_EMAILS`). See [docs/BREVO_SETUP.md](docs/BREVO_SETUP.md).
+
+```bash
+BREVO_API_KEY=
+BREVO_SENDER_EMAIL=admin@aarvanta.co
+BREVO_SENDER_NAME=Aarvanta
+BREVO_WEBHOOK_SECRET=
+```
+
+Webhook: `POST /api/webhooks/brevo?secret=$BREVO_WEBHOOK_SECRET`. Without an API key, campaign sends are simulated.
+
 ### 10. Website chat
 
 - Visitor UI: `/chat` (link in sidebar)

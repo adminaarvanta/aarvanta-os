@@ -47,6 +47,7 @@ export function AppSidebar({
   whatsappUnread = 0,
   voiceUnread = 0,
   showWhatsAppNav = false,
+  showOutreachNav = false,
 }: {
   production: boolean;
   tenant?: {
@@ -59,6 +60,7 @@ export function AppSidebar({
   whatsappUnread?: number;
   voiceUnread?: number;
   showWhatsAppNav?: boolean;
+  showOutreachNav?: boolean;
 }) {
   const pathname = usePathname();
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -66,7 +68,7 @@ export function AppSidebar({
   const plan = usePlan();
   const tour = useDemoTourOptional();
   // Main tabs always visible — locked ones show a Pro badge.
-  const navItems = commandCenterNav(showWhatsAppNav);
+  const navItems = commandCenterNav(showWhatsAppNav, showOutreachNav);
   const shortcuts = SIDEBAR_SHORTCUTS.filter((item) =>
     isNavHrefVisible(plan, item.href)
   );
@@ -369,6 +371,7 @@ export function AppSidebar({
         tenant={tenant}
         sidebarCollapsed={collapsed}
         includeWhatsApp={showWhatsAppNav}
+        includeOutreach={showOutreachNav}
       />
     </>
   );

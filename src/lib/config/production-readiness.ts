@@ -384,6 +384,34 @@ export function getProductionReadiness(): ProductionReadiness {
     });
   }
 
+  const brevoKey = has(process.env.BREVO_API_KEY);
+  if (brevoKey) {
+    items.push({
+      id: "brevo",
+      label: "Brevo email outreach",
+      status: "ok",
+      detail: "Transactional API ready for Email OS",
+    });
+    if (!has(process.env.BREVO_WEBHOOK_SECRET)) {
+      warnings.push(
+        "BREVO_WEBHOOK_SECRET not set — Email OS webhooks are unauthenticated"
+      );
+      items.push({
+        id: "brevo_webhook",
+        label: "BREVO_WEBHOOK_SECRET",
+        status: "warning",
+        detail: "Set to protect /api/webhooks/brevo",
+      });
+    }
+  } else {
+    items.push({
+      id: "brevo",
+      label: "Brevo email outreach",
+      status: "warning",
+      detail: "Set BREVO_API_KEY to send live outreach (super admin)",
+    });
+  }
+
   const googleSso =
     isSsoConfigured("google") &&
     has(process.env.SSO_GOOGLE_CLIENT_SECRET);

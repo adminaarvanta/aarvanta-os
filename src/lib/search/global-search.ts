@@ -31,7 +31,7 @@ export async function runGlobalSearch(
   scope: TenantScope,
   query: string,
   limit = 20,
-  options?: { includeWhatsApp?: boolean }
+  options?: { includeWhatsApp?: boolean; includeOutreach?: boolean }
 ): Promise<GlobalSearchResult[]> {
   const q = query.trim();
   const featureLimit = Math.min(8, limit);

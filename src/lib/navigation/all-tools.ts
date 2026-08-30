@@ -10,20 +10,27 @@ export const HIDDEN_FROM_ALL_TOOLS = new Set([
   "whatsapp",
   "whatsapp-manage",
   "affiliate-admin",
+  "outreach",
 ]);
 
 const WHATSAPP_TOOL_IDS = new Set(["whatsapp", "whatsapp-manage"]);
+const OUTREACH_TOOL_IDS = new Set(["outreach"]);
 
 /** All navigable modules, deduped by path. */
 export function getAllToolsModules(options?: {
   includeWhatsApp?: boolean;
+  includeOutreach?: boolean;
 }): PlatformModule[] {
   const seen = new Set<string>();
   const merged = [...CORE_MODULES, ...PLATFORM_MODULES];
 
   return merged.filter((tool) => {
     if (HIDDEN_FROM_ALL_TOOLS.has(tool.id)) {
-      if (!(options?.includeWhatsApp && WHATSAPP_TOOL_IDS.has(tool.id))) {
+      const allowWhatsApp =
+        options?.includeWhatsApp && WHATSAPP_TOOL_IDS.has(tool.id);
+      const allowOutreach =
+        options?.includeOutreach && OUTREACH_TOOL_IDS.has(tool.id);
+      if (!allowWhatsApp && !allowOutreach) {
         return false;
       }
     }

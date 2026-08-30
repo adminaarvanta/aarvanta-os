@@ -39,6 +39,7 @@ export const MODULE_FEATURE_MAP: Record<string, PlanFeatureKey | "ungated"> = {
   communications: "unifiedInbox",
   whatsapp: "whatsappChannel",
   voice: "voiceAi",
+  outreach: "ungated",
   calling: "voiceAi",
   crm: "crm",
   workforce: "aiWorkforce",

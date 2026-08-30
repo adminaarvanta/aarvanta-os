@@ -7,6 +7,7 @@ import {
   Landmark,
   LayoutDashboard,
   LayoutGrid,
+  Mail,
   MessageCircle,
   Phone,
   Settings,
@@ -76,6 +77,26 @@ export const WHATSAPP_OS_ITEM: OperatingSystemItem = {
   description: "Business inbox, templates & profile",
   dotClass: "bg-success",
   iconClass: "text-success bg-success/10",
+};
+
+/**
+ * Super-admin-only Email Outreach (Brevo). Email-gated via
+ * `canAccessEmailOutreach` — production super admins + demo mode.
+ */
+export const OUTREACH_NAV_ITEM: CommandNavItem = {
+  href: "/outreach",
+  label: "Email",
+  icon: Mail,
+  featureKey: "ungated",
+};
+
+export const EMAIL_OS_ITEM: OperatingSystemItem = {
+  id: "outreach",
+  label: "Email OS",
+  href: "/outreach",
+  description: "Brevo outreach campaigns",
+  dotClass: "bg-accent-cyan",
+  iconClass: "text-accent-cyan bg-accent-cyan/10",
 };
 
 /**
@@ -226,23 +247,49 @@ function insertAfterHref<T extends { href: string }>(
   return [...items.slice(0, at), extra, ...items.slice(at)];
 }
 
-export function commandCenterNav(showWhatsApp: boolean): CommandNavItem[] {
-  if (!showWhatsApp) return COMMAND_CENTER_NAV;
-  return insertAfterHref(COMMAND_CENTER_NAV, "/voice", WHATSAPP_NAV_ITEM);
+export function commandCenterNav(
+  showWhatsApp: boolean,
+  showOutreach = false
+): CommandNavItem[] {
+  let nav = COMMAND_CENTER_NAV;
+  if (showWhatsApp) {
+    nav = insertAfterHref(nav, "/voice", WHATSAPP_NAV_ITEM);
+  }
+  if (showOutreach) {
+    nav = insertAfterHref(
+      nav,
+      showWhatsApp ? "/whatsapp" : "/voice",
+      OUTREACH_NAV_ITEM
+    );
+  }
+  return nav;
 }
 
-export function mobileMoreNav(showWhatsApp: boolean): CommandNavItem[] {
-  if (!showWhatsApp) return MOBILE_NAV_MORE;
-  return [WHATSAPP_NAV_ITEM, ...MOBILE_NAV_MORE];
+export function mobileMoreNav(
+  showWhatsApp: boolean,
+  showOutreach = false
+): CommandNavItem[] {
+  const extras: CommandNavItem[] = [];
+  if (showWhatsApp) extras.push(WHATSAPP_NAV_ITEM);
+  if (showOutreach) extras.push(OUTREACH_NAV_ITEM);
+  return extras.length ? [...extras, ...MOBILE_NAV_MORE] : MOBILE_NAV_MORE;
 }
 
-export function operatingSystems(showWhatsApp: boolean): OperatingSystemItem[] {
-  if (!showWhatsApp) return OPERATING_SYSTEMS;
-  const idx = OPERATING_SYSTEMS.findIndex((item) => item.id === "voice");
-  const at = idx === -1 ? 0 : idx + 1;
-  return [
-    ...OPERATING_SYSTEMS.slice(0, at),
-    WHATSAPP_OS_ITEM,
-    ...OPERATING_SYSTEMS.slice(at),
-  ];
+export function operatingSystems(
+  showWhatsApp: boolean,
+  showOutreach = false
+): OperatingSystemItem[] {
+  let systems = OPERATING_SYSTEMS;
+  if (showWhatsApp) {
+    const idx = systems.findIndex((item) => item.id === "voice");
+    const at = idx === -1 ? 0 : idx + 1;
+    systems = [...systems.slice(0, at), WHATSAPP_OS_ITEM, ...systems.slice(at)];
+  }
+  if (showOutreach) {
+    const afterId = showWhatsApp ? "whatsapp" : "voice";
+    const idx = systems.findIndex((item) => item.id === afterId);
+    const at = idx === -1 ? 0 : idx + 1;
+    systems = [...systems.slice(0, at), EMAIL_OS_ITEM, ...systems.slice(at)];
+  }
+  return systems;
 }

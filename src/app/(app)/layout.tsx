@@ -7,6 +7,7 @@ import { isOnboardingPending, shouldShowLaunchpad } from "@/lib/onboarding/catal
 import { getSessionContext } from "@/lib/tenant/context";
 import { ROLE_LABELS } from "@/types/tenant";
 import type { EntitlementsClient } from "@/lib/billing/entitlements";
+import { canAccessEmailOutreach } from "@/lib/channels/email-outreach-access";
 import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 import { redirect } from "next/navigation";
 
@@ -27,6 +28,7 @@ export default async function AppLayout({
   let whatsappUnread = 0;
   let voiceUnread = 0;
   let showWhatsAppNav = false;
+  let showOutreachNav = false;
   let entitlements: EntitlementsClient | null = null;
 
   try {
@@ -49,6 +51,7 @@ export default async function AppLayout({
     userRole = ROLE_LABELS[ctx.role] ?? ctx.role;
     userId = ctx.userId;
     showWhatsAppNav = canAccessWhatsAppOs(ctx.email);
+    showOutreachNav = canAccessEmailOutreach(ctx.email);
     hasSeenWalkthrough = Boolean(ctx.member?.hasSeenWalkthrough);
     showLaunchpad = shouldShowLaunchpad(bootstrapped.organization);
     const conversations = await getRepository().listConversations(ctx.scope);
@@ -110,6 +113,7 @@ export default async function AppLayout({
       whatsappUnread={whatsappUnread}
       voiceUnread={voiceUnread}
       showWhatsAppNav={showWhatsAppNav}
+      showOutreachNav={showOutreachNav}
       entitlements={entitlements}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">

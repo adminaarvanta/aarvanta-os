@@ -4,6 +4,7 @@ import { shouldShowLaunchpad } from "@/lib/onboarding/catalog";
 import { buildLaunchpadSnapshot } from "@/lib/onboarding/launchpad";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext } from "@/lib/tenant/context";
+import { canAccessEmailOutreach } from "@/lib/channels/email-outreach-access";
 import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 
 export default async function DashboardPage() {
@@ -19,6 +20,7 @@ export default async function DashboardPage() {
       userName={ctx.name || ctx.email}
       snapshot={snapshot}
       showWhatsApp={canAccessWhatsAppOs(ctx.email)}
+      showOutreach={canAccessEmailOutreach(ctx.email)}
       setupGuide={
         shouldShowLaunchpad(org)
           ? {

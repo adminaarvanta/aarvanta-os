@@ -12,6 +12,7 @@ import {
   Landmark,
   LayoutDashboard,
   Lock,
+  Mail,
   MessageCircle,
   PenLine,
   Phone,
@@ -120,6 +121,15 @@ export const CORE_MODULES: PlatformModule[] = [
     icon: Phone,
     group: "Core",
     phase: "9b-voice",
+  },
+  {
+    id: "outreach",
+    label: "Email OS",
+    description: "Brevo email outreach campaigns (super admin)",
+    href: "/outreach",
+    icon: Mail,
+    group: "Core",
+    phase: "email-brevo",
   },
   {
     id: "projects",

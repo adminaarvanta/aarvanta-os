@@ -40,6 +40,7 @@ export function CommandCenterDashboard({
   snapshot,
   setupGuide = null,
   showWhatsApp = false,
+  showOutreach = false,
 }: {
   userName: string;
   snapshot: FounderSnapshot;
@@ -49,6 +50,7 @@ export function CommandCenterDashboard({
     percent: number;
   } | null;
   showWhatsApp?: boolean;
+  showOutreach?: boolean;
 }) {
   const firstName = userName.split(" ")[0] ?? userName;
   const aiScore = Math.min(
@@ -156,7 +158,7 @@ export function CommandCenterDashboard({
                 <h2 className="text-lg font-semibold text-foreground">Operating Systems</h2>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {operatingSystems(showWhatsApp).map((os) => (
+                {operatingSystems(showWhatsApp, showOutreach).map((os) => (
                   <Link
                     key={os.id}
                     href={os.href}

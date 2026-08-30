@@ -112,12 +112,14 @@ export function VoicePageShell({
   actions,
   children,
   tone = "navy",
+  product = "Voice OS",
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
   tone?: VoiceTone;
+  product?: string;
 }) {
   return (
     <>
@@ -137,7 +139,7 @@ export function VoicePageShell({
         <div className="relative flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-              Voice OS
+              {product}
             </p>
             <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {title}
