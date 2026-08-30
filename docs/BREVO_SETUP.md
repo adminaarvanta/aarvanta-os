@@ -38,7 +38,7 @@ Without `BREVO_WEBHOOK_SECRET`, production webhooks return 401.
 
 ## 4. Cron
 
-`GET /api/cron/email-campaigns` (Bearer `CRON_SECRET`) drains the send queue. Vercel Cron runs it every 15 minutes. Starting a campaign also sends the first batch immediately.
+`GET /api/cron/email-campaigns` (Bearer `CRON_SECRET`) drains the send queue. Vercel Cron runs it daily (Hobby limit). Starting a campaign also sends the first batch immediately.
 
 ## 5. Merge fields
 
