@@ -10,9 +10,8 @@ export default async function NewEmailCampaignPage() {
   return (
     <EmailPageShell
       title="New campaign"
-      subtitle="Write the email, choose CRM contacts, then save or start sending"
-      tone="cyan"
-      actions={<EmailBackLink href="/outreach/campaigns">All campaigns</EmailBackLink>}
+      description="Write the email, choose CRM contacts, then save or start sending."
+      back={<EmailBackLink href="/outreach/campaigns" label="All campaigns" />}
     >
       <EmailCampaignComposer contacts={contacts} />
     </EmailPageShell>

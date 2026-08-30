@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { EmailSection } from "@/components/outreach/email-os-ui";
 import { contactDisplayName, type ContactTag, type CrmContact } from "@/types/crm";
 import { EMAIL_MERGE_FIELDS, type EmailCampaignFilters } from "@/types/email-outreach";
 
@@ -18,7 +19,7 @@ const TAG_OPTIONS: ContactTag[] = [
 type AudienceMode = "all" | "pick" | "filters";
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold";
+  "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20";
 
 export function EmailCampaignComposer({
   contacts,
@@ -140,9 +141,9 @@ export function EmailCampaignComposer({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <section className="space-y-3 rounded-2xl border border-border bg-surface-elevated p-4">
-        <h3 className="text-sm font-semibold text-foreground">Campaign</h3>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <EmailSection title="Campaign" accent="navy">
+        <div className="space-y-3">
         <label className="block text-sm">
           <span className="mb-1 block text-muted">Name</span>
           <input
@@ -180,10 +181,11 @@ export function EmailCampaignComposer({
             onChange={(e) => setDailySendLimit(Number(e.target.value) || 50)}
           />
         </label>
-      </section>
+        </div>
+      </EmailSection>
 
-      <section className="space-y-3 rounded-2xl border border-border bg-surface-elevated p-4">
-        <h3 className="text-sm font-semibold text-foreground">Email</h3>
+      <EmailSection title="Email" accent="cyan">
+        <div className="space-y-3">
         <label className="block text-sm">
           <span className="mb-1 block text-muted">Subject</span>
           <input
@@ -206,7 +208,7 @@ export function EmailCampaignComposer({
             <button
               key={field}
               type="button"
-              className="rounded-full border border-border bg-surface px-2 py-0.5 text-[11px] text-muted hover:border-gold/40 hover:text-foreground"
+              className="rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted transition hover:border-cyan-400/40 hover:text-foreground"
               onClick={() => insertMerge(field)}
             >
               {`{{${field}}}`}
@@ -221,10 +223,11 @@ export function EmailCampaignComposer({
             onChange={(e) => setTextBody(e.target.value)}
           />
         </label>
-      </section>
+        </div>
+      </EmailSection>
 
-      <section className="space-y-3 rounded-2xl border border-border bg-surface-elevated p-4">
-        <h3 className="text-sm font-semibold text-foreground">Audience</h3>
+      <EmailSection title="Audience" accent="gold">
+        <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           {(
             [
@@ -237,10 +240,10 @@ export function EmailCampaignComposer({
               key={mode}
               type="button"
               onClick={() => setAudienceMode(mode)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                 audienceMode === mode
-                  ? "bg-[var(--navy)] text-white dark:bg-gold dark:text-[var(--navy)]"
-                  : "border border-border text-muted hover:text-foreground"
+                  ? "bg-gradient-to-r from-[#2f7f92] to-[#1a2f59] text-white shadow-[0_4px_12px_rgba(47,127,146,0.24)]"
+                  : "border border-border/80 bg-background text-muted hover:border-cyan-400/40 hover:text-foreground"
               }`}
             >
               {label}
@@ -262,10 +265,10 @@ export function EmailCampaignComposer({
                         on ? prev.filter((t) => t !== tag) : [...prev, tag]
                       )
                     }
-                    className={`rounded-full px-2.5 py-1 text-[11px] capitalize ${
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize transition ${
                       on
-                        ? "bg-gold/15 text-gold-dark dark:text-gold-bright"
-                        : "border border-border text-muted"
+                        ? "bg-gold text-black shadow-sm"
+                        : "border border-border bg-background text-muted hover:border-gold/40 hover:text-foreground"
                     }`}
                   >
                     {tag.replace(/_/g, " ")}
@@ -295,7 +298,7 @@ export function EmailCampaignComposer({
               value={contactQuery}
               onChange={(e) => setContactQuery(e.target.value)}
             />
-            <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-border p-2">
+            <div className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-border/80 bg-background/70 p-2">
               {filteredContacts.map((contact) => {
                 const checked = selectedContactIds.includes(contact.id);
                 return (
@@ -338,7 +341,8 @@ export function EmailCampaignComposer({
             </p>
           ) : null}
         </div>
-      </section>
+        </div>
+      </EmailSection>
 
       {error ? <p className="text-sm text-[var(--chart-lost)]">{error}</p> : null}
 

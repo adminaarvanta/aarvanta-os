@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { EmailOsNav } from "@/components/outreach/email-os-nav";
+import { EmailAtmosphere } from "@/components/outreach/email-os-ui";
 import { canAccessEmailOutreach } from "@/lib/channels/email-outreach-access";
 import { getSessionContext } from "@/lib/tenant/context";
 
@@ -13,10 +13,5 @@ export default async function EmailOutreachLayout({
     notFound();
   }
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-[rgba(14,165,198,0.05)] via-background to-[rgba(26,47,89,0.04)]">
-      <EmailOsNav />
-      <div className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</div>
-    </div>
-  );
+  return <EmailAtmosphere>{children}</EmailAtmosphere>;
 }
