@@ -384,13 +384,16 @@ export function getProductionReadiness(): ProductionReadiness {
     });
   }
 
-  const brevoKey = has(process.env.BREVO_API_KEY);
+  const brevoKey =
+    has(process.env.BREVO_API_KEY) || has(process.env.BREVO_SMTP_KEY);
   if (brevoKey) {
     items.push({
       id: "brevo",
       label: "Brevo email outreach",
       status: "ok",
-      detail: "Transactional API ready for Email OS",
+      detail: has(process.env.BREVO_SMTP_KEY)
+        ? "SMTP relay ready for Email OS"
+        : "Transactional API ready for Email OS",
     });
     if (!has(process.env.BREVO_WEBHOOK_SECRET)) {
       warnings.push(
@@ -408,7 +411,7 @@ export function getProductionReadiness(): ProductionReadiness {
       id: "brevo",
       label: "Brevo email outreach",
       status: "warning",
-      detail: "Set BREVO_API_KEY to send live outreach (super admin)",
+      detail: "Set BREVO_SMTP_KEY or BREVO_API_KEY to send live outreach (super admin)",
     });
   }
 
