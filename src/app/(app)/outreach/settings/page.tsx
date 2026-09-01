@@ -34,12 +34,18 @@ export default async function EmailOutreachSettingsPage() {
           </span>
           <div>
             <p className="text-sm font-semibold text-foreground">
-              {live ? "Brevo SMTP is connected" : "Brevo still needs a working login"}
+              {live
+                ? "Brevo SMTP is connected"
+                : runtime.configured
+                  ? "Brevo still needs a working login"
+                  : "Brevo is not configured yet"}
             </p>
             <p className="mt-1 text-sm text-muted">
               {live
                 ? `Sends will go out as ${runtime.sender.name} <${runtime.sender.email}>.`
-                : "The SMTP key is stored, but the account check failed. Confirm the SMTP login in Brevo, then retry a test send."}
+                : runtime.configured
+                  ? "The SMTP or API key is stored, but the account check failed. Confirm the login in Brevo, then retry a test send."
+                  : "Add BREVO_SMTP_KEY or BREVO_API_KEY to send live. Until then, campaign sends run in simulate mode."}
             </p>
           </div>
         </div>
