@@ -7,11 +7,17 @@ import {
   type PublicPlanId,
 } from "@/lib/billing/plan-catalog";
 import type { PlanFeatureKey } from "@/lib/billing/module-access";
+import {
+  creditOverridesFromMember,
+  hasUnlimitedEmailOutreach,
+  hasUnlimitedVoice,
+} from "@/lib/billing/member-credits";
 import { isCurrentUserSuperAdmin } from "@/lib/billing/super-admin";
 import { getPeriodUsage } from "@/lib/billing/usage-store";
 import { getBillingStore } from "@/lib/data/platform-store";
 import { isDemoMode } from "@/lib/config/app-mode";
 import type { TenantScope } from "@/types/communication";
+import type { MemberCreditOverrides } from "@/types/tenant";
 import type { Subscription, UsageMetric } from "@/types/platform-modules";
 
 export type UsageSnapshot = Record<UsageMetric, number>;
@@ -26,6 +32,8 @@ export type Entitlements = {
   period: string;
   /** Platform root user — full product, no plan gates. */
   isSuperAdmin: boolean;
+  /** Per-member grants from super admin (voice + Email OS). */
+  creditOverrides: MemberCreditOverrides;
 };
 
 function isUsableSubscription(sub: Subscription): boolean {
@@ -53,6 +61,20 @@ export async function resolveEntitlements(
   const { currentUsagePeriod } = await import("@/lib/billing/usage-store");
   const period = currentUsagePeriod();
   const superAdmin = await isCurrentUserSuperAdmin();
+  let creditOverrides: MemberCreditOverrides = {
+    unlimitedVoice: false,
+    unlimitedEmailOutreach: false,
+  };
+
+  if (!superAdmin) {
+    try {
+      const { getSessionContext } = await import("@/lib/tenant/context");
+      const ctx = await getSessionContext();
+      creditOverrides = creditOverridesFromMember(ctx.member);
+    } catch {
+      /* no session — keep defaults */
+    }
+  }
 
   if (superAdmin) {
     const plan = getPlan("enterprise")!;
@@ -69,6 +91,10 @@ export async function resolveEntitlements(
       usage: emptyUsage(),
       period,
       isSuperAdmin: true,
+      creditOverrides: {
+        unlimitedVoice: true,
+        unlimitedEmailOutreach: true,
+      },
     };
   }
 
@@ -94,6 +120,7 @@ export async function resolveEntitlements(
     usage,
     period,
     isSuperAdmin: false,
+    creditOverrides,
   };
 }
 
@@ -116,6 +143,12 @@ export function remainingForMetric(
   metric: UsageMetric
 ): number | "unlimited" {
   if (entitlements.isSuperAdmin) return "unlimited";
+  if (metric === "voice_minutes" && hasUnlimitedVoice(entitlements)) {
+    return "unlimited";
+  }
+  if (metric === "emails" && hasUnlimitedEmailOutreach(entitlements)) {
+    return "unlimited";
+  }
   const map: Partial<Record<UsageMetric, keyof PlanLimits>> = {
     ai_credits: "aiCredits",
     voice_minutes: "voiceMinutes",
@@ -138,6 +171,8 @@ export function usagePercent(
   metric: UsageMetric
 ): number | null {
   if (entitlements.isSuperAdmin) return null;
+  if (metric === "voice_minutes" && hasUnlimitedVoice(entitlements)) return null;
+  if (metric === "emails" && hasUnlimitedEmailOutreach(entitlements)) return null;
   const remaining = remainingForMetric(entitlements, metric);
   if (remaining === "unlimited") return null;
   const map: Partial<Record<UsageMetric, keyof PlanLimits>> = {
@@ -173,6 +208,7 @@ export type EntitlementsClient = {
   creditsRemaining: number | "unlimited";
   creditsPercent: number | null;
   isSuperAdmin: boolean;
+  creditOverrides: MemberCreditOverrides;
   /** Demo app — skip explore banners so people can try the product. */
   demoMode: boolean;
   /** Build OS draft jobs used (workspace lifetime count). */
@@ -194,6 +230,7 @@ export function toClientEntitlements(
     creditsRemaining: remainingForMetric(e, "ai_credits"),
     creditsPercent: usagePercent(e, "ai_credits"),
     isSuperAdmin: e.isSuperAdmin,
+    creditOverrides: e.creditOverrides,
     demoMode: isDemoMode(),
     buildDraftsUsed: extras?.buildDraftsUsed,
   };

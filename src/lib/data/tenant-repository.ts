@@ -1,6 +1,7 @@
 import type { TenantScope } from "@/types/communication";
 import type {
   Invitation,
+  MemberCreditOverrides,
   MemberRole,
   Organization,
   Workspace,
@@ -53,6 +54,11 @@ export interface TenantRepository {
     patch: Partial<
       Pick<WorkspaceMember, "hasSeenWalkthrough" | "walkthroughCompletedAt">
     >,
+    scope: TenantScope
+  ): Promise<WorkspaceMember | null>;
+  updateMemberCreditOverrides(
+    id: string,
+    overrides: MemberCreditOverrides,
     scope: TenantScope
   ): Promise<WorkspaceMember | null>;
   removeMember(id: string, scope: TenantScope): Promise<boolean>;

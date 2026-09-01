@@ -9,7 +9,7 @@ export default async function EmailOutreachLayout({
   children: React.ReactNode;
 }) {
   const ctx = await getSessionContext();
-  if (!canAccessEmailOutreach(ctx.email)) {
+  if (!canAccessEmailOutreach(ctx.email, ctx.member)) {
     notFound();
   }
 

@@ -169,6 +169,21 @@ export const tenantFirestoreRepository: TenantRepository = {
     return updated;
   },
 
+  async updateMemberCreditOverrides(id, overrides, scope) {
+    const existing = await this.getMember(id, scope);
+    if (!existing) return null;
+    const updated = {
+      ...existing,
+      creditOverrides: {
+        unlimitedVoice: Boolean(overrides.unlimitedVoice),
+        unlimitedEmailOutreach: Boolean(overrides.unlimitedEmailOutreach),
+      },
+      updatedAt: crmNow(),
+    };
+    await getDb().collection(MEMBERS).doc(id).set(updated);
+    return updated;
+  },
+
   async removeMember(id, scope) {
     const existing = await this.getMember(id, scope);
     if (!existing || existing.role === "owner") return false;

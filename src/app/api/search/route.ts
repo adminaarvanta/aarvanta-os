@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 
     const results = await runGlobalSearch(ctx.scope, query, limit, {
       includeWhatsApp: canAccessWhatsAppOs(ctx.email),
-      includeOutreach: canAccessEmailOutreach(ctx.email),
+      includeOutreach: canAccessEmailOutreach(ctx.email, ctx.member),
     });
     return NextResponse.json({ query, results });
   } catch (error) {

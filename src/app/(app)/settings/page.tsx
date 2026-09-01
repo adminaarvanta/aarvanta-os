@@ -3,6 +3,7 @@ import { SettingsClient } from "@/components/tenant/settings-client";
 import { PageFrame, PageScroll } from "@/components/layout/page-scroll";
 import { PageHeader } from "@/components/ui/os/page-header";
 import { isProductionMode } from "@/lib/config/app-mode";
+import { isSuperAdminEmail } from "@/lib/billing/super-admin";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { hydrateWorkspaceSettingsCache } from "@/lib/hr/settings";
@@ -40,6 +41,7 @@ export default async function SettingsPage() {
           permissions={permissionsForRole(ctx.role)}
           workspaceSettings={workspaceSettings}
           production={isProductionMode()}
+          isSuperAdmin={isSuperAdminEmail(ctx.email)}
         />
       </PageScroll>
     </PageFrame>

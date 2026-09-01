@@ -212,8 +212,8 @@ export async function POST(req: Request) {
     if (call.status === "completed" && call.durationSeconds > 0) {
       try {
         const minutes = Math.max(1, Math.ceil(call.durationSeconds / 60));
-        const { incrementUsage } = await import("@/lib/billing/usage-store");
-        await incrementUsage(scope, "voice_minutes", minutes);
+        const { consumeVoiceMinutes } = await import("@/lib/billing/consume");
+        await consumeVoiceMinutes(scope, minutes);
       } catch (error) {
         console.warn(
           "[billing] voice minute consume failed",

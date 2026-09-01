@@ -20,7 +20,7 @@ export default async function DashboardPage() {
       userName={ctx.name || ctx.email}
       snapshot={snapshot}
       showWhatsApp={canAccessWhatsAppOs(ctx.email)}
-      showOutreach={canAccessEmailOutreach(ctx.email)}
+      showOutreach={canAccessEmailOutreach(ctx.email, ctx.member)}
       setupGuide={
         shouldShowLaunchpad(org)
           ? {

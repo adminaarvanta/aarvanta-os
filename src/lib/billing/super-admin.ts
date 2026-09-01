@@ -33,3 +33,13 @@ export async function isCurrentUserSuperAdmin(): Promise<boolean> {
     return false;
   }
 }
+
+/** Throws when the signed-in user is not a platform super admin. */
+export async function requireSuperAdminSession() {
+  const { getSessionContext } = await import("@/lib/tenant/context");
+  const ctx = await getSessionContext();
+  if (!isSuperAdminEmail(ctx.email)) {
+    throw new Error("Forbidden");
+  }
+  return ctx;
+}
