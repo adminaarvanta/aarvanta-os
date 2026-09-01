@@ -232,6 +232,21 @@ export function BillingClient({
               <span className="text-muted"> · plan gates bypassed</span>
             )}
           </p>
+          {!entitlements.isSuperAdmin &&
+          (entitlements.creditOverrides.unlimitedVoice ||
+            entitlements.creditOverrides.unlimitedEmailOutreach) ? (
+            <p className="mt-1 text-xs text-gold-bright">
+              Super-admin grants:
+              {entitlements.creditOverrides.unlimitedVoice ? " unlimited voice" : ""}
+              {entitlements.creditOverrides.unlimitedVoice &&
+              entitlements.creditOverrides.unlimitedEmailOutreach
+                ? ","
+                : ""}
+              {entitlements.creditOverrides.unlimitedEmailOutreach
+                ? " unlimited email outreach"
+                : ""}
+            </p>
+          ) : null}
           <p className="mt-1 text-xs text-muted">
             Payments via Stripe ·{" "}
             {stripeConfigured ? (

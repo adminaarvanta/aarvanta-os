@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Shield } from "lucide-react";
 import { SystemStatusPanel } from "@/components/settings/system-status-panel";
 import { WorkspaceSettingsPanel } from "@/components/settings/workspace-settings-panel";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ type SettingsClientProps = {
   permissions: Permission[];
   workspaceSettings: WorkspaceSettings;
   production: boolean;
+  isSuperAdmin?: boolean;
 };
 
 const roleBadgeClass: Record<MemberRole, string> = {
@@ -49,6 +51,7 @@ export function SettingsClient({
   permissions,
   workspaceSettings,
   production,
+  isSuperAdmin = false,
 }: SettingsClientProps) {
   const router = useRouter();
   const [orgName, setOrgName] = useState(organization.name);
@@ -154,6 +157,27 @@ export function SettingsClient({
       />
 
       <SystemStatusPanel />
+
+      {isSuperAdmin && (
+        <Panel>
+          <SectionHeader
+            title="Super admin"
+            description="Platform operator tools — not visible to workspace owners."
+          />
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/settings/credit-access"
+              className="inline-flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black hover:bg-gold-bright"
+            >
+              <Shield className="h-4 w-4" aria-hidden />
+              Credit access
+            </Link>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            Grant unlimited Voice OS minutes and Email OS outreach to marketing staff.
+          </p>
+        </Panel>
+      )}
 
       <Panel>
         <SectionHeader title="Your account" description="Signed-in user for this workspace." />

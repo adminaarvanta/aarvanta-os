@@ -51,7 +51,7 @@ export default async function AppLayout({
     userRole = ROLE_LABELS[ctx.role] ?? ctx.role;
     userId = ctx.userId;
     showWhatsAppNav = canAccessWhatsAppOs(ctx.email);
-    showOutreachNav = canAccessEmailOutreach(ctx.email);
+    showOutreachNav = canAccessEmailOutreach(ctx.email, ctx.member);
     hasSeenWalkthrough = Boolean(ctx.member?.hasSeenWalkthrough);
     showLaunchpad = shouldShowLaunchpad(bootstrapped.organization);
     const conversations = await getRepository().listConversations(ctx.scope);
@@ -93,6 +93,10 @@ export default async function AppLayout({
         typeof free.limits.aiCredits === "number" ? free.limits.aiCredits : 0,
       creditsPercent: 0,
       isSuperAdmin: false,
+      creditOverrides: {
+        unlimitedVoice: false,
+        unlimitedEmailOutreach: false,
+      },
       demoMode: !production,
     };
   }

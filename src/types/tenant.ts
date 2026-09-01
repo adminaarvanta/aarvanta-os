@@ -7,6 +7,14 @@ export type InvitationStatus = "pending" | "accepted" | "expired" | "revoked";
 
 export type MemberStatus = "active" | "suspended";
 
+/** Super-admin grants for marketing / ops staff — not full platform super admin. */
+export type MemberCreditOverrides = {
+  /** No voice minute cap; Voice OS stays on plan feature gates. */
+  unlimitedVoice?: boolean;
+  /** No email send cap + access to Email OS (/outreach). */
+  unlimitedEmailOutreach?: boolean;
+};
+
 export type OnboardingStatus = "pending" | "complete";
 
 export type OnboardingUseCase =
@@ -75,6 +83,8 @@ export interface WorkspaceMember extends TenantScope {
   /** Free first-run product walkthrough completed or skipped. */
   hasSeenWalkthrough?: boolean;
   walkthroughCompletedAt?: string;
+  /** Platform super-admin grants for voice + Email OS outreach. */
+  creditOverrides?: MemberCreditOverrides;
   joinedAt: string;
   updatedAt: string;
 }

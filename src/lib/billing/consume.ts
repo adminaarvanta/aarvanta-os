@@ -12,6 +12,10 @@ import {
   type Entitlements,
 } from "@/lib/billing/entitlements";
 import {
+  hasUnlimitedEmailOutreach,
+  hasUnlimitedVoice,
+} from "@/lib/billing/member-credits";
+import {
   hasMinAccess,
   type PlanFeatureKey,
 } from "@/lib/billing/module-access";
@@ -110,6 +114,7 @@ export async function consumeVoiceMinutes(
   if (entitlements.isSuperAdmin) return entitlements;
   await requireFeature(scope, "voiceAi", "lite");
   const fresh = await resolveEntitlements(scope);
+  if (hasUnlimitedVoice(fresh)) return fresh;
   const remaining = remainingForMetric(fresh, "voice_minutes");
   if (remaining !== "unlimited" && remaining < minutes) {
     throw new PlanEntitlementError(
@@ -135,6 +140,7 @@ export async function requireVoiceCapacity(
   if (entitlements.isSuperAdmin) return entitlements;
   await requireFeature(scope, "voiceAi", "lite");
   const fresh = await resolveEntitlements(scope);
+  if (hasUnlimitedVoice(fresh)) return fresh;
   const remaining = remainingForMetric(fresh, "voice_minutes");
   if (remaining !== "unlimited" && remaining < minutesNeeded) {
     throw new PlanEntitlementError(
@@ -181,6 +187,7 @@ export async function consumeEmailSend(
   if (entitlements.isSuperAdmin) return entitlements;
   await requireFeature(scope, "emailChannel", "lite");
   const fresh = await resolveEntitlements(scope);
+  if (hasUnlimitedEmailOutreach(fresh)) return fresh;
   const remaining = remainingForMetric(fresh, "emails");
   if (remaining !== "unlimited" && remaining < count) {
     throw new PlanEntitlementError(
