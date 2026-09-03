@@ -8,9 +8,9 @@ import {
 } from "@/lib/billing/plan-catalog";
 import type { PlanFeatureKey } from "@/lib/billing/module-access";
 import {
-  creditOverridesFromMember,
   hasUnlimitedEmailOutreach,
   hasUnlimitedVoice,
+  resolveCreditOverridesForSession,
 } from "@/lib/billing/member-credits";
 import { isCurrentUserSuperAdmin } from "@/lib/billing/super-admin";
 import { getPeriodUsage } from "@/lib/billing/usage-store";
@@ -70,7 +70,10 @@ export async function resolveEntitlements(
     try {
       const { getSessionContext } = await import("@/lib/tenant/context");
       const ctx = await getSessionContext();
-      creditOverrides = creditOverridesFromMember(ctx.member);
+      creditOverrides = await resolveCreditOverridesForSession({
+        email: ctx.email,
+        member: ctx.member,
+      });
     } catch {
       /* no session — keep defaults */
     }
@@ -111,12 +114,24 @@ export async function resolveEntitlements(
   const plan = getPlan(planId) ?? getPlan("free")!;
   const usage = await getPeriodUsage(scope, period);
 
+  // Super-admin grants unlock the modules themselves — not just usage caps.
+  const features: PlanFeatureMatrix = { ...plan.features };
+  const limits: PlanLimits = { ...plan.limits };
+  if (creditOverrides.unlimitedVoice) {
+    features.voiceAi = "full";
+    limits.voiceMinutes = "unlimited";
+  }
+  if (creditOverrides.unlimitedEmailOutreach) {
+    features.emailChannel = "full";
+    limits.emailsPerMonth = "unlimited";
+  }
+
   return {
     planId,
     plan,
     subscription: paid ?? null,
-    limits: plan.limits,
-    features: plan.features,
+    limits,
+    features,
     usage,
     period,
     isSuperAdmin: false,

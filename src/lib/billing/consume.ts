@@ -29,6 +29,10 @@ export async function requireFeature(
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
   if (entitlements.isSuperAdmin) return entitlements;
+  if (key === "voiceAi" && hasUnlimitedVoice(entitlements)) return entitlements;
+  if (key === "emailChannel" && hasUnlimitedEmailOutreach(entitlements)) {
+    return entitlements;
+  }
   const actual = featureAccess(entitlements, key);
   if (actual === "none") {
     throw new PlanEntitlementError(
@@ -111,10 +115,11 @@ export async function consumeVoiceMinutes(
 ): Promise<Entitlements> {
   if (minutes <= 0) return resolveEntitlements(scope);
   const entitlements = await resolveEntitlements(scope);
-  if (entitlements.isSuperAdmin) return entitlements;
+  if (entitlements.isSuperAdmin || hasUnlimitedVoice(entitlements)) {
+    return entitlements;
+  }
   await requireFeature(scope, "voiceAi", "lite");
   const fresh = await resolveEntitlements(scope);
-  if (hasUnlimitedVoice(fresh)) return fresh;
   const remaining = remainingForMetric(fresh, "voice_minutes");
   if (remaining !== "unlimited" && remaining < minutes) {
     throw new PlanEntitlementError(
@@ -137,10 +142,11 @@ export async function requireVoiceCapacity(
   minutesNeeded = 1
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
-  if (entitlements.isSuperAdmin) return entitlements;
+  if (entitlements.isSuperAdmin || hasUnlimitedVoice(entitlements)) {
+    return entitlements;
+  }
   await requireFeature(scope, "voiceAi", "lite");
   const fresh = await resolveEntitlements(scope);
-  if (hasUnlimitedVoice(fresh)) return fresh;
   const remaining = remainingForMetric(fresh, "voice_minutes");
   if (remaining !== "unlimited" && remaining < minutesNeeded) {
     throw new PlanEntitlementError(
@@ -184,10 +190,11 @@ export async function consumeEmailSend(
   count = 1
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
-  if (entitlements.isSuperAdmin) return entitlements;
+  if (entitlements.isSuperAdmin || hasUnlimitedEmailOutreach(entitlements)) {
+    return entitlements;
+  }
   await requireFeature(scope, "emailChannel", "lite");
   const fresh = await resolveEntitlements(scope);
-  if (hasUnlimitedEmailOutreach(fresh)) return fresh;
   const remaining = remainingForMetric(fresh, "emails");
   if (remaining !== "unlimited" && remaining < count) {
     throw new PlanEntitlementError(
