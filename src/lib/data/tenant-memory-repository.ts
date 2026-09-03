@@ -99,6 +99,10 @@ export const tenantMemoryRepository: TenantRepository = {
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 
+  async listAllMembers() {
+    return [...members].sort((a, b) => a.name.localeCompare(b.name));
+  },
+
   async getMember(id, scope) {
     const item = members.find((m) => m.id === id);
     return item && inCrmScope(item, scope) ? item : null;

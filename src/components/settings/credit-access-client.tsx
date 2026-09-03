@@ -14,7 +14,9 @@ export type CreditAccessMember = {
   name: string;
   email: string;
   role: MemberRole;
+  organizationName: string;
   workspaceName: string;
+  membershipCount: number;
   creditOverrides: {
     unlimitedVoice: boolean;
     unlimitedEmailOutreach: boolean;
@@ -44,7 +46,8 @@ export function CreditAccessClient({
     const q = query.trim().toLowerCase();
     if (!q) return members;
     return members.filter((m) => {
-      const hay = `${m.name} ${m.email} ${m.workspaceName}`.toLowerCase();
+      const hay =
+        `${m.name} ${m.email} ${m.organizationName} ${m.workspaceName}`.toLowerCase();
       return hay.includes(q);
     });
   }, [members, query]);
@@ -97,14 +100,14 @@ export function CreditAccessClient({
       <Panel>
         <SectionHeader
           title="Credit access"
-          description="Grant unlimited Voice OS minutes and Email OS outreach to marketing and ops staff. Changes apply on their next login."
+          description="Grant unlimited Voice OS minutes and Email OS outreach to any product user. Changes apply on their next login."
         />
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-foreground">
           <Shield className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
           <p>
-            Super-admin only. Unlimited voice skips minute caps (plan Voice access
-            still applies). Unlimited email outreach removes send limits and opens
-            Email OS for that person.
+            Super-admin only. Lists every signed-up user across all organizations.
+            Unlimited voice skips minute caps. Unlimited email outreach removes send
+            limits and opens Email OS for that person.
           </p>
         </div>
       </Panel>
@@ -118,13 +121,13 @@ export function CreditAccessClient({
       <Panel>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SectionHeader
-            title="Team members"
-            description={`${members.length} active across all workspaces`}
+            title="Product users"
+            description={`${members.length} unique users across the platform`}
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name or email…"
+            placeholder="Search name, email, or org…"
             className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold/30"
           />
         </div>
@@ -145,7 +148,17 @@ export function CreditAccessClient({
                       <Badge className={roleBadge[member.role]}>
                         {ROLE_LABELS[member.role]}
                       </Badge>
-                      <span className="text-xs text-muted">{member.workspaceName}</span>
+                      <span className="text-xs text-muted">
+                        {member.organizationName}
+                        {member.workspaceName
+                          ? ` · ${member.workspaceName}`
+                          : ""}
+                      </span>
+                      {member.membershipCount > 1 ? (
+                        <span className="text-[11px] text-dim">
+                          {member.membershipCount} workspaces
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 sm:items-end">
@@ -185,7 +198,7 @@ export function CreditAccessClient({
         </ul>
 
         {!filtered.length && (
-          <p className="mt-4 text-sm text-muted">No members match your search.</p>
+          <p className="mt-4 text-sm text-muted">No users match your search.</p>
         )}
       </Panel>
 
