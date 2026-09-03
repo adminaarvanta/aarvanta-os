@@ -64,8 +64,12 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
   if (isDemoMode()) {
     const scope = await getDemoScopeFromCookie();
     const repo = getTenantRepository();
-    const member =
+    let member =
       (await repo.getMemberByUser(DEMO_USER.userId, scope)) ?? null;
+    const { withResolvedCreditOverrides } = await import(
+      "@/lib/billing/member-credits"
+    );
+    member = await withResolvedCreditOverrides(DEMO_USER.email, member);
     return {
       userId: DEMO_USER.userId,
       email: DEMO_USER.email,
@@ -83,8 +87,28 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
 
   const scope = sessionToScope(session);
   const repo = getTenantRepository();
-  const member =
+  let member =
     (await repo.getMemberByUser(session.userId, scope)) ?? null;
+
+  // Scope/userId mismatches: fall back to any membership for this email
+  // in the active workspace, then any active membership.
+  if (!member) {
+    const byEmail = await repo.listMembershipsForEmail(session.email);
+    member =
+      byEmail.find(
+        (m) =>
+          m.status === "active" &&
+          m.workspaceId === scope.workspaceId &&
+          m.tenantId === scope.tenantId
+      ) ??
+      byEmail.find((m) => m.status === "active") ??
+      null;
+  }
+
+  const { withResolvedCreditOverrides } = await import(
+    "@/lib/billing/member-credits"
+  );
+  member = await withResolvedCreditOverrides(session.email, member);
 
   return {
     userId: session.userId,

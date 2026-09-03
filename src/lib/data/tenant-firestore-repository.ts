@@ -292,14 +292,21 @@ export const tenantFirestoreRepository: TenantRepository = {
   },
 
   async listMembershipsForEmail(email) {
-    const key = email.trim().toLowerCase();
-    const snap = await getDb()
-      .collection(MEMBERS)
-      .where("email", "==", key)
-      .get();
-    return snap.docs
-      .map((doc) => doc.data() as WorkspaceMember)
-      .filter((m) => m.status === "active");
+    const raw = email.trim();
+    const key = raw.toLowerCase();
+    const variants = raw === key ? [key] : [raw, key];
+    const byId = new Map<string, WorkspaceMember>();
+    for (const value of variants) {
+      const snap = await getDb()
+        .collection(MEMBERS)
+        .where("email", "==", value)
+        .get();
+      for (const doc of snap.docs) {
+        const data = doc.data() as WorkspaceMember;
+        if (data.status === "active") byId.set(data.id, data);
+      }
+    }
+    return [...byId.values()];
   },
 
   async createMember(input, scope) {

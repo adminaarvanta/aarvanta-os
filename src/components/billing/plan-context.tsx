@@ -44,6 +44,22 @@ export function usePathAccess(pathname: string): {
     const key = featureKeyForPath(pathname);
     return { key, access: "ungated", locked: false, explore: false };
   }
+  if (plan?.isSuperAdmin) {
+    const key = featureKeyForPath(pathname);
+    return { key, access: "ungated", locked: false, explore: false };
+  }
+  // Super-admin credit grants unlock Voice for Free/explore users.
+  if (
+    plan?.creditOverrides?.unlimitedVoice &&
+    featureKeyForPath(pathname) === "voiceAi"
+  ) {
+    return {
+      key: "voiceAi",
+      access: "full",
+      locked: false,
+      explore: false,
+    };
+  }
   if (pathname.split("/").filter(Boolean)[0] === "automation") {
     if (!plan) {
       return { key: "workflows", access: "ungated", locked: false, explore: false };
@@ -93,6 +109,13 @@ export function isNavHrefVisible(
 ): boolean {
   if (!plan || href === "#all-tools") return true;
   if (plan.demoMode) return true;
+  if (plan.isSuperAdmin) return true;
+  if (
+    featureKeyForPath(href) === "voiceAi" &&
+    plan.creditOverrides?.unlimitedVoice
+  ) {
+    return true;
+  }
   if (automationHref(href)) {
     return (
       plan.features.workflows !== "none" || plan.features.aiWorkforce !== "none"
@@ -110,6 +133,13 @@ export function isNavHrefLocked(
 ): boolean {
   if (!plan || href === "#all-tools") return false;
   if (plan.demoMode) return false;
+  if (plan.isSuperAdmin) return false;
+  if (
+    featureKeyForPath(href) === "voiceAi" &&
+    plan.creditOverrides?.unlimitedVoice
+  ) {
+    return false;
+  }
   if (automationHref(href)) {
     return (
       plan.features.workflows === "none" && plan.features.aiWorkforce === "none"
