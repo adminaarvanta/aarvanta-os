@@ -39,6 +39,8 @@ export interface TenantRepository {
   listMembers(scope: TenantScope): Promise<WorkspaceMember[]>;
   /** All members under an organization (every workspace). */
   listMembersByTenant(tenantId: string): Promise<WorkspaceMember[]>;
+  /** Platform-wide members (super-admin tools). */
+  listAllMembers(): Promise<WorkspaceMember[]>;
   getMember(id: string, scope: TenantScope): Promise<WorkspaceMember | null>;
   getMemberByUser(
     userId: string,

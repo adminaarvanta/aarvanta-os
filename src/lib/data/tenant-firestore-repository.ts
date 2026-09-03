@@ -121,6 +121,13 @@ export const tenantFirestoreRepository: TenantRepository = {
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 
+  async listAllMembers() {
+    const snap = await getDb().collection(MEMBERS).get();
+    return snap.docs
+      .map((doc) => doc.data() as WorkspaceMember)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+
   async getMember(id, scope) {
     const snap = await getDb().collection(MEMBERS).doc(id).get();
     if (!snap.exists) return null;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody } from "@/lib/api/request";
+import { applyCreditOverridesForEmail } from "@/lib/billing/credit-access-roster";
 import { requireSuperAdminSession } from "@/lib/billing/super-admin";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 
@@ -14,7 +15,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const ctx = await requireSuperAdminSession();
+    await requireSuperAdminSession();
     const { id } = await params;
     const body = await parseJsonBody<unknown>(req);
     if (body instanceof NextResponse) return body;
@@ -24,24 +25,13 @@ export async function PATCH(
       return apiError("VALIDATION_ERROR", "Invalid credit override payload", 400);
     }
 
-    const repo = getTenantRepository();
-    const roster = await repo.listMembersByTenant(ctx.scope.tenantId);
-    const member = roster.find((m) => m.id === id);
-    if (!member) {
-      return apiError("NOT_FOUND", "Member not found in this organization", 404);
-    }
-
-    const updated = await repo.updateMemberCreditOverrides(
+    const updated = await applyCreditOverridesForEmail(
+      getTenantRepository(),
       id,
-      parsed.data,
-      {
-        tenantId: member.tenantId,
-        workspaceId: member.workspaceId,
-        companyId: member.companyId,
-      }
+      parsed.data
     );
     if (!updated) {
-      return apiError("UPDATE_FAILED", "Could not update member credits", 500);
+      return apiError("NOT_FOUND", "Member not found", 404);
     }
 
     return NextResponse.json({
