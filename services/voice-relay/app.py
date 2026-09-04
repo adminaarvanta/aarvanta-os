@@ -76,7 +76,7 @@ TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-SERVICE_VERSION = "1.7.1"
+SERVICE_VERSION = "1.7.2"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -850,7 +850,7 @@ async def health() -> JSONResponse:
     )
 
 
-@app.get("/tts/{filename}")
+@app.get("/tts/{filename}", response_model=None)
 async def tts_file(filename: str) -> FileResponse | PlainTextResponse:
     if not re.fullmatch(r"[a-f0-9]{16,64}\.mp3", filename):
         return PlainTextResponse("not found", status_code=404)
