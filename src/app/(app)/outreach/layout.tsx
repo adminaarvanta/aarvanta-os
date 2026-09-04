@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { EmailAtmosphere } from "@/components/outreach/email-os-ui";
-import { canAccessEmailOutreach } from "@/lib/channels/email-outreach-access";
+import { canAccessEmailOutreachAsync } from "@/lib/channels/email-outreach-access";
 import { getSessionContext } from "@/lib/tenant/context";
 
 export default async function EmailOutreachLayout({
@@ -9,7 +9,7 @@ export default async function EmailOutreachLayout({
   children: React.ReactNode;
 }) {
   const ctx = await getSessionContext();
-  if (!canAccessEmailOutreach(ctx.email, ctx.member)) {
+  if (!(await canAccessEmailOutreachAsync(ctx.email, ctx.member))) {
     notFound();
   }
 

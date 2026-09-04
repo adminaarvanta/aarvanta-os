@@ -7,7 +7,6 @@ import { isOnboardingPending, shouldShowLaunchpad } from "@/lib/onboarding/catal
 import { getSessionContext } from "@/lib/tenant/context";
 import { ROLE_LABELS } from "@/types/tenant";
 import type { EntitlementsClient } from "@/lib/billing/entitlements";
-import { canAccessEmailOutreach } from "@/lib/channels/email-outreach-access";
 import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 import { redirect } from "next/navigation";
 
@@ -51,7 +50,6 @@ export default async function AppLayout({
     userRole = ROLE_LABELS[ctx.role] ?? ctx.role;
     userId = ctx.userId;
     showWhatsAppNav = canAccessWhatsAppOs(ctx.email);
-    showOutreachNav = canAccessEmailOutreach(ctx.email, ctx.member);
     hasSeenWalkthrough = Boolean(ctx.member?.hasSeenWalkthrough);
     showLaunchpad = shouldShowLaunchpad(bootstrapped.organization);
     const conversations = await getRepository().listConversations(ctx.scope);
@@ -68,9 +66,18 @@ export default async function AppLayout({
       "@/lib/data/site-build-store"
     );
     const buildJobs = await getSiteBuildRepository().list(ctx.scope);
-    entitlements = toClientEntitlements(await resolveEntitlements(ctx.scope), {
+    const resolved = await resolveEntitlements(ctx.scope);
+    entitlements = toClientEntitlements(resolved, {
       buildDraftsUsed: buildJobs.length,
     });
+    // Prefer entitlements (email-keyed grant store) so Email OS nav appears
+    // even when membership rows are stale.
+    const { canAccessEmailOutreachAsync } = await import(
+      "@/lib/channels/email-outreach-access"
+    );
+    showOutreachNav =
+      Boolean(resolved.creditOverrides.unlimitedEmailOutreach) ||
+      (await canAccessEmailOutreachAsync(ctx.email, ctx.member));
   } catch {
     const { getPlan } = await import("@/lib/billing/plan-catalog");
     const free = getPlan("free")!;

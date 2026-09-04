@@ -9,7 +9,7 @@ export type MemberStatus = "active" | "suspended";
 
 /** Super-admin grants for marketing / ops staff — not full platform super admin. */
 export type MemberCreditOverrides = {
-  /** No voice minute cap; Voice OS stays on plan feature gates. */
+  /** No voice minute cap + Voice OS module unlock (skips Free explore). */
   unlimitedVoice?: boolean;
   /** No email send cap + access to Email OS (/outreach). */
   unlimitedEmailOutreach?: boolean;
