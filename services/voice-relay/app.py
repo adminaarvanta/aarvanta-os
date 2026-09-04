@@ -76,7 +76,7 @@ TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-SERVICE_VERSION = "1.7.0"
+SERVICE_VERSION = "1.7.1"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -955,40 +955,51 @@ async def conversation_relay(websocket: WebSocket) -> None:
                         await speak(websocket, notice, call_context)
                     except Exception as exc:  # noqa: BLE001
                         log.warning("recording notice play failed: %s", exc)
-                # Always open with a spoken greeting (inbound + outbound).
-                opening_instruction = (
-                    OUTBOUND_OPENING_INSTRUCTION
-                    if direction.startswith("outbound")
-                    else INBOUND_OPENING_INSTRUCTION
+                # Twilio already spoke welcomeGreeting on inbound catalog calls.
+                # Opening again made the agent greet twice. Outbound / cloned
+                # calls have no TwiML welcome, so the relay still greets.
+                skip_opening = str(params.get("skipOpening") or "").strip().lower() in (
+                    "1",
+                    "true",
+                    "yes",
                 )
-                agent_name = str(call_context.get("voiceAgentName") or "Ava")
-                try:
-                    opening = await stream_reply(
-                        websocket,
-                        history,
-                        system,
-                        opening_instruction,
-                        call_context,
+                if skip_opening:
+                    log.info("skipping relay opening — TwiML already greeted")
+                    agent_name = str(call_context.get("voiceAgentName") or "Ava")
+                else:
+                    opening_instruction = (
+                        OUTBOUND_OPENING_INSTRUCTION
+                        if direction.startswith("outbound")
+                        else INBOUND_OPENING_INSTRUCTION
                     )
-                    # Drop the synthetic instruction from history; keep the
-                    # assistant's opening so the conversation flows naturally.
-                    if len(history) >= 2 and history[-2]["role"] == "user":
-                        del history[-2]
-                    transcript.append({"role": "assistant", "content": opening})
-                except Exception as exc:  # noqa: BLE001
-                    log.exception("opening line failed: %s", exc)
-                    if direction.startswith("outbound"):
-                        fallback = (
-                            f"Hi, this is {agent_name} calling from {BRAND_NAME}. "
-                            "Do you have a moment?"
+                    agent_name = str(call_context.get("voiceAgentName") or "Ava")
+                    try:
+                        opening = await stream_reply(
+                            websocket,
+                            history,
+                            system,
+                            opening_instruction,
+                            call_context,
                         )
-                    else:
-                        fallback = (
-                            f"Hi, thanks for calling {BRAND_NAME}. "
-                            f"This is {agent_name} — how can I help?"
-                        )
-                    await speak(websocket, fallback, call_context)
-                    transcript.append({"role": "assistant", "content": fallback})
+                        # Drop the synthetic instruction from history; keep the
+                        # assistant's opening so the conversation flows naturally.
+                        if len(history) >= 2 and history[-2]["role"] == "user":
+                            del history[-2]
+                        transcript.append({"role": "assistant", "content": opening})
+                    except Exception as exc:  # noqa: BLE001
+                        log.exception("opening line failed: %s", exc)
+                        if direction.startswith("outbound"):
+                            fallback = (
+                                f"Hi, this is {agent_name} calling from {BRAND_NAME}. "
+                                "Do you have a moment?"
+                            )
+                        else:
+                            fallback = (
+                                f"Hi, thanks for calling {BRAND_NAME}. "
+                                f"This is {agent_name} — how can I help?"
+                            )
+                        await speak(websocket, fallback, call_context)
+                        transcript.append({"role": "assistant", "content": fallback})
                 continue
 
             if msg_type == "prompt":
