@@ -1,12 +1,15 @@
-import type { ConversationRelayTtsProvider } from "@/lib/channels/voice-relay-tts";
+import { isDemoClonedVoiceId } from "@/lib/channels/cloned-voice";
 import {
   CUSTOM_VOICE_OPTION_ID,
   defaultVoiceIdFor,
+  languageMatches,
+  VOICE_CATALOG,
   VOICE_LANGUAGES,
 } from "@/lib/channels/voice-catalog";
 import {
   getConversationRelayTtsFromEnv,
   isVoiceRelayBudgetMode,
+  type ConversationRelayTtsProvider,
 } from "@/lib/channels/voice-relay-tts";
 import type { WorkspaceSettings } from "@/types/workspace-settings";
 
@@ -23,6 +26,30 @@ export type ResolvedVoiceCallingConfig = {
 
 const RECORDING_NOTICE =
   "This call may be recorded for quality and training purposes.";
+
+/**
+ * Locale safe to put on ConversationRelay TwiML.
+ * `multi` is only valid with ElevenLabs + Deepgram; Amazon/Google reject it
+ * and end the session. Unknown codes fall back to en-US so the call still connects.
+ */
+export function conversationRelayLanguage(
+  language: string | undefined,
+  provider: ConversationRelayTtsProvider
+): string {
+  const code = language?.trim() || "en-US";
+  if (code === "multi") {
+    return provider === "ElevenLabs" ? "multi" : "en-US";
+  }
+  if (!VOICE_LANGUAGES.some((item) => item.id === code)) return "en-US";
+  if (provider !== "ElevenLabs") {
+    const supported = VOICE_CATALOG.some(
+      (voice) =>
+        voice.provider === provider && languageMatches(voice.languages, code)
+    );
+    if (!supported) return "en-US";
+  }
+  return code;
+}
 
 export function resolveVoiceCallingConfig(
   settings?: Pick<
@@ -43,13 +70,16 @@ export function resolveVoiceCallingConfig(
     provider = "Amazon";
   }
 
-  const language =
+  const requestedLanguage =
     settings?.voiceLanguage &&
     VOICE_LANGUAGES.some((l) => l.id === settings.voiceLanguage)
       ? settings.voiceLanguage
       : "en-US";
+  const language = conversationRelayLanguage(requestedLanguage, provider);
 
-  const custom = settings?.voiceCustomId?.trim();
+  const customRaw = settings?.voiceCustomId?.trim();
+  const custom =
+    customRaw && !isDemoClonedVoiceId(customRaw) ? customRaw : "";
   const curated = settings?.voiceId?.trim();
   const voice =
     custom ||

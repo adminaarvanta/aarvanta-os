@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CUSTOM_VOICE_OPTION_ID,
   defaultVoiceIdFor,
+  languageMatches,
   VOICE_CATALOG,
   VOICE_LANGUAGES,
   voicesForProvider,
@@ -127,7 +128,9 @@ export function VoiceConfigPanel({
         voiceCustomId: next.voiceCustomId?.trim() || "",
         callRecordingEnabled: Boolean(next.callRecordingEnabled),
         callRecordingAnnounce: next.callRecordingAnnounce !== false,
-        voicePrimaryAgentId: next.voicePrimaryAgentId ?? "",
+        ...(next.voicePrimaryAgentId !== undefined
+          ? { voicePrimaryAgentId: next.voicePrimaryAgentId || "" }
+          : {}),
       };
       const res = await fetch("/api/voice/config", {
         method: "PATCH",
@@ -158,7 +161,7 @@ export function VoiceConfigPanel({
           (v) =>
             v.id === next.voiceId &&
             v.provider === p &&
-            (v.languages.length === 0 || v.languages.includes(lang))
+            languageMatches(v.languages, lang)
         );
         if (!stillValid) next.voiceId = defaultVoiceIdFor(p, lang);
       }

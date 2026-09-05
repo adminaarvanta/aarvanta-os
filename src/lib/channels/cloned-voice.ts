@@ -40,7 +40,11 @@ export function pickPreferredVoiceAgent(
     const match = agents.find((a) => a.id === primary);
     if (match) return match;
   }
-  return agents.find((a) => hasCustomVoiceSample(a)) ?? agents[0];
+  return (
+    agents.find((a) => Boolean(liveClonedVoiceId(a))) ??
+    agents.find((a) => hasCustomVoiceSample(a)) ??
+    agents[0]
+  );
 }
 
 /**

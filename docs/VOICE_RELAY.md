@@ -142,11 +142,13 @@ There is **no fully free** two-way PSTN AI on Twilio. Conversation Relay is **~$
 Twilio ConversationRelay can only speak **catalog** ElevenLabs/Google/Amazon voices. A clone from uploaded audio lives in the Aarvanta ElevenLabs account, so the EC2 relay synthesizes MP3s and sends ConversationRelay `{ type: "play", source }`.
 
 1. Create a **new** Voice Agent at **`/voice/agents`** (do not clone onto the default Ava persona).
-2. On that agent’s flow page, upload **or record** 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
+2. On that agent’s page, upload **or record** 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
 3. Leave **Use this agent as the default for Dialer, inbound, and scheduled calls** checked (or later click **Set as primary** / pick it under Voice settings → Primary Voice Agent). Campaigns can still choose a different agent.
 4. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
-5. Redeploy the relay (`version` ≥ **1.6.0**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy).
-6. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live cloned speech still needs production + the API key. The primary agent’s **script/flow** is used on Dialer/inbound even in demo.
+5. Redeploy the relay (`version` ≥ **1.7.1**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy). Inbound catalog calls use Twilio `welcomeGreeting` only — the relay does not greet a second time. Outbound and cloned calls still open from the relay.
+6. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live cloned speech still needs production + the API key. The primary agent’s **call playbook** is used on Dialer/inbound even in demo.
+
+The playbook on the agent page is coaching notes for each part of the call (greet, qualify, book, hang up). It is **not** a word-for-word script — the model paraphrases. Optional example lines are hints only.
 
 Agents without a ready clone keep the workspace Voice settings (Sarah/Rachel/etc.). Live calls resolve the agent in this order: explicit Dialer/campaign id → workspace primary → first agent with a custom clone → first agent.
 
@@ -155,7 +157,7 @@ Agents without a ready clone keep the workspace Voice settings (Sarah/Rachel/etc
 In **`/voice`** (and compact on **`/calling`**), operators can set:
 
 - **Provider** — ElevenLabs, Google, or Amazon Polly
-- **Language** — e.g. `en-US`, `en-GB`, `hi-IN` (passed to ConversationRelay + relay LLM prompt)
+- **Language** — e.g. `en-US`, `en-GB`, `hi-IN`. ConversationRelay gets the **workspace** locale (not the agent picker). `multi` (auto-detect) is only sent with ElevenLabs; Amazon/Google fall back to `en-US` so the session does not drop.
 - **Voice** — curated list (default **Sarah**), or paste a **custom Twilio/ElevenLabs voice ID**. Prefer Sarah/Rachel for natural reception; Mark (fast) uses `flash_v2_5` (lower latency, flatter).
 - **Primary Voice Agent** — persona used for inbound, Dialer, and scheduled calls when none is specified. A custom clone on that agent is what speaks on live calls.
 - **Record calls** — opt-in (default off); optional spoken consent notice

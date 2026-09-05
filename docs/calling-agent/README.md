@@ -7,7 +7,7 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 | Route | Purpose |
 |-------|---------|
 | `/voice` | Mission control dashboard |
-| `/voice/agents` | Personas — create a new agent, clone a custom voice, set one as **primary** for Dialer / inbound / scheduled calls |
+| `/voice/agents` | Personas — voice clone, primary agent, and call playbook (coaching notes, not a teleprompter) |
 | `/voice/campaigns` | Campaign list + 6-step wizard |
 | `/voice/live` | Live call monitor |
 | `/voice/queue` | Kanban queue |

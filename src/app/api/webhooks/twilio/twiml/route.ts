@@ -78,7 +78,9 @@ async function twimlResponse(req: Request) {
   });
   const resolvedAgentId = agent?.id ?? "";
   const clonedOnCall = Boolean(liveClonedVoiceId(agent));
-  const language = agent?.language?.trim() || voice.language;
+  // Workspace Relay locale — never the agent picker. An agent language like
+  // `multi` or an unsupported code with Amazon/Google ends the Twilio session.
+  const language = voice.language;
 
   const businessName = settings.businessName?.trim() || "Aarvanta";
   const defaultWelcome =
@@ -117,6 +119,7 @@ async function twimlResponse(req: Request) {
         sessionId,
         contactId,
         voiceAgentId: resolvedAgentId,
+        skipOpening: Boolean(welcome),
       })
     : buildSayTwiml(
         (brief || welcome || defaultWelcome).slice(0, 280),
@@ -159,6 +162,7 @@ function buildConversationRelayTwiml(
     sessionId?: string;
     contactId?: string;
     voiceAgentId?: string;
+    skipOpening?: boolean;
   }
 ) {
   const elevenNorm =
@@ -181,6 +185,9 @@ function buildConversationRelayTwiml(
       : "",
     params.voiceAgentId
       ? `<Parameter name="voiceAgentId" value="${escapeXml(params.voiceAgentId)}" />`
+      : "",
+    params.skipOpening
+      ? `<Parameter name="skipOpening" value="true" />`
       : "",
   ]
     .filter(Boolean)

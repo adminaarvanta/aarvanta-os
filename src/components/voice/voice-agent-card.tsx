@@ -59,14 +59,14 @@ export function VoiceAgentCard({
             : agent.ttsProvider
               ? ` · ${agent.ttsProvider}`
               : ""}{" "}
-        · {agent.flowConfig.stages.length} stages
+        · {agent.flowConfig.stages.length}-step playbook
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Link
           href={`/voice/agents/${agent.id}/flow`}
           className="inline-flex text-sm font-medium text-gold hover:underline"
         >
-          {catalogDefault && !cloned ? "Edit flow →" : "Voice & flow →"}
+          {catalogDefault && !cloned ? "Edit playbook →" : "Voice & playbook →"}
         </Link>
         {!isPrimary ? (
           <Button

@@ -22,13 +22,13 @@ export default async function AgentFlowPage({ params }: Params) {
 
   return (
     <VoicePageShell
-      title={`${agent.name} · Script / Flow`}
+      title={agent.name}
       subtitle={
         catalogDefault
           ? "Default catalog agent — create a new agent to clone a custom voice."
           : isPrimary
-            ? "Primary agent for Dialer, inbound, and scheduled calls. Clone a custom voice, then tune the flow."
-            : "Clone a custom voice for this persona, then set it as primary so real calls use it."
+            ? "Primary agent for Dialer, inbound, and scheduled calls. Set how they sound, then optionally tune the call playbook."
+            : "Set how they sound, optionally tune the call playbook, then mark as primary so real calls use this agent."
       }
       tone="navy"
       actions={
@@ -45,4 +45,4 @@ export default async function AgentFlowPage({ params }: Params) {
   );
 }
 
-export const metadata = { title: "Voice OS · Flow Builder" };
+export const metadata = { title: "Voice OS · Voice Agent" };

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import { formatPlaybookForRelay } from "@/lib/calling/call-playbook";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
@@ -143,14 +144,7 @@ export async function POST(req: Request) {
   }
 
   const flowConfig = agent?.flowConfig ?? DEFAULT_FLOW_CONFIG;
-  const stageBrief = flowConfig.stages
-    .map(
-      (s) =>
-        `${s.id}: ${s.objective} (transitions: ${s.transitions
-          .map((t) => `${t.when}→${t.to}`)
-          .join(", ") || "end"})`
-    )
-    .join("\n");
+  const stageBrief = formatPlaybookForRelay(flowConfig);
 
   const clonedVoiceId = liveClonedVoiceId(agent);
   const recordingNotice =
@@ -171,7 +165,7 @@ export async function POST(req: Request) {
     campaignGoal,
     memorySummary,
     voiceAgentName: agent?.greetingName ?? agent?.name ?? "Ava",
-    language: agent?.language ?? "en-US",
+    language: voicePrefs.language,
     entryStage: flowConfig.entryStage,
     flowStages: stageBrief,
     sessionId: parsed.data.sessionId,

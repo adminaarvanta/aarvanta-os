@@ -67,7 +67,7 @@ export function CreateVoiceAgentForm() {
       <p className="text-sm font-semibold text-foreground">Create a new agent</p>
       <p className="mt-0.5 text-xs text-muted">
         Ava stays on the workspace catalog voice. Create a new persona, then
-        clone your voice on that agent’s flow page.
+        clone your voice on that agent’s page.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <label className="block text-xs text-muted">

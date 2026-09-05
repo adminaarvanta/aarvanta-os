@@ -524,7 +524,7 @@ export const VOICE_CATALOG: VoiceCatalogEntry[] = [
 
 export const CUSTOM_VOICE_OPTION_ID = "__custom__";
 
-function languageMatches(
+export function languageMatches(
   voiceLanguages: string[],
   language?: string
 ): boolean {

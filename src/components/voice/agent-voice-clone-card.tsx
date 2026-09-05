@@ -351,8 +351,13 @@ export function AgentVoiceCloneCard({
 
       <details className="mt-3 rounded-xl border border-border bg-background px-3 py-2">
         <summary className="cursor-pointer text-xs font-semibold text-foreground">
-          Sample script to read (~1 minute)
+          Words to read while recording (~1 minute)
         </summary>
+        <p className="mt-2 text-[11px] text-muted">
+          Optional. Reading this out loud gives the clone a mix of greetings,
+          questions, and numbers. Speak naturally — do not sound like you are
+          reading a teleprompter.
+        </p>
         <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-muted">
           {VOICE_CLONE_SCRIPT}
         </p>
@@ -425,7 +430,7 @@ export function AgentVoiceCloneCard({
       <div className="mt-3 rounded-xl border border-dashed border-border px-3 py-3">
         <p className="text-xs font-semibold text-foreground">Record in browser</p>
         <p className="mt-0.5 text-[11px] text-muted">
-          Read the sample script in a quiet room. Aim for 1–2 minutes
+          Read the sample above in a quiet room. Aim for 1–2 minutes
           {elapsed > 0 ? ` · ${formatClock(elapsed)}` : ""}.
         </p>
         {takeUrl ? (
