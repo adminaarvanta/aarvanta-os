@@ -10,6 +10,7 @@ import type { PlanFeatureKey } from "@/lib/billing/module-access";
 import {
   hasUnlimitedEmailOutreach,
   hasUnlimitedVoice,
+  resolveCreditOverridesForScope,
   resolveCreditOverridesForSession,
 } from "@/lib/billing/member-credits";
 import { isCurrentUserSuperAdmin } from "@/lib/billing/super-admin";
@@ -75,7 +76,9 @@ export async function resolveEntitlements(
         member: ctx.member,
       });
     } catch {
-      /* no session — keep defaults */
+      // Cron / webhooks have no session — still honor workspace grants so
+      // Free + unlimitedEmailOutreach / unlimitedVoice metering succeeds.
+      creditOverrides = await resolveCreditOverridesForScope(scope);
     }
   }
 

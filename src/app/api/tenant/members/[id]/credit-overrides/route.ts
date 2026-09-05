@@ -15,7 +15,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdminSession();
+    const ctx = await requireSuperAdminSession();
     const { id } = await params;
     const body = await parseJsonBody<unknown>(req);
     if (body instanceof NextResponse) return body;
@@ -28,7 +28,8 @@ export async function PATCH(
     const updated = await applyCreditOverridesForEmail(
       getTenantRepository(),
       id,
-      parsed.data
+      parsed.data,
+      ctx.email
     );
     if (!updated) {
       return apiError("NOT_FOUND", "Member not found", 404);
@@ -36,6 +37,7 @@ export async function PATCH(
 
     return NextResponse.json({
       id: updated.id,
+      email: updated.email,
       creditOverrides: {
         unlimitedVoice: Boolean(updated.creditOverrides?.unlimitedVoice),
         unlimitedEmailOutreach: Boolean(

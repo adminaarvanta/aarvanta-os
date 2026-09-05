@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/request";
-import { canAccessEmailOutreach } from "@/lib/channels/email-outreach-access";
+import { canAccessEmailOutreachAsync } from "@/lib/channels/email-outreach-access";
 import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 import { runGlobalSearch } from "@/lib/search/global-search";
 import { getSessionContext } from "@/lib/tenant/context";
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 
     const results = await runGlobalSearch(ctx.scope, query, limit, {
       includeWhatsApp: canAccessWhatsAppOs(ctx.email),
-      includeOutreach: canAccessEmailOutreach(ctx.email, ctx.member),
+      includeOutreach: await canAccessEmailOutreachAsync(ctx.email, ctx.member),
     });
     return NextResponse.json({ query, results });
   } catch (error) {

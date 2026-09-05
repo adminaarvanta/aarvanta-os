@@ -39,7 +39,9 @@ export const MODULE_FEATURE_MAP: Record<string, PlanFeatureKey | "ungated"> = {
   communications: "unifiedInbox",
   whatsapp: "whatsappChannel",
   voice: "voiceAi",
-  outreach: "ungated",
+  // Email OS is grant-gated (not plan-gated for Free), but map to emailChannel
+  // so creditOverrides.unlimitedEmailOutreach unlocks explore banners/nav.
+  outreach: "emailChannel",
   calling: "voiceAi",
   crm: "crm",
   workforce: "aiWorkforce",

@@ -4,15 +4,18 @@ import { shouldShowLaunchpad } from "@/lib/onboarding/catalog";
 import { buildLaunchpadSnapshot } from "@/lib/onboarding/launchpad";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext } from "@/lib/tenant/context";
-import { canAccessEmailOutreach } from "@/lib/channels/email-outreach-access";
 import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
 
 export default async function DashboardPage() {
   const ctx = await getSessionContext();
-  const [snapshot, org, launchpad] = await Promise.all([
+  const { canAccessEmailOutreachAsync } = await import(
+    "@/lib/channels/email-outreach-access"
+  );
+  const [snapshot, org, launchpad, showOutreach] = await Promise.all([
     buildFounderSnapshot(ctx.scope),
     getTenantRepository().getOrganization(ctx.scope.tenantId),
     buildLaunchpadSnapshot(ctx.scope),
+    canAccessEmailOutreachAsync(ctx.email, ctx.member),
   ]);
 
   return (
@@ -20,7 +23,7 @@ export default async function DashboardPage() {
       userName={ctx.name || ctx.email}
       snapshot={snapshot}
       showWhatsApp={canAccessWhatsAppOs(ctx.email)}
-      showOutreach={canAccessEmailOutreach(ctx.email, ctx.member)}
+      showOutreach={showOutreach}
       setupGuide={
         shouldShowLaunchpad(org)
           ? {

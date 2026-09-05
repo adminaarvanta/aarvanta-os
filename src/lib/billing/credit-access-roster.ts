@@ -1,4 +1,10 @@
-import { normalizeMemberCreditOverrides } from "@/lib/billing/member-credits";
+import {
+  listCreditGrantOverrides,
+} from "@/lib/billing/credit-grant-store";
+import {
+  normalizeMemberCreditOverrides,
+  saveCreditOverridesForEmail,
+} from "@/lib/billing/member-credits";
 import type { TenantRepository } from "@/lib/data/tenant-repository";
 import type { MemberCreditOverrides, MemberRole, WorkspaceMember } from "@/types/tenant";
 
@@ -30,7 +36,6 @@ function emailKey(email: string) {
   return email.trim().toLowerCase();
 }
 
-/** Prefer memberships that already have grants, then higher roles, then newer. */
 function pickRepresentative(candidates: WorkspaceMember[]): WorkspaceMember {
   return [...candidates].sort((a, b) => {
     const aGrant =
@@ -63,9 +68,10 @@ function mergedOverrides(candidates: WorkspaceMember[]): MemberCreditOverrides {
 export async function buildCreditAccessRoster(
   repo: TenantRepository
 ): Promise<CreditAccessRosterEntry[]> {
-  const [members, organizations] = await Promise.all([
+  const [members, organizations, grantMap] = await Promise.all([
     repo.listAllMembers(),
     repo.listOrganizations(),
+    listCreditGrantOverrides(),
   ]);
   const workspaceLists = await Promise.all(
     organizations.map((org) => repo.listWorkspaces(org.id))
@@ -85,10 +91,43 @@ export async function buildCreditAccessRoster(
     byEmail.set(key, list);
   }
 
+  // Include emails that only exist in the grant store (edge cases).
+  for (const [key] of grantMap) {
+    if (!byEmail.has(key)) byEmail.set(key, []);
+  }
+
   const roster: CreditAccessRosterEntry[] = [];
-  for (const group of byEmail.values()) {
+  for (const [key, group] of byEmail.entries()) {
+    const fromStore = grantMap.get(key);
+    const fromMembers = normalizeMemberCreditOverrides(mergedOverrides(group));
+    const overrides = normalizeMemberCreditOverrides({
+      unlimitedVoice:
+        Boolean(fromStore?.unlimitedVoice) || fromMembers.unlimitedVoice,
+      unlimitedEmailOutreach:
+        Boolean(fromStore?.unlimitedEmailOutreach) ||
+        fromMembers.unlimitedEmailOutreach,
+    });
+
+    if (group.length === 0) {
+      // Grant-only row (no membership doc) — still show so super admin can clear.
+      roster.push({
+        id: `grant_${key}`,
+        userId: `user_${key.replace(/[^a-z0-9]+/g, "_").slice(0, 40)}`,
+        name: key.split("@")[0] || key,
+        email: key,
+        role: "member",
+        organizationName: "—",
+        workspaceName: "—",
+        membershipCount: 0,
+        creditOverrides: {
+          unlimitedVoice: Boolean(overrides.unlimitedVoice),
+          unlimitedEmailOutreach: Boolean(overrides.unlimitedEmailOutreach),
+        },
+      });
+      continue;
+    }
+
     const representative = pickRepresentative(group);
-    const overrides = normalizeMemberCreditOverrides(mergedOverrides(group));
     roster.push({
       id: representative.id,
       userId: representative.userId,
@@ -112,36 +151,60 @@ export async function buildCreditAccessRoster(
 }
 
 /**
- * Apply credit overrides to every active membership for this person
- * (same email), so grants work in any workspace they sign into.
+ * Apply credit overrides by email (memberships + email-keyed grant store).
  */
 export async function applyCreditOverridesForEmail(
   repo: TenantRepository,
   memberId: string,
-  overrides: MemberCreditOverrides
+  overrides: MemberCreditOverrides,
+  updatedBy?: string
 ): Promise<WorkspaceMember | null> {
   const all = await repo.listAllMembers();
-  const target = all.find((m) => m.id === memberId);
-  if (!target) return null;
+  const target =
+    all.find((m) => m.id === memberId) ??
+    (memberId.startsWith("grant_")
+      ? ({
+          id: memberId,
+          email: memberId.slice("grant_".length),
+          tenantId: "grant",
+          workspaceId: "grant",
+          companyId: "grant",
+          userId: memberId,
+          name: memberId.slice("grant_".length),
+          role: "member" as const,
+          status: "active" as const,
+          joinedAt: new Date(0).toISOString(),
+          updatedAt: new Date().toISOString(),
+        } satisfies WorkspaceMember)
+      : null);
+  if (!target?.email) return null;
 
-  const key = emailKey(target.email);
-  const siblings = all.filter(
-    (m) => m.status === "active" && emailKey(m.email) === key
-  );
+  const saved = await saveCreditOverridesForEmail({
+    email: target.email,
+    overrides,
+    updatedBy,
+  });
 
-  let primary: WorkspaceMember | null = null;
-  for (const member of siblings) {
-    const updated = await repo.updateMemberCreditOverrides(
-      member.id,
-      overrides,
-      {
-        tenantId: member.tenantId,
-        workspaceId: member.workspaceId,
-        companyId: member.companyId,
-      }
-    );
-    if (member.id === memberId) primary = updated;
-    else if (!primary) primary = updated;
+  if (target.id.startsWith("grant_")) {
+    return {
+      ...target,
+      creditOverrides: normalizeMemberCreditOverrides(saved),
+    };
   }
-  return primary;
+
+  const refreshed = await repo.getMember(target.id, {
+    tenantId: target.tenantId,
+    workspaceId: target.workspaceId,
+    companyId: target.companyId,
+  });
+  if (refreshed) {
+    return {
+      ...refreshed,
+      creditOverrides: normalizeMemberCreditOverrides(saved),
+    };
+  }
+  return {
+    ...target,
+    creditOverrides: normalizeMemberCreditOverrides(saved),
+  };
 }

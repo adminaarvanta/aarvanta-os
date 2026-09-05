@@ -294,7 +294,15 @@ export const tenantFirestoreRepository: TenantRepository = {
   async listMembershipsForEmail(email) {
     const raw = email.trim();
     const key = raw.toLowerCase();
-    const variants = raw === key ? [key] : [raw, key];
+    // Auth sessions normalize email to lowercase; membership docs may retain
+    // mixed case. Try common casings, then a case-insensitive full scan.
+    const variants = Array.from(
+      new Set(
+        raw === key
+          ? [key]
+          : [raw, key, raw.toUpperCase(), raw.replace(/^./, (c) => c.toUpperCase())]
+      )
+    );
     const byId = new Map<string, WorkspaceMember>();
     for (const value of variants) {
       const snap = await getDb()
@@ -306,7 +314,14 @@ export const tenantFirestoreRepository: TenantRepository = {
         if (data.status === "active") byId.set(data.id, data);
       }
     }
-    return [...byId.values()];
+    if (byId.size > 0) return [...byId.values()];
+
+    const snap = await getDb().collection(MEMBERS).get();
+    return snap.docs
+      .map((doc) => doc.data() as WorkspaceMember)
+      .filter(
+        (m) => m.status === "active" && m.email.trim().toLowerCase() === key
+      );
   },
 
   async createMember(input, scope) {
@@ -327,6 +342,16 @@ export const tenantFirestoreRepository: TenantRepository = {
       companyName: input.companyName,
       authProvider: input.authProvider,
       profileComplete: input.profileComplete ?? true,
+      ...(input.creditOverrides
+        ? {
+            creditOverrides: {
+              unlimitedVoice: Boolean(input.creditOverrides.unlimitedVoice),
+              unlimitedEmailOutreach: Boolean(
+                input.creditOverrides.unlimitedEmailOutreach
+              ),
+            },
+          }
+        : {}),
       joinedAt: now,
       updatedAt: now,
     };

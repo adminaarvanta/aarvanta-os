@@ -48,13 +48,24 @@ export function usePathAccess(pathname: string): {
     const key = featureKeyForPath(pathname);
     return { key, access: "ungated", locked: false, explore: false };
   }
-  // Super-admin credit grants unlock Voice for Free/explore users.
+  // Super-admin credit grants unlock Voice / Email OS for Free users.
   if (
     plan?.creditOverrides?.unlimitedVoice &&
     featureKeyForPath(pathname) === "voiceAi"
   ) {
     return {
       key: "voiceAi",
+      access: "full",
+      locked: false,
+      explore: false,
+    };
+  }
+  if (
+    plan?.creditOverrides?.unlimitedEmailOutreach &&
+    featureKeyForPath(pathname) === "emailChannel"
+  ) {
+    return {
+      key: "emailChannel",
       access: "full",
       locked: false,
       explore: false,
@@ -116,6 +127,12 @@ export function isNavHrefVisible(
   ) {
     return true;
   }
+  if (
+    featureKeyForPath(href) === "emailChannel" &&
+    plan.creditOverrides?.unlimitedEmailOutreach
+  ) {
+    return true;
+  }
   if (automationHref(href)) {
     return (
       plan.features.workflows !== "none" || plan.features.aiWorkforce !== "none"
@@ -137,6 +154,12 @@ export function isNavHrefLocked(
   if (
     featureKeyForPath(href) === "voiceAi" &&
     plan.creditOverrides?.unlimitedVoice
+  ) {
+    return false;
+  }
+  if (
+    featureKeyForPath(href) === "emailChannel" &&
+    plan.creditOverrides?.unlimitedEmailOutreach
   ) {
     return false;
   }
