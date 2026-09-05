@@ -2,6 +2,7 @@
 
 import {
   Check,
+  ImagePlus,
   Loader2,
   Monitor,
   Smartphone,
@@ -200,6 +201,21 @@ export function BuildStudioLayout({
             Preview
           </span>
         </div>
+        {done && photoCount === 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/30 bg-gold/10 px-3 py-2.5 sm:px-4">
+            <p className="text-xs text-foreground">
+              This preview still uses stock photos. Add the client’s real work pictures to replace them.
+            </p>
+            <button
+              type="button"
+              onClick={() => setRightTab("photos")}
+              className="inline-flex items-center gap-1 rounded-lg bg-gold px-2.5 py-1 text-[11px] font-semibold text-black"
+            >
+              <ImagePlus className="h-3.5 w-3.5" />
+              Add work photos
+            </button>
+          </div>
+        ) : null}
         <div className="min-h-0 flex-1 overflow-y-auto p-2 sm:p-5">
           {site ? (
             <div
@@ -227,8 +243,8 @@ export function BuildStudioLayout({
         <div className="flex border-b border-border-subtle">
           {(
             [
+              ["photos", photoCount ? `Photos (${photoCount})` : "Work photos"],
               ["assistant", "AI Assistant"],
-              ["photos", photoCount ? `Photos (${photoCount})` : "Photos"],
               ["website", "Your Website"],
             ] as const
           ).map(([id, label]) => (

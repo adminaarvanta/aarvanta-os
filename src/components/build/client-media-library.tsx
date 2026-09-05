@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { compressImageForUpload } from "@/lib/site-builder/compress-image";
@@ -39,6 +39,7 @@ export function ClientMediaLibrary({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<"upload" | string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   function reportError(message: string) {
     setLocalError(message);
@@ -148,63 +149,104 @@ export function ClientMediaLibrary({
   }
 
   return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-dim">
-          Your work photos
-        </p>
-        <p className={cn("mt-1 text-muted", compact ? "text-[11px]" : "text-xs")}>
-          Upload real photos of the work — plaques, products, the workshop. They replace
-          stock on the hero, gallery, and portfolio. We never invent pictures of your work.
-        </p>
-        {items.length ? (
-          <p className="mt-1 text-[11px] text-dim">
-            {items.length} uploaded
-            {appliedCount
-              ? ` · ${appliedCount} showing on the site`
-              : " · stock fills empty slots"}
+    <div className="space-y-4">
+      {!compact ? (
+        <div>
+          <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+            Work photos
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            Add the client’s real pictures — plaques, products, the workshop. They replace
+            stock on the hero, gallery, and portfolio. We never invent photos of the work.
           </p>
-        ) : (
-          <p className="mt-1 text-[11px] text-dim">
-            No client photos yet — the draft uses stock until you add some.
+        </div>
+      ) : (
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gold">
+            Your work photos
           </p>
-        )}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          multiple
-          className="hidden"
-          onChange={(event) => {
-            void uploadFiles(event.target.files);
-            event.target.value = "";
-          }}
-        />
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={disabled || busy === "upload" || items.length >= SITE_MEDIA_MAX_PER_JOB}
-          onClick={() => inputRef.current?.click()}
-        >
-          {busy === "upload" ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
-          )}
-          {items.length ? "Add photos" : "Upload photos"}
-        </Button>
-        <span className="text-[11px] text-dim">
-          JPEG, PNG, or WebP · up to {SITE_MEDIA_MAX_PER_JOB}
-        </span>
-      </div>
-      {localError ? <p className="text-xs text-red-400">{localError}</p> : null}
+          <p className="mt-1 text-xs text-muted">
+            Real client pictures replace stock. We never generate fake photos of the work.
+          </p>
+        </div>
+      )}
 
       {items.length ? (
-        <ul className={cn("grid gap-3", compact ? "grid-cols-2" : "grid-cols-1")}>
+        <p className="text-xs text-muted">
+          {items.length} uploaded
+          {appliedCount ? ` · ${appliedCount} showing on the site` : " · stock fills empty slots"}
+        </p>
+      ) : (
+        <p className="text-xs text-dim">Optional — skip if you only have stock for now.</p>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          void uploadFiles(event.target.files);
+          event.target.value = "";
+        }}
+      />
+
+      <button
+        type="button"
+        disabled={disabled || busy === "upload" || items.length >= SITE_MEDIA_MAX_PER_JOB}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragOver(false);
+          void uploadFiles(event.dataTransfer.files);
+        }}
+        className={cn(
+          "flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 text-center transition",
+          compact ? "min-h-[140px] py-6" : "min-h-[220px] py-10",
+          dragOver
+            ? "border-gold bg-gold/15"
+            : "border-gold/50 bg-gold/5 hover:border-gold hover:bg-gold/10",
+          (disabled || busy === "upload") && "opacity-70"
+        )}
+      >
+        {busy === "upload" ? (
+          <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        ) : (
+          <Upload className={cn("text-gold", compact ? "h-7 w-7" : "h-10 w-10")} />
+        )}
+        <p className={cn("mt-3 font-semibold text-foreground", compact ? "text-sm" : "text-base")}>
+          {busy === "upload" ? "Uploading…" : "Drop work photos here"}
+        </p>
+        <p className="mt-1 text-xs text-muted">
+          or click to browse · JPEG, PNG, WebP · up to {SITE_MEDIA_MAX_PER_JOB}
+        </p>
+      </button>
+
+      {items.length ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={disabled || busy === "upload" || items.length >= SITE_MEDIA_MAX_PER_JOB}
+            onClick={() => inputRef.current?.click()}
+          >
+            <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
+            Add more
+          </Button>
+        </div>
+      ) : null}
+
+      {localError ? <p className="text-sm text-red-400">{localError}</p> : null}
+
+      {items.length ? (
+        <ul className={cn("grid gap-3", compact ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3")}>
           {items.map((item) => (
             <li
               key={item.id}
@@ -214,7 +256,7 @@ export function ClientMediaLibrary({
               <img
                 src={item.url}
                 alt={item.caption || item.name}
-                className="h-28 w-full object-cover"
+                className="h-36 w-full object-cover"
               />
               <div className="space-y-2 p-2.5">
                 <p className="truncate text-[11px] text-muted" title={item.name}>

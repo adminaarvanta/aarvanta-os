@@ -222,7 +222,7 @@ Build OS generates multi-page marketing sites from a structured brief:
 
 Sites are dense React block trees (hero, pricing, FAQ, galleries, booking CTAs, etc.), filled by heuristics and optionally OpenAI.
 
-**Photos:** upload the client’s own work photos in the wizard (Add Apps) or the studio **Photos** tab. Those files are stored separately from the build job (so Firestore docs stay small) and mapped onto hero, gallery, portfolio, about, and product slots. Stock photography fills only the leftover slots — Build OS does not invent pictures of the client’s work. Unsplash is used when `UNSPLASH_ACCESS_KEY` is set; otherwise curated Unsplash CDN + picsum + DiceBear avatars.
+**Photos:** upload the client’s own work photos on the **Work photos** wizard step or the studio **Work photos** tab. Those files are stored separately from the build job (so Firestore docs stay small) and mapped onto hero, gallery, portfolio, about, and product slots. Stock photography fills only the leftover slots — Build OS does not invent pictures of the client’s work. Unsplash is used when `UNSPLASH_ACCESS_KEY` is set; otherwise curated Unsplash CDN + picsum + DiceBear avatars.
 
 ```bash
 # Optional — richer stock photography for generated sites
