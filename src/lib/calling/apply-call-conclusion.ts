@@ -51,11 +51,27 @@ async function completeTask(
   );
 }
 
+function hasConclusionApplied(session: CallSession) {
+  return (session.crmUpdates ?? []).some(
+    (update) => update === "Conclusion applied" || update.startsWith("Conclusion applied")
+  );
+}
+
 export async function applyCallConclusion(
   session: CallSession,
   scope: TenantScope
 ): Promise<{ conclusion: CallConclusion; task?: CrmTask }> {
+  if (hasConclusionApplied(session)) {
+    return {
+      conclusion: session.conclusion ?? {
+        outcome: session.outcome ?? "completed",
+        nextAction: "none",
+      },
+    };
+  }
+
   if (!session.contactId) {
+    await markConclusionApplied(session, scope);
     return {
       conclusion: session.conclusion ?? {
         outcome: session.outcome ?? "completed",
@@ -68,6 +84,7 @@ export async function applyCallConclusion(
   const calling = getCallingAgentRepository();
   const contact = await crm.getContact(session.contactId, scope);
   if (!contact) {
+    await markConclusionApplied(session, scope);
     return {
       conclusion: session.conclusion ?? {
         outcome: session.outcome ?? "completed",
@@ -109,7 +126,7 @@ export async function applyCallConclusion(
     : null;
   const originatingTaskId = session.crmTaskId ?? originating?.crmTaskId;
 
-  if (isFailedCallOutcome(conclusion.outcome) && originating) {
+  if (isFailedCallOutcome(conclusion.outcome) && originating?.status === "calling") {
     const attempts = (originating.attemptCount ?? 0) + 1;
     const max = DEFAULT_RETRY_POLICY.maxRetries;
     if (attempts < max && contact.phone) {
@@ -142,6 +159,9 @@ export async function applyCallConclusion(
         timeZone: slotOptions.timeZone,
         kind: "missed",
       });
+      await markConclusionApplied(session, scope, [
+        `Retry scheduled after ${conclusion.outcome}`,
+      ]);
       return { conclusion };
     }
 
@@ -155,6 +175,7 @@ export async function applyCallConclusion(
       scope,
       `Closed after ${attempts} attempts (${conclusion.outcome}).`
     );
+    await markConclusionApplied(session, scope);
     return { conclusion };
   }
 
@@ -176,6 +197,7 @@ export async function applyCallConclusion(
   }
 
   if (conclusion.nextAction === "meeting") {
+    await markConclusionApplied(session, scope);
     return { conclusion };
   }
 
@@ -187,6 +209,7 @@ export async function applyCallConclusion(
         summary: conclusion.notes,
       });
     }
+    await markConclusionApplied(session, scope);
     return { conclusion };
   }
 
@@ -197,6 +220,7 @@ export async function applyCallConclusion(
       t.status !== "done"
   );
   if (existingOpen) {
+    await markConclusionApplied(session, scope);
     return { conclusion, task: existingOpen };
   }
 
@@ -248,6 +272,7 @@ export async function applyCallConclusion(
       summary: conclusion.notes,
       infoToSend: conclusion.infoToSend || conclusion.notes,
     });
+    await markConclusionApplied(session, scope, [`Created AI voice task ${task.id}`]);
     return { conclusion, task };
   }
 
@@ -339,13 +364,28 @@ export async function applyCallConclusion(
     timeZone: slotOptions.timeZone,
   });
 
-  const crmUpdates = [
-    ...(session.crmUpdates ?? []),
+  await markConclusionApplied(session, scope, [
     `Next action: ${conclusion.nextAction}`,
     task ? `Created AI voice task ${task.id}` : null,
     scheduledCallId ? `Scheduled follow-up ${scheduledCallId}` : null,
-  ].filter((v): v is string => Boolean(v));
-  await calling.updateSession(session.id, { crmUpdates }, scope);
+  ]);
 
   return { conclusion, task };
+}
+
+async function markConclusionApplied(
+  session: CallSession,
+  scope: TenantScope,
+  extras: Array<string | null | undefined> = []
+) {
+  const calling = getCallingAgentRepository();
+  const crmUpdates = [
+    ...(session.crmUpdates ?? []),
+    "Conclusion applied",
+    ...extras,
+  ].filter((value, index, list): value is string => {
+    if (!value) return false;
+    return list.indexOf(value) === index;
+  });
+  await calling.updateSession(session.id, { crmUpdates }, scope);
 }

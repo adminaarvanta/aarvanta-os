@@ -79,7 +79,12 @@ export function voiceToneForStatus(status: string): VoiceTone {
     case "running":
     case "calling":
     case "in_progress":
+    case "live":
       return "cyan";
+    case "connecting":
+      return "blue";
+    case "ringing":
+      return "amber";
     case "booked_meeting":
     case "meeting_booked":
     case "completed":
@@ -100,6 +105,8 @@ export function voiceToneForStatus(status: string): VoiceTone {
     case "not_interested":
     case "wrong_number":
     case "skipped":
+    case "stale":
+    case "disconnected":
       return "rose";
     default:
       return "slate";

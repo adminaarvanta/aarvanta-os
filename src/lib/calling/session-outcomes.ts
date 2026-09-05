@@ -1,5 +1,5 @@
+import { isFailedCallOutcome, inferCallConclusion, isCallOutcome } from "@/lib/calling/call-conclusion";
 import { nextAttemptAtForOutcome } from "@/lib/calling/retry-policy";
-import { inferCallConclusion, isCallOutcome } from "@/lib/calling/call-conclusion";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { crmNow } from "@/lib/data/crm-helpers";
 import type { TenantScope } from "@/types/communication";
@@ -34,6 +34,7 @@ export async function finalizeCallSession(input: {
   recordingUrl?: string;
   recordingSid?: string;
   durationSeconds?: number;
+  status?: CallSession["status"];
 }) {
   const repo = getCallingAgentRepository();
   let session: CallSession | null = null;
@@ -75,16 +76,24 @@ export async function finalizeCallSession(input: {
     );
   }
 
-  const endedAt = crmNow();
+  const endedAt = session.endedAt ?? crmNow();
   const started = new Date(session.startedAt).getTime();
   const durationSeconds =
     input.durationSeconds ??
+    session.durationSeconds ??
     Math.max(0, Math.round((Date.now() - started) / 1000));
+
+  const failedConnect =
+    isFailedCallOutcome(conclusion.outcome) &&
+    !(input.turns.length || session.transcript.length);
+  const nextStatus =
+    input.status ??
+    (failedConnect || isFailedCallOutcome(conclusion.outcome) ? "failed" : "completed");
 
   const updated = await repo.updateSession(
     session.id,
     {
-      status: "completed",
+      status: nextStatus,
       endedAt,
       durationSeconds,
       transcript: input.turns.length ? input.turns : session.transcript,
@@ -110,7 +119,7 @@ export async function finalizeCallSession(input: {
     const campaign = updated.campaignId
       ? await repo.getCampaign(updated.campaignId, input.scope)
       : null;
-    if (queueItem && campaign) {
+    if (queueItem?.status === "calling" && campaign) {
       const usesFollowUpSchedule =
         conclusion.nextAction === "callback" ||
         conclusion.nextAction === "follow_up" ||

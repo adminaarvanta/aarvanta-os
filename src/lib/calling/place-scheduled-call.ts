@@ -1,4 +1,6 @@
+import { closeCallSession } from "@/lib/calling/close-call-session";
 import { deliverOutbound } from "@/lib/channels/deliver";
+import { shouldSimulateChannel } from "@/lib/channels/config";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import {
@@ -28,6 +30,7 @@ export async function placeScheduledCall(
     workspaceId: item.workspaceId,
     companyId: item.companyId,
   };
+  let sessionId: string | undefined;
   try {
     const repo = getRepository();
     const calling = getCallingAgentRepository();
@@ -75,6 +78,7 @@ export async function placeScheduledCall(
       },
       scope
     );
+    sessionId = session.id;
 
     if (item.crmTaskId) {
       await crm.updateTask(
@@ -84,29 +88,43 @@ export async function placeScheduledCall(
       );
     }
 
-    const delivery = await deliverOutbound({
-      channel: "voice",
-      contact: {
-        ...conversation.contact,
-        phone: conversation.contact.phone ?? item.phone,
-        name:
-          item.contactName ??
-          (crmContact
-            ? contactDisplayName(crmContact)
-            : conversation.contact.name),
-      },
-      content: item.message,
-      conversationId: conversation.id,
-      voiceDirection: "outbound",
-      contactId: crmContact?.id,
-      sessionId: session.id,
-      voiceAgentId: agent?.id,
-    });
+    let delivery;
+    try {
+      delivery = await deliverOutbound({
+        channel: "voice",
+        contact: {
+          ...conversation.contact,
+          phone: conversation.contact.phone ?? item.phone,
+          name:
+            item.contactName ??
+            (crmContact
+              ? contactDisplayName(crmContact)
+              : conversation.contact.name),
+        },
+        content: item.message,
+        conversationId: conversation.id,
+        voiceDirection: "outbound",
+        contactId: crmContact?.id,
+        sessionId: session.id,
+        voiceAgentId: agent?.id,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Twilio voice delivery failed";
+      await closeCallSession({
+        scope,
+        sessionId: session.id,
+        outcome: "failed",
+        summary: message,
+        applySideEffects: false,
+      });
+      throw error;
+    }
 
     await calling.updateSession(
       session.id,
       {
-        status: "in_progress",
+        status: shouldSimulateChannel("voice") ? "in_progress" : "ringing",
         callSid: delivery.callSid,
         summary: item.message,
       },
@@ -142,6 +160,15 @@ export async function placeScheduledCall(
       { status: "failed", error: message },
       scope
     );
+    if (sessionId) {
+      await closeCallSession({
+        scope,
+        sessionId,
+        outcome: "failed",
+        summary: message,
+        applySideEffects: false,
+      });
+    }
     return { id: item.id, ok: false, error: message };
   }
 }

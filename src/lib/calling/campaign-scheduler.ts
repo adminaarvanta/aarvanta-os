@@ -1,4 +1,6 @@
+import { closeCallSession } from "@/lib/calling/close-call-session";
 import { isWithinWorkingHours, countCallsToday } from "@/lib/calling/working-hours";
+import { shouldSimulateChannel } from "@/lib/channels/config";
 import { deliverOutbound } from "@/lib/channels/deliver";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
@@ -63,16 +65,26 @@ export async function runCampaignScheduler(limit = 10): Promise<SchedulerResult[
       results.push({ id: item.id, ok: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed";
-      await repo.updateQueueItem(
-        item.id,
-        {
-          status: "failed",
-          lastOutcome: "failed",
-          attemptCount: item.attemptCount + 1,
-          lastAttemptAt: crmNow(),
-        },
-        scope
-      );
+      const current = await repo.getQueueItem(item.id, scope);
+      if (current?.sessionId) {
+        await closeCallSession({
+          scope,
+          sessionId: current.sessionId,
+          outcome: "failed",
+          summary: message,
+        });
+      } else {
+        await repo.updateQueueItem(
+          item.id,
+          {
+            status: "failed",
+            lastOutcome: "failed",
+            attemptCount: item.attemptCount + 1,
+            lastAttemptAt: crmNow(),
+          },
+          scope
+        );
+      }
       results.push({ id: item.id, ok: false, error: message });
     }
   }
@@ -168,37 +180,52 @@ export async function dialQueueItem(item: CallQueueItem) {
     .filter(Boolean)
     .join(" ");
 
-  const delivery = await deliverOutbound({
-    channel: "voice",
-    contact: {
-      ...conversation.contact,
-      phone: contact.phone,
-      name: contactDisplayName(contact),
-    },
-    content: briefing,
-    conversationId: conversation.id,
-    voiceDirection: "outbound",
-    campaignId: campaign.id,
-    queueId: item.id,
-    sessionId: session.id,
-    contactId: contact.id,
-    voiceAgentId: agent?.id,
-  });
+  try {
+    const delivery = await deliverOutbound({
+      channel: "voice",
+      contact: {
+        ...conversation.contact,
+        phone: contact.phone,
+        name: contactDisplayName(contact),
+      },
+      content: briefing,
+      conversationId: conversation.id,
+      voiceDirection: "outbound",
+      campaignId: campaign.id,
+      queueId: item.id,
+      sessionId: session.id,
+      contactId: contact.id,
+      voiceAgentId: agent?.id,
+    });
 
-  await inbox.addOutboundCall(
-    conversation.id,
-    {
-      summary: `[Campaign ${campaign.name}] Outbound AI call`,
-      callSid: delivery.callSid,
-      durationSeconds: 0,
-    },
-    scope,
-    { name: agent?.name ?? "Voice Agent", id: agent?.id ?? "voice-agent" }
-  );
+    await inbox.addOutboundCall(
+      conversation.id,
+      {
+        summary: `[Campaign ${campaign.name}] Outbound AI call`,
+        callSid: delivery.callSid,
+        durationSeconds: 0,
+      },
+      scope,
+      { name: agent?.name ?? "Voice Agent", id: agent?.id ?? "voice-agent" }
+    );
 
-  await repo.updateSession(
-    session.id,
-    { status: "in_progress", callSid: delivery.callSid, summary: briefing },
-    scope
-  );
+    await repo.updateSession(
+      session.id,
+      {
+        status: shouldSimulateChannel("voice") ? "in_progress" : "ringing",
+        callSid: delivery.callSid,
+        summary: briefing,
+      },
+      scope
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Twilio voice delivery failed";
+    await closeCallSession({
+      scope,
+      sessionId: session.id,
+      outcome: "failed",
+      summary: message,
+    });
+    throw error;
+  }
 }

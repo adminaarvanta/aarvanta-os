@@ -202,6 +202,14 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
       )
       .slice(0, limit);
   },
+  async listQueueItemsByStatus(status, limit = 100) {
+    const snap = await getDb()
+      .collection(COLLECTIONS.queue)
+      .where("status", "==", status)
+      .limit(limit)
+      .get();
+    return snap.docs.map((d) => d.data() as CallQueueItem);
+  },
 
   async listSessions(scope, filters) {
     let items = await listScoped<CallSession>(COLLECTIONS.sessions, scope);
@@ -257,6 +265,31 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
     if (!existing) return null;
     const updated = { ...existing, ...patch, updatedAt: crmNow() };
     return save(COLLECTIONS.sessions, updated);
+  },
+  async listOpenSessions(limit = 100) {
+    const db = getDb();
+    const [ringing, inProgress] = await Promise.all([
+      db
+        .collection(COLLECTIONS.sessions)
+        .where("status", "==", "ringing")
+        .limit(limit)
+        .get(),
+      db
+        .collection(COLLECTIONS.sessions)
+        .where("status", "==", "in_progress")
+        .limit(limit)
+        .get(),
+    ]);
+    const items = [
+      ...ringing.docs.map((d) => d.data() as CallSession),
+      ...inProgress.docs.map((d) => d.data() as CallSession),
+    ];
+    return items
+      .sort(
+        (a, b) =>
+          new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
+      )
+      .slice(0, limit);
   },
 
   async listMeetings(scope, filters) {

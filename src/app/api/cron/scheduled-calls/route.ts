@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sweepStaleSessions } from "@/lib/calling/sweep-stale-sessions";
 import { runScheduledCallExecutor } from "@/lib/calling/place-scheduled-call";
 
 export const runtime = "nodejs";
@@ -16,6 +17,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const sweep = await sweepStaleSessions();
   const results = await runScheduledCallExecutor();
-  return NextResponse.json({ processed: results.length, results });
+  return NextResponse.json({ processed: results.length, swept: sweep, results });
 }
