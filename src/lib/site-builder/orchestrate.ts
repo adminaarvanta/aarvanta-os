@@ -4,6 +4,7 @@ import {
   type PipelineProgressEvent,
 } from "@/lib/site-builder/agents/pipeline";
 import { generateDesignOptions } from "@/lib/site-builder/agents/design-options";
+import { applyClientMediaToSite } from "@/lib/site-builder/apply-client-media";
 import { planSiteFromPreferences } from "@/lib/site-builder/plan-site";
 import { generateSiteFromPlan } from "@/lib/site-builder/generate-site";
 import { resolveSiteThemeWithBrand } from "@/lib/site-builder/theme-presets";
@@ -41,10 +42,20 @@ export async function proposeDesignOptions(
 ): Promise<SiteBuildJob> {
   try {
     const { preferences, usedAi } = await generateDesignOptions(job.preferences, opts);
+    const media = job.clientMedia ?? [];
+    const withPhotos = media.length
+      ? {
+          ...preferences,
+          designOptions: preferences.designOptions?.map((option) => ({
+            ...option,
+            preview: applyClientMediaToSite(option.preview, media),
+          })),
+        }
+      : preferences;
     return {
       ...job,
       status: "designs_ready",
-      preferences,
+      preferences: withPhotos,
       usedAi,
       error: undefined,
       generatedSite: undefined,

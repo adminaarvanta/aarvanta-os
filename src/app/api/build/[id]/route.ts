@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
+import { getSiteMediaRepository } from "@/lib/data/site-media-store";
 import { persistDraftPreferences } from "@/lib/site-builder/orchestrate";
 import { normalizeSitePreferences } from "@/lib/site-builder/normalize-preferences";
 import { siteDraftPreferencesSchema } from "@/lib/site-builder/schemas";
@@ -25,7 +26,8 @@ export async function GET(_req: Request, context: RouteContext) {
     );
   }
 
-  return NextResponse.json({ job });
+  const media = await getSiteMediaRepository().listByJob(id, scope);
+  return NextResponse.json({ job: { ...job, clientMedia: media } });
 }
 
 /** Save draft preferences without regenerating the site. */
@@ -88,6 +90,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  await getSiteMediaRepository().removeByJob(id, scope);
   const removed = await getSiteBuildRepository().remove(id, scope);
   if (!removed) {
     return NextResponse.json(

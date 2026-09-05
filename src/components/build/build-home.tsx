@@ -241,7 +241,7 @@ export function BuildHome({
           empty && "hidden"
         )}
       >
-        Tip: upload your product logo on the Site Name step so it appears in the header.
+        Tip: upload your logo on Site Name, and real work photos on Add Apps — they replace stock on the site.
       </p>
     </div>
   );
