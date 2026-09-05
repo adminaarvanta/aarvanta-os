@@ -94,4 +94,6 @@ export type CreateMemberInput = {
   companyName?: string;
   authProvider?: import("@/types/tenant").MemberAuthProvider;
   profileComplete?: boolean;
+  /** Copied from credit access grants when ensuring a membership row. */
+  creditOverrides?: import("@/types/tenant").MemberCreditOverrides;
 };

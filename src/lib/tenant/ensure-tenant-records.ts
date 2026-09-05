@@ -43,12 +43,29 @@ export async function ensureTenantRecords(
 
   const membership = await repo.getMemberByUser(ctx.userId, scope);
   if (!membership) {
+    let creditOverrides: import("@/types/tenant").MemberCreditOverrides | undefined;
+    try {
+      const { resolveCreditOverridesForSession } = await import(
+        "@/lib/billing/member-credits"
+      );
+      const resolved = await resolveCreditOverridesForSession({
+        email: ctx.email,
+        member: ctx.member,
+      });
+      if (resolved.unlimitedVoice || resolved.unlimitedEmailOutreach) {
+        creditOverrides = resolved;
+      }
+    } catch {
+      /* best-effort — grants still resolve via email store on read */
+    }
+
     await repo.createMember(
       {
         userId: ctx.userId,
         email: ctx.email,
         name: ctx.name,
         role: ctx.role,
+        ...(creditOverrides ? { creditOverrides } : {}),
       },
       scope
     );

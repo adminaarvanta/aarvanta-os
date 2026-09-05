@@ -259,6 +259,16 @@ export const tenantMemoryRepository: TenantRepository = {
       companyName: input.companyName,
       authProvider: input.authProvider,
       profileComplete: input.profileComplete ?? true,
+      ...(input.creditOverrides
+        ? {
+            creditOverrides: {
+              unlimitedVoice: Boolean(input.creditOverrides.unlimitedVoice),
+              unlimitedEmailOutreach: Boolean(
+                input.creditOverrides.unlimitedEmailOutreach
+              ),
+            },
+          }
+        : {}),
       joinedAt: now,
       updatedAt: now,
     };
