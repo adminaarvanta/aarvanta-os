@@ -329,3 +329,30 @@ export function createConversation(
     timeline,
   };
 }
+
+/** Drop WhatsApp channel + WhatsApp messages. Returns null when the thread should be deleted. */
+export function stripWhatsAppHistory(
+  conv: Conversation
+): Conversation | null {
+  const timeline = conv.timeline.filter(
+    (event) => !(event.type === "message" && event.channel === "whatsapp")
+  );
+  const channels = conv.channels.filter((channel) => channel !== "whatsapp");
+  const hadWhatsApp =
+    conv.channels.includes("whatsapp") ||
+    conv.timeline.some(
+      (event) => event.type === "message" && event.channel === "whatsapp"
+    );
+  if (!hadWhatsApp) return conv;
+  if (channels.length === 0 && timeline.length === 0) return null;
+
+  const last = timeline[timeline.length - 1];
+  return {
+    ...conv,
+    channels,
+    timeline,
+    unreadCount: 0,
+    lastActivityAt: last?.occurredAt ?? conv.createdAt,
+    updatedAt: new Date().toISOString(),
+  };
+}

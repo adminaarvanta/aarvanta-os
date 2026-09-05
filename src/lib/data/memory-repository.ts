@@ -12,6 +12,7 @@ import {
   attachCallRecording,
   patchTimelineCallBySid,
   createConversation,
+  stripWhatsAppHistory,
   inScope,
   newId,
   normalizeEmail,
@@ -439,6 +440,26 @@ export const memoryRepository: ConversationRepository = {
     getConversations()[idx].unreadCount = 0;
     getConversations()[idx].updatedAt = new Date().toISOString();
     return structuredClone(getConversations()[idx]);
+  },
+
+  async clearWhatsAppHistory(scope) {
+    const store = getConversations();
+    let updated = 0;
+    let deleted = 0;
+    for (let i = store.length - 1; i >= 0; i--) {
+      const conv = store[i];
+      if (!conv || !inScope(conv, scope)) continue;
+      const next = stripWhatsAppHistory(conv);
+      if (next === conv) continue;
+      if (next === null) {
+        store.splice(i, 1);
+        deleted += 1;
+        continue;
+      }
+      store[i] = next;
+      updated += 1;
+    }
+    return { updated, deleted };
   },
 };
 

@@ -11,6 +11,7 @@ import {
   attachCallRecording,
   patchTimelineCallBySid,
   createConversation,
+  stripWhatsAppHistory,
   inScope,
   newId,
   normalizeEmail,
@@ -443,5 +444,24 @@ export const firestoreRepository: ConversationRepository = {
       unreadCount: 0,
       updatedAt: new Date().toISOString(),
     });
+  },
+
+  async clearWhatsAppHistory(scope) {
+    const items = await listScoped(scope);
+    let updated = 0;
+    let deleted = 0;
+    const db = getDb();
+    for (const conv of items) {
+      const next = stripWhatsAppHistory(conv);
+      if (next === conv) continue;
+      if (next === null) {
+        await db.collection(COLLECTION).doc(conv.id).delete();
+        deleted += 1;
+        continue;
+      }
+      await save(next);
+      updated += 1;
+    }
+    return { updated, deleted };
   },
 };

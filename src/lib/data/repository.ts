@@ -155,6 +155,11 @@ export interface ConversationRepository {
     conversationId: string,
     scope: TenantScope
   ): Promise<Conversation | null>;
+  /** Remove WhatsApp messages/threads in this workspace. Other channels stay. */
+  clearWhatsAppHistory(scope: TenantScope): Promise<{
+    updated: number;
+    deleted: number;
+  }>;
 }
 
 export function getRepository(): ConversationRepository {

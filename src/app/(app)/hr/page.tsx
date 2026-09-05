@@ -11,9 +11,8 @@ export default async function HrOverviewPage() {
   const scope = await getTenantScope();
   await ensureHrPlatformSeed(scope);
   const hr = getHrStore();
-  const [jobs, candidates, employees, punches, leave, exits, onboarding] =
+  const [candidates, employees, punches, leave, exits, onboarding] =
     await Promise.all([
-      hr.listJobs(scope),
       hr.list(scope),
       hr.listEmployees(scope),
       hr.listPunches(scope),
@@ -22,7 +21,6 @@ export default async function HrOverviewPage() {
       getOnboardingDashboard(),
     ]);
 
-  const openJobs = jobs.filter((j) => j.status === "open").length;
   const activeEmployees = employees.filter((e) => e.status !== "exited").length;
   const pendingLeave = leave.filter((l) => l.status === "pending").length;
   const pendingOnboarding =
@@ -32,15 +30,15 @@ export default async function HrOverviewPage() {
     <div className="space-y-6">
       <HrPageHeader
         title="People lifecycle"
-        description="From job post to exit documents — one colourful HR workspace."
+        description="From candidates to exit documents — one colourful HR workspace."
         actions={
           <div className="flex flex-wrap gap-2">
             <AskAiButton module="hr" />
             <PendingLink
-              href="/hr/jobs"
+              href="/hr/candidates"
               className="inline-flex items-center justify-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black shadow-sm shadow-gold/20 transition-colors hover:bg-gold-bright"
             >
-              Post a job
+              Candidates
             </PendingLink>
             <PendingLink
               href="/hr/onboarding"
@@ -54,7 +52,6 @@ export default async function HrOverviewPage() {
 
       <HrStatStrip
         items={[
-          { label: "Open jobs", value: openJobs, tone: "cyan", hint: `${jobs.length} total` },
           {
             label: "Pipeline",
             value: candidates.filter((c) => c.status !== "hired" && c.status !== "rejected").length,

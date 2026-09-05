@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import {
-  Briefcase,
   CalendarDays,
   ClipboardList,
   DoorOpen,
@@ -20,7 +19,6 @@ import { cn } from "@/lib/utils";
 
 export const HR_TABS = [
   { href: "/hr", label: "Overview", exact: true, icon: LayoutDashboard },
-  { href: "/hr/jobs", label: "Jobs", icon: Briefcase },
   { href: "/hr/candidates", label: "Candidates", icon: UserPlus },
   { href: "/hr/onboarding", label: "Onboarding", icon: ClipboardList },
   { href: "/hr/employees", label: "Employees", icon: Users },
