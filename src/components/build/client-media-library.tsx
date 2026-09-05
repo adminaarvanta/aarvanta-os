@@ -38,11 +38,17 @@ export function ClientMediaLibrary({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<"upload" | string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  function reportError(message: string) {
+    setLocalError(message);
+    onError?.(message);
+  }
 
   async function resolveJobId(): Promise<string | null> {
     if (jobId) return jobId;
     if (!onNeedJob) {
-      onError?.("Save a draft first, then add photos.");
+      reportError("Save a draft first, then add photos.");
       return null;
     }
     return onNeedJob();
@@ -52,13 +58,14 @@ export function ClientMediaLibrary({
     if (!files?.length) return;
     const remaining = SITE_MEDIA_MAX_PER_JOB - items.length;
     if (remaining <= 0) {
-      onError?.(`You can add up to ${SITE_MEDIA_MAX_PER_JOB} photos.`);
+      reportError(`You can add up to ${SITE_MEDIA_MAX_PER_JOB} photos.`);
       return;
     }
 
     const id = await resolveJobId();
     if (!id) return;
 
+    setLocalError(null);
     setBusy("upload");
     try {
       let latest = items;
@@ -79,7 +86,7 @@ export function ClientMediaLibrary({
           error?: { message?: string };
         };
         if (!res.ok || !data.media) {
-          onError?.(data.error?.message ?? "Could not upload that photo.");
+          reportError(data.error?.message ?? "Could not upload that photo.");
           continue;
         }
         latest = [...latest, data.media];
@@ -106,7 +113,7 @@ export function ClientMediaLibrary({
         error?: { message?: string };
       };
       if (!res.ok || !data.media) {
-        onError?.(data.error?.message ?? "Could not update that photo.");
+        reportError(data.error?.message ?? "Could not update that photo.");
         return;
       }
       onChange(
@@ -128,7 +135,7 @@ export function ClientMediaLibrary({
         error?: { message?: string };
       };
       if (!res.ok) {
-        onError?.(data.error?.message ?? "Could not remove that photo.");
+        reportError(data.error?.message ?? "Could not remove that photo.");
         return;
       }
       onChange(
@@ -194,6 +201,7 @@ export function ClientMediaLibrary({
           JPEG, PNG, or WebP · up to {SITE_MEDIA_MAX_PER_JOB}
         </span>
       </div>
+      {localError ? <p className="text-xs text-red-400">{localError}</p> : null}
 
       {items.length ? (
         <ul className={cn("grid gap-3", compact ? "grid-cols-2" : "grid-cols-1")}>

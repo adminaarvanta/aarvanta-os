@@ -396,7 +396,11 @@ export function BuildOsClient({
     });
     if (!createRes.ok) {
       const body = (await createRes.json()) as { error?: { message?: string } };
-      setError(body.error?.message ?? "Could not create build job.");
+      setError(
+        body.error?.message
+          ? `${body.error.message} Open an existing draft to add photos, or upgrade for another site.`
+          : "Could not create build job."
+      );
       return null;
     }
     const created = (await createRes.json()) as {
