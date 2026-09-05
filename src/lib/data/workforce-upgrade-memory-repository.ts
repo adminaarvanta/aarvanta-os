@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import {
   buildDemoCollaborations,
   buildDemoSharedMemory,
@@ -22,7 +22,7 @@ export const workforceUpgradeMemoryRepository: WorkforceUpgradeRepository = {
   async createSharedMemory(input, scope) {
     const now = crmNow();
     const entry = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("sm"),
       createdAt: now,
@@ -43,7 +43,7 @@ export const workforceUpgradeMemoryRepository: WorkforceUpgradeRepository = {
 
   async createCollaboration(input, scope) {
     const collab = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("collab"),
       status: input.status ?? ("completed" as const),

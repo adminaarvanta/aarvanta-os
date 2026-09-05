@@ -1,5 +1,5 @@
 import type { CallingAgentRepository } from "@/lib/data/calling-agent-repository";
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
 import {
@@ -39,7 +39,9 @@ async function listScoped<T extends TenantScope>(
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as T);
+  return snap.docs
+    .map((doc) => doc.data() as T)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 async function getScoped<T extends TenantScope>(
@@ -69,7 +71,7 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async createAgent(input, scope) {
     const now = crmNow();
     const agent: VoiceAgent = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("voice_agent"),
       name: input.name,
       language: input.language ?? "en-US",
@@ -107,7 +109,7 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async createCampaign(input, scope) {
     const now = crmNow();
     const campaign: CallCampaign = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("campaign"),
       name: input.name,
       description: input.description,
@@ -151,7 +153,7 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async createQueueItem(input, scope) {
     const now = crmNow();
     const item: CallQueueItem = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("queue"),
       campaignId: input.campaignId,
       contactId: input.contactId,
@@ -233,7 +235,7 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async createSession(input, scope) {
     const now = crmNow();
     const session: CallSession = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("session"),
       queueId: input.queueId,
       campaignId: input.campaignId,
@@ -274,7 +276,7 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async createMeeting(input, scope) {
     const now = crmNow();
     const meeting: MeetingBooking = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("meeting"),
       leadId: input.leadId,
       campaignId: input.campaignId,
@@ -312,7 +314,7 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async createReminder(input, scope) {
     const now = crmNow();
     const reminder: ReminderJob = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("reminder"),
       meetingBookingId: input.meetingBookingId,
       channel: input.channel,

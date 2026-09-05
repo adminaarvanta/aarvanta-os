@@ -1,4 +1,9 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import {
+  crmNewId,
+  crmNow,
+  inWorkspaceScope,
+  persistWorkspaceScope,
+} from "@/lib/data/crm-helpers";
 import {
   buildDemoActivityFeed,
   buildDemoTeamComments,
@@ -18,7 +23,7 @@ let activity = buildDemoActivityFeed();
 export const teamMemoryRepository: TeamRepository = {
   async listNotes(scope) {
     return notes
-      .filter((n) => inCrmScope(n, scope))
+      .filter((n) => inWorkspaceScope(n, scope))
       .sort(
         (a, b) =>
           Number(b.pinned) - Number(a.pinned) ||
@@ -29,7 +34,7 @@ export const teamMemoryRepository: TeamRepository = {
   async createNote(input, scope) {
     const now = crmNow();
     const note = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("note"),
       pinned: input.pinned ?? false,
@@ -55,7 +60,7 @@ export const teamMemoryRepository: TeamRepository = {
   async listComments(scope, noteId) {
     return comments
       .filter(
-        (c) => inCrmScope(c, scope) && (!noteId || c.noteId === noteId)
+        (c) => inWorkspaceScope(c, scope) && (!noteId || c.noteId === noteId)
       )
       .sort(
         (a, b) =>
@@ -65,7 +70,7 @@ export const teamMemoryRepository: TeamRepository = {
 
   async createComment(input, scope) {
     const comment = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("comment"),
       createdAt: crmNow(),
@@ -102,7 +107,7 @@ export const teamMemoryRepository: TeamRepository = {
 
   async listActivity(scope, limit = 50) {
     return activity
-      .filter((a) => inCrmScope(a, scope))
+      .filter((a) => inWorkspaceScope(a, scope))
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -112,7 +117,7 @@ export const teamMemoryRepository: TeamRepository = {
 
   async addActivity(input, scope) {
     const item = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("act"),
       createdAt: crmNow(),

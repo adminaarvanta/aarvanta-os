@@ -1,4 +1,4 @@
-import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { isMemoryDatastore } from "@/lib/data/datastore";
 import type { TenantScope } from "@/types/communication";
@@ -33,11 +33,7 @@ const COLLECTION = "scheduled_calls";
 let memory: ScheduledCall[] = [];
 
 function inScope(item: TenantScope, scope: TenantScope) {
-  return (
-    item.tenantId === scope.tenantId &&
-    item.workspaceId === scope.workspaceId &&
-    item.companyId === scope.companyId
-  );
+  return inCrmScope(item, scope);
 }
 
 export async function listScheduledCalls(scope: TenantScope): Promise<ScheduledCall[]> {
@@ -55,9 +51,10 @@ export async function listScheduledCalls(scope: TenantScope): Promise<ScheduledC
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs
-    .map((doc) => doc.data() as ScheduledCall)
-    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    return snap.docs
+      .map((doc) => doc.data() as ScheduledCall)
+      .filter((item) => inCrmScope(item, scope))
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
 }
 
 export async function listScheduledCallsForContact(
@@ -105,7 +102,7 @@ export async function createScheduledCall(
 ): Promise<ScheduledCall> {
   const now = crmNow();
   const item: ScheduledCall = {
-    ...scope,
+    ...persistScope(scope),
     id: crmNewId("sched_call"),
     phone: input.phone.trim(),
     contactName: input.contactName,

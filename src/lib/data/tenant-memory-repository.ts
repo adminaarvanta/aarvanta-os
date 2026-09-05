@@ -1,4 +1,9 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import {
+  crmNewId,
+  crmNow,
+  inWorkspaceScope,
+  persistWorkspaceScope,
+} from "@/lib/data/crm-helpers";
 import {
   buildDemoInvitationSeed,
   buildDemoMemberSeed,
@@ -89,7 +94,7 @@ export const tenantMemoryRepository: TenantRepository = {
 
   async listMembers(scope) {
     return members
-      .filter((m) => inCrmScope(m, scope))
+      .filter((m) => inWorkspaceScope(m, scope))
       .sort((a, b) => a.name.localeCompare(b.name));
   },
 
@@ -105,23 +110,23 @@ export const tenantMemoryRepository: TenantRepository = {
 
   async getMember(id, scope) {
     const item = members.find((m) => m.id === id);
-    return item && inCrmScope(item, scope) ? item : null;
+    return item && inWorkspaceScope(item, scope) ? item : null;
   },
 
   async getMemberByUser(userId, scope) {
     return (
       members.find(
-        (m) => m.userId === userId && inCrmScope(m, scope) && m.status === "active"
+        (m) => m.userId === userId && inWorkspaceScope(m, scope) && m.status === "active"
       ) ?? null
     );
   },
 
   async updateMemberRole(id, role, scope) {
-    const idx = members.findIndex((m) => m.id === id && inCrmScope(m, scope));
+    const idx = members.findIndex((m) => m.id === id && inWorkspaceScope(m, scope));
     if (idx === -1) return null;
     if (members[idx].role === "owner" && role !== "owner") {
       const owners = members.filter(
-        (m) => inCrmScope(m, scope) && m.role === "owner" && m.id !== id
+        (m) => inWorkspaceScope(m, scope) && m.role === "owner" && m.id !== id
       );
       if (owners.length === 0) return null;
     }
@@ -130,7 +135,7 @@ export const tenantMemoryRepository: TenantRepository = {
   },
 
   async updateMemberPreferences(id, patch, scope) {
-    const idx = members.findIndex((m) => m.id === id && inCrmScope(m, scope));
+    const idx = members.findIndex((m) => m.id === id && inWorkspaceScope(m, scope));
     if (idx === -1) return null;
     members[idx] = {
       ...members[idx],
@@ -141,7 +146,7 @@ export const tenantMemoryRepository: TenantRepository = {
   },
 
   async updateMemberCreditOverrides(id, overrides, scope) {
-    const idx = members.findIndex((m) => m.id === id && inCrmScope(m, scope));
+    const idx = members.findIndex((m) => m.id === id && inWorkspaceScope(m, scope));
     if (idx === -1) return null;
     members[idx] = {
       ...members[idx],
@@ -165,7 +170,7 @@ export const tenantMemoryRepository: TenantRepository = {
 
   async listInvitations(scope) {
     return invitations
-      .filter((i) => inCrmScope(i, scope))
+      .filter((i) => inWorkspaceScope(i, scope))
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -191,7 +196,7 @@ export const tenantMemoryRepository: TenantRepository = {
       Date.now() + 7 * 24 * 60 * 60 * 1000
     ).toISOString();
     const invitation = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("inv"),
       token: crmNewId("tok"),
@@ -205,7 +210,7 @@ export const tenantMemoryRepository: TenantRepository = {
 
   async revokeInvitation(id, scope) {
     const idx = invitations.findIndex(
-      (i) => i.id === id && inCrmScope(i, scope) && i.status === "pending"
+      (i) => i.id === id && inWorkspaceScope(i, scope) && i.status === "pending"
     );
     if (idx === -1) return false;
     invitations[idx] = { ...invitations[idx], status: "revoked" };
@@ -240,14 +245,14 @@ export const tenantMemoryRepository: TenantRepository = {
     const existing = members.find(
       (m) =>
         m.userId === input.userId &&
-        inCrmScope(m, scope) &&
+        inWorkspaceScope(m, scope) &&
         m.status === "active"
     );
     if (existing) return existing;
 
     const now = crmNow();
     const member = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       id: crmNewId("member"),
       userId: input.userId,
       email: input.email,

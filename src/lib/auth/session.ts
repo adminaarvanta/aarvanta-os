@@ -77,5 +77,7 @@ export function sessionToScope(session: SessionPayload): TenantScope {
     tenantId: session.tenantId,
     workspaceId: session.workspaceId,
     companyId: session.companyId,
+    ownerUserId: session.userId,
+    viewerRole: session.role,
   };
 }

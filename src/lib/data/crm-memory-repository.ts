@@ -10,6 +10,7 @@ import {
   crmNewId,
   crmNow,
   inCrmScope,
+  persistScope,
   sumPurchases,
 } from "@/lib/data/crm-helpers";
 import type { CrmRepository } from "@/lib/data/crm-repository";
@@ -57,9 +58,10 @@ export const crmMemoryRepository: CrmRepository = {
     const now = crmNow();
     const purchases = input.purchases ?? [];
     const contact: CrmContact = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("crm_contact"),
       ...input,
+      ownerId: input.ownerId ?? scope.ownerUserId,
       purchases,
       purchaseTotal: sumPurchases(purchases),
       currency: "GBP",
@@ -105,9 +107,10 @@ export const crmMemoryRepository: CrmRepository = {
   async createCompany(input, scope) {
     const now = crmNow();
     const company: CrmCompany = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("acct"),
       ...input,
+      ownerId: input.ownerId ?? scope.ownerUserId,
       tags: input.tags ?? [],
       purchaseTotal: 0,
       currency: "GBP",
@@ -159,7 +162,7 @@ export const crmMemoryRepository: CrmRepository = {
             { id: crmNewId("stage"), name: "Won", order: 4, probability: 100 },
           ];
     const pipeline: CrmPipeline = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("pipe"),
       name: input.name,
       stages,
@@ -208,9 +211,10 @@ export const crmMemoryRepository: CrmRepository = {
   async createDeal(input, scope) {
     const now = crmNow();
     const deal: CrmDeal = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("deal"),
       ...input,
+      ownerId: input.ownerId ?? scope.ownerUserId,
       currency: "GBP",
       probability: input.probability ?? 0,
       status: input.status ?? "open",
@@ -264,7 +268,7 @@ export const crmMemoryRepository: CrmRepository = {
   async createTask(input, scope) {
     const now = crmNow();
     const task: CrmTask = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("task"),
       ...input,
       status: input.status ?? "todo",
@@ -310,7 +314,7 @@ export const crmMemoryRepository: CrmRepository = {
   async createActivity(input, scope) {
     const now = crmNow();
     const activity: CrmActivity = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("act"),
       ...input,
       occurredAt: input.occurredAt ?? now,

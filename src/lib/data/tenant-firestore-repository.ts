@@ -1,4 +1,9 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import {
+  crmNewId,
+  crmNow,
+  inWorkspaceScope,
+  persistWorkspaceScope,
+} from "@/lib/data/crm-helpers";
 import type {
   CreateInvitationInput,
   TenantRepository,
@@ -132,7 +137,7 @@ export const tenantFirestoreRepository: TenantRepository = {
     const snap = await getDb().collection(MEMBERS).doc(id).get();
     if (!snap.exists) return null;
     const data = snap.data() as WorkspaceMember;
-    return inCrmScope(data, scope) ? data : null;
+    return inWorkspaceScope(data, scope) ? data : null;
   },
 
   async getMemberByUser(userId, scope) {
@@ -240,7 +245,7 @@ export const tenantFirestoreRepository: TenantRepository = {
   async createInvitation(input: CreateInvitationInput, scope) {
     const now = crmNow();
     const invitation: Invitation = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("inv"),
       token: crmNewId("tok"),
@@ -256,7 +261,7 @@ export const tenantFirestoreRepository: TenantRepository = {
     const snap = await getDb().collection(INVITATIONS).doc(id).get();
     if (!snap.exists) return false;
     const data = snap.data() as Invitation;
-    if (!inCrmScope(data, scope) || data.status !== "pending") return false;
+    if (!inWorkspaceScope(data, scope) || data.status !== "pending") return false;
     await getDb()
       .collection(INVITATIONS)
       .doc(id)
@@ -330,7 +335,7 @@ export const tenantFirestoreRepository: TenantRepository = {
 
     const now = crmNow();
     const member: WorkspaceMember = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       id: crmNewId("member"),
       userId: input.userId,
       email: input.email,

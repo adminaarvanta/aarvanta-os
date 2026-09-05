@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type {
   CreateKnowledgeChunkInput,
   CreateKnowledgeDocumentInput,
@@ -38,7 +38,7 @@ export const knowledgeMemoryRepository: KnowledgeRepository = {
     const doc: KnowledgeDocument = isFullDocument(input)
       ? input
       : {
-          ...scope,
+          ...persistScope(scope),
           id: crmNewId("kdoc"),
           ...input,
           tags: input.tags ?? [],
@@ -89,7 +89,7 @@ export const knowledgeMemoryRepository: KnowledgeRepository = {
     );
     const created = newChunks.map((chunk) => {
       const record: KnowledgeChunk = {
-        ...scope,
+        ...persistScope(scope),
         id: crmNewId("kchunk"),
         ...chunk,
         createdAt: crmNow(),

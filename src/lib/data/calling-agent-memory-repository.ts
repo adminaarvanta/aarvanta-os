@@ -7,7 +7,7 @@ import {
   DEMO_VOICE_AGENTS,
 } from "@/lib/data/calling-agent-demo-seed";
 import type { CallingAgentRepository } from "@/lib/data/calling-agent-repository";
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { TenantScope } from "@/types/communication";
 import {
   DEFAULT_FLOW_CONFIG,
@@ -43,7 +43,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async createAgent(input, scope) {
     const now = crmNow();
     const agent: VoiceAgent = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("voice_agent"),
       name: input.name,
       language: input.language ?? "en-US",
@@ -87,7 +87,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async createCampaign(input, scope) {
     const now = crmNow();
     const campaign: CallCampaign = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("campaign"),
       name: input.name,
       description: input.description,
@@ -133,7 +133,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async createQueueItem(input, scope) {
     const now = crmNow();
     const item: CallQueueItem = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("queue"),
       campaignId: input.campaignId,
       contactId: input.contactId,
@@ -197,7 +197,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async createSession(input, scope) {
     const now = crmNow();
     const session: CallSession = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("session"),
       queueId: input.queueId,
       campaignId: input.campaignId,
@@ -240,7 +240,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async createMeeting(input, scope) {
     const now = crmNow();
     const meeting: MeetingBooking = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("meeting"),
       leadId: input.leadId,
       campaignId: input.campaignId,
@@ -279,7 +279,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async createReminder(input, scope) {
     const now = crmNow();
     const reminder: ReminderJob = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("reminder"),
       meetingBookingId: input.meetingBookingId,
       channel: input.channel,

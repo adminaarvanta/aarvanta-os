@@ -1,4 +1,4 @@
-import { crmNow, crmNewId, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNow, crmNewId, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { SiteBuildRepository } from "@/lib/data/site-build-repository";
 import type { TenantScope } from "@/types/communication";
 import type { SiteBuildJob, SitePreferences } from "@/types/site-builder";
@@ -50,7 +50,7 @@ export function seedSiteBuildJob(
 ): SiteBuildJob {
   const now = crmNow();
   return {
-    ...scope,
+    ...persistScope(scope),
     id: crmNewId("build"),
     status: "draft",
     preferences,
