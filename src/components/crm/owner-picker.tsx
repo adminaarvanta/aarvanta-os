@@ -17,12 +17,14 @@ export function OwnerPicker({
   onChange,
   onCommit,
   id,
+  compact = false,
 }: {
   members: MemberOption[];
   value: OwnerSelection;
   onChange: (value: OwnerSelection) => void;
   onCommit?: (value: OwnerSelection) => void;
   id?: string;
+  compact?: boolean;
 }) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -283,7 +285,9 @@ export function OwnerPicker({
           </button>
         ) : null}
       </div>
-      <p className="mt-1.5 text-[11px] leading-4 text-muted">{hint}</p>
+      {compact ? null : (
+        <p className="mt-1.5 text-[11px] leading-4 text-muted">{hint}</p>
+      )}
       {menu}
     </div>
   );

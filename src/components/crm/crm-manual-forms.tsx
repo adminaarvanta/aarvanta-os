@@ -2,7 +2,7 @@
 
 import { NotebookPen } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   CrmField,
   CrmFormActions,
@@ -169,22 +169,55 @@ export function AssignOwnerField({
   value,
   members,
   onSave,
+  compact = false,
 }: {
-  label: string;
+  label?: string;
   value?: string;
   members: MemberOption[];
   onSave: (ownerId: string) => Promise<void>;
+  compact?: boolean;
 }) {
+  const [knownMembers, setKnownMembers] = useState(members);
   const [owner, setOwner] = useState<OwnerSelection>(() =>
     selectionFromOwnerId(value, members)
   );
   const [busy, setBusy] = useState(false);
+  const savedOwnerId = useRef(value);
+
+  useEffect(() => {
+    setKnownMembers((current) => {
+      const extras = current.filter(
+        (member) => !members.some((next) => next.userId === member.userId)
+      );
+      return extras.length ? [...members, ...extras] : members;
+    });
+  }, [members]);
+
+  useEffect(() => {
+    if (savedOwnerId.current === value) return;
+    savedOwnerId.current = value;
+    setOwner(selectionFromOwnerId(value, knownMembers));
+  }, [value, knownMembers]);
 
   async function commit(next: OwnerSelection) {
     setOwner(next);
     setBusy(true);
     try {
-      const ownerId = (await ensureOwnerId(members, next)) ?? "";
+      const ownerId = (await ensureOwnerId(knownMembers, next)) ?? "";
+      if (next.kind === "new" && ownerId) {
+        const created = {
+          userId: ownerId,
+          name: next.name,
+          email: "",
+        };
+        setKnownMembers((current) =>
+          current.some((member) => member.userId === ownerId)
+            ? current
+            : [...current, created]
+        );
+        setOwner({ kind: "existing", id: ownerId, name: next.name });
+      }
+      savedOwnerId.current = ownerId || undefined;
       await onSave(ownerId);
     } finally {
       setBusy(false);
@@ -193,13 +226,16 @@ export function AssignOwnerField({
 
   return (
     <div className={busy ? "opacity-60" : undefined}>
-      <label className="mb-1.5 block text-xs font-semibold text-foreground">
-        {label}
-      </label>
+      {label ? (
+        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+          {label}
+        </label>
+      ) : null}
       <OwnerPicker
-        members={members}
+        members={knownMembers}
         value={owner}
         onChange={setOwner}
+        compact={compact}
         onCommit={(next) => {
           void commit(next);
         }}

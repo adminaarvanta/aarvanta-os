@@ -6,7 +6,7 @@ import type { CrmDeal, CrmPipeline, PipelineStage } from "@/types/crm";
 import { contactDisplayName, type CrmContact } from "@/types/crm";
 import { DealManualActions } from "@/components/crm/deal-manual-actions";
 import { formatCrmMoney } from "@/components/crm/crm-shell";
-import { MemberSelect } from "@/components/shared/member-select";
+import { AssignOwnerField } from "@/components/crm/crm-manual-forms";
 import { cn } from "@/lib/utils";
 
 const STAGE_ACCENTS = [
@@ -205,12 +205,11 @@ export function PipelineBoard({
                       </p>
                     ) : null}
                     <div className="mt-2 space-y-1.5 opacity-80">
-                      <MemberSelect
+                      <AssignOwnerField
                         members={members}
-                        value={deal.ownerId ?? ""}
-                        onChange={(userId) => assignOwner(deal.id, userId)}
-                        placeholder="Assign owner…"
-                        className="text-xs py-1"
+                        value={deal.ownerId}
+                        compact
+                        onSave={(userId) => assignOwner(deal.id, userId)}
                       />
                       <select
                         className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-muted outline-none focus:border-gold focus:text-foreground"
