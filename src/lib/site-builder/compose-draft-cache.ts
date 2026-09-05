@@ -6,7 +6,7 @@ import type {
 } from "@/types/site-builder";
 import type { BuildWizardStepId } from "@/components/build/build-wizard-rail";
 
-const STORAGE_KEY = "aarvanta.build.composeDraft.v5";
+const STORAGE_KEY = "aarvanta.build.composeDraft.v6";
 
 export type ComposeStep = BuildWizardStepId;
 

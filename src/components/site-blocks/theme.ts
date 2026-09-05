@@ -47,7 +47,7 @@ export function mediaStyle(theme: SitePlanTheme, url?: string, overlay = false):
     : "";
   return {
     backgroundColor: theme.primaryColor,
-    backgroundImage: `${shade}url(${url})`,
+    backgroundImage: `${shade}url("${url.replace(/"/g, "%22")}")`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };

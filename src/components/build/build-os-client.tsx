@@ -142,7 +142,7 @@ export function BuildOsClient({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [studioRightTab, setStudioRightTab] = useState<
     "assistant" | "website" | "photos"
-  >("assistant");
+  >("photos");
   const [sharePath, setSharePath] = useState<string | null>(null);
   const checkoutSyncedRef = useRef(false);
 
@@ -191,13 +191,14 @@ export function BuildOsClient({
     const set = new Set<BuildWizardStepId>();
     if (prompt.trim().length >= 12) set.add("about");
     if (businessName.trim().length >= 2) set.add("name");
+    if (clientMedia.length) set.add("photos");
     if (goals.length) set.add("goals");
     if (features.length) set.add("apps");
     if (selectedDesignOptionId) set.add("designs");
     if (job?.preferences.deployment.domain.selectedDomain) set.add("domain");
     if (job?.generatedSite) set.add("generate");
     return set;
-  }, [prompt, businessName, goals, features, selectedDesignOptionId, job]);
+  }, [prompt, businessName, clientMedia.length, goals, features, selectedDesignOptionId, job]);
 
   const hydrateFromJob = useCallback((next: import("@/types/site-builder").SiteBuildJob) => {
     setJob(next);
@@ -243,6 +244,7 @@ export function BuildOsClient({
     setSharePath(next.shareToken ? publicSharePath(next.shareToken) : null);
     setClientMedia(next.clientMedia ?? []);
     setStatusMessage(null);
+    setStudioRightTab("photos");
     if (next.generatedSite) setStep("generate");
     else if (next.preferences.designOptions?.length) setStep("designs");
     else setStep("about");
@@ -587,6 +589,13 @@ export function BuildOsClient({
         if (isRefine) {
           setRefineInput("");
           setStatusMessage("Site updated with your changes.");
+        } else {
+          setStudioRightTab("photos");
+          setStatusMessage(
+            (finalJob.clientMedia ?? clientMedia).length
+              ? "Website ready. Your work photos are on the site — add more in Photos."
+              : "Website ready. Add real work photos in the Photos tab to replace stock."
+          );
         }
         syncLocalCache(finalJob.id, "generate");
         router.replace(`/build?job=${finalJob.id}`);
@@ -750,7 +759,7 @@ export function BuildOsClient({
     setError(null);
     setStatusMessage(null);
     setSharePath(null);
-    setStudioRightTab("assistant");
+    setStudioRightTab("photos");
     setGenProgress(null);
     setStep("about");
     setView("compose");
@@ -1258,11 +1267,48 @@ export function BuildOsClient({
                   type="button"
                   disabled={businessName.trim().length < 2}
                   onClick={() => {
+                    setStep("photos");
+                    syncLocalCache(job?.id, "photos");
+                  }}
+                >
+                  Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "photos" && (
+            <div className="animate-fade-up space-y-6">
+              <ClientMediaLibrary
+                jobId={job?.id}
+                items={clientMedia}
+                onNeedJob={async () => ensureJob(buildPreferences())}
+                onError={setError}
+                onChange={(items, nextJob) => {
+                  setClientMedia(items);
+                  if (nextJob) setJob(nextJob);
+                }}
+              />
+              <div className="flex justify-between">
+                <Button type="button" variant="secondary" onClick={() => setStep("name")}>
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
                     setStep("goals");
                     syncLocalCache(job?.id, "goals");
                   }}
                 >
-                  Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+                  {clientMedia.length ? (
+                    <>
+                      Continue <ArrowRight className="ml-1.5 h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      Skip for now <ArrowRight className="ml-1.5 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -1304,7 +1350,7 @@ export function BuildOsClient({
                 })}
               </div>
               <div className="flex justify-between">
-                <Button type="button" variant="secondary" onClick={() => setStep("name")}>
+                <Button type="button" variant="secondary" onClick={() => setStep("photos")}>
                   Back
                 </Button>
                 <Button
@@ -1358,20 +1404,6 @@ export function BuildOsClient({
                     </button>
                   );
                 })}
-              </div>
-              <div className="rounded-2xl border border-border bg-surface-elevated p-4">
-                <ClientMediaLibrary
-                  jobId={job?.id}
-                  items={clientMedia}
-                  compact
-                  disabled={designsBusy}
-                  onNeedJob={async () => ensureJob(buildPreferences())}
-                  onError={setError}
-                  onChange={(items, nextJob) => {
-                    setClientMedia(items);
-                    if (nextJob) setJob(nextJob);
-                  }}
-                />
               </div>
               <div className="flex justify-between">
                 <Button type="button" variant="secondary" onClick={() => setStep("goals")}>

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 export type BuildWizardStepId =
   | "about"
   | "name"
+  | "photos"
   | "goals"
   | "apps"
   | "designs"
@@ -19,6 +20,7 @@ export const BUILD_WIZARD_STEPS: Array<{
 }> = [
   { id: "about", label: "About Your Site", description: "Describe the business" },
   { id: "name", label: "Site Name", description: "Name & brand vibe" },
+  { id: "photos", label: "Work photos", description: "Your real pictures" },
   { id: "goals", label: "Goals", description: "What success looks like" },
   { id: "apps", label: "Add Apps", description: "Features to include" },
   { id: "designs", label: "Design", description: "Pick a homepage look" },

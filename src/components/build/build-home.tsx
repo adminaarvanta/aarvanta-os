@@ -84,7 +84,14 @@ function JobCard({
               <p className="truncate text-sm font-semibold text-foreground">
                 {job.preferences.businessName || "Untitled site"}
               </p>
-              <p className="text-[11px] text-dim">{statusLabel(job)}</p>
+              <p className="text-[11px] text-dim">
+                {statusLabel(job)}
+                {job.clientMedia?.length
+                  ? ` · ${job.clientMedia.length} work photo${job.clientMedia.length === 1 ? "" : "s"}`
+                  : job.generatedSite
+                    ? " · stock photos"
+                    : ""}
+              </p>
             </div>
           </div>
         </div>
@@ -241,7 +248,7 @@ export function BuildHome({
           empty && "hidden"
         )}
       >
-        Tip: upload your logo on Site Name, and real work photos on Add Apps — they replace stock on the site.
+        Tip: upload the logo on Site Name, then real work photos on the Work photos step — they replace stock on the live site.
       </p>
     </div>
   );
