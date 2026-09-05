@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, Clock, Play } from "lucide-react";
 import { DeleteEntityButton } from "@/components/crm/delete-entity-button";
 import { EditTaskForm } from "@/components/crm/edit-task-form";
-import { MemberSelect } from "@/components/shared/member-select";
+import { AssignOwnerField } from "@/components/crm/crm-manual-forms";
 import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
 import { getAgentDefinition, isAgentType } from "@/lib/workforce/agents";
@@ -190,11 +190,11 @@ export function TaskList({
                 </div>
                 {!task.assignedAgentType ? (
                   <div className="max-w-xs">
-                    <MemberSelect
+                    <AssignOwnerField
                       members={members}
-                      value={task.assignedTo ?? ""}
-                      onChange={(userId) => assignTask(task.id, userId)}
-                      placeholder="Assign to…"
+                      value={task.assignedTo}
+                      compact
+                      onSave={(userId) => assignTask(task.id, userId)}
                     />
                     {task.assignedTo ? (
                       <p className="mt-1 text-[10px] text-muted">

@@ -20,40 +20,38 @@ export function CompanyManualPanel({
   const router = useRouter();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <section className="space-y-4 rounded-2xl border border-border/80 bg-surface-elevated p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Actions</h3>
-          <div className="flex flex-wrap gap-2">
-            <EditCompanyForm company={company} />
-            <DeleteEntityButton
-              entity="companies"
-              id={company.id}
-              label="company"
-              redirectTo="/crm/companies"
-            />
-          </div>
+    <section className="space-y-4 rounded-2xl border border-border/80 bg-surface-elevated p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground">Actions</h3>
+        <div className="flex flex-wrap gap-2">
+          <CreateTaskForm members={members} accountId={company.id} />
+          <LogActivityForm
+            accountId={company.id}
+            members={members}
+            defaultAuthorId={currentUserId}
+          />
+          <EditCompanyForm company={company} />
+          <DeleteEntityButton
+            entity="companies"
+            id={company.id}
+            label="company"
+            redirectTo="/crm/companies"
+          />
         </div>
-        <AssignOwnerField
-          label="Owner"
-          value={company.ownerId}
-          members={members}
-          onSave={async (next) => {
-            await fetch(`/api/companies/${company.id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ownerId: next || undefined }),
-            });
-            router.refresh();
-          }}
-        />
-        <CreateTaskForm members={members} accountId={company.id} />
-      </section>
-      <LogActivityForm
-        accountId={company.id}
+      </div>
+      <AssignOwnerField
+        label="Owner"
+        value={company.ownerId}
         members={members}
-        defaultAuthorId={currentUserId}
+        onSave={async (next) => {
+          await fetch(`/api/companies/${company.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ownerId: next || undefined }),
+          });
+          router.refresh();
+        }}
       />
-    </div>
+    </section>
   );
 }

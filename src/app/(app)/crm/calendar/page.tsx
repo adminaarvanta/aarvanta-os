@@ -2,9 +2,12 @@ import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { CalendarDays } from "lucide-react";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
-import { CrmEmptyState, CrmSection, CrmShell } from "@/components/crm/crm-shell";
+import { CreateTaskForm } from "@/components/crm/create-task-form";
+import { CrmEmptyState, CrmSection, CrmShell, CrmToolbar } from "@/components/crm/crm-shell";
 import { CrmTimeline } from "@/components/crm/crm-timeline";
 import { getCrmRepository } from "@/lib/data/crm-store";
+import { activeMemberOptions } from "@/lib/crm/members";
+import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getTenantScope } from "@/lib/tenant/context";
 import { cn } from "@/lib/utils";
 
@@ -37,10 +40,14 @@ function dayLabel(dueDate: string) {
 
 export default async function CalendarPage() {
   const scope = await getTenantScope();
-  const [tasks, activities] = await Promise.all([
-    getCrmRepository().listTasks(scope),
-    getCrmRepository().listActivities(scope),
+  const repo = getCrmRepository();
+  const [tasks, activities, companies, members] = await Promise.all([
+    repo.listTasks(scope),
+    repo.listActivities(scope),
+    repo.listCompanies(scope),
+    getTenantRepository().listMembers(scope),
   ]);
+  const memberOptions = activeMemberOptions(members);
 
   const datedTasks = tasks
     .filter((t) => t.dueDate && t.status !== "done")
@@ -81,6 +88,14 @@ export default async function CalendarPage() {
       description="Upcoming due work and recent meetings or calls."
       actions={<AskAiButton module="crm" />}
     >
+      <CrmToolbar>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <CreateTaskForm
+            members={memberOptions}
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          />
+        </div>
+      </CrmToolbar>
       <div className="grid gap-4 lg:grid-cols-2">
         <CrmSection title="Due soon" accent="rose">
           {agenda.length === 0 ? (

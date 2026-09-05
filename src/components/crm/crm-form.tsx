@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const crmInputClass =
@@ -122,3 +123,53 @@ export function CrmFormDialog({
     </div>
   );
 }
+
+export function CrmFormBody({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      {children}
+    </div>
+  );
+}
+
+export function CrmFormActions({
+  busy,
+  submitDisabled,
+  onCancel,
+  submitLabel,
+  busyLabel = "Saving…",
+}: {
+  busy?: boolean;
+  submitDisabled?: boolean;
+  onCancel: () => void;
+  submitLabel: string;
+  busyLabel?: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle bg-surface-elevated px-5 py-4">
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={onCancel}
+        disabled={busy}
+      >
+        Cancel
+      </Button>
+      <Button
+        type="submit"
+        size="sm"
+        variant="navy"
+        disabled={busy || submitDisabled}
+      >
+        {busy ? busyLabel : submitLabel}
+      </Button>
+    </div>
+  );
+}
+
+export const crmChipClass = {
+  active:
+    "rounded-full px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_4px_12px_rgba(26,47,89,0.22)]",
+  idle: "rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted hover:border-[#2f7f92]/40 hover:text-foreground",
+} as const;

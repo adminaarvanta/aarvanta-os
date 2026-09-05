@@ -1,13 +1,30 @@
 "use client";
 
+import { NotebookPen } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { MemberSelect } from "@/components/shared/member-select";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  CrmField,
+  CrmFormActions,
+  CrmFormBody,
+  CrmFormDialog,
+  crmChipClass,
+  crmInputClass,
+} from "@/components/crm/crm-form";
+import { OwnerPicker } from "@/components/crm/owner-picker";
 import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
+import {
+  ensureOwnerId,
+  selectionFromOwnerId,
+  type OwnerSelection,
+} from "@/lib/crm/owner-selection";
 
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30";
+const ACTIVITY_TYPES = [
+  { value: "note", label: "Note" },
+  { value: "call", label: "Call" },
+  { value: "meeting", label: "Meeting" },
+] as const;
 
 export function LogActivityForm({
   contactId,
@@ -23,17 +40,30 @@ export function LogActivityForm({
   defaultAuthorId?: string;
 }) {
   const router = useRouter();
+  const ids = useId();
+  const [open, setOpen] = useState(false);
   const [type, setType] = useState<"call" | "meeting" | "note">("note");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [authorId, setAuthorId] = useState(defaultAuthorId ?? "");
+  const [author, setAuthor] = useState<OwnerSelection>(() =>
+    selectionFromOwnerId(defaultAuthorId, members)
+  );
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const close = useCallback(() => {
+    if (busy) return;
+    setOpen(false);
+    setError(null);
+  }, [busy]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     setBusy(true);
+    setError(null);
     try {
+      const authorId = await ensureOwnerId(members, author);
       const res = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,61 +74,93 @@ export function LogActivityForm({
           contactId,
           accountId,
           dealId,
-          authorId: authorId || undefined,
+          authorId,
         }),
       });
-      if (res.ok) {
-        setTitle("");
-        setDescription("");
-        router.refresh();
+      if (!res.ok) {
+        setError("Could not log that activity. Try again.");
+        return;
       }
+      setTitle("");
+      setDescription("");
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="space-y-3 rounded-2xl border border-border/80 bg-surface-elevated p-5"
-    >
-      <p className="text-sm font-medium text-foreground">Log activity</p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as "call" | "meeting" | "note")}
-          className={inputClass}
-        >
-          <option value="note">Note</option>
-          <option value="call">Call</option>
-          <option value="meeting">Meeting</option>
-        </select>
-        <MemberSelect
-          members={members}
-          value={authorId}
-          onChange={setAuthorId}
-          placeholder="Logged by…"
-          allowUnassigned={false}
-        />
-      </div>
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Activity title *"
-        required
-        className={inputClass}
-      />
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Notes (optional)"
-        rows={2}
-        className={inputClass}
-      />
-      <Button type="submit" size="sm" disabled={busy}>
-        {busy ? "Saving…" : "Log activity"}
+    <>
+      <Button type="button" size="sm" variant="navy" onClick={() => setOpen(true)}>
+        <NotebookPen className="mr-1.5 h-3.5 w-3.5" />
+        Log activity
       </Button>
-    </form>
+      <CrmFormDialog
+        open={open}
+        title="Log activity"
+        description="Record a note, call, or meeting against this record."
+        icon={NotebookPen}
+        onClose={close}
+      >
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <CrmFormBody>
+            <CrmField label="Type">
+              <div className="flex flex-wrap gap-2">
+                {ACTIVITY_TYPES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setType(option.value)}
+                    className={
+                      type === option.value ? crmChipClass.active : crmChipClass.idle
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </CrmField>
+            <CrmField label="Title" htmlFor={`${ids}-title`} required>
+              <input
+                id={`${ids}-title`}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Called to confirm next steps"
+                required
+                className={crmInputClass}
+              />
+            </CrmField>
+            <CrmField label="Notes" htmlFor={`${ids}-notes`}>
+              <textarea
+                id={`${ids}-notes`}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="What happened…"
+                className={`${crmInputClass} resize-none`}
+              />
+            </CrmField>
+            <CrmField label="Logged by" htmlFor={`${ids}-author`}>
+              <OwnerPicker
+                id={`${ids}-author`}
+                members={members}
+                value={author}
+                onChange={setAuthor}
+              />
+            </CrmField>
+            {error ? (
+              <p className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
+          </CrmFormBody>
+          <CrmFormActions busy={busy} onCancel={close} submitLabel="Save activity" />
+        </form>
+      </CrmFormDialog>
+    </>
   );
 }
 
@@ -107,34 +169,76 @@ export function AssignOwnerField({
   value,
   members,
   onSave,
+  compact = false,
 }: {
-  label: string;
+  label?: string;
   value?: string;
   members: MemberOption[];
   onSave: (ownerId: string) => Promise<void>;
+  compact?: boolean;
 }) {
-  const [ownerId, setOwnerId] = useState(value ?? "");
+  const [knownMembers, setKnownMembers] = useState(members);
+  const [owner, setOwner] = useState<OwnerSelection>(() =>
+    selectionFromOwnerId(value, members)
+  );
   const [busy, setBusy] = useState(false);
+  const savedOwnerId = useRef(value);
 
-  async function save(next: string) {
-    setOwnerId(next);
+  useEffect(() => {
+    setKnownMembers((current) => {
+      const extras = current.filter(
+        (member) => !members.some((next) => next.userId === member.userId)
+      );
+      return extras.length ? [...members, ...extras] : members;
+    });
+  }, [members]);
+
+  useEffect(() => {
+    if (savedOwnerId.current === value) return;
+    savedOwnerId.current = value;
+    setOwner(selectionFromOwnerId(value, knownMembers));
+  }, [value, knownMembers]);
+
+  async function commit(next: OwnerSelection) {
+    setOwner(next);
     setBusy(true);
     try {
-      await onSave(next);
+      const ownerId = (await ensureOwnerId(knownMembers, next)) ?? "";
+      if (next.kind === "new" && ownerId) {
+        const created = {
+          userId: ownerId,
+          name: next.name,
+          email: "",
+        };
+        setKnownMembers((current) =>
+          current.some((member) => member.userId === ownerId)
+            ? current
+            : [...current, created]
+        );
+        setOwner({ kind: "existing", id: ownerId, name: next.name });
+      }
+      savedOwnerId.current = ownerId || undefined;
+      await onSave(ownerId);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div>
-      <label className="mb-1 block text-xs text-muted">{label}</label>
-      <MemberSelect
-        members={members}
-        value={ownerId}
-        onChange={save}
-        placeholder="Unassigned"
-        className={busy ? "opacity-60" : undefined}
+    <div className={busy ? "opacity-60" : undefined}>
+      {label ? (
+        <label className="mb-1.5 block text-xs font-semibold text-foreground">
+          {label}
+        </label>
+      ) : null}
+      <OwnerPicker
+        members={knownMembers}
+        value={owner}
+        onChange={setOwner}
+        compact={compact}
+        onCommit={(next) => {
+          void commit(next);
+        }}
       />
     </div>
   );

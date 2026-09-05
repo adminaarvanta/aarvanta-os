@@ -6,6 +6,7 @@ import {
   CrmEmptyState,
   CrmShell,
   CrmTag,
+  CrmToolbar,
 } from "@/components/crm/crm-shell";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
@@ -34,16 +35,26 @@ export default async function ConversationsPage() {
       description="Inbox threads linked to people in CRM."
       actions={<AskAiButton module="crm" />}
     >
+      <CrmToolbar>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Link
+            href="/inbox"
+            className="inline-flex items-center rounded-lg bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] px-3 py-1.5 text-xs font-medium text-white shadow-[0_6px_16px_rgba(26,47,89,0.24)] hover:brightness-[1.06]"
+          >
+            Open Inbox
+          </Link>
+        </div>
+      </CrmToolbar>
       {linked.length === 0 ? (
         <CrmEmptyState
           icon={MessageSquare}
-          accent="cyan"
+          accent="navy"
           title="No linked conversations"
           description="Qualify inbox threads or link people to start a relationship timeline."
           action={
             <Link
               href="/inbox"
-              className="inline-flex items-center rounded-lg bg-gold px-4 py-2 text-sm font-medium text-black shadow-sm shadow-gold/20 hover:bg-gold-bright"
+              className="inline-flex items-center rounded-lg bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] px-4 py-2 text-sm font-medium text-white shadow-[0_6px_16px_rgba(26,47,89,0.24)] hover:brightness-[1.06]"
             >
               Open Inbox
             </Link>
@@ -60,7 +71,7 @@ export default async function ConversationsPage() {
               <li key={conv.id}>
                 <Link
                   href={`/inbox/${conv.id}`}
-                  className="flex items-start gap-3 rounded-2xl border border-border/80 bg-surface-elevated px-4 py-3 transition hover:border-gold/40 hover:bg-sky-500/[0.04]"
+                  className="flex items-start gap-3 rounded-2xl border border-border/80 bg-surface-elevated px-4 py-3 transition hover:border-[#2f7f92]/40 hover:bg-sky-500/[0.04]"
                 >
                   <CrmAvatar name={name} seed={person?.id ?? conv.id} />
                   <div className="min-w-0 flex-1">
@@ -70,7 +81,7 @@ export default async function ConversationsPage() {
                       </p>
                       <div className="flex shrink-0 items-center gap-2">
                         {conv.unreadCount > 0 ? (
-                          <span className="rounded-full bg-gold px-2 py-0.5 text-[11px] font-semibold tabular-nums text-black">
+                          <span className="rounded-full bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white">
                             {conv.unreadCount} new
                           </span>
                         ) : null}

@@ -24,7 +24,8 @@ export function ScoreContactButton({ contactId }: { contactId: string }) {
       type="button"
       onClick={handleScore}
       disabled={loading}
-      className="inline-flex w-full items-center justify-center gap-2 bg-gold text-black hover:bg-gold-bright sm:w-auto"
+      variant="navy"
+      className="inline-flex w-full items-center justify-center gap-2 sm:w-auto"
     >
       <Sparkles className="h-4 w-4" />
       {loading ? "Scoring…" : "AI lead score"}

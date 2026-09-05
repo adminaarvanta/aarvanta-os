@@ -23,7 +23,6 @@ export function DealManualActions({
 }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [logging, setLogging] = useState(false);
   const [title, setTitle] = useState(deal.title);
   const [value, setValue] = useState(String(deal.value));
   const [notes, setNotes] = useState(deal.notes ?? "");
@@ -103,15 +102,12 @@ export function DealManualActions({
         >
           {editing ? "Cancel" : "Edit"}
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-7 px-2 text-[10px]"
-          onClick={() => setLogging((v) => !v)}
-        >
-          {logging ? "Hide log" : "Log activity"}
-        </Button>
+        <LogActivityForm
+          dealId={deal.id}
+          contactId={deal.contactId}
+          members={members}
+          defaultAuthorId={currentUserId}
+        />
         <DeleteEntityButton entity="deals" id={deal.id} label="deal" />
       </div>
 
@@ -138,19 +134,10 @@ export function DealManualActions({
             className={inputClass}
             placeholder="Notes"
           />
-          <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy}>
+          <Button type="submit" size="sm" variant="navy" className="h-7 text-xs" disabled={busy}>
             Save
           </Button>
         </form>
-      )}
-
-      {logging && (
-        <LogActivityForm
-          dealId={deal.id}
-          contactId={deal.contactId}
-          members={members}
-          defaultAuthorId={currentUserId}
-        />
       )}
     </div>
   );

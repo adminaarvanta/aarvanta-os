@@ -2,9 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MemberSelect } from "@/components/shared/member-select";
+import { OwnerPicker } from "@/components/crm/owner-picker";
 import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
+import {
+  ensureOwnerId,
+  selectionFromOwnerId,
+  type OwnerSelection,
+} from "@/lib/crm/owner-selection";
 import type { CrmTask, TaskPriority, TaskStatus } from "@/types/crm";
 
 const inputClass =
@@ -25,13 +30,16 @@ export function EditTaskForm({
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [dueDate, setDueDate] = useState(task.dueDate ?? "");
-  const [assignedTo, setAssignedTo] = useState(task.assignedTo ?? "");
+  const [owner, setOwner] = useState<OwnerSelection>(() =>
+    selectionFromOwnerId(task.assignedTo, members)
+  );
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     setBusy(true);
     try {
+      const assignedTo = await ensureOwnerId(members, owner);
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -41,7 +49,7 @@ export function EditTaskForm({
           priority,
           status,
           dueDate: dueDate || undefined,
-          assignedTo: assignedTo || undefined,
+          assignedTo,
         }),
       });
       if (res.ok) {
@@ -109,11 +117,11 @@ export function EditTaskForm({
         onChange={(e) => setDueDate(e.target.value)}
         className={inputClass}
       />
-      <MemberSelect
+      <OwnerPicker
         members={members}
-        value={assignedTo}
-        onChange={setAssignedTo}
-        placeholder="Assign to…"
+        value={owner}
+        onChange={setOwner}
+        compact
       />
       <div className="flex gap-2">
         <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy}>
