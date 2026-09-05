@@ -29,6 +29,16 @@ export function IntegrationsClient({ providers }: { providers: ProviderRow[] }) 
   async function connect(provider: IntegrationProvider) {
     setBusy(provider);
     try {
+      if (provider === "google_calendar") {
+        const res = await fetch("/api/voice/calendar", { method: "POST" });
+        const data = (await res.json()) as { redirect?: string };
+        if (data.redirect) {
+          window.location.href = data.redirect;
+          return;
+        }
+        router.refresh();
+        return;
+      }
       await fetch("/api/integrations/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   exchangeGoogleCalendarCode,
+  fetchGoogleAccountEmail,
   storeGoogleCalendarTokens,
 } from "@/lib/calendar/google-calendar";
 import type { TenantScope } from "@/types/communication";
@@ -21,13 +22,17 @@ export async function GET(req: Request) {
     ) as TenantScope & { userId?: string };
 
     const tokens = await exchangeGoogleCalendarCode(code);
+    const email = tokens.accessToken
+      ? await fetchGoogleAccountEmail(tokens.accessToken)
+      : undefined;
     await storeGoogleCalendarTokens(
       {
         tenantId: state.tenantId,
         workspaceId: state.workspaceId,
         companyId: state.companyId,
       },
-      tokens
+      { ...tokens, email },
+      state.userId
     );
 
     return NextResponse.redirect(`${appUrl}/voice/calendar?gcal=connected`);

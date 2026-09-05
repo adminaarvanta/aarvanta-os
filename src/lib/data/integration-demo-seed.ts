@@ -20,6 +20,7 @@ export function buildDemoIntegrations(): IntegrationConnection[] {
       id: "int_calendar",
       tenantId: DEMO_ORG_AARVANTA,
       workspaceId: DEMO_WS_AARVANTA_MAIN,
+      userId: "user_pavan",
       provider: "google_calendar",
       status: "connected",
       accountLabel: "pavan@aarvanta.com",
@@ -92,7 +93,7 @@ export const INTEGRATION_DEFINITIONS = [
   {
     provider: "google_calendar" as const,
     name: "Google Calendar",
-    description: "Meeting sync and scheduling",
+    description: "Connect your own calendar for Voice OS booking and sync",
     category: "calendar" as const,
   },
   {

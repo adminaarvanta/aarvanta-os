@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
 import { bookMeeting } from "@/lib/calling/book-meeting";
+import { resolveCalendarUserId } from "@/lib/calendar/user-calendar";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
 
 /**
@@ -16,6 +17,7 @@ const schema = z.object({
   campaignId: z.string().optional(),
   sessionId: z.string().optional(),
   salesRepName: z.string().optional(),
+  ownerId: z.string().optional(),
 });
 
 function unauthorizedTool() {
@@ -46,6 +48,13 @@ export async function POST(req: Request) {
   const scope = getWebhookTenantScope();
 
   try {
+    const ownerId = await resolveCalendarUserId(scope, {
+      userId: parsed.data.ownerId,
+      campaignId: parsed.data.campaignId,
+      sessionId: parsed.data.sessionId,
+      leadId: parsed.data.leadId,
+    });
+
     const meeting = await bookMeeting({
       scope,
       leadId: parsed.data.leadId,
@@ -54,6 +63,7 @@ export async function POST(req: Request) {
       timezone: parsed.data.timezone,
       campaignId: parsed.data.campaignId,
       sessionId: parsed.data.sessionId,
+      ownerId,
       salesRepName: parsed.data.salesRepName ?? "Sales Specialist",
     });
 

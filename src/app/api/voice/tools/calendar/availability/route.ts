@@ -5,6 +5,7 @@ import {
   getAvailabilityDays,
   getDaySlots,
 } from "@/lib/calendar/availability";
+import { resolveCalendarUserId } from "@/lib/calendar/user-calendar";
 import {
   getSessionContext,
   getWebhookTenantScope,
@@ -13,6 +14,10 @@ import {
 const schema = z.object({
   timezone: z.string().optional(),
   days: z.number().int().min(1).max(7).optional(),
+  userId: z.string().optional(),
+  campaignId: z.string().optional(),
+  sessionId: z.string().optional(),
+  leadId: z.string().optional(),
 });
 
 /**
@@ -35,6 +40,10 @@ async function handle(req: Request) {
 
   let timezone = "America/New_York";
   let days = 3;
+  let userId: string | undefined;
+  let campaignId: string | undefined;
+  let sessionId: string | undefined;
+  let leadId: string | undefined;
 
   if (req.method === "POST") {
     const body = await parseJsonBody<unknown>(req);
@@ -45,25 +54,26 @@ async function handle(req: Request) {
     }
     timezone = parsed.data.timezone ?? timezone;
     days = parsed.data.days ?? days;
-
-    if (!isRelayTool) {
-      try {
-        await getSessionContext();
-      } catch {
-        return unauthorized();
-      }
-    }
+    userId = parsed.data.userId;
+    campaignId = parsed.data.campaignId;
+    sessionId = parsed.data.sessionId;
+    leadId = parsed.data.leadId;
   } else {
     const url = new URL(req.url);
     timezone = url.searchParams.get("timezone") ?? timezone;
     days = Number(url.searchParams.get("days") ?? days) || 3;
+    userId = url.searchParams.get("userId") ?? undefined;
+    campaignId = url.searchParams.get("campaignId") ?? undefined;
+    sessionId = url.searchParams.get("sessionId") ?? undefined;
+    leadId = url.searchParams.get("leadId") ?? undefined;
+  }
 
-    if (!isRelayTool) {
-      try {
-        await getSessionContext();
-      } catch {
-        return unauthorized();
-      }
+  if (!isRelayTool) {
+    try {
+      const ctx = await getSessionContext();
+      userId = userId ?? ctx.userId;
+    } catch {
+      return unauthorized();
     }
   }
 
@@ -71,7 +81,19 @@ async function handle(req: Request) {
     ? getWebhookTenantScope()
     : (await getSessionContext()).scope;
 
-  const availability = await getAvailabilityDays({ scope, timezone, days });
+  const calendarUserId = await resolveCalendarUserId(scope, {
+    userId,
+    campaignId,
+    sessionId,
+    leadId,
+  });
+
+  const availability = await getAvailabilityDays({
+    scope,
+    timezone,
+    days,
+    userId: calendarUserId,
+  });
 
   const withSlots = await Promise.all(
     availability.map(async (day) => {
@@ -79,6 +101,7 @@ async function handle(req: Request) {
         scope,
         date: day.date,
         timezone,
+        userId: calendarUserId,
       });
       return {
         ...day,

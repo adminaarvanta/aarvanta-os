@@ -1,9 +1,13 @@
 import { getIntegrationRepository } from "@/lib/data/integration-store";
 import { isDemoMode } from "@/lib/config/app-mode";
+import { crmNow } from "@/lib/data/crm-helpers";
+import { getUserCalendarConnection } from "@/lib/calendar/user-calendar";
 import type { TenantScope } from "@/types/communication";
+import type { IntegrationConnection } from "@/types/integration";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
+const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
 
 type StoredTokens = {
   accessToken?: string;
@@ -80,30 +84,73 @@ export async function exchangeGoogleCalendarCode(code: string) {
   };
 }
 
-async function getStoredTokens(scope: TenantScope): Promise<StoredTokens | null> {
-  const repo = getIntegrationRepository();
-  const connections = await repo.listConnections(scope.tenantId, scope.workspaceId);
-  const conn = connections.find(
-    (c) => c.provider === "google_calendar" && c.status === "connected"
-  );
-  if (!conn?.metadata) return null;
+export async function fetchGoogleAccountEmail(
+  accessToken: string
+): Promise<string | undefined> {
+  try {
+    const res = await fetch(GOOGLE_USERINFO_URL, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) return undefined;
+    const data = (await res.json()) as { email?: string };
+    return data.email?.trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function tokensFromConnection(conn: IntegrationConnection): StoredTokens | null {
+  if (conn.status !== "connected") return null;
+  if (!conn.metadata) {
+    return { email: conn.accountLabel };
+  }
   return {
     accessToken: conn.metadata.accessToken,
     refreshToken: conn.metadata.refreshToken,
     expiresAt: conn.metadata.expiresAt
       ? Number(conn.metadata.expiresAt)
       : undefined,
-    email: conn.metadata.email,
+    email: conn.metadata.email || conn.accountLabel,
   };
 }
 
-async function saveTokens(scope: TenantScope, tokens: StoredTokens) {
+async function getStoredTokens(
+  scope: TenantScope,
+  userId?: string
+): Promise<StoredTokens | null> {
+  const conn = await getUserCalendarConnection(scope, userId);
+  if (!conn) return null;
+  return tokensFromConnection(conn);
+}
+
+async function persistConnection(conn: IntegrationConnection) {
+  try {
+    const { getAdminFirestore } = await import("@/lib/firebase/admin");
+    const { isMemoryDatastore } = await import("@/lib/data/datastore");
+    if (!isMemoryDatastore()) {
+      const db = getAdminFirestore();
+      if (db) {
+        await db.collection("integrations").doc(conn.id).set(conn);
+        return;
+      }
+    }
+  } catch {
+    /* fall through to in-memory patch */
+  }
+}
+
+async function saveTokens(
+  scope: TenantScope,
+  tokens: StoredTokens,
+  userId?: string
+) {
   const repo = getIntegrationRepository();
   const conn = await repo.connect(
     scope.tenantId,
     scope.workspaceId,
     "google_calendar",
-    tokens.email ?? "Google Calendar"
+    tokens.email ?? "Google Calendar",
+    userId
   );
   const metadata = {
     accessToken: tokens.accessToken ?? "",
@@ -111,38 +158,37 @@ async function saveTokens(scope: TenantScope, tokens: StoredTokens) {
     expiresAt: String(tokens.expiresAt ?? ""),
     email: tokens.email ?? "",
   };
-  const updated = {
+  const updated: IntegrationConnection = {
     ...conn,
-    status: "connected" as const,
+    userId: userId ?? conn.userId,
+    status: "connected",
+    accountLabel: tokens.email ?? conn.accountLabel ?? "Google Calendar",
     metadata,
+    lastSyncAt: crmNow(),
+    lastSyncError: undefined,
     connectedAt: new Date().toISOString(),
   };
 
-  try {
-    const { getAdminFirestore } = await import("@/lib/firebase/admin");
-    const { isMemoryDatastore } = await import("@/lib/data/datastore");
-    if (!isMemoryDatastore()) {
-      const db = getAdminFirestore();
-      if (db) {
-        await db.collection("integrations").doc(conn.id).set(updated);
-        return;
-      }
-    }
-  } catch {
-    /* fall through to in-memory patch */
-  }
-
-  (conn as { metadata?: Record<string, string> }).metadata = metadata;
+  await persistConnection(updated);
+  (conn as IntegrationConnection).metadata = metadata;
+  (conn as IntegrationConnection).userId = updated.userId;
+  (conn as IntegrationConnection).accountLabel = updated.accountLabel;
+  (conn as IntegrationConnection).lastSyncAt = updated.lastSyncAt;
 }
 
 export async function storeGoogleCalendarTokens(
   scope: TenantScope,
-  tokens: StoredTokens
+  tokens: StoredTokens,
+  userId?: string
 ) {
-  await saveTokens(scope, tokens);
+  await saveTokens(scope, tokens, userId);
 }
 
-async function refreshAccessToken(scope: TenantScope, refreshToken: string) {
+async function refreshAccessToken(
+  scope: TenantScope,
+  refreshToken: string,
+  userId?: string
+) {
   const { clientId, clientSecret } = clientConfig();
   const body = new URLSearchParams({
     client_id: clientId,
@@ -167,12 +213,15 @@ async function refreshAccessToken(scope: TenantScope, refreshToken: string) {
     refreshToken,
     expiresAt: Date.now() + data.expires_in * 1000,
   };
-  await saveTokens(scope, tokens);
+  await saveTokens(scope, tokens, userId);
   return tokens.accessToken;
 }
 
-async function getAccessToken(scope: TenantScope): Promise<string | null> {
-  const tokens = await getStoredTokens(scope);
+async function getAccessToken(
+  scope: TenantScope,
+  userId?: string
+): Promise<string | null> {
+  const tokens = await getStoredTokens(scope, userId);
   if (!tokens?.accessToken && !tokens?.refreshToken) return null;
   if (
     tokens.accessToken &&
@@ -182,25 +231,49 @@ async function getAccessToken(scope: TenantScope): Promise<string | null> {
     return tokens.accessToken;
   }
   if (tokens.refreshToken) {
-    return refreshAccessToken(scope, tokens.refreshToken);
+    return refreshAccessToken(scope, tokens.refreshToken, userId);
   }
   return tokens.accessToken ?? null;
 }
 
 export async function hasGoogleCalendarConnection(
-  scope: TenantScope
+  scope: TenantScope,
+  userId?: string
+): Promise<boolean> {
+  const conn = await getUserCalendarConnection(scope, userId);
+  return conn?.status === "connected";
+}
+
+/** True when we can call the live Google Calendar API for this user. */
+export async function hasLiveGoogleCalendar(
+  scope: TenantScope,
+  userId?: string
 ): Promise<boolean> {
   if (isDemoMode()) return false;
-  const tokens = await getStoredTokens(scope);
-  return Boolean(tokens?.refreshToken || tokens?.accessToken);
+  if (userId) {
+    const tokens = await getStoredTokens(scope, userId);
+    return Boolean(tokens?.refreshToken || tokens?.accessToken);
+  }
+  const connections = await getIntegrationRepository().listConnections(
+    scope.tenantId,
+    scope.workspaceId
+  );
+  return connections.some((c) => {
+    if (c.provider !== "google_calendar" || c.status !== "connected") {
+      return false;
+    }
+    const tokens = tokensFromConnection(c);
+    return Boolean(tokens?.refreshToken || tokens?.accessToken);
+  });
 }
 
 export async function fetchGoogleFreeBusy(
   scope: TenantScope,
   timeMin: string,
-  timeMax: string
+  timeMax: string,
+  userId?: string
 ): Promise<{ start: string; end: string }[]> {
-  const accessToken = await getAccessToken(scope);
+  const accessToken = await getAccessToken(scope, userId);
   if (!accessToken) return [];
 
   const res = await fetch(`${CALENDAR_API}/freeBusy`, {
@@ -224,6 +297,43 @@ export async function fetchGoogleFreeBusy(
   return data.calendars?.primary?.busy ?? [];
 }
 
+export async function fetchTeamGoogleFreeBusy(
+  scope: TenantScope,
+  timeMin: string,
+  timeMax: string,
+  userId?: string
+): Promise<{ start: string; end: string }[]> {
+  if (userId) {
+    return fetchGoogleFreeBusy(scope, timeMin, timeMax, userId);
+  }
+
+  const connections = await getIntegrationRepository().listConnections(
+    scope.tenantId,
+    scope.workspaceId
+  );
+  const userIds = [
+    ...new Set(
+      connections
+        .filter(
+          (c) => c.provider === "google_calendar" && c.status === "connected"
+        )
+        .map((c) => c.userId)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+
+  if (userIds.length === 0) {
+    return fetchGoogleFreeBusy(scope, timeMin, timeMax);
+  }
+
+  const chunks = await Promise.all(
+    userIds.map((id) =>
+      fetchGoogleFreeBusy(scope, timeMin, timeMax, id).catch(() => [])
+    )
+  );
+  return chunks.flat();
+}
+
 export async function createGoogleCalendarEvent(
   scope: TenantScope,
   input: {
@@ -233,9 +343,10 @@ export async function createGoogleCalendarEvent(
     end: string;
     timezone: string;
     attendeeEmail?: string;
-  }
+  },
+  userId?: string
 ): Promise<{ eventId: string; meetLink?: string; htmlLink?: string }> {
-  const accessToken = await getAccessToken(scope);
+  const accessToken = await getAccessToken(scope, userId);
   if (!accessToken) {
     throw new Error("Google Calendar is not connected");
   }
@@ -288,9 +399,10 @@ export async function updateGoogleCalendarEvent(
     end: string;
     timezone: string;
     title?: string;
-  }
+  },
+  userId?: string
 ) {
-  const accessToken = await getAccessToken(scope);
+  const accessToken = await getAccessToken(scope, userId);
   if (!accessToken) throw new Error("Google Calendar is not connected");
 
   const res = await fetch(`${CALENDAR_API}/calendars/primary/events/${eventId}`, {
@@ -313,9 +425,10 @@ export async function updateGoogleCalendarEvent(
 
 export async function deleteGoogleCalendarEvent(
   scope: TenantScope,
-  eventId: string
+  eventId: string,
+  userId?: string
 ) {
-  const accessToken = await getAccessToken(scope);
+  const accessToken = await getAccessToken(scope, userId);
   if (!accessToken) throw new Error("Google Calendar is not connected");
 
   const res = await fetch(`${CALENDAR_API}/calendars/primary/events/${eventId}`, {
@@ -325,4 +438,38 @@ export async function deleteGoogleCalendarEvent(
   if (!res.ok && res.status !== 404) {
     throw new Error(`Delete event failed: ${await res.text()}`);
   }
+}
+
+export async function syncUserGoogleCalendar(
+  scope: TenantScope,
+  userId: string
+): Promise<IntegrationConnection | null> {
+  const repo = getIntegrationRepository();
+  const connection = await repo.sync(
+    scope.tenantId,
+    scope.workspaceId,
+    "google_calendar",
+    userId
+  );
+  if (!connection) return null;
+
+  if (await hasLiveGoogleCalendar(scope, userId)) {
+    try {
+      const timeMin = new Date().toISOString();
+      const timeMax = new Date(Date.now() + 7 * 86_400_000).toISOString();
+      await fetchGoogleFreeBusy(scope, timeMin, timeMax, userId);
+    } catch (error) {
+      const lastSyncError =
+        error instanceof Error ? error.message : "Calendar sync failed";
+      const updated: IntegrationConnection = {
+        ...connection,
+        lastSyncError,
+      };
+      await persistConnection(updated);
+      connection.lastSyncError = lastSyncError;
+      return connection;
+    }
+  }
+
+  return connection;
 }

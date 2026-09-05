@@ -14,7 +14,16 @@ export default async function IntegrationsPage() {
 
   const providers = INTEGRATION_DEFINITIONS.map((def) => ({
     ...def,
-    connection: connections.find((c) => c.provider === def.provider) ?? null,
+    connection:
+      def.provider === "google_calendar"
+        ? connections.find(
+            (c) => c.provider === "google_calendar" && c.userId === ctx.userId
+          ) ??
+          connections.find(
+            (c) => c.provider === "google_calendar" && !c.userId
+          ) ??
+          null
+        : connections.find((c) => c.provider === def.provider) ?? null,
   }));
 
   return (

@@ -5,22 +5,26 @@ export interface IntegrationRepository {
   getConnection(
     tenantId: string,
     workspaceId: string,
-    provider: IntegrationProvider
+    provider: IntegrationProvider,
+    userId?: string
   ): Promise<IntegrationConnection | null>;
   connect(
     tenantId: string,
     workspaceId: string,
     provider: IntegrationProvider,
-    accountLabel?: string
+    accountLabel?: string,
+    userId?: string
   ): Promise<IntegrationConnection>;
   disconnect(
     tenantId: string,
     workspaceId: string,
-    provider: IntegrationProvider
+    provider: IntegrationProvider,
+    userId?: string
   ): Promise<IntegrationConnection | null>;
   sync(
     tenantId: string,
     workspaceId: string,
-    provider: IntegrationProvider
+    provider: IntegrationProvider,
+    userId?: string
   ): Promise<IntegrationConnection | null>;
 }

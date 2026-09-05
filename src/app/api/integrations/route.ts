@@ -13,7 +13,16 @@ export async function GET() {
       ctx.scope.workspaceId
     );
     const providers = INTEGRATION_DEFINITIONS.map((def) => {
-      const conn = connections.find((c) => c.provider === def.provider);
+      const conn =
+        def.provider === "google_calendar"
+          ? connections.find(
+              (c) =>
+                c.provider === "google_calendar" && c.userId === ctx.userId
+            ) ??
+            connections.find(
+              (c) => c.provider === "google_calendar" && !c.userId
+            )
+          : connections.find((c) => c.provider === def.provider);
       return { ...def, connection: conn ?? null };
     });
     return NextResponse.json({ providers, connections });

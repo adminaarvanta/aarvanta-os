@@ -5,13 +5,37 @@ import type { IntegrationConnection, IntegrationProvider } from "@/types/integra
 
 let connections = buildDemoIntegrations();
 
-function find(provider: IntegrationProvider, tenantId: string, workspaceId: string) {
-  return connections.find(
-    (c) =>
-      c.provider === provider &&
-      c.tenantId === tenantId &&
-      c.workspaceId === workspaceId
+function matchesScope(
+  c: IntegrationConnection,
+  provider: IntegrationProvider,
+  tenantId: string,
+  workspaceId: string
+) {
+  return (
+    c.provider === provider &&
+    c.tenantId === tenantId &&
+    c.workspaceId === workspaceId
   );
+}
+
+function find(
+  provider: IntegrationProvider,
+  tenantId: string,
+  workspaceId: string,
+  userId?: string
+) {
+  const matches = connections.filter((c) =>
+    matchesScope(c, provider, tenantId, workspaceId)
+  );
+  if (userId) {
+    return (
+      matches.find((c) => c.userId === userId) ??
+      (provider === "google_calendar"
+        ? undefined
+        : matches.find((c) => !c.userId))
+    );
+  }
+  return matches.find((c) => !c.userId) ?? matches[0];
 }
 
 export const integrationMemoryRepository: IntegrationRepository = {
@@ -21,12 +45,12 @@ export const integrationMemoryRepository: IntegrationRepository = {
     );
   },
 
-  async getConnection(tenantId, workspaceId, provider) {
-    return find(provider, tenantId, workspaceId) ?? null;
+  async getConnection(tenantId, workspaceId, provider, userId) {
+    return find(provider, tenantId, workspaceId, userId) ?? null;
   },
 
-  async connect(tenantId, workspaceId, provider, accountLabel) {
-    const existing = find(provider, tenantId, workspaceId);
+  async connect(tenantId, workspaceId, provider, accountLabel, userId) {
+    const existing = find(provider, tenantId, workspaceId, userId);
     const now = crmNow();
     if (existing) {
       existing.status = "connected";
@@ -35,12 +59,14 @@ export const integrationMemoryRepository: IntegrationRepository = {
       existing.lastSyncAt = now;
       existing.disconnectedAt = undefined;
       existing.lastSyncError = undefined;
+      if (userId) existing.userId = userId;
       return existing;
     }
     const conn: IntegrationConnection = {
       id: crmNewId("int"),
       tenantId,
       workspaceId,
+      userId,
       provider,
       status: "connected",
       accountLabel: accountLabel ?? "Connected account",
@@ -51,19 +77,22 @@ export const integrationMemoryRepository: IntegrationRepository = {
     return conn;
   },
 
-  async disconnect(tenantId, workspaceId, provider) {
-    const existing = find(provider, tenantId, workspaceId);
+  async disconnect(tenantId, workspaceId, provider, userId) {
+    const existing = find(provider, tenantId, workspaceId, userId);
     if (!existing) return null;
     existing.status = "disconnected";
     existing.disconnectedAt = crmNow();
+    existing.metadata = undefined;
+    existing.lastSyncError = undefined;
     return existing;
   },
 
-  async sync(tenantId, workspaceId, provider) {
-    const existing = find(provider, tenantId, workspaceId);
+  async sync(tenantId, workspaceId, provider, userId) {
+    const existing = find(provider, tenantId, workspaceId, userId);
     if (!existing || existing.status !== "connected") return null;
     existing.status = "syncing";
     existing.lastSyncAt = crmNow();
+    existing.lastSyncError = undefined;
     existing.status = "connected";
     return existing;
   },

@@ -12,7 +12,7 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 | `/voice/live` | Live call monitor |
 | `/voice/queue` | Kanban queue |
 | `/voice/meetings` | Booked meetings |
-| `/voice/calendar` | Slot picker + Google Calendar connect |
+| `/voice/calendar` | Per-user Google Calendar connect + sync, team status, slot picker |
 | `/voice/history` | Conversation replay |
 | `/voice/insights` | Funnel + performance + insights |
 | `/voice/dialer` | Manual dialer (CRM person picker + Voice Agent + Call now / Schedule) |
@@ -30,4 +30,4 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 
 ## Demo
 
-With `APP_MODE` unset (demo), seeded campaign/queue/sessions/meetings load from memory. Calendar booking uses synthetic slots when Google is not connected.
+With `APP_MODE` unset (demo), seeded campaign/queue/sessions/meetings load from memory. Any **active** workspace member can connect their own calendar from `/voice/calendar` or `/voice/settings`. Demo mode simulates the connection and local sync; with Google OAuth configured, production stores tokens per user and uses that calendar for FreeBusy + event create. Suspended members cannot connect. Calendar booking uses synthetic slots when Google is not live.

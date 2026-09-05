@@ -287,7 +287,7 @@ export function getProductionReadiness(): ProductionReadiness {
       id: "google_calendar",
       label: "Google Calendar",
       status: "ok",
-      detail: "OAuth client configured for AI meeting booking",
+      detail: "OAuth client configured — each active user can connect their calendar",
     });
   } else {
     warnings.push(
