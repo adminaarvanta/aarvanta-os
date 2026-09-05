@@ -1,15 +1,9 @@
 import { closeCallSession } from "@/lib/calling/close-call-session";
 import { nextAttemptAtForOutcome } from "@/lib/calling/retry-policy";
-import {
-  classifyOpenSession,
-  DEMO_SWEEP_MIN_AGE_MS,
-} from "@/lib/calling/stale-call-session";
-import { DEMO_CALL_SESSIONS } from "@/lib/data/calling-agent-demo-seed";
+import { classifyOpenSession } from "@/lib/calling/stale-call-session";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import type { TenantScope } from "@/types/communication";
-import type { CallQueueItem, CallSession } from "@/types/calling-agent";
-
-const DEMO_SESSION_IDS = new Set(DEMO_CALL_SESSIONS.map((s) => s.id));
+import type { CallQueueItem } from "@/types/calling-agent";
 
 export type SweepStaleResult = {
   closed: number;
@@ -23,15 +17,6 @@ function scopeOf(record: TenantScope): TenantScope {
     workspaceId: record.workspaceId,
     companyId: record.companyId,
   };
-}
-
-function isYoungDemoSession(session: CallSession, now: number): boolean {
-  if (!DEMO_SESSION_IDS.has(session.id) && !session.id.startsWith("session_live_")) {
-    return false;
-  }
-  const started = new Date(session.startedAt).getTime();
-  const age = Number.isNaN(started) ? 0 : Math.max(0, now - started);
-  return age < DEMO_SWEEP_MIN_AGE_MS;
 }
 
 export async function sweepStaleSessions(opts?: {
@@ -53,7 +38,6 @@ export async function sweepStaleSessions(opts?: {
   const closedSessionIds: string[] = [];
 
   for (const session of open) {
-    if (isYoungDemoSession(session, now)) continue;
     const verdict = classifyOpenSession(session, now);
     if (!verdict.stale) continue;
     const closed = await closeCallSession({

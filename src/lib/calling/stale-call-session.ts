@@ -46,11 +46,32 @@ export function lastActivityMs(session: CallSession): number {
   return Number.isNaN(started) ? Date.now() : started;
 }
 
+/** Demo seed live cards stay visible while someone is walking the product. */
+export function isProtectedDemoSession(
+  session: Pick<CallSession, "id" | "startedAt">,
+  now = Date.now()
+): boolean {
+  if (!session.id.startsWith("session_live_")) return false;
+  const started = new Date(session.startedAt).getTime();
+  const age = Number.isNaN(started) ? 0 : Math.max(0, now - started);
+  return age < DEMO_SWEEP_MIN_AGE_MS;
+}
+
 export function classifyOpenSession(
   session: CallSession,
   now = Date.now()
 ): OpenSessionVerdict {
   if (session.status !== "ringing" && session.status !== "in_progress") {
+    return { stale: false, outcome: "completed", summary: "", phase: "live" };
+  }
+
+  if (isProtectedDemoSession(session, now)) {
+    if (session.status === "ringing") {
+      return { stale: false, outcome: "no_answer", summary: "", phase: "ringing" };
+    }
+    if (spokenTurnCount(session) === 0) {
+      return { stale: false, outcome: "failed", summary: "", phase: "connecting" };
+    }
     return { stale: false, outcome: "completed", summary: "", phase: "live" };
   }
 
