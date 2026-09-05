@@ -76,7 +76,13 @@ export function CrmImportForm({ entity }: { entity: CrmImportEntity }) {
 
   if (!open) {
     return (
-      <Button type="button" size="sm" variant="secondary" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        className="border-[#2f7f92]/25 bg-sky-500/[0.07] text-[#1a2f59] hover:border-[#2f7f92]/45 hover:bg-sky-500/[0.12]"
+        onClick={() => setOpen(true)}
+      >
         <Upload className="mr-1.5 h-3.5 w-3.5" />
         Import Excel / Sheets
       </Button>

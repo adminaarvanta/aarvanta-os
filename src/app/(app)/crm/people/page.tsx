@@ -50,25 +50,28 @@ export default async function PeoplePage({
       actions={<AskAiButton module="crm" />}
     >
       <CrmToolbar>
-        <CrmFacet href="/crm/people" active={!leadsOnly}>
-          All people
-        </CrmFacet>
-        <CrmFacet href="/crm/people?facet=leads" active={leadsOnly}>
-          Leads
-        </CrmFacet>
-        <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
-        {leadsOnly ? (
-          <CreateLeadForm
-            members={memberOptions}
-            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
-          />
-        ) : (
-          <CreateContactForm
-            members={memberOptions}
-            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
-          />
-        )}
-        <CrmImportForm entity="contacts" />
+        <div className="flex flex-wrap items-center gap-2">
+          <CrmFacet href="/crm/people" active={!leadsOnly}>
+            All people
+          </CrmFacet>
+          <CrmFacet href="/crm/people?facet=leads" active={leadsOnly}>
+            Leads
+          </CrmFacet>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {leadsOnly ? (
+            <CreateLeadForm
+              members={memberOptions}
+              companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+            />
+          ) : (
+            <CreateContactForm
+              members={memberOptions}
+              companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+            />
+          )}
+          <CrmImportForm entity="contacts" />
+        </div>
       </CrmToolbar>
 
       <PeopleDirectory

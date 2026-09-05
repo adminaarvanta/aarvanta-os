@@ -164,7 +164,7 @@ export function CrmShell({
 
 export function CrmToolbar({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/80 bg-surface-elevated/80 p-2.5">
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/80 bg-surface-elevated/90 p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       {children}
     </div>
   );
@@ -185,8 +185,8 @@ export function CrmFacet({
       className={cn(
         "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
         active
-          ? "bg-gold text-black shadow-sm"
-          : "border border-border bg-background text-muted hover:border-gold/40 hover:text-foreground"
+          ? "bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_4px_12px_rgba(26,47,89,0.22)]"
+          : "border border-border bg-background text-muted hover:border-[#2f7f92]/40 hover:text-foreground"
       )}
     >
       {children}
