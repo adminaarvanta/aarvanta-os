@@ -1,7 +1,7 @@
 import { crmNewId, crmNow } from "@/lib/data/crm-helpers";
 import type { IntegrationRepository } from "@/lib/data/integration-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import type { IntegrationConnection, IntegrationProvider } from "@/types/integration";
+import type { IntegrationConnection } from "@/types/integration";
 
 const COLLECTION = "integrations";
 

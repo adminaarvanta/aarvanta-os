@@ -105,6 +105,10 @@ export async function listTeamCalendars(
         lastSyncError: conn?.lastSyncError,
         isCurrentUser: m.userId === currentUserId,
       };
+    })
+    .sort((a, b) => {
+      if (a.isCurrentUser !== b.isCurrentUser) return a.isCurrentUser ? -1 : 1;
+      return a.name.localeCompare(b.name);
     });
 }
 
