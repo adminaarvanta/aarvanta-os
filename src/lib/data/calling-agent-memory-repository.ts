@@ -171,6 +171,12 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       .sort((a, b) => b.priority - a.priority || a.nextAttemptAt.localeCompare(b.nextAttemptAt))
       .slice(0, limit);
   },
+  async listQueueItemsByStatus(status, limit = 100) {
+    return queue
+      .filter((q) => q.status === status)
+      .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))
+      .slice(0, limit);
+  },
 
   async listSessions(scope, filters) {
     let items = scoped(sessions, scope);
@@ -222,6 +228,15 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
     if (idx < 0) return null;
     sessions[idx] = { ...sessions[idx], ...patch, updatedAt: crmNow() };
     return sessions[idx];
+  },
+  async listOpenSessions(limit = 100) {
+    return sessions
+      .filter((s) => s.status === "ringing" || s.status === "in_progress")
+      .sort(
+        (a, b) =>
+          new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
+      )
+      .slice(0, limit);
   },
 
   async listMeetings(scope, filters) {

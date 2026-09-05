@@ -9,6 +9,8 @@ import {
   markWebhookProcessed,
 } from "@/lib/webhooks/idempotency";
 import { parseTwilioSms, verifyTwilioSignature } from "@/lib/webhooks/twilio";
+import { closeCallSession } from "@/lib/calling/close-call-session";
+import { spokenTurnCount } from "@/lib/calling/stale-call-session";
 import { parseTwilioVoiceStatus } from "@/lib/webhooks/twilio-voice";
 
 async function parseTwilioBody(req: Request) {
@@ -125,47 +127,56 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true, processed: 0, duplicate: true });
     }
 
-    if (call.direction === "outbound") {
-      let conversation = await repo.findConversationByPhone(call.phone, scope);
-      if (!conversation) {
-        conversation = await repo.ensurePhoneConversation(
-          { phone: call.phone, channel: "voice" },
-          scope
-        );
-      }
-      const patched = await repo.patchCallBySid(
-        conversation.id,
-        call.callSid,
-        {
-          summary: call.summary,
-          durationSeconds: call.durationSeconds,
-        },
-        scope
-      );
-      if (!patched) {
-        await repo.addOutboundCall(
+    const terminal = [
+      "completed",
+      "busy",
+      "failed",
+      "no-answer",
+      "canceled",
+    ].includes(call.status);
+
+    if (terminal && call.phone) {
+      if (call.direction === "outbound") {
+        let conversation = await repo.findConversationByPhone(call.phone, scope);
+        if (!conversation) {
+          conversation = await repo.ensurePhoneConversation(
+            { phone: call.phone, channel: "voice" },
+            scope
+          );
+        }
+        const patched = await repo.patchCallBySid(
           conversation.id,
+          call.callSid,
           {
             summary: call.summary,
             durationSeconds: call.durationSeconds,
+          },
+          scope
+        );
+        if (!patched) {
+          await repo.addOutboundCall(
+            conversation.id,
+            {
+              summary: call.summary,
+              durationSeconds: call.durationSeconds,
+              callSid: call.callSid,
+            },
+            scope
+          );
+        }
+      } else {
+        await repo.addInboundCall(
+          {
+            phone: call.phone,
+            durationSeconds: call.durationSeconds,
+            summary: call.summary,
             callSid: call.callSid,
           },
           scope
         );
       }
-    } else {
-      await repo.addInboundCall(
-        {
-          phone: call.phone,
-          durationSeconds: call.durationSeconds,
-          summary: call.summary,
-          callSid: call.callSid,
-        },
-        scope
-      );
     }
 
-    // Keep CallSession duration/status in sync for Voice OS History.
     try {
       const { getCallingAgentRepository } = await import(
         "@/lib/data/calling-agent-store"
@@ -173,35 +184,54 @@ export async function POST(req: Request) {
       const calling = getCallingAgentRepository();
       const session = await calling.getSessionByCallSid(call.callSid, scope);
       if (session) {
-        const terminal = ["completed", "busy", "failed", "no-answer", "canceled"].includes(
-          call.status
-        );
-        const outcome =
-          call.status === "busy"
-            ? ("busy" as const)
-            : call.status === "no-answer"
-              ? ("no_answer" as const)
-              : call.status === "failed" || call.status === "canceled"
-                ? ("failed" as const)
-                : call.status === "completed"
-                  ? session.outcome ?? ("completed" as const)
-                  : undefined;
-        await calling.updateSession(
-          session.id,
-          {
-            callSid: call.callSid,
+        if (call.status === "answered" || call.status === "in-progress") {
+          if (session.status === "ringing") {
+            await calling.updateSession(
+              session.id,
+              { status: "in_progress", callSid: call.callSid },
+              scope
+            );
+          }
+        } else if (
+          call.status === "busy" ||
+          call.status === "no-answer" ||
+          call.status === "failed" ||
+          call.status === "canceled"
+        ) {
+          const outcome =
+            call.status === "busy"
+              ? ("busy" as const)
+              : call.status === "no-answer"
+                ? ("no_answer" as const)
+                : ("failed" as const);
+          await closeCallSession({
+            scope,
+            session,
+            outcome,
+            summary: call.summary,
             durationSeconds: call.durationSeconds || session.durationSeconds,
-            ...(terminal
-              ? {
-                  status:
-                    call.status === "completed" ? "completed" : "failed",
-                  endedAt: session.endedAt ?? new Date().toISOString(),
-                  ...(outcome ? { outcome } : {}),
-                }
-              : {}),
-          },
-          scope
-        );
+          });
+        } else if (call.status === "completed") {
+          const spoken = spokenTurnCount(session);
+          if ((call.durationSeconds ?? 0) === 0 && spoken === 0) {
+            await closeCallSession({
+              scope,
+              session,
+              outcome: "no_answer",
+              summary: call.summary || "Call completed without connecting.",
+              durationSeconds: 0,
+            });
+          } else if ((call.durationSeconds ?? 0) > 0) {
+            await calling.updateSession(
+              session.id,
+              {
+                callSid: call.callSid,
+                durationSeconds: call.durationSeconds,
+              },
+              scope
+            );
+          }
+        }
       }
     } catch (err) {
       console.warn("[twilio] session sync failed", err);

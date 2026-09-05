@@ -163,6 +163,11 @@ export interface CallingAgentRepository {
     scope: TenantScope
   ): Promise<CallQueueItem | null>;
   listDueQueueItems(nowIso: string, limit?: number): Promise<CallQueueItem[]>;
+  /** Unscoped — used by cron to repair queue items stuck in `calling`. */
+  listQueueItemsByStatus(
+    status: QueueItemStatus,
+    limit?: number
+  ): Promise<CallQueueItem[]>;
 
   listSessions(
     scope: TenantScope,
@@ -185,6 +190,8 @@ export interface CallingAgentRepository {
     >,
     scope: TenantScope
   ): Promise<CallSession | null>;
+  /** Unscoped — ringing + in_progress across tenants for the stale-session sweeper. */
+  listOpenSessions(limit?: number): Promise<CallSession[]>;
 
   listMeetings(
     scope: TenantScope,

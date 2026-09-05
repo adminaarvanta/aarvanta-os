@@ -136,6 +136,7 @@ async function initiateTwilioVoiceCall(
     Method: "POST",
     StatusCallback: statusCallback,
     StatusCallbackMethod: "POST",
+    Timeout: "30",
   });
   for (const event of ["initiated", "ringing", "answered", "completed"]) {
     body.append("StatusCallbackEvent", event);

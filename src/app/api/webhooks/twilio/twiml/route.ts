@@ -196,7 +196,7 @@ function buildConversationRelayTwiml(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <ConversationRelay url="${escapeXml(wssUrl)}"${welcomeAttr} language="${escapeXml(params.language)}" ttsProvider="${escapeXml(params.provider)}" voice="${escapeXml(params.voiceId)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any">
+    <ConversationRelay url="${escapeXml(wssUrl)}"${welcomeAttr} language="${escapeXml(params.language)}" ttsProvider="${escapeXml(params.provider)}" voice="${escapeXml(params.voiceId)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any" sessionTimeout="900">
       <Parameter name="goal" value="${escapeXml(params.goal)}" />
       <Parameter name="direction" value="${escapeXml(params.direction)}" />
       <Parameter name="conversationId" value="${escapeXml(params.conversationId)}" />

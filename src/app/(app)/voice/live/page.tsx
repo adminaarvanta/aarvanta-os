@@ -5,7 +5,7 @@ export default function VoiceLivePage() {
   return (
     <VoicePageShell
       title="Live Calls"
-      subtitle="Real-time AI agent activity, transcript, and qualification"
+      subtitle="Who is ringing, connecting, or on the line — plus stuck sessions that never connected"
       tone="cyan"
     >
       <LiveCallsPanel />

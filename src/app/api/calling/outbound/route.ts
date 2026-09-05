@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { closeCallSession } from "@/lib/calling/close-call-session";
 import { deliverOutbound } from "@/lib/channels/deliver";
+import { shouldSimulateChannel } from "@/lib/channels/config";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import { normalizePhone } from "@/lib/data/conversation-helpers";
@@ -111,24 +113,21 @@ export async function POST(req: Request) {
     });
     callSid = delivery.callSid;
   } catch (error) {
-    await calling.updateSession(
-      session.id,
-      { status: "failed", outcome: "failed" },
-      scope
-    );
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Twilio voice delivery failed",
-      },
-      { status: 502 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Twilio voice delivery failed";
+    await closeCallSession({
+      scope,
+      sessionId: session.id,
+      outcome: "failed",
+      summary: message,
+    });
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 
   await calling.updateSession(
     session.id,
     {
-      status: "in_progress",
+      status: shouldSimulateChannel("voice") ? "in_progress" : "ringing",
       callSid,
       summary: parsed.data.message,
     },
