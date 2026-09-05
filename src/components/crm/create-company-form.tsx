@@ -1,18 +1,25 @@
 "use client";
 
+import { Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useId, useState } from "react";
+import {
+  CrmField,
+  CrmFormActions,
+  CrmFormBody,
+  CrmFormDialog,
+  crmInputClass,
+} from "@/components/crm/crm-form";
 import { MemberSelect } from "@/components/shared/member-select";
 import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
 
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30";
-
 export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
   const router = useRouter();
+  const ids = useId();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [industry, setIndustry] = useState("");
@@ -21,10 +28,17 @@ export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
   const [notes, setNotes] = useState("");
   const [ownerId, setOwnerId] = useState("");
 
+  const close = useCallback(() => {
+    if (busy) return;
+    setOpen(false);
+    setError(null);
+  }, [busy]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch("/api/companies", {
         method: "POST",
@@ -40,92 +54,122 @@ export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
           tags: ["prospect"],
         }),
       });
-      if (res.ok) {
-        const data = (await res.json()) as { company: { id: string } };
-        setName("");
-        setDomain("");
-        setIndustry("");
-        setSize("");
-        setWebsite("");
-        setNotes("");
-        setOwnerId("");
-        setOpen(false);
-        router.push(`/crm/companies/${data.company.id}`);
-        router.refresh();
+      if (!res.ok) {
+        setError("Could not create that company. Try again.");
+        return;
       }
+      const data = (await res.json()) as { company: { id: string } };
+      setName("");
+      setDomain("");
+      setIndustry("");
+      setSize("");
+      setWebsite("");
+      setNotes("");
+      setOwnerId("");
+      setOpen(false);
+      router.push(`/crm/companies/${data.company.id}`);
+      router.refresh();
     } finally {
       setBusy(false);
     }
   }
 
-  if (!open) {
-    return (
-      <Button type="button" size="sm" onClick={() => setOpen(true)}>
+  return (
+    <>
+      <Button type="button" size="sm" variant="navy" onClick={() => setOpen(true)}>
+        <Building2 className="mr-1.5 h-3.5 w-3.5" />
         Add company
       </Button>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="rounded-xl border border-border bg-surface-elevated p-4 space-y-3"
-    >
-      <p className="text-sm font-medium text-foreground">New company</p>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Company name *"
-        required
-        className={inputClass}
-      />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <input
-          value={domain}
-          onChange={(e) => setDomain(e.target.value)}
-          placeholder="Domain"
-          className={inputClass}
-        />
-        <input
-          value={website}
-          onChange={(e) => setWebsite(e.target.value)}
-          placeholder="Website"
-          className={inputClass}
-        />
-        <input
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          placeholder="Industry"
-          className={inputClass}
-        />
-        <input
-          value={size}
-          onChange={(e) => setSize(e.target.value)}
-          placeholder="Size (e.g. 50–200)"
-          className={inputClass}
-        />
-      </div>
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes (optional)"
-        rows={2}
-        className={inputClass}
-      />
-      <MemberSelect
-        members={members}
-        value={ownerId}
-        onChange={setOwnerId}
-        placeholder="Owner (optional)"
-      />
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={busy}>
-          {busy ? "Saving…" : "Create company"}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
-        </Button>
-      </div>
-    </form>
+      <CrmFormDialog
+        open={open}
+        title="New company"
+        description="Create an account. You can type any company name — it does not have to be in a list."
+        icon={Building2}
+        onClose={close}
+      >
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <CrmFormBody>
+            <CrmField label="Company name" htmlFor={`${ids}-name`} required>
+              <input
+                id={`${ids}-name`}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Acme Robotics"
+                required
+                className={crmInputClass}
+              />
+            </CrmField>
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              <CrmField label="Domain" htmlFor={`${ids}-domain`}>
+                <input
+                  id={`${ids}-domain`}
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  placeholder="acme.com"
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Website" htmlFor={`${ids}-website`}>
+                <input
+                  id={`${ids}-website`}
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://"
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Industry" htmlFor={`${ids}-industry`}>
+                <input
+                  id={`${ids}-industry`}
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  placeholder="SaaS, consulting…"
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Size" htmlFor={`${ids}-size`}>
+                <input
+                  id={`${ids}-size`}
+                  value={size}
+                  onChange={(e) => setSize(e.target.value)}
+                  placeholder="50–200"
+                  className={crmInputClass}
+                />
+              </CrmField>
+            </div>
+            <CrmField label="Notes" htmlFor={`${ids}-notes`}>
+              <textarea
+                id={`${ids}-notes`}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="What they buy, how you met…"
+                className={`${crmInputClass} resize-none`}
+              />
+            </CrmField>
+            <CrmField label="Owner" htmlFor={`${ids}-owner`}>
+              <MemberSelect
+                id={`${ids}-owner`}
+                members={members}
+                value={ownerId}
+                onChange={setOwnerId}
+                placeholder="Unassigned"
+                className={crmInputClass}
+              />
+            </CrmField>
+            {error ? (
+              <p className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
+          </CrmFormBody>
+          <CrmFormActions
+            busy={busy}
+            onCancel={close}
+            submitLabel="Create company"
+          />
+        </form>
+      </CrmFormDialog>
+    </>
   );
 }

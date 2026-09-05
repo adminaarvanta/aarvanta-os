@@ -19,11 +19,10 @@ export default async function ActivityPage({
   const scope = await getTenantScope();
   const { assignedTo } = await searchParams;
 
-  const [tasks, members] = await Promise.all([
-    getCrmRepository().listTasks(
-      scope,
-      assignedTo ? { assignedTo } : undefined
-    ),
+  const repo = getCrmRepository();
+  const [tasks, companies, members] = await Promise.all([
+    repo.listTasks(scope, assignedTo ? { assignedTo } : undefined),
+    repo.listCompanies(scope),
     getTenantRepository().listMembers(scope),
   ]);
 
@@ -73,11 +72,14 @@ export default async function ActivityPage({
       actions={<AskAiButton module="crm" />}
     >
       <CrmToolbar>
-        <div className="min-w-[min(100%,24rem)] flex-1">
-          <CreateTaskForm members={memberOptions} />
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <CreateTaskForm
+            members={memberOptions}
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          />
+          <CrmImportForm entity="tasks" />
+          <SeedCrmSampleButton />
         </div>
-        <CrmImportForm entity="tasks" />
-        <SeedCrmSampleButton />
       </CrmToolbar>
       <Suspense fallback={null}>
         <TaskFilters members={memberOptions} />

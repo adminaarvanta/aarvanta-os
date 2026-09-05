@@ -28,10 +28,11 @@ export default async function SalesPage({
   const { pipeline: pipelineParam } = await searchParams;
   const repo = getCrmRepository();
 
-  const [pipelines, deals, contacts, members] = await Promise.all([
+  const [pipelines, deals, contacts, companies, members] = await Promise.all([
     repo.listPipelines(scope),
     repo.listDeals(scope),
     repo.listContacts(scope),
+    repo.listCompanies(scope),
     getTenantRepository().listMembers(scope),
   ]);
 
@@ -48,9 +49,11 @@ export default async function SalesPage({
         wide
       >
         <CrmToolbar>
-          <CreatePipelineForm />
-          <CrmImportForm entity="pipelines" />
-          <CrmImportForm entity="deals" />
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <CreatePipelineForm />
+            <CrmImportForm entity="pipelines" />
+            <CrmImportForm entity="deals" />
+          </div>
         </CrmToolbar>
         <CrmEmptyState
           icon={Kanban}
@@ -71,31 +74,35 @@ export default async function SalesPage({
       wide
     >
       <CrmToolbar>
-        {pipelines.map((p) => (
-          <CrmFacet
-            key={p.id}
-            href={`/crm/sales?pipeline=${p.id}`}
-            active={p.id === activePipeline.id}
-          >
-            {p.name}
-          </CrmFacet>
-        ))}
-        <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
-        <CreateDealForm
-          pipeline={activePipeline}
-          contacts={contacts}
-          members={memberOptions}
-        />
-        <CreatePipelineForm />
-        <EditPipelineForm pipeline={activePipeline} />
-        <DeleteEntityButton
-          entity="pipelines"
-          id={activePipeline.id}
-          label="pipeline"
-          redirectTo="/crm/sales"
-        />
-        <CrmImportForm entity="pipelines" />
-        <CrmImportForm entity="deals" />
+        <div className="flex flex-wrap items-center gap-2">
+          {pipelines.map((p) => (
+            <CrmFacet
+              key={p.id}
+              href={`/crm/sales?pipeline=${p.id}`}
+              active={p.id === activePipeline.id}
+            >
+              {p.name}
+            </CrmFacet>
+          ))}
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <CreateDealForm
+            pipeline={activePipeline}
+            contacts={contacts}
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+            members={memberOptions}
+          />
+          <CreatePipelineForm />
+          <EditPipelineForm pipeline={activePipeline} />
+          <DeleteEntityButton
+            entity="pipelines"
+            id={activePipeline.id}
+            label="pipeline"
+            redirectTo="/crm/sales"
+          />
+          <CrmImportForm entity="pipelines" />
+          <CrmImportForm entity="deals" />
+        </div>
       </CrmToolbar>
 
       <PipelineBoard

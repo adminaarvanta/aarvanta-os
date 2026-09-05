@@ -8,11 +8,16 @@ import {
   Users,
 } from "lucide-react";
 import { AskAiButton } from "@/components/ai-team/ask-ai-button";
+import { CreateCompanyForm } from "@/components/crm/create-company-form";
+import { CreateContactForm } from "@/components/crm/create-contact-form";
+import { CreateDealForm } from "@/components/crm/create-deal-form";
+import { CreateTaskForm } from "@/components/crm/create-task-form";
 import { CrmLoopPanel } from "@/components/crm/crm-loop-panel";
 import {
   CrmAvatar,
   CrmSection,
   CrmShell,
+  CrmToolbar,
   formatCrmMoney,
 } from "@/components/crm/crm-shell";
 import { LeadScoreBadge } from "@/components/crm/lead-score-badge";
@@ -74,6 +79,27 @@ export default async function CrmOverviewPage() {
         />
       }
     >
+      <CrmToolbar>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <CreateContactForm
+            members={memberOptions}
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          />
+          <CreateCompanyForm members={memberOptions} />
+          {pipelines[0] ? (
+            <CreateDealForm
+              pipeline={pipelines[0]}
+              contacts={contacts}
+              companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+              members={memberOptions}
+            />
+          ) : null}
+          <CreateTaskForm
+            members={memberOptions}
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+          />
+        </div>
+      </CrmToolbar>
       <div className="grid gap-4 xl:grid-cols-2 xl:items-stretch">
         <section className="h-full overflow-hidden rounded-2xl border border-gold/30 bg-surface-elevated shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
           <div className="h-1.5 bg-gradient-to-r from-[#1a2f59] via-[#a8894f] to-[#2f7f92]" />

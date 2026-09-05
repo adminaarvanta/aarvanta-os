@@ -1,8 +1,17 @@
 "use client";
 
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { CompanyPicker } from "@/components/crm/company-picker";
+import {
+  CrmField,
+  CrmFormActions,
+  CrmFormBody,
+  CrmFormDialog,
+  crmChipClass,
+  crmInputClass,
+} from "@/components/crm/crm-form";
 import { Button } from "@/components/ui/button";
 import {
   ensureCompanyId,
@@ -10,9 +19,6 @@ import {
   type CompanySelection,
 } from "@/lib/crm/company-selection";
 import type { CrmCompany, CrmContact, ContactTag } from "@/types/crm";
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30";
 
 const TAG_OPTIONS: ContactTag[] = [
   "prospect",
@@ -31,8 +37,10 @@ export function EditContactForm({
   companies: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
+  const ids = useId();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState(contact.firstName);
   const [lastName, setLastName] = useState(contact.lastName);
   const [email, setEmail] = useState(contact.email ?? "");
@@ -44,6 +52,12 @@ export function EditContactForm({
   const [notes, setNotes] = useState(contact.notes ?? "");
   const [tags, setTags] = useState<ContactTag[]>(contact.tags);
 
+  const close = useCallback(() => {
+    if (busy) return;
+    setOpen(false);
+    setError(null);
+  }, [busy]);
+
   function toggleTag(tag: ContactTag) {
     setTags((current) =>
       current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]
@@ -54,6 +68,7 @@ export function EditContactForm({
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim()) return;
     setBusy(true);
+    setError(null);
     try {
       const accountId = await ensureCompanyId(companies, company);
       const res = await fetch(`/api/contacts/${contact.id}`, {
@@ -70,110 +85,131 @@ export function EditContactForm({
           tags,
         }),
       });
-      if (res.ok) {
-        setOpen(false);
-        router.refresh();
+      if (!res.ok) {
+        setError("Could not save this contact. Try again.");
+        return;
       }
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
   }
 
-  if (!open) {
-    return (
+  return (
+    <>
       <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(true)}>
+        <Pencil className="mr-1.5 h-3.5 w-3.5" />
         Edit contact
       </Button>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="rounded-xl border border-border bg-surface-elevated p-4 space-y-3"
-    >
-      <p className="text-sm font-medium text-foreground">Edit contact</p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <input
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          placeholder="First name *"
-          required
-          className={inputClass}
-        />
-        <input
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          placeholder="Last name *"
-          required
-          className={inputClass}
-        />
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          type="email"
-          className={inputClass}
-        />
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="Phone"
-          className={inputClass}
-        />
-        <input
-          value={jobTitle}
-          onChange={(e) => setJobTitle(e.target.value)}
-          placeholder="Job title"
-          className={inputClass}
-        />
-        <div className="sm:col-span-2">
-          <CompanyPicker
-            companies={companies}
-            value={company}
-            onChange={setCompany}
-          />
-        </div>
-      </div>
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes"
-        rows={2}
-        className={inputClass}
-      />
-      <div className="flex flex-wrap gap-2">
-        {TAG_OPTIONS.map((tag) => (
-          <button
-            key={tag}
-            type="button"
-            onClick={() => toggleTag(tag)}
-            className={
-              tags.includes(tag)
-                ? "rounded-full bg-gold/20 px-2.5 py-1 text-xs text-gold ring-1 ring-gold/40"
-                : "rounded-full border border-border px-2.5 py-1 text-xs text-muted"
-            }
-          >
-            {tag.replace("_", " ")}
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={busy}>
-          {busy ? "Saving…" : "Save changes"}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
-        </Button>
-      </div>
-    </form>
+      <CrmFormDialog
+        open={open}
+        title="Edit contact"
+        description="Update details, or type a new company name to create and link it."
+        icon={Pencil}
+        onClose={close}
+      >
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <CrmFormBody>
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              <CrmField label="First name" htmlFor={`${ids}-first`} required>
+                <input
+                  id={`${ids}-first`}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Last name" htmlFor={`${ids}-last`} required>
+                <input
+                  id={`${ids}-last`}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Email" htmlFor={`${ids}-email`}>
+                <input
+                  id={`${ids}-email`}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Phone" htmlFor={`${ids}-phone`}>
+                <input
+                  id={`${ids}-phone`}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={crmInputClass}
+                />
+              </CrmField>
+            </div>
+            <CrmField label="Job title" htmlFor={`${ids}-title`}>
+              <input
+                id={`${ids}-title`}
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                className={crmInputClass}
+              />
+            </CrmField>
+            <CrmField label="Company" htmlFor={`${ids}-company`}>
+              <CompanyPicker
+                id={`${ids}-company`}
+                companies={companies}
+                value={company}
+                onChange={setCompany}
+              />
+            </CrmField>
+            <CrmField label="Notes" htmlFor={`${ids}-notes`}>
+              <textarea
+                id={`${ids}-notes`}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className={`${crmInputClass} resize-none`}
+              />
+            </CrmField>
+            <CrmField label="Tags">
+              <div className="flex flex-wrap gap-2">
+                {TAG_OPTIONS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={
+                      tags.includes(tag) ? crmChipClass.active : crmChipClass.idle
+                    }
+                  >
+                    {tag.replace("_", " ")}
+                  </button>
+                ))}
+              </div>
+            </CrmField>
+            {error ? (
+              <p className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
+          </CrmFormBody>
+          <CrmFormActions busy={busy} onCancel={close} submitLabel="Save changes" />
+        </form>
+      </CrmFormDialog>
+    </>
   );
 }
 
 export function EditCompanyForm({ company }: { company: CrmCompany }) {
   const router = useRouter();
+  const ids = useId();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(company.name);
   const [domain, setDomain] = useState(company.domain ?? "");
   const [industry, setIndustry] = useState(company.industry ?? "");
@@ -182,10 +218,17 @@ export function EditCompanyForm({ company }: { company: CrmCompany }) {
   const [address, setAddress] = useState(company.address ?? "");
   const [notes, setNotes] = useState(company.notes ?? "");
 
+  const close = useCallback(() => {
+    if (busy) return;
+    setOpen(false);
+    setError(null);
+  }, [busy]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`/api/companies/${company.id}`, {
         method: "PATCH",
@@ -200,83 +243,101 @@ export function EditCompanyForm({ company }: { company: CrmCompany }) {
           notes: notes.trim() || undefined,
         }),
       });
-      if (res.ok) {
-        setOpen(false);
-        router.refresh();
+      if (!res.ok) {
+        setError("Could not save this company. Try again.");
+        return;
       }
+      setOpen(false);
+      router.refresh();
     } finally {
       setBusy(false);
     }
   }
 
-  if (!open) {
-    return (
+  return (
+    <>
       <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(true)}>
+        <Pencil className="mr-1.5 h-3.5 w-3.5" />
         Edit company
       </Button>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="rounded-xl border border-border bg-surface-elevated p-4 space-y-3"
-    >
-      <p className="text-sm font-medium text-foreground">Edit company</p>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Company name *"
-        required
-        className={inputClass}
-      />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <input
-          value={domain}
-          onChange={(e) => setDomain(e.target.value)}
-          placeholder="Domain"
-          className={inputClass}
-        />
-        <input
-          value={website}
-          onChange={(e) => setWebsite(e.target.value)}
-          placeholder="Website"
-          className={inputClass}
-        />
-        <input
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          placeholder="Industry"
-          className={inputClass}
-        />
-        <input
-          value={size}
-          onChange={(e) => setSize(e.target.value)}
-          placeholder="Size"
-          className={inputClass}
-        />
-      </div>
-      <input
-        value={address}
-        onChange={(e) => setAddress(e.target.value)}
-        placeholder="Address"
-        className={inputClass}
-      />
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes"
-        rows={2}
-        className={inputClass}
-      />
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={busy}>
-          {busy ? "Saving…" : "Save changes"}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
-        </Button>
-      </div>
-    </form>
+      <CrmFormDialog
+        open={open}
+        title="Edit company"
+        description="Update the account details. The company name can be anything you need."
+        icon={Pencil}
+        onClose={close}
+      >
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <CrmFormBody>
+            <CrmField label="Company name" htmlFor={`${ids}-name`} required>
+              <input
+                id={`${ids}-name`}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className={crmInputClass}
+              />
+            </CrmField>
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              <CrmField label="Domain" htmlFor={`${ids}-domain`}>
+                <input
+                  id={`${ids}-domain`}
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Website" htmlFor={`${ids}-website`}>
+                <input
+                  id={`${ids}-website`}
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Industry" htmlFor={`${ids}-industry`}>
+                <input
+                  id={`${ids}-industry`}
+                  value={industry}
+                  onChange={(e) => setIndustry(e.target.value)}
+                  className={crmInputClass}
+                />
+              </CrmField>
+              <CrmField label="Size" htmlFor={`${ids}-size`}>
+                <input
+                  id={`${ids}-size`}
+                  value={size}
+                  onChange={(e) => setSize(e.target.value)}
+                  className={crmInputClass}
+                />
+              </CrmField>
+            </div>
+            <CrmField label="Address" htmlFor={`${ids}-address`}>
+              <input
+                id={`${ids}-address`}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className={crmInputClass}
+              />
+            </CrmField>
+            <CrmField label="Notes" htmlFor={`${ids}-notes`}>
+              <textarea
+                id={`${ids}-notes`}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                className={`${crmInputClass} resize-none`}
+              />
+            </CrmField>
+            {error ? (
+              <p className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
+          </CrmFormBody>
+          <CrmFormActions busy={busy} onCancel={close} submitLabel="Save changes" />
+        </form>
+      </CrmFormDialog>
+    </>
   );
 }

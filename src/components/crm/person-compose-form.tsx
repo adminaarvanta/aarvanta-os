@@ -4,7 +4,14 @@ import { UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useId, useState } from "react";
 import { CompanyPicker } from "@/components/crm/company-picker";
-import { CrmField, CrmFormDialog, crmInputClass } from "@/components/crm/crm-form";
+import {
+  CrmField,
+  CrmFormActions,
+  CrmFormBody,
+  CrmFormDialog,
+  crmChipClass,
+  crmInputClass,
+} from "@/components/crm/crm-form";
 import { MemberSelect } from "@/components/shared/member-select";
 import { Button } from "@/components/ui/button";
 import {
@@ -129,7 +136,7 @@ export function PersonComposeForm({
         onClose={close}
       >
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+          <CrmFormBody>
           <div className="grid gap-3.5 sm:grid-cols-2">
             <CrmField label="First name" htmlFor={`${ids}-first`} required>
               <input
@@ -208,12 +215,7 @@ export function PersonComposeForm({
                         key={option.value}
                         type="button"
                         onClick={() => setTag(option.value)}
-                        className={cn(
-                          "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                          active
-                            ? "bg-gradient-to-r from-[#1a2f59] to-[#2f7f92] text-white shadow-[0_4px_12px_rgba(26,47,89,0.22)]"
-                            : "border border-border bg-background text-muted hover:border-[#2f7f92]/40 hover:text-foreground"
-                        )}
+                        className={active ? crmChipClass.active : crmChipClass.idle}
                       >
                         {option.label}
                       </button>
@@ -259,26 +261,13 @@ export function PersonComposeForm({
               {error}
             </p>
           ) : null}
-          </div>
+          </CrmFormBody>
 
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border-subtle bg-surface-elevated px-5 py-4">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={close}
-              disabled={busy}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" size="sm" variant="navy" disabled={busy}>
-              {busy
-                ? "Saving…"
-                : isLead
-                  ? "Create lead"
-                  : "Create contact"}
-            </Button>
-          </div>
+          <CrmFormActions
+            busy={busy}
+            onCancel={close}
+            submitLabel={isLead ? "Create lead" : "Create contact"}
+          />
         </form>
       </CrmFormDialog>
     </>

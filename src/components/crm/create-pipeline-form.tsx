@@ -1,25 +1,39 @@
 "use client";
 
+import { GitBranch } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useId, useState } from "react";
+import {
+  CrmField,
+  CrmFormActions,
+  CrmFormBody,
+  CrmFormDialog,
+  crmInputClass,
+} from "@/components/crm/crm-form";
 import { Button } from "@/components/ui/button";
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-gold focus:ring-1 focus:ring-gold/30";
 
 const DEFAULT_STAGES = "New, Qualified, Proposal, Negotiation, Won";
 
 export function CreatePipelineForm() {
   const router = useRouter();
+  const ids = useId();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [stagesText, setStagesText] = useState(DEFAULT_STAGES);
+
+  const close = useCallback(() => {
+    if (busy) return;
+    setOpen(false);
+    setError(null);
+  }, [busy]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
+    setError(null);
     try {
       const stageNames = stagesText
         .split(",")
@@ -35,60 +49,79 @@ export function CreatePipelineForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), stages }),
       });
-      if (res.ok) {
-        const data = (await res.json()) as { pipeline?: { id: string } };
-        setName("");
-        setStagesText(DEFAULT_STAGES);
-        setOpen(false);
-        if (data.pipeline?.id) {
-          router.push(`/crm/sales?pipeline=${data.pipeline.id}`);
-        }
-        router.refresh();
+      if (!res.ok) {
+        setError("Could not create that pipeline. Try again.");
+        return;
       }
+      const data = (await res.json()) as { pipeline?: { id: string } };
+      setName("");
+      setStagesText(DEFAULT_STAGES);
+      setOpen(false);
+      if (data.pipeline?.id) {
+        router.push(`/crm/sales?pipeline=${data.pipeline.id}`);
+      }
+      router.refresh();
     } finally {
       setBusy(false);
     }
   }
 
-  if (!open) {
-    return (
-      <Button type="button" size="sm" variant="secondary" onClick={() => setOpen(true)}>
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        className="border-[#2f7f92]/25 bg-sky-500/[0.07] text-[#1a2f59] hover:border-[#2f7f92]/45 hover:bg-sky-500/[0.12]"
+        onClick={() => setOpen(true)}
+      >
+        <GitBranch className="mr-1.5 h-3.5 w-3.5" />
         Add pipeline
       </Button>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="rounded-xl border border-border bg-surface-elevated p-4 space-y-3"
-    >
-      <p className="text-sm font-medium text-foreground">New pipeline</p>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Pipeline name *"
-        required
-        className={inputClass}
-      />
-      <div>
-        <label className="mb-1 block text-xs text-muted">
-          Stages (comma-separated)
-        </label>
-        <input
-          value={stagesText}
-          onChange={(e) => setStagesText(e.target.value)}
-          className={inputClass}
-        />
-      </div>
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={busy}>
-          {busy ? "Saving…" : "Create pipeline"}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Cancel
-        </Button>
-      </div>
-    </form>
+      <CrmFormDialog
+        open={open}
+        title="New pipeline"
+        description="Name the board and list stages in the order deals should move."
+        icon={GitBranch}
+        onClose={close}
+      >
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <CrmFormBody>
+            <CrmField label="Pipeline name" htmlFor={`${ids}-name`} required>
+              <input
+                id={`${ids}-name`}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enterprise sales"
+                required
+                className={crmInputClass}
+              />
+            </CrmField>
+            <CrmField
+              label="Stages"
+              htmlFor={`${ids}-stages`}
+              hint="Comma-separated, in order. Probabilities are set automatically."
+            >
+              <input
+                id={`${ids}-stages`}
+                value={stagesText}
+                onChange={(e) => setStagesText(e.target.value)}
+                className={crmInputClass}
+              />
+            </CrmField>
+            {error ? (
+              <p className="rounded-xl border border-danger/20 bg-danger/5 px-3 py-2 text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
+          </CrmFormBody>
+          <CrmFormActions
+            busy={busy}
+            onCancel={close}
+            submitLabel="Create pipeline"
+          />
+        </form>
+      </CrmFormDialog>
+    </>
   );
 }

@@ -25,8 +25,10 @@ export default async function CompaniesPage() {
       actions={<AskAiButton module="crm" />}
     >
       <CrmToolbar>
-        <CreateCompanyForm members={memberOptions} />
-        <CrmImportForm entity="companies" />
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <CreateCompanyForm members={memberOptions} />
+          <CrmImportForm entity="companies" />
+        </div>
       </CrmToolbar>
       <CompaniesDirectory
         companies={companies.map((company) => ({

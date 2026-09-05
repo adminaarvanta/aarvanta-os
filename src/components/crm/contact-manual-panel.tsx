@@ -22,40 +22,43 @@ export function ContactManualPanel({
   const router = useRouter();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <section className="space-y-4 rounded-2xl border border-border/80 bg-surface-elevated p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Actions</h3>
-          <div className="flex flex-wrap gap-2">
-            <EditContactForm contact={contact} companies={companies} />
-            <DeleteEntityButton
-              entity="contacts"
-              id={contact.id}
-              label="contact"
-              redirectTo="/crm/people"
-            />
-          </div>
+    <section className="space-y-4 rounded-2xl border border-border/80 bg-surface-elevated p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground">Actions</h3>
+        <div className="flex flex-wrap gap-2">
+          <CreateTaskForm
+            members={members}
+            companies={companies}
+            contactId={contact.id}
+            accountId={contact.accountId}
+          />
+          <LogActivityForm
+            contactId={contact.id}
+            members={members}
+            defaultAuthorId={currentUserId}
+          />
+          <EditContactForm contact={contact} companies={companies} />
+          <DeleteEntityButton
+            entity="contacts"
+            id={contact.id}
+            label="contact"
+            redirectTo="/crm/people"
+          />
         </div>
-        <AssignOwnerField
-          label="Owner"
-          value={contact.ownerId}
-          members={members}
-          onSave={async (next) => {
-            await fetch(`/api/contacts/${contact.id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ownerId: next || undefined }),
-            });
-            router.refresh();
-          }}
-        />
-        <CreateTaskForm members={members} contactId={contact.id} />
-      </section>
-      <LogActivityForm
-        contactId={contact.id}
+      </div>
+      <AssignOwnerField
+        label="Owner"
+        value={contact.ownerId}
         members={members}
-        defaultAuthorId={currentUserId}
+        onSave={async (next) => {
+          await fetch(`/api/contacts/${contact.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ownerId: next || undefined }),
+          });
+          router.refresh();
+        }}
       />
-    </div>
+    </section>
   );
 }
