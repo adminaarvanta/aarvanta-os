@@ -38,3 +38,20 @@ export const createEmailCampaignSchema = z.object({
 });
 
 export const updateEmailCampaignSchema = createEmailCampaignSchema.partial();
+
+export const createEmailOutreachTemplateSchema = z.object({
+  name: z.string().min(1).max(160),
+  description: z.string().max(1000).optional(),
+  subject: z.string().min(1).max(200),
+  previewText: z.string().max(200).optional(),
+  htmlBody: z.string().max(100_000),
+  textBody: z.string().max(50_000),
+  source: z.enum(["user", "ai"]).optional(),
+});
+
+export const generateEmailTemplateSchema = z.object({
+  prompt: z.string().min(1).max(4000),
+  tone: z.string().max(80).optional(),
+  ctaUrl: z.string().url().optional().or(z.literal("")),
+  brandName: z.string().max(120).optional(),
+});

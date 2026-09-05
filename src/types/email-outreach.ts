@@ -84,3 +84,22 @@ export const EMAIL_MERGE_FIELDS = [
 ] as const;
 
 export type EmailMergeField = (typeof EMAIL_MERGE_FIELDS)[number];
+
+export type EmailTemplateSource = "starter" | "user" | "ai";
+
+/** Reusable Email OS HTML template (starters + user/AI saves). */
+export interface EmailOutreachTemplate extends TenantScope {
+  id: string;
+  name: string;
+  description?: string;
+  subject: string;
+  previewText?: string;
+  htmlBody: string;
+  textBody: string;
+  source: EmailTemplateSource;
+  /** Built-in catalog id when source is starter (not persisted as a user row). */
+  starterId?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}

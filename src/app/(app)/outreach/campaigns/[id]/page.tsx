@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Inbox, MailWarning, Send } from "lucide-react";
 import { EmailCampaignActions } from "@/components/outreach/campaign-actions";
+import { EmailCampaignComposer } from "@/components/outreach/campaign-composer";
 import {
   EmailBackLink,
   EmailEmptyState,
@@ -11,6 +12,7 @@ import {
 import { StatTile } from "@/components/ui/os/stat-tile";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getEmailOutreachRepository } from "@/lib/data/email-outreach-store";
+import { buildEmailPreviewHtml } from "@/lib/email-outreach/html-utils";
 import { campaignQueueStats } from "@/lib/email-outreach/metrics";
 import { getTenantScope } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
@@ -30,6 +32,10 @@ export default async function EmailCampaignDetailPage({ params }: Params) {
   ]);
   const contactById = new Map(contacts.map((c) => [c.id, c]));
   const stats = campaignQueueStats(queue);
+  const previewHtml = buildEmailPreviewHtml(
+    campaign.htmlBody,
+    campaign.textBody
+  );
 
   return (
     <EmailPageShell
@@ -39,7 +45,10 @@ export default async function EmailCampaignDetailPage({ params }: Params) {
       actions={
         <>
           <EmailStatusBadge status={campaign.status} />
-          <EmailCampaignActions campaignId={campaign.id} status={campaign.status} />
+          <EmailCampaignActions
+            campaignId={campaign.id}
+            status={campaign.status}
+          />
         </>
       }
     >
@@ -74,15 +83,36 @@ export default async function EmailCampaignDetailPage({ params }: Params) {
         />
       </div>
 
-      <EmailSection title="Message" accent="cyan">
-        <p className="text-sm font-medium text-foreground">{campaign.subject}</p>
-        {campaign.previewText ? (
-          <p className="mt-1 text-xs text-muted">{campaign.previewText}</p>
-        ) : null}
-        <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-border/70 bg-background/70 p-3 text-sm text-foreground">
-          {campaign.textBody}
-        </pre>
-      </EmailSection>
+      {campaign.status === "draft" ? (
+        <EmailSection title="Edit draft" accent="gold">
+          <EmailCampaignComposer contacts={contacts} campaign={campaign} />
+        </EmailSection>
+      ) : (
+        <EmailSection title="Message" accent="cyan">
+          <p className="text-sm font-medium text-foreground">
+            {campaign.subject}
+          </p>
+          {campaign.previewText ? (
+            <p className="mt-1 text-xs text-muted">{campaign.previewText}</p>
+          ) : null}
+          <div className="mt-3 overflow-hidden rounded-xl border border-border/70 bg-white">
+            <iframe
+              title="Campaign HTML preview"
+              sandbox=""
+              srcDoc={previewHtml}
+              className="h-[360px] w-full bg-white"
+            />
+          </div>
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs font-medium text-muted">
+              Plain text
+            </summary>
+            <pre className="mt-2 whitespace-pre-wrap rounded-xl border border-border/70 bg-background/70 p-3 text-sm text-foreground">
+              {campaign.textBody}
+            </pre>
+          </details>
+        </EmailSection>
+      )}
 
       <EmailSection title="Send queue" accent="navy" flush={queue.length > 0}>
         {queue.length ? (

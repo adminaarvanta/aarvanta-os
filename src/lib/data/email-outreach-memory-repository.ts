@@ -5,11 +5,16 @@ import {
 import type { EmailOutreachRepository } from "@/lib/data/email-outreach-repository";
 import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { TenantScope } from "@/types/communication";
-import type { EmailCampaign, EmailSendItem } from "@/types/email-outreach";
+import type {
+  EmailCampaign,
+  EmailOutreachTemplate,
+  EmailSendItem,
+} from "@/types/email-outreach";
 
 type MemoryState = {
   campaigns: EmailCampaign[];
   queue: EmailSendItem[];
+  templates: EmailOutreachTemplate[];
 };
 
 const globalStore = globalThis as typeof globalThis & {
@@ -21,9 +26,12 @@ function state(): MemoryState {
     globalStore.__aarvantaEmailOutreach = {
       campaigns: [...DEMO_EMAIL_CAMPAIGNS],
       queue: [...DEMO_EMAIL_QUEUE],
+      templates: [],
     };
   }
-  return globalStore.__aarvantaEmailOutreach;
+  const store = globalStore.__aarvantaEmailOutreach;
+  if (!store.templates) store.templates = [];
+  return store;
 }
 
 function scoped<T extends TenantScope>(items: T[], scope: TenantScope) {
@@ -76,6 +84,44 @@ export const emailOutreachMemoryRepository: EmailOutreachRepository = {
       updatedAt: crmNow(),
     };
     return store.campaigns[idx];
+  },
+
+  async listTemplates(scope) {
+    return scoped(state().templates, scope).sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+  },
+  async getTemplate(id, scope) {
+    const item = state().templates.find((t) => t.id === id);
+    return item && inCrmScope(item, scope) ? item : null;
+  },
+  async createTemplate(input, scope) {
+    const now = crmNow();
+    const template: EmailOutreachTemplate = {
+      ...scope,
+      id: crmNewId("emt"),
+      name: input.name,
+      description: input.description,
+      subject: input.subject,
+      previewText: input.previewText,
+      htmlBody: input.htmlBody,
+      textBody: input.textBody,
+      source: input.source ?? "user",
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const store = state();
+    store.templates = [template, ...store.templates];
+    return template;
+  },
+  async deleteTemplate(id, scope) {
+    const store = state();
+    const before = store.templates.length;
+    store.templates = store.templates.filter(
+      (t) => !(t.id === id && inCrmScope(t, scope))
+    );
+    return store.templates.length < before;
   },
 
   async listQueue(scope, filters) {
