@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { WorkforceUpgradeRepository } from "@/lib/data/workforce-upgrade-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
@@ -20,7 +20,9 @@ async function listScoped<T extends TenantScope>(collection: string, scope: Tena
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as T);
+  return snap.docs
+    .map((doc) => doc.data() as T)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const workforceUpgradeFirestoreRepository: WorkforceUpgradeRepository = {
@@ -35,7 +37,7 @@ export const workforceUpgradeFirestoreRepository: WorkforceUpgradeRepository = {
   async createSharedMemory(input, scope) {
     const now = crmNow();
     const entry: SharedMemoryEntry = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("sm"),
       createdAt: now,
@@ -55,7 +57,7 @@ export const workforceUpgradeFirestoreRepository: WorkforceUpgradeRepository = {
 
   async createCollaboration(input, scope) {
     const collab: AgentCollaboration = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("collab"),
       status: input.status ?? "completed",

@@ -22,6 +22,7 @@ export const launchFirestoreRepository: LaunchRepository = {
       .get();
     return snap.docs
       .map((doc) => doc.data() as LaunchSession)
+      .filter((item) => inCrmScope(item, scope))
       .sort(
         (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );

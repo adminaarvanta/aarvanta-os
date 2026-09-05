@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { NotificationsRepository } from "@/lib/data/notifications-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
@@ -20,7 +20,9 @@ async function listScoped<T extends TenantScope>(collection: string, scope: Tena
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as T);
+  return snap.docs
+    .map((doc) => doc.data() as T)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const notificationsFirestoreRepository: NotificationsRepository = {
@@ -67,7 +69,7 @@ export const notificationsFirestoreRepository: NotificationsRepository = {
 
   async createNotification(input, scope) {
     const item: AppNotification = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("notif"),
       read: false,

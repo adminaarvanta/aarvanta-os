@@ -19,8 +19,37 @@ function productionTenantScope(): TenantScope | null {
   return { tenantId, workspaceId, companyId };
 }
 
-/** Match tenant scope, including demo ↔ production aliasing during memory fallback. */
-export function inCrmScope<T extends TenantScope>(record: T, scope: TenantScope) {
+/** Persistable tenant fields — strips query-only viewer metadata. */
+export function persistScope(scope: TenantScope): TenantScope {
+  return {
+    tenantId: scope.tenantId,
+    workspaceId: scope.workspaceId,
+    companyId: scope.companyId,
+    ...(scope.ownerUserId ? { ownerUserId: scope.ownerUserId } : {}),
+  };
+}
+
+/** Drop query-only fields before writing a record assembled from session scope. */
+export function stripQueryScope<T extends TenantScope>(record: T): T {
+  const rest = { ...record };
+  delete rest.viewerRole;
+  return { ...rest, ...persistScope(record) };
+}
+
+/** Workspace fields only — for members, invitations, and team collaboration. */
+export function persistWorkspaceScope(scope: TenantScope): TenantScope {
+  return {
+    tenantId: scope.tenantId,
+    workspaceId: scope.workspaceId,
+    companyId: scope.companyId,
+  };
+}
+
+/** Workspace-only match for org members, invitations, and team collaboration. */
+export function inWorkspaceScope<T extends TenantScope>(
+  record: T,
+  scope: TenantScope
+) {
   if (scopesMatch(record, scope)) return true;
 
   if (isProductionMode() && isMemoryDatastore()) {
@@ -38,6 +67,34 @@ export function inCrmScope<T extends TenantScope>(record: T, scope: TenantScope)
   }
 
   return false;
+}
+
+function recordOwnerUserId(record: TenantScope): string | undefined {
+  if (record.ownerUserId) return record.ownerUserId;
+  const assigned = (record as TenantScope & { ownerId?: string }).ownerId;
+  return assigned || undefined;
+}
+
+/**
+ * Module data match: same workspace, then isolate to the signed-in user.
+ * System/webhook scopes (no ownerUserId) still see the whole workspace.
+ * Legacy rows without an owner are visible only to the workspace owner.
+ */
+export function inUserDataScope<T extends TenantScope>(
+  record: T,
+  scope: TenantScope
+) {
+  if (!inWorkspaceScope(record, scope)) return false;
+  if (!scope.ownerUserId) return true;
+
+  const recordOwner = recordOwnerUserId(record);
+  if (recordOwner) return recordOwner === scope.ownerUserId;
+  return scope.viewerRole === "owner";
+}
+
+/** Match tenant + user ownership for CRM and other operating modules. */
+export function inCrmScope<T extends TenantScope>(record: T, scope: TenantScope) {
+  return inUserDataScope(record, scope);
 }
 
 export function crmNewId(prefix: string) {

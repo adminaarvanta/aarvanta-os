@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { AgentChatRepository } from "@/lib/data/agent-chat-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
@@ -19,7 +19,9 @@ async function listScoped(scope: TenantScope): Promise<AgentChatMessage[]> {
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as AgentChatMessage);
+  return snap.docs
+    .map((doc) => doc.data() as AgentChatMessage)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const agentChatFirestoreRepository: AgentChatRepository = {
@@ -35,7 +37,7 @@ export const agentChatFirestoreRepository: AgentChatRepository = {
 
   async addMessage(input, scope) {
     const message: AgentChatMessage = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("agent_chat"),
       createdAt: crmNow(),

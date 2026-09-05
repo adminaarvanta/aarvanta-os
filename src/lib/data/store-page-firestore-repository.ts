@@ -20,7 +20,9 @@ export const storePageFirestoreRepository: StorePageRepository = {
       .where("workspaceId", "==", scope.workspaceId)
       .where("companyId", "==", scope.companyId)
       .get();
-    return snap.docs.map((doc) => doc.data() as GeneratedStorePage);
+    return snap.docs
+      .map((doc) => doc.data() as GeneratedStorePage)
+      .filter((item) => inCrmScope(item, scope));
   },
 
   async get(id, scope) {

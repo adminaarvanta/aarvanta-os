@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { ProjectRepository } from "@/lib/data/project-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
@@ -13,7 +13,7 @@ function getDb() {
   return db;
 }
 
-async function listScoped<T extends { tenantId: string }>(
+async function listScoped<T extends TenantScope>(
   collection: string,
   scope: TenantScope
 ): Promise<T[]> {
@@ -23,7 +23,9 @@ async function listScoped<T extends { tenantId: string }>(
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as T);
+  return snap.docs
+    .map((doc) => doc.data() as T)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const projectFirestoreRepository: ProjectRepository = {
@@ -45,7 +47,7 @@ export const projectFirestoreRepository: ProjectRepository = {
   async createProject(input, scope) {
     const now = crmNow();
     const project: Project = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("proj"),
       ...input,
       status: input.status ?? "active",
@@ -83,7 +85,7 @@ export const projectFirestoreRepository: ProjectRepository = {
     const existing = await this.listTasks(scope, input.projectId);
     const now = crmNow();
     const task: ProjectTask = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("ptask"),
       ...input,
       status: input.status ?? "todo",

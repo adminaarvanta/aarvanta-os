@@ -3,7 +3,7 @@ import {
   DEMO_EMAIL_QUEUE,
 } from "@/lib/email-outreach/demo-seed";
 import type { EmailOutreachRepository } from "@/lib/data/email-outreach-repository";
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { TenantScope } from "@/types/communication";
 import type { EmailCampaign, EmailSendItem } from "@/types/email-outreach";
 
@@ -43,7 +43,7 @@ export const emailOutreachMemoryRepository: EmailOutreachRepository = {
   async createCampaign(input, scope) {
     const now = crmNow();
     const campaign: EmailCampaign = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("emc"),
       name: input.name,
       description: input.description,
@@ -100,7 +100,7 @@ export const emailOutreachMemoryRepository: EmailOutreachRepository = {
   async createQueueItems(inputs, scope) {
     const now = crmNow();
     const created: EmailSendItem[] = inputs.map((input) => ({
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("ems"),
       campaignId: input.campaignId,
       contactId: input.contactId,

@@ -1,3 +1,4 @@
+import { persistWorkspaceScope } from "@/lib/data/crm-helpers";
 import type {
   Channel,
   ContactRef,
@@ -316,7 +317,7 @@ export function createConversation(
 ): Conversation {
   const now = new Date().toISOString();
   return {
-    ...scope,
+    ...persistWorkspaceScope(scope),
     id: newId("conv"),
     contact,
     channels: [channel],

@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type {
   CreateProjectInput,
   CreateProjectTaskInput,
@@ -30,7 +30,7 @@ export const projectMemoryRepository: ProjectRepository = {
   async createProject(input, scope) {
     const now = crmNow();
     const project: Project = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("proj"),
       ...input,
       status: input.status ?? "active",
@@ -65,7 +65,7 @@ export const projectMemoryRepository: ProjectRepository = {
   async createTask(input, scope) {
     const now = crmNow();
     const task: ProjectTask = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("ptask"),
       ...input,
       status: input.status ?? "todo",

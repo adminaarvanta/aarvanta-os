@@ -39,7 +39,7 @@ import {
   buildDemoWikiPages,
   buildDemoWritingDrafts,
 } from "@/lib/data/platform-demo-seed";
-import { crmNow } from "@/lib/data/crm-helpers";
+import { crmNow, persistScope } from "@/lib/data/crm-helpers";
 import { createScopedRepository } from "@/lib/data/scoped-store";
 import type { TenantScope } from "@/types/communication";
 import type { HrCase } from "@/types/hr-case";
@@ -646,7 +646,7 @@ export function createSopDocument(
   scope: TenantScope
 ) {
   return getSopStore().create({
-    ...scope,
+    ...persistScope(scope),
     title: input.title,
     question: input.question,
     content: input.content ?? "",
@@ -669,7 +669,7 @@ export function createProposalDocument(
   scope: TenantScope
 ) {
   return getProposalStore().create({
-    ...scope,
+    ...persistScope(scope),
     title: input.title,
     clientName: input.clientName,
     value: input.value ?? 0,
@@ -745,7 +745,7 @@ export function createAutonomousTask(
   scope: TenantScope
 ) {
   return getAutonomousStore().create({
-    ...scope,
+    ...persistScope(scope),
     ...input,
     status: "queued",
     createdAt: crmNow(),
@@ -779,7 +779,7 @@ export async function installMarketplaceAgent(
   }
 
   return getMarketplaceStore().create({
-    ...scope,
+    ...persistScope(scope),
     marketplaceId: catalogAgent.id,
     name: catalogAgent.name,
     enabled: true,

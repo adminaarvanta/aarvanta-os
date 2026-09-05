@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { WorkforceRepository } from "@/lib/data/workforce-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { normalizeAgentRun } from "@/lib/workforce/serialize";
@@ -20,7 +20,9 @@ async function listScoped(scope: TenantScope): Promise<AgentRun[]> {
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => normalizeAgentRun(doc.data() as AgentRun));
+  return snap.docs
+    .map((doc) => normalizeAgentRun(doc.data() as AgentRun))
+    .filter((item) => inCrmScope(item, scope));
 }
 
 async function getScoped(id: string, scope: TenantScope): Promise<AgentRun | null> {
@@ -48,7 +50,7 @@ export const workforceFirestoreRepository: WorkforceRepository = {
 
   async createRun(input, scope) {
     const run: AgentRun = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("agent_run"),
       createdAt: crmNow(),

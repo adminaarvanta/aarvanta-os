@@ -24,10 +24,20 @@ export interface SessionContext {
 
 const getSessionFromCookiesCached = cache(getSessionFromCookies);
 
+function withViewer(scope: TenantScope, userId: string, role: MemberRole): TenantScope {
+  return {
+    tenantId: scope.tenantId,
+    workspaceId: scope.workspaceId,
+    companyId: scope.companyId,
+    ownerUserId: userId,
+    viewerRole: role,
+  };
+}
+
 async function getDemoScopeFromCookie(): Promise<TenantScope> {
   const cookieStore = await cookies();
   const raw = cookieStore.get(WORKSPACE_COOKIE)?.value;
-  if (!raw) return DEMO_TENANT;
+  if (!raw) return { ...DEMO_TENANT, ownerUserId: DEMO_USER.userId, viewerRole: DEMO_USER.role };
 
   try {
     const parsed = JSON.parse(raw) as TenantScope;
@@ -36,12 +46,12 @@ async function getDemoScopeFromCookie(): Promise<TenantScope> {
       typeof parsed.workspaceId === "string" &&
       typeof parsed.companyId === "string"
     ) {
-      return parsed;
+      return withViewer(parsed, DEMO_USER.userId, DEMO_USER.role);
     }
   } catch {
     /* fall through */
   }
-  return DEMO_TENANT;
+  return { ...DEMO_TENANT, ownerUserId: DEMO_USER.userId, viewerRole: DEMO_USER.role };
 }
 
 export const getTenantScope = cache(async (): Promise<TenantScope> => {
@@ -70,12 +80,13 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
       "@/lib/billing/member-credits"
     );
     member = await withResolvedCreditOverrides(DEMO_USER.email, member);
+    const role = member?.role ?? DEMO_USER.role;
     return {
       userId: DEMO_USER.userId,
       email: DEMO_USER.email,
       name: DEMO_USER.name,
-      role: member?.role ?? DEMO_USER.role,
-      scope,
+      role,
+      scope: withViewer(scope, DEMO_USER.userId, role),
       member,
     };
   }
@@ -110,13 +121,14 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
   );
   member = await withResolvedCreditOverrides(session.email, member);
 
+  const role = member?.role ?? session.role;
   return {
     userId: session.userId,
     email: session.email,
     name: member?.name || session.name,
     // Prefer live membership role so hierarchy changes apply immediately.
-    role: member?.role ?? session.role,
-    scope,
+    role,
+    scope: withViewer(scope, session.userId, role),
     member,
   };
 });

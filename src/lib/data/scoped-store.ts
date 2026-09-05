@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, stripQueryScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
 
@@ -29,7 +29,7 @@ export function createScopedMemoryStore<T extends TenantScope & { id: string }>(
       idPrefix: string
     ) {
       const item = {
-        ...input,
+        ...stripQueryScope(input as T),
         id: input.id ?? crmNewId(idPrefix),
       } as T;
       items.unshift(item);
@@ -60,7 +60,9 @@ export function createScopedFirestoreStore<T extends TenantScope & { id: string 
       .where("workspaceId", "==", scope.workspaceId)
       .where("companyId", "==", scope.companyId)
       .get();
-    return snap.docs.map((doc) => doc.data() as T);
+    return snap.docs
+      .map((doc) => doc.data() as T)
+      .filter((item) => inCrmScope(item, scope));
   }
 
   return {
@@ -80,7 +82,7 @@ export function createScopedFirestoreStore<T extends TenantScope & { id: string 
       idPrefix: string
     ) {
       const item = {
-        ...input,
+        ...stripQueryScope(input as T),
         id: input.id ?? crmNewId(idPrefix),
       } as T;
       await db().collection(collection).doc(item.id).set(item);

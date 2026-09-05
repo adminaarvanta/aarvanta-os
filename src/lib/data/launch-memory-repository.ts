@@ -1,4 +1,4 @@
-import { crmNow, crmNewId, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNow, crmNewId, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { LaunchRepository } from "@/lib/data/launch-repository";
 import type { TenantScope } from "@/types/communication";
 import type { CreateLaunchSessionInput, LaunchSession } from "@/types/launch";
@@ -44,7 +44,7 @@ export function seedLaunchSession(
 ): LaunchSession {
   const now = crmNow();
   return {
-    ...scope,
+    ...persistScope(scope),
     id: crmNewId("launch"),
     status: "draft",
     intent: input,

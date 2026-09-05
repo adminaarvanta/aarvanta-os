@@ -1,5 +1,5 @@
 import type { EmailOutreachRepository } from "@/lib/data/email-outreach-repository";
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
 import type { EmailCampaign, EmailSendItem } from "@/types/email-outreach";
@@ -25,7 +25,9 @@ async function listScoped<T extends TenantScope>(
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as T);
+  return snap.docs
+    .map((doc) => doc.data() as T)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 async function getScoped<T extends TenantScope>(
@@ -57,7 +59,7 @@ export const emailOutreachFirestoreRepository: EmailOutreachRepository = {
   async createCampaign(input, scope) {
     const now = crmNow();
     const campaign: EmailCampaign = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("emc"),
       name: input.name,
       description: input.description,
@@ -121,7 +123,7 @@ export const emailOutreachFirestoreRepository: EmailOutreachRepository = {
     const created: EmailSendItem[] = [];
     for (const input of inputs) {
       const item: EmailSendItem = {
-        ...scope,
+        ...persistScope(scope),
         id: crmNewId("ems"),
         campaignId: input.campaignId,
         contactId: input.contactId,

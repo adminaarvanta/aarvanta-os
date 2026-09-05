@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { AgentChatRepository } from "@/lib/data/agent-chat-repository";
 import type { TenantScope } from "@/types/communication";
 import type { AgentChatMessage } from "@/types/workforce";
@@ -18,7 +18,7 @@ export const agentChatMemoryRepository: AgentChatRepository = {
 
   async addMessage(input, scope) {
     const message: AgentChatMessage = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("agent_chat"),
       createdAt: crmNow(),

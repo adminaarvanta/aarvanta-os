@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type {
   CreateKnowledgeChunkInput,
   CreateKnowledgeDocumentInput,
@@ -30,7 +30,9 @@ async function listScopedDocs(scope: TenantScope): Promise<KnowledgeDocument[]> 
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as KnowledgeDocument);
+  return snap.docs
+    .map((doc) => doc.data() as KnowledgeDocument)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 async function listScopedChunks(scope: TenantScope): Promise<KnowledgeChunk[]> {
@@ -40,7 +42,9 @@ async function listScopedChunks(scope: TenantScope): Promise<KnowledgeChunk[]> {
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as KnowledgeChunk);
+  return snap.docs
+    .map((doc) => doc.data() as KnowledgeChunk)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const knowledgeFirestoreRepository: KnowledgeRepository = {
@@ -64,7 +68,7 @@ export const knowledgeFirestoreRepository: KnowledgeRepository = {
     const doc: KnowledgeDocument = isFullDocument(input)
       ? input
       : {
-          ...scope,
+          ...persistScope(scope),
           id: crmNewId("kdoc"),
           ...input,
           tags: input.tags ?? [],
@@ -125,7 +129,7 @@ export const knowledgeFirestoreRepository: KnowledgeRepository = {
 
     const created: KnowledgeChunk[] = newChunks.map((chunk: CreateKnowledgeChunkInput) => {
       const record: KnowledgeChunk = {
-        ...scope,
+        ...persistScope(scope),
         id: crmNewId("kchunk"),
         ...chunk,
         createdAt: crmNow(),

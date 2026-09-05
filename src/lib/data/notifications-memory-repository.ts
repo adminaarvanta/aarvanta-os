@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import {
   buildDemoDigests,
   buildDemoNotifications,
@@ -50,7 +50,7 @@ export const notificationsMemoryRepository: NotificationsRepository = {
 
   async createNotification(input, scope) {
     const item = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("notif"),
       read: false,

@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { CreateWorkflowInput, WorkflowRepository } from "@/lib/data/workflow-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
@@ -20,7 +20,9 @@ async function listScoped<T extends TenantScope>(collection: string, scope: Tena
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as T);
+  return snap.docs
+    .map((doc) => doc.data() as T)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const workflowFirestoreRepository: WorkflowRepository = {
@@ -42,7 +44,7 @@ export const workflowFirestoreRepository: WorkflowRepository = {
   async createWorkflow(input: CreateWorkflowInput, scope) {
     const now = crmNow();
     const workflow: Workflow = {
-      ...scope,
+      ...persistScope(scope),
       id: crmNewId("wf"),
       ...input,
       enabled: input.enabled ?? true,
@@ -95,7 +97,7 @@ export const workflowFirestoreRepository: WorkflowRepository = {
 
   async createRun(input, scope) {
     const run: WorkflowRun = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("wf_run"),
       createdAt: crmNow(),

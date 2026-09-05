@@ -1,5 +1,5 @@
 import { DEMO_CRM_PIPELINES } from "@/lib/data/crm-demo-seed";
-import { crmNewId } from "@/lib/data/crm-helpers";
+import { crmNewId, persistScope } from "@/lib/data/crm-helpers";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { isProductionMode } from "@/lib/config/app-mode";
@@ -17,7 +17,7 @@ export async function ensureSalesPipeline(
   const template = DEMO_CRM_PIPELINES[0]!;
   const pipeline: CrmPipeline = {
     ...template,
-    ...scope,
+    ...persistScope(scope),
     id: crmNewId("pipe"),
   };
 

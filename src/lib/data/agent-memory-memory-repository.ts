@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { AgentMemoryRepository } from "@/lib/data/agent-memory-repository";
 import { DEMO_AGENT_MEMORY } from "@/lib/data/workforce-demo-seed";
 import type { TenantScope } from "@/types/communication";
@@ -19,7 +19,7 @@ export const agentMemoryMemoryRepository: AgentMemoryRepository = {
 
   async addMemory(input, scope) {
     const entry: AgentMemoryEntry = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("agent_mem"),
       createdAt: crmNow(),

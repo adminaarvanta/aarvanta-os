@@ -22,6 +22,7 @@ export const domainOrderFirestoreRepository: DomainOrderRepository = {
       .get();
     return snap.docs
       .map((doc) => doc.data() as DomainOrder)
+      .filter((item) => inCrmScope(item, scope))
       .sort(
         (a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime()
       );

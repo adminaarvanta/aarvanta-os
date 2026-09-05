@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, persistWorkspaceScope } from "@/lib/data/crm-helpers";
 import type {
   CreateCommentInput,
   CreateNoteInput,
@@ -41,7 +41,7 @@ export const teamFirestoreRepository: TeamRepository = {
   async createNote(input: CreateNoteInput, scope) {
     const now = crmNow();
     const note: TeamNote = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("note"),
       pinned: input.pinned ?? false,
@@ -76,7 +76,7 @@ export const teamFirestoreRepository: TeamRepository = {
 
   async createComment(input: CreateCommentInput, scope) {
     const comment: TeamComment = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("comment"),
       createdAt: crmNow(),
@@ -109,7 +109,7 @@ export const teamFirestoreRepository: TeamRepository = {
 
   async addActivity(input, scope) {
     const item: ActivityFeedItem = {
-      ...scope,
+      ...persistWorkspaceScope(scope),
       ...input,
       id: crmNewId("act"),
       createdAt: crmNow(),

@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
 import type { AgentMemoryRepository } from "@/lib/data/agent-memory-repository";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
@@ -19,7 +19,9 @@ async function listScoped(scope: TenantScope): Promise<AgentMemoryEntry[]> {
     .where("workspaceId", "==", scope.workspaceId)
     .where("companyId", "==", scope.companyId)
     .get();
-  return snap.docs.map((doc) => doc.data() as AgentMemoryEntry);
+  return snap.docs
+    .map((doc) => doc.data() as AgentMemoryEntry)
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const agentMemoryFirestoreRepository: AgentMemoryRepository = {
@@ -35,7 +37,7 @@ export const agentMemoryFirestoreRepository: AgentMemoryRepository = {
 
   async addMemory(input, scope) {
     const entry: AgentMemoryEntry = {
-      ...scope,
+      ...persistScope(scope),
       ...input,
       id: crmNewId("agent_mem"),
       createdAt: crmNow(),

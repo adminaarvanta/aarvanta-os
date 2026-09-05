@@ -3,6 +3,16 @@ export interface TenantScope {
   tenantId: string;
   workspaceId: string;
   companyId: string;
+  /**
+   * User who owns this operational record (CRM, finance, workflows, …).
+   * Team membership and inbox stay workspace-scoped and omit this field.
+   */
+  ownerUserId?: string;
+  /**
+   * Query-only: role of the signed-in viewer. Never persist on records.
+   * Used so workspace owners can still see legacy rows that predate ownerUserId.
+   */
+  viewerRole?: "owner" | "admin" | "manager" | "member" | "guest";
 }
 
 export type Channel =
