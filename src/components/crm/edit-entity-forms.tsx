@@ -2,7 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { CompanyPicker } from "@/components/crm/company-picker";
 import { Button } from "@/components/ui/button";
+import {
+  ensureCompanyId,
+  selectionFromAccountId,
+  type CompanySelection,
+} from "@/lib/crm/company-selection";
 import type { CrmCompany, CrmContact, ContactTag } from "@/types/crm";
 
 const inputClass =
@@ -32,7 +38,9 @@ export function EditContactForm({
   const [email, setEmail] = useState(contact.email ?? "");
   const [phone, setPhone] = useState(contact.phone ?? "");
   const [jobTitle, setJobTitle] = useState(contact.jobTitle ?? "");
-  const [accountId, setAccountId] = useState(contact.accountId ?? "");
+  const [company, setCompany] = useState<CompanySelection>(() =>
+    selectionFromAccountId(contact.accountId, companies)
+  );
   const [notes, setNotes] = useState(contact.notes ?? "");
   const [tags, setTags] = useState<ContactTag[]>(contact.tags);
 
@@ -47,6 +55,7 @@ export function EditContactForm({
     if (!firstName.trim() || !lastName.trim()) return;
     setBusy(true);
     try {
+      const accountId = await ensureCompanyId(companies, company);
       const res = await fetch(`/api/contacts/${contact.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -56,7 +65,7 @@ export function EditContactForm({
           email: email.trim() || undefined,
           phone: phone.trim() || undefined,
           jobTitle: jobTitle.trim() || undefined,
-          accountId: accountId || undefined,
+          accountId,
           notes: notes.trim() || undefined,
           tags,
         }),
@@ -118,18 +127,13 @@ export function EditContactForm({
           placeholder="Job title"
           className={inputClass}
         />
-        <select
-          value={accountId}
-          onChange={(e) => setAccountId(e.target.value)}
-          className={inputClass}
-        >
-          <option value="">Company (optional)</option>
-          {companies.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <div className="sm:col-span-2">
+          <CompanyPicker
+            companies={companies}
+            value={company}
+            onChange={setCompany}
+          />
+        </div>
       </div>
       <textarea
         value={notes}
