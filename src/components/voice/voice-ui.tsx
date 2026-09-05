@@ -158,7 +158,7 @@ export function VoicePageShell({
           {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
         </div>
       </header>
-      <div className="relative flex-1 bg-[radial-gradient(circle_at_top_left,var(--dot-grid)_1px,transparent_1px)] bg-[size:18px_18px]">
+      <div className="relative flex min-h-0 flex-1 flex-col bg-[radial-gradient(circle_at_top_left,var(--dot-grid)_1px,transparent_1px)] bg-[size:18px_18px]">
         {children}
       </div>
     </>
