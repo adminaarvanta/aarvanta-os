@@ -2,8 +2,8 @@ import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { isDemoMode } from "@/lib/config/app-mode";
 import type { TenantScope } from "@/types/communication";
 import {
-  fetchGoogleFreeBusy,
-  hasGoogleCalendarConnection,
+  fetchTeamGoogleFreeBusy,
+  hasLiveGoogleCalendar,
 } from "@/lib/calendar/google-calendar";
 
 export type DayAvailability = {
@@ -51,6 +51,7 @@ export async function getAvailabilityDays(input: {
   scope: TenantScope;
   timezone: string;
   days?: number;
+  userId?: string;
 }): Promise<DayAvailability[]> {
   const count = input.days ?? 3;
   const dates = addBusinessDays(new Date(), count);
@@ -59,12 +60,20 @@ export async function getAvailabilityDays(input: {
   });
 
   let busy: { start: string; end: string }[] = [];
-  if (!isDemoMode() && (await hasGoogleCalendarConnection(input.scope))) {
+  if (
+    !isDemoMode() &&
+    (await hasLiveGoogleCalendar(input.scope, input.userId))
+  ) {
     try {
       const timeMin = dates[0].toISOString();
       const timeMax = new Date(dates[dates.length - 1]);
       timeMax.setHours(23, 59, 59, 999);
-      busy = await fetchGoogleFreeBusy(input.scope, timeMin, timeMax.toISOString());
+      busy = await fetchTeamGoogleFreeBusy(
+        input.scope,
+        timeMin,
+        timeMax.toISOString(),
+        input.userId
+      );
     } catch (err) {
       console.warn("[calendar] FreeBusy failed, using local meetings", err);
     }
@@ -84,6 +93,7 @@ export async function getDaySlots(input: {
   scope: TenantScope;
   date: string;
   timezone: string;
+  userId?: string;
 }): Promise<TimeSlot[]> {
   const day = new Date(`${input.date}T12:00:00.000Z`);
   const meetings = await getCallingAgentRepository().listMeetings(input.scope, {
@@ -91,16 +101,20 @@ export async function getDaySlots(input: {
   });
 
   let busy: { start: string; end: string }[] = [];
-  if (!isDemoMode() && (await hasGoogleCalendarConnection(input.scope))) {
+  if (
+    !isDemoMode() &&
+    (await hasLiveGoogleCalendar(input.scope, input.userId))
+  ) {
     try {
       const start = new Date(input.date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(input.date);
       end.setHours(23, 59, 59, 999);
-      busy = await fetchGoogleFreeBusy(
+      busy = await fetchTeamGoogleFreeBusy(
         input.scope,
         start.toISOString(),
-        end.toISOString()
+        end.toISOString(),
+        input.userId
       );
     } catch {
       /* local fallback */

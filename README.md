@@ -275,6 +275,7 @@ Check channel status: `GET /api/health` → `channels` object (`live` | `simulat
 - `POST /api/conversations/:id/messages`
 - `POST /api/conversations/:id/notes`
 - `POST /api/conversations/:id/summarize`
+- `GET /api/voice/calendar` · `POST|DELETE /api/voice/calendar` · `POST /api/voice/calendar/sync` — per-user Voice OS calendar
 - `GET|POST /api/webhooks/whatsapp`
 - `POST /api/webhooks/twilio` — SMS + voice status
 - `GET /api/webhooks/twilio/twiml` — voice message TwiML

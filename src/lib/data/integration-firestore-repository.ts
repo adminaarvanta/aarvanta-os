@@ -21,27 +21,43 @@ export const integrationFirestoreRepository: IntegrationRepository = {
     return snap.docs.map((doc) => doc.data() as IntegrationConnection);
   },
 
-  async getConnection(tenantId, workspaceId, provider) {
+  async getConnection(tenantId, workspaceId, provider, userId) {
     const snap = await getDb()
       .collection(COLLECTION)
       .where("tenantId", "==", tenantId)
       .where("workspaceId", "==", workspaceId)
       .where("provider", "==", provider)
-      .limit(1)
       .get();
-    return snap.empty ? null : (snap.docs[0].data() as IntegrationConnection);
+    const items = snap.docs.map((doc) => doc.data() as IntegrationConnection);
+    if (userId) {
+      return (
+        items.find((c) => c.userId === userId) ??
+        (provider === "google_calendar"
+          ? null
+          : items.find((c) => !c.userId) ?? null)
+      );
+    }
+    return items.find((c) => !c.userId) ?? items[0] ?? null;
   },
 
-  async connect(tenantId, workspaceId, provider, accountLabel) {
-    const existing = await this.getConnection(tenantId, workspaceId, provider);
+  async connect(tenantId, workspaceId, provider, accountLabel, userId) {
+    const existing = await this.getConnection(
+      tenantId,
+      workspaceId,
+      provider,
+      userId
+    );
     const now = crmNow();
     if (existing) {
       const updated = {
         ...existing,
+        userId: userId ?? existing.userId,
         status: "connected" as const,
         accountLabel: accountLabel ?? existing.accountLabel,
         connectedAt: now,
         lastSyncAt: now,
+        disconnectedAt: undefined,
+        lastSyncError: undefined,
       };
       await getDb().collection(COLLECTION).doc(existing.id).set(updated);
       return updated;
@@ -50,6 +66,7 @@ export const integrationFirestoreRepository: IntegrationRepository = {
       id: crmNewId("int"),
       tenantId,
       workspaceId,
+      userId,
       provider,
       status: "connected",
       accountLabel: accountLabel ?? "Connected account",
@@ -60,22 +77,38 @@ export const integrationFirestoreRepository: IntegrationRepository = {
     return conn;
   },
 
-  async disconnect(tenantId, workspaceId, provider) {
-    const existing = await this.getConnection(tenantId, workspaceId, provider);
+  async disconnect(tenantId, workspaceId, provider, userId) {
+    const existing = await this.getConnection(
+      tenantId,
+      workspaceId,
+      provider,
+      userId
+    );
     if (!existing) return null;
     const updated = {
       ...existing,
       status: "disconnected" as const,
       disconnectedAt: crmNow(),
+      metadata: undefined,
+      lastSyncError: undefined,
     };
     await getDb().collection(COLLECTION).doc(existing.id).set(updated);
     return updated;
   },
 
-  async sync(tenantId, workspaceId, provider) {
-    const existing = await this.getConnection(tenantId, workspaceId, provider);
+  async sync(tenantId, workspaceId, provider, userId) {
+    const existing = await this.getConnection(
+      tenantId,
+      workspaceId,
+      provider,
+      userId
+    );
     if (!existing || existing.status !== "connected") return null;
-    const updated = { ...existing, lastSyncAt: crmNow() };
+    const updated = {
+      ...existing,
+      lastSyncAt: crmNow(),
+      lastSyncError: undefined,
+    };
     await getDb().collection(COLLECTION).doc(existing.id).set(updated);
     return updated;
   },

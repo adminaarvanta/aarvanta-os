@@ -106,7 +106,7 @@ Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
 
 **Call now / campaign dials** must pass `contactId` + `sessionId` in TwiML custom params (manual outbound resolves CRM by phone). Without `contactId`, the agent will not book.
 
-1. Connect Google Calendar at `/voice/calendar` (optional — otherwise demo Meet link).
+1. Each active user connects their own Google Calendar at `/voice/calendar` (optional — otherwise demo Meet link). Sync writes availability and bookings to that user’s calendar.
 2. Redeploy relay so `/health` shows `"version": "1.5.0"` and `"toolsEnabled": true`.
 3. Settings → Call now (CRM contact with phone) → agree a time on the call.
 4. Confirm under `/voice/meetings` (+ Google Calendar if connected).

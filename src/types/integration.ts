@@ -20,6 +20,8 @@ export interface IntegrationConnection {
   id: string;
   tenantId: string;
   workspaceId: string;
+  /** Set for per-user providers (Google Calendar). Workspace-level integrations omit this. */
+  userId?: string;
   provider: IntegrationProvider;
   status: IntegrationStatus;
   accountLabel?: string;

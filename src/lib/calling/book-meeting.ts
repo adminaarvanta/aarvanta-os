@@ -1,7 +1,7 @@
 import {
   createGoogleCalendarEvent,
   deleteGoogleCalendarEvent,
-  hasGoogleCalendarConnection,
+  hasLiveGoogleCalendar,
   updateGoogleCalendarEvent,
 } from "@/lib/calendar/google-calendar";
 import { syncMeetingToCrm } from "@/lib/calling/crm-sync";
@@ -44,15 +44,22 @@ export async function bookMeeting(input: {
   let calendarEventId: string | undefined;
   let meetLink: string | undefined;
 
-  if (!isDemoMode() && (await hasGoogleCalendarConnection(input.scope))) {
-    const event = await createGoogleCalendarEvent(input.scope, {
-      title,
-      description: "Booked by Aarvanta AI calling agent",
-      start: input.meetingStart,
-      end: input.meetingEnd,
-      timezone: input.timezone,
-      attendeeEmail: contact.email,
-    });
+  if (
+    !isDemoMode() &&
+    (await hasLiveGoogleCalendar(input.scope, input.ownerId))
+  ) {
+    const event = await createGoogleCalendarEvent(
+      input.scope,
+      {
+        title,
+        description: "Booked by Aarvanta AI calling agent",
+        start: input.meetingStart,
+        end: input.meetingEnd,
+        timezone: input.timezone,
+        attendeeEmail: contact.email,
+      },
+      input.ownerId
+    );
     calendarEventId = event.eventId;
     meetLink = event.meetLink;
   } else {
@@ -140,14 +147,19 @@ export async function rescheduleMeeting(input: {
   if (
     existing.calendarEventId &&
     !existing.calendarEventId.startsWith("local_") &&
-    (await hasGoogleCalendarConnection(input.scope))
+    (await hasLiveGoogleCalendar(input.scope, existing.ownerId))
   ) {
-    await updateGoogleCalendarEvent(input.scope, existing.calendarEventId, {
-      start: input.meetingStart,
-      end: input.meetingEnd,
-      timezone,
-      title: existing.title,
-    });
+    await updateGoogleCalendarEvent(
+      input.scope,
+      existing.calendarEventId,
+      {
+        start: input.meetingStart,
+        end: input.meetingEnd,
+        timezone,
+        title: existing.title,
+      },
+      existing.ownerId
+    );
   }
 
   const updated = await repo.updateMeeting(
@@ -197,9 +209,13 @@ export async function cancelMeeting(input: {
   if (
     existing.calendarEventId &&
     !existing.calendarEventId.startsWith("local_") &&
-    (await hasGoogleCalendarConnection(input.scope))
+    (await hasLiveGoogleCalendar(input.scope, existing.ownerId))
   ) {
-    await deleteGoogleCalendarEvent(input.scope, existing.calendarEventId);
+    await deleteGoogleCalendarEvent(
+      input.scope,
+      existing.calendarEventId,
+      existing.ownerId
+    );
   }
 
   const reminders = await repo.listReminders(input.scope, {
