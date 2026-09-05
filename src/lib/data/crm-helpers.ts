@@ -29,6 +29,13 @@ export function persistScope(scope: TenantScope): TenantScope {
   };
 }
 
+/** Drop query-only fields before writing a record assembled from session scope. */
+export function stripQueryScope<T extends TenantScope>(record: T): T {
+  const rest = { ...record };
+  delete rest.viewerRole;
+  return { ...rest, ...persistScope(record) };
+}
+
 /** Workspace fields only — for members, invitations, and team collaboration. */
 export function persistWorkspaceScope(scope: TenantScope): TenantScope {
   return {

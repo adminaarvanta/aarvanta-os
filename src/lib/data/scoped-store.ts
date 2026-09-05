@@ -1,4 +1,4 @@
-import { crmNewId, crmNow, inCrmScope, persistScope } from "@/lib/data/crm-helpers";
+import { crmNewId, crmNow, inCrmScope, stripQueryScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
 
@@ -28,10 +28,8 @@ export function createScopedMemoryStore<T extends TenantScope & { id: string }>(
       input: Omit<T, "id"> & Partial<Pick<T, "id">>,
       idPrefix: string
     ) {
-      const { viewerRole: _viewerRole, ...safeInput } = input;
       const item = {
-        ...safeInput,
-        ...persistScope(input),
+        ...stripQueryScope(input as T),
         id: input.id ?? crmNewId(idPrefix),
       } as T;
       items.unshift(item);
@@ -83,10 +81,8 @@ export function createScopedFirestoreStore<T extends TenantScope & { id: string 
       input: Omit<T, "id"> & Partial<Pick<T, "id">>,
       idPrefix: string
     ) {
-      const { viewerRole: _viewerRole, ...safeInput } = input;
       const item = {
-        ...safeInput,
-        ...persistScope(input),
+        ...stripQueryScope(input as T),
         id: input.id ?? crmNewId(idPrefix),
       } as T;
       await db().collection(collection).doc(item.id).set(item);
