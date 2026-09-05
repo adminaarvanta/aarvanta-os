@@ -98,12 +98,29 @@ export async function POST(req: Request) {
       companyId: workspace?.defaultCompanyId ?? invitation.companyId,
     };
 
+    let creditOverrides: import("@/types/tenant").MemberCreditOverrides | undefined;
+    try {
+      const { resolveCreditOverridesForSession } = await import(
+        "@/lib/billing/member-credits"
+      );
+      const resolved = await resolveCreditOverridesForSession({
+        email,
+        member: null,
+      });
+      if (resolved.unlimitedVoice || resolved.unlimitedEmailOutreach) {
+        creditOverrides = resolved;
+      }
+    } catch {
+      /* best-effort — grants still resolve via email store on read */
+    }
+
     const member = await repo.createMember(
       {
         userId,
         email,
         name,
         role: invitation.role,
+        ...(creditOverrides ? { creditOverrides } : {}),
       },
       scope
     );

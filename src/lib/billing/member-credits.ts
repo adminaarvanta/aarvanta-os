@@ -4,6 +4,7 @@ import {
   setCreditOverridesForEmail,
 } from "@/lib/billing/credit-grant-store";
 import {
+  EMPTY_MEMBER_CREDIT_OVERRIDES,
   mergeMemberCreditOverrides,
   normalizeMemberCreditOverrides,
 } from "@/lib/billing/credit-override-utils";
@@ -100,6 +101,43 @@ export async function resolveCreditOverridesForSession(input: {
   }
 
   return merged;
+}
+
+/**
+ * Resolve grants for a workspace when there is no signed-in session
+ * (Email OS cron, Twilio voice webhooks). Treats the workspace as unlimited
+ * when any active member in that scope has the corresponding grant.
+ */
+export async function resolveCreditOverridesForScope(scope: {
+  tenantId: string;
+  workspaceId: string;
+  companyId: string;
+}): Promise<MemberCreditOverrides> {
+  try {
+    const { getTenantRepository } = await import("@/lib/data/tenant-store");
+    const members = await getTenantRepository().listMembers(scope);
+    const active = members.filter((m) => m.status === "active");
+    let merged = creditOverridesFromMemberships(active);
+
+    if (!(merged.unlimitedVoice && merged.unlimitedEmailOutreach)) {
+      const emails = [
+        ...new Set(
+          active
+            .map((m) => m.email?.trim().toLowerCase())
+            .filter((email): email is string => Boolean(email))
+        ),
+      ];
+      for (const email of emails) {
+        const fromStore = await getCreditOverridesForEmail(email);
+        merged = mergeMemberCreditOverrides(merged, fromStore);
+        if (merged.unlimitedVoice && merged.unlimitedEmailOutreach) break;
+      }
+    }
+
+    return merged;
+  } catch {
+    return { ...EMPTY_MEMBER_CREDIT_OVERRIDES };
+  }
 }
 
 /**

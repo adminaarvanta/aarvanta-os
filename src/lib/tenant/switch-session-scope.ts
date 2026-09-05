@@ -30,12 +30,28 @@ export async function switchSessionToScope(target: TenantScope): Promise<boolean
   if (!membership && session.role === "owner") {
     const workspace = await repo.getWorkspace(target.workspaceId);
     if (workspace && workspace.tenantId === session.tenantId) {
+      let creditOverrides: import("@/types/tenant").MemberCreditOverrides | undefined;
+      try {
+        const { resolveCreditOverridesForSession } = await import(
+          "@/lib/billing/member-credits"
+        );
+        const resolved = await resolveCreditOverridesForSession({
+          email: session.email,
+          member: null,
+        });
+        if (resolved.unlimitedVoice || resolved.unlimitedEmailOutreach) {
+          creditOverrides = resolved;
+        }
+      } catch {
+        /* best-effort — grants still resolve via email store on read */
+      }
       await repo.createMember(
         {
           userId: session.userId,
           email: session.email,
           name: session.name,
           role: session.role,
+          ...(creditOverrides ? { creditOverrides } : {}),
         },
         target
       );

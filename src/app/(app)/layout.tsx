@@ -30,55 +30,81 @@ export default async function AppLayout({
   let showOutreachNav = false;
   let entitlements: EntitlementsClient | null = null;
 
+  // Resolve session + credit grants first, in isolation. An unrelated
+  // bootstrap failure must not wipe Voice / Email OS unlocks for grantees.
+  let sessionCtx: Awaited<ReturnType<typeof getSessionContext>> | null = null;
   try {
-    const ctx = await getSessionContext();
-    const repo = getTenantRepository();
-    const { ensureTenantRecords } = await import("@/lib/tenant/ensure-tenant-records");
-    const { ensureProductionBootstrap } = await import(
-      "@/lib/tenant/ensure-production-bootstrap"
-    );
-    const bootstrapped = await ensureTenantRecords(ctx);
-    await ensureProductionBootstrap();
-    pendingOnboarding = isOnboardingPending(bootstrapped.organization);
-    const workspaces = await repo.listWorkspaces(ctx.scope.tenantId);
-    tenant = {
-      organization: bootstrapped.organization,
-      workspace: bootstrapped.workspace,
-      workspaces,
-    };
-    userName = ctx.name || ctx.email.split("@")[0] || "Founder";
-    userRole = ROLE_LABELS[ctx.role] ?? ctx.role;
-    userId = ctx.userId;
-    showWhatsAppNav = canAccessWhatsAppOs(ctx.email);
-    hasSeenWalkthrough = Boolean(ctx.member?.hasSeenWalkthrough);
-    showLaunchpad = shouldShowLaunchpad(bootstrapped.organization);
-    const conversations = await getRepository().listConversations(ctx.scope);
-    const { unreadForChannel } = await import("@/lib/channels/filter-conversations");
-    whatsappUnread = unreadForChannel(conversations, "whatsapp");
-    voiceUnread = unreadForChannel(conversations, "voice");
-    const { hydrateWorkspaceSettingsCache } = await import("@/lib/hr/settings");
-    await hydrateWorkspaceSettingsCache(bootstrapped.workspace.id);
+    sessionCtx = await getSessionContext();
+    userName = sessionCtx.name || sessionCtx.email.split("@")[0] || "Founder";
+    userRole = ROLE_LABELS[sessionCtx.role] ?? sessionCtx.role;
+    userId = sessionCtx.userId;
+    showWhatsAppNav = canAccessWhatsAppOs(sessionCtx.email);
+    hasSeenWalkthrough = Boolean(sessionCtx.member?.hasSeenWalkthrough);
 
     const { resolveEntitlements, toClientEntitlements } = await import(
       "@/lib/billing/entitlements"
     );
-    const { getSiteBuildRepository } = await import(
-      "@/lib/data/site-build-store"
-    );
-    const buildJobs = await getSiteBuildRepository().list(ctx.scope);
-    const resolved = await resolveEntitlements(ctx.scope);
-    entitlements = toClientEntitlements(resolved, {
-      buildDraftsUsed: buildJobs.length,
-    });
-    // Prefer entitlements (email-keyed grant store) so Email OS nav appears
-    // even when membership rows are stale.
+    const resolved = await resolveEntitlements(sessionCtx.scope);
+    entitlements = toClientEntitlements(resolved);
+
     const { canAccessEmailOutreachAsync } = await import(
       "@/lib/channels/email-outreach-access"
     );
     showOutreachNav =
       Boolean(resolved.creditOverrides.unlimitedEmailOutreach) ||
-      (await canAccessEmailOutreachAsync(ctx.email, ctx.member));
+      (await canAccessEmailOutreachAsync(sessionCtx.email, sessionCtx.member));
   } catch {
+    /* session missing — free fallback below */
+  }
+
+  if (sessionCtx) {
+    try {
+      const ctx = sessionCtx;
+      const repo = getTenantRepository();
+      const { ensureTenantRecords } = await import(
+        "@/lib/tenant/ensure-tenant-records"
+      );
+      const { ensureProductionBootstrap } = await import(
+        "@/lib/tenant/ensure-production-bootstrap"
+      );
+      const bootstrapped = await ensureTenantRecords(ctx);
+      await ensureProductionBootstrap();
+      pendingOnboarding = isOnboardingPending(bootstrapped.organization);
+      const workspaces = await repo.listWorkspaces(ctx.scope.tenantId);
+      tenant = {
+        organization: bootstrapped.organization,
+        workspace: bootstrapped.workspace,
+        workspaces,
+      };
+      showLaunchpad = shouldShowLaunchpad(bootstrapped.organization);
+      const conversations = await getRepository().listConversations(ctx.scope);
+      const { unreadForChannel } = await import(
+        "@/lib/channels/filter-conversations"
+      );
+      whatsappUnread = unreadForChannel(conversations, "whatsapp");
+      voiceUnread = unreadForChannel(conversations, "voice");
+      const { hydrateWorkspaceSettingsCache } = await import("@/lib/hr/settings");
+      await hydrateWorkspaceSettingsCache(bootstrapped.workspace.id);
+
+      const { getSiteBuildRepository } = await import(
+        "@/lib/data/site-build-store"
+      );
+      const buildJobs = await getSiteBuildRepository().list(ctx.scope);
+      if (entitlements) {
+        entitlements = {
+          ...entitlements,
+          buildDraftsUsed: buildJobs.length,
+        };
+      }
+    } catch (error) {
+      console.warn(
+        "[app-layout] bootstrap failed; keeping resolved credit grants",
+        error instanceof Error ? error.message : error
+      );
+    }
+  }
+
+  if (!entitlements) {
     const { getPlan } = await import("@/lib/billing/plan-catalog");
     const free = getPlan("free")!;
     entitlements = {

@@ -100,7 +100,7 @@ export function CreditAccessClient({
       <Panel>
         <SectionHeader
           title="Credit access"
-          description="Grant unlimited Voice OS minutes and Email OS outreach to any product user. Recipients should hard-refresh the app (or sign out and back in) after you save so nav and plan gates pick up the grant."
+          description="Grant unlimited Voice OS minutes and Email OS outreach to any product user. After saving, recipients should hard-refresh (or sign out/in). If they still cannot open Voice or Email OS after a deploy, re-toggle both switches here to rewrite memberships and the email grant index."
         />
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-foreground">
           <Shield className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
