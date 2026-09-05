@@ -84,6 +84,39 @@ export const siteReferenceScreenshotSchema = z.object({
 
 export const siteBrandLogoSchema = siteReferenceScreenshotSchema;
 
+export const SITE_MEDIA_ROLES = [
+  "hero",
+  "gallery",
+  "portfolio",
+  "about",
+  "product",
+  "general",
+] as const;
+
+export const siteMediaRoleSchema = z.enum(SITE_MEDIA_ROLES);
+
+export const siteClientMediaSchema = z.object({
+  id: z.string().min(1).max(80),
+  jobId: z.string().min(1).max(80),
+  name: z.string().min(1).max(180),
+  mimeType: z.string().min(1).max(80),
+  role: siteMediaRoleSchema,
+  caption: z.string().max(160).optional(),
+  url: z.string().min(1).max(400),
+  byteSize: z.number().int().nonnegative(),
+  uploadedAt: z.string(),
+});
+
+export const siteMediaPatchSchema = z.object({
+  role: siteMediaRoleSchema.optional(),
+  caption: z.string().max(160).optional(),
+});
+
+export {
+  SITE_MEDIA_MAX_BYTES,
+  SITE_MEDIA_MAX_PER_JOB,
+} from "@/lib/site-builder/media-constants";
+
 export const siteDomainPurchaseSchema = z.object({
   status: z.enum(["none", "selected", "purchased", "external"]).default("none"),
   selectedDomain: z.string().max(120).optional(),

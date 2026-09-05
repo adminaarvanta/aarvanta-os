@@ -150,6 +150,32 @@ export type SiteReferenceScreenshot = {
 /** Brand / product logo uploaded in Build OS (same shape as inspiration screenshots). */
 export type SiteBrandLogo = SiteReferenceScreenshot;
 
+/** Where a client-owned photo should land on the generated site. */
+export type SiteMediaRole =
+  | "hero"
+  | "gallery"
+  | "portfolio"
+  | "about"
+  | "product"
+  | "general";
+
+/**
+ * Lightweight ref for a client-uploaded photo.
+ * Binary bytes live in the media store — never embed data URLs on the job.
+ */
+export type SiteClientMedia = {
+  id: string;
+  jobId: string;
+  name: string;
+  mimeType: string;
+  role: SiteMediaRole;
+  caption?: string;
+  /** App-relative URL served by GET /api/build/:jobId/media/:id */
+  url: string;
+  byteSize: number;
+  uploadedAt: string;
+};
+
 /**
  * Domain attachment modes:
  * - purchase via Aarvanta (`selected` / `purchased`)
@@ -485,6 +511,8 @@ export type SiteBuildJob = TenantScope & {
   progress?: SiteGenerationProgress;
   /** Persisted AI Assistant refine transcript (survives refresh). */
   refineChat?: SiteRefineTurn[];
+  /** Client-owned work photos (refs only — binaries are in the media store). */
+  clientMedia?: SiteClientMedia[];
   usedAi?: boolean;
   error?: string;
   approvedAt?: string;

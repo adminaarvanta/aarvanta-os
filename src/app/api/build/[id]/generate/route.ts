@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
+import { getSiteMediaRepository } from "@/lib/data/site-media-store";
+import { withClientMediaRefs } from "@/lib/site-builder/sync-client-media";
 import {
   generateSitePlan,
   updateSitePreferences,
@@ -61,7 +63,8 @@ export async function POST(req: Request, context: RouteContext) {
   if (body instanceof NextResponse) return body;
 
   // Allow empty body to regenerate with existing preferences
-  let working: SiteBuildJob = job;
+  const library = await getSiteMediaRepository().listByJob(id, scope);
+  let working: SiteBuildJob = withClientMediaRefs(job, library);
   if (body && typeof body === "object" && Object.keys(body as object).length > 0) {
     const parsed = sitePreferencesSchema.safeParse(body);
     if (!parsed.success) {
@@ -80,7 +83,7 @@ export async function POST(req: Request, context: RouteContext) {
       : latestRefine;
 
     working = updateSitePreferences(
-      job,
+      working,
       {
         ...incoming,
         refineInstructions: accumulated ?? incoming.refineInstructions,
@@ -96,6 +99,8 @@ export async function POST(req: Request, context: RouteContext) {
       },
       { preserveGenerated: isRefine }
     );
+
+    working = withClientMediaRefs(working, library);
 
     if (isRefine && latestRefine) {
       working = appendRefineTurn(working, {

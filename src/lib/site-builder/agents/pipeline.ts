@@ -14,6 +14,7 @@ import {
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
+import { applyClientMediaToSite } from "@/lib/site-builder/apply-client-media";
 import { applyBrandRefine, applyRefineHeuristics } from "@/lib/site-builder/apply-refine";
 import {
   isCopyRefine,
@@ -219,13 +220,16 @@ export async function runGenerationPipeline(
       }
     }
 
-    site = {
-      ...site,
-      brand,
-      theme,
-      generatedAt: crmNow(),
-      version: (priorSite.version ?? 1) + 1,
-    };
+    site = overlayClientPhotos(
+      {
+        ...site,
+        brand,
+        theme,
+        generatedAt: crmNow(),
+        version: (priorSite.version ?? 1) + 1,
+      },
+      job
+    );
 
     await emit("done", 100, "Updates applied", { brand, site });
 
@@ -459,13 +463,16 @@ export async function runGenerationPipeline(
     site = alignHomeToSelectedDesign(site, selectedDesign);
   }
 
-  site = {
-    ...applyRefineHeuristics(site, preferences.refineInstructions),
-    brand,
-    theme,
-    generatedAt: crmNow(),
-    version: site.version ?? 1,
-  };
+  site = overlayClientPhotos(
+    {
+      ...applyRefineHeuristics(site, preferences.refineInstructions),
+      brand,
+      theme,
+      generatedAt: crmNow(),
+      version: site.version ?? 1,
+    },
+    job
+  );
 
   await emit("done", 100, "Website ready", {
     business: businessResult.profile,
@@ -488,6 +495,11 @@ export async function runGenerationPipeline(
   });
 
   return { job: updatedJob, plan, site, preferences, usedAi };
+}
+
+function overlayClientPhotos(site: GeneratedSite, job: SiteBuildJob): GeneratedSite {
+  const media = job.clientMedia ?? [];
+  return media.length ? applyClientMediaToSite(site, media) : site;
 }
 
 function inferCategoryFromIndustry(

@@ -7,7 +7,7 @@ import {
   Smartphone,
   Tablet,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { GenerationMagicSlides } from "@/components/build/generation-magic-slides";
 import { GeneratedSitePreview } from "@/components/build/generated-site-preview";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ const STAGES: Array<{ id: SiteGenerationStage; label: string }> = [
   { id: "pages", label: "Planning pages" },
   { id: "layout", label: "Designing layout" },
   { id: "content", label: "Writing content" },
-  { id: "media", label: "Generating images" },
+  { id: "media", label: "Selecting photos" },
   { id: "done", label: "Finishing up" },
 ];
 
@@ -66,6 +66,8 @@ export function BuildStudioLayout({
   statusMessage,
   rightTab: controlledRightTab,
   onRightTabChange,
+  photosPanel,
+  photoCount = 0,
 }: {
   site?: GeneratedSite | null;
   progress: SiteGenerationProgress | null;
@@ -84,13 +86,15 @@ export function BuildStudioLayout({
   domainLabel?: string;
   featureCount?: number;
   statusMessage?: string | null;
-  rightTab?: "assistant" | "website";
-  onRightTabChange?: (tab: "assistant" | "website") => void;
+  rightTab?: "assistant" | "website" | "photos";
+  onRightTabChange?: (tab: "assistant" | "website" | "photos") => void;
+  photosPanel?: ReactNode;
+  photoCount?: number;
 }) {
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [internalRightTab, setInternalRightTab] = useState<"assistant" | "website">(
-    "assistant"
-  );
+  const [internalRightTab, setInternalRightTab] = useState<
+    "assistant" | "website" | "photos"
+  >("assistant");
   const rightTab = controlledRightTab ?? internalRightTab;
   const setRightTab = onRightTabChange ?? setInternalRightTab;
   const done = Boolean(site) && !busy;
@@ -224,6 +228,7 @@ export function BuildStudioLayout({
           {(
             [
               ["assistant", "AI Assistant"],
+              ["photos", photoCount ? `Photos (${photoCount})` : "Photos"],
               ["website", "Your Website"],
             ] as const
           ).map(([id, label]) => (
@@ -243,7 +248,15 @@ export function BuildStudioLayout({
           ))}
         </div>
 
-        {rightTab === "assistant" ? (
+        {rightTab === "photos" ? (
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            {photosPanel ?? (
+              <p className="text-xs text-muted">
+                Upload real work photos here. Stock fills any empty slots.
+              </p>
+            )}
+          </div>
+        ) : rightTab === "assistant" ? (
           <div className="flex min-h-0 flex-1 flex-col p-4">
             <div className="flex-1 space-y-3 overflow-y-auto text-sm">
               <div className="rounded-xl bg-surface-muted px-3 py-2 text-muted">

@@ -19,6 +19,7 @@ import {
   BuildWizardRail,
   type BuildWizardStepId,
 } from "@/components/build/build-wizard-rail";
+import { ClientMediaLibrary } from "@/components/build/client-media-library";
 import { DesignOptionsPicker } from "@/components/build/design-options-picker";
 import { DomainPurchasePanel } from "@/components/build/domain-purchase-panel";
 import { ThemeStylePanel } from "@/components/build/theme-style-panel";
@@ -30,6 +31,7 @@ import {
 } from "@/lib/site-builder/compose-draft-cache";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import { EXAMPLE_PROMPTS, inferPreferencesFromPrompt } from "@/lib/site-builder/infer-preferences";
+import { countClientMediaOnSite } from "@/lib/site-builder/apply-client-media";
 import { publicSharePath } from "@/lib/site-builder/share-path";
 import {
   defaultCustomThemeFromPreset,
@@ -43,14 +45,13 @@ import type {
   SiteFeatureOption,
   SiteGenerationStage,
   SitePreferences,
+  SiteClientMedia,
   SiteReferenceScreenshot,
   SiteThemePreset,
   SiteTone,
 } from "@/types/site-builder";
 import { cn } from "@/lib/utils";
 
-const MAX_SCREENSHOTS = 3;
-const MAX_SCREENSHOT_BYTES = 1_500_000;
 const MAX_LOGO_BYTES = 1_000_000;
 
 const GOAL_OPTIONS = [
@@ -96,7 +97,6 @@ export function BuildOsClient({
   const plan = usePlan();
   const jobParam = searchParams.get("job");
   const isNewCompose = searchParams.get("new") === "1";
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const jobRef = useRef<import("@/types/site-builder").SiteBuildJob | null>(null);
   const hydratedRef = useRef(false);
@@ -119,6 +119,7 @@ export function BuildOsClient({
     defaultCustomThemeFromPreset("gold_navy")
   );
   const [screenshots, setScreenshots] = useState<SiteReferenceScreenshot[]>([]);
+  const [clientMedia, setClientMedia] = useState<SiteClientMedia[]>([]);
   const [brandLogo, setBrandLogo] = useState<SiteBrandLogo | null>(null);
   const [designOptions, setDesignOptions] = useState<SiteDesignOption[]>([]);
   const [selectedDesignOptionId, setSelectedDesignOptionId] = useState<string | null>(null);
@@ -139,9 +140,9 @@ export function BuildOsClient({
   const [error, setError] = useState<string | null>(null);
   const [usedAi, setUsedAi] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [studioRightTab, setStudioRightTab] = useState<"assistant" | "website">(
-    "assistant"
-  );
+  const [studioRightTab, setStudioRightTab] = useState<
+    "assistant" | "website" | "photos"
+  >("assistant");
   const [sharePath, setSharePath] = useState<string | null>(null);
   const checkoutSyncedRef = useRef(false);
 
@@ -240,6 +241,7 @@ export function BuildOsClient({
       .filter(Boolean);
     if (fromKeys?.length) setGoals(fromKeys);
     setSharePath(next.shareToken ? publicSharePath(next.shareToken) : null);
+    setClientMedia(next.clientMedia ?? []);
     setStatusMessage(null);
     if (next.generatedSite) setStep("generate");
     else if (next.preferences.designOptions?.length) setStep("designs");
@@ -455,6 +457,7 @@ export function BuildOsClient({
         usedAi: boolean;
       };
       setJob(data.job);
+      setClientMedia(data.job.clientMedia ?? clientMedia);
       setDesignOptions(data.options);
       setSelectedDesignOptionId(data.options[0]?.id ?? null);
       setUsedAi(data.usedAi);
@@ -569,6 +572,7 @@ export function BuildOsClient({
 
       if (finalJob) {
         setJob(finalJob);
+        setClientMedia(finalJob.clientMedia ?? clientMedia);
         if (finalJob.shareToken) {
           setSharePath(publicSharePath(finalJob.shareToken));
         }
@@ -658,29 +662,6 @@ export function BuildOsClient({
     window.open(path, "_blank", "noopener,noreferrer");
   }
 
-  async function onScreenshotFiles(files: FileList | null) {
-    if (!files?.length) return;
-    const remaining = MAX_SCREENSHOTS - screenshots.length;
-    if (remaining <= 0) return;
-    const toAdd: SiteReferenceScreenshot[] = [];
-    for (const file of Array.from(files).slice(0, remaining)) {
-      if (!file.type.startsWith("image/") || file.size > MAX_SCREENSHOT_BYTES) continue;
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(new Error("read failed"));
-        reader.readAsDataURL(file);
-      });
-      toAdd.push({
-        id: `ref_${Date.now()}_${file.name}`,
-        name: file.name,
-        dataUrl,
-        uploadedAt: new Date().toISOString(),
-      });
-    }
-    if (toAdd.length) setScreenshots((prev) => [...prev, ...toAdd]);
-  }
-
   function applyDomainChange(domain: SiteDomainPurchase) {
     setJob((current) => {
       if (!current) return current;
@@ -759,6 +740,7 @@ export function BuildOsClient({
     setDesignOptions([]);
     setSelectedDesignOptionId(null);
     setScreenshots([]);
+    setClientMedia([]);
     setBrandLogo(null);
     setRefineInput("");
     setError(null);
@@ -988,6 +970,28 @@ export function BuildOsClient({
           statusMessage={statusMessage}
           rightTab={studioRightTab}
           onRightTabChange={setStudioRightTab}
+          photoCount={clientMedia.length}
+          photosPanel={
+            <ClientMediaLibrary
+              jobId={job?.id}
+              items={clientMedia}
+              appliedCount={countClientMediaOnSite(job?.generatedSite)}
+              disabled={busy}
+              onNeedJob={async () => ensureJob(buildPreferences())}
+              onError={setError}
+              onChange={(items, nextJob) => {
+                setClientMedia(items);
+                if (nextJob) {
+                  setJob(nextJob);
+                  setStatusMessage(
+                    items.length
+                      ? "Your photos are on the site. Stock fills any empty slots."
+                      : "Client photos removed. Remaining images are stock."
+                  );
+                }
+              }}
+            />
+          }
         />
       </div>
     );
@@ -1351,27 +1355,19 @@ export function BuildOsClient({
                   );
                 })}
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    void onScreenshotFiles(e.target.files);
-                    e.target.value = "";
+              <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+                <ClientMediaLibrary
+                  jobId={job?.id}
+                  items={clientMedia}
+                  compact
+                  disabled={designsBusy}
+                  onNeedJob={async () => ensureJob(buildPreferences())}
+                  onError={setError}
+                  onChange={(items, nextJob) => {
+                    setClientMedia(items);
+                    if (nextJob) setJob(nextJob);
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:text-foreground"
-                >
-                  <ImagePlus className="h-3.5 w-3.5" />
-                  Inspiration images
-                  {screenshots.length ? ` (${screenshots.length})` : ""}
-                </button>
               </div>
               <div className="flex justify-between">
                 <Button type="button" variant="secondary" onClick={() => setStep("goals")}>

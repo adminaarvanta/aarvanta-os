@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { getSiteBuildRepository } from "@/lib/data/site-build-store";
+import { getSiteMediaRepository } from "@/lib/data/site-media-store";
+import { withClientMediaRefs } from "@/lib/site-builder/sync-client-media";
 import {
   proposeDesignOptions,
   updateSitePreferences,
@@ -53,7 +55,8 @@ export async function POST(req: Request, context: RouteContext) {
     preferencesBody = raw;
   }
 
-  let working = job;
+  const library = await getSiteMediaRepository().listByJob(id, scope);
+  let working = withClientMediaRefs(job, library);
   if (preferencesBody && Object.keys(preferencesBody).length > 0) {
     const parsed = sitePreferencesSchema.safeParse(preferencesBody);
     if (!parsed.success) {
@@ -62,7 +65,10 @@ export async function POST(req: Request, context: RouteContext) {
         { status: 400 }
       );
     }
-    working = updateSitePreferences(job, normalizeSitePreferences(parsed.data));
+    working = withClientMediaRefs(
+      updateSitePreferences(working, normalizeSitePreferences(parsed.data)),
+      library
+    );
   }
 
   const next = await proposeDesignOptions(working, { refreshSeed, previousOptionNames });
