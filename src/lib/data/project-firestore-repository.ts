@@ -13,7 +13,7 @@ function getDb() {
   return db;
 }
 
-async function listScoped<T extends { tenantId: string }>(
+async function listScoped<T extends TenantScope>(
   collection: string,
   scope: TenantScope
 ): Promise<T[]> {
@@ -25,7 +25,7 @@ async function listScoped<T extends { tenantId: string }>(
     .get();
   return snap.docs
     .map((doc) => doc.data() as T)
-    .filter((item) => inCrmScope(item as TenantScope, scope));
+    .filter((item) => inCrmScope(item, scope));
 }
 
 export const projectFirestoreRepository: ProjectRepository = {
