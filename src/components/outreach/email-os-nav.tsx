@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Mail, Megaphone, Settings2 } from "lucide-react";
+import { LayoutDashboard, Mail, Megaphone, Settings2, FileCode2 } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/outreach", label: "Dashboard", exact: true, icon: LayoutDashboard },
   { href: "/outreach/campaigns", label: "Campaigns", exact: false, icon: Megaphone },
+  { href: "/outreach/templates", label: "Templates", exact: false, icon: FileCode2 },
   { href: "/outreach/settings", label: "Settings", exact: false, icon: Settings2 },
 ];
 

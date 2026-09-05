@@ -2,11 +2,16 @@ import type { EmailOutreachRepository } from "@/lib/data/email-outreach-reposito
 import { crmNewId, crmNow, inCrmScope } from "@/lib/data/crm-helpers";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { TenantScope } from "@/types/communication";
-import type { EmailCampaign, EmailSendItem } from "@/types/email-outreach";
+import type {
+  EmailCampaign,
+  EmailOutreachTemplate,
+  EmailSendItem,
+} from "@/types/email-outreach";
 
 const COLLECTIONS = {
   campaigns: "email_campaigns",
   queue: "email_send_queue",
+  templates: "email_outreach_templates",
 } as const;
 
 function getDb() {
@@ -90,6 +95,47 @@ export const emailOutreachFirestoreRepository: EmailOutreachRepository = {
       ...patch,
       updatedAt: crmNow(),
     });
+  },
+
+  async listTemplates(scope) {
+    const items = await listScoped<EmailOutreachTemplate>(
+      COLLECTIONS.templates,
+      scope
+    );
+    return items.sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+  },
+  async getTemplate(id, scope) {
+    return getScoped<EmailOutreachTemplate>(COLLECTIONS.templates, id, scope);
+  },
+  async createTemplate(input, scope) {
+    const now = crmNow();
+    const template: EmailOutreachTemplate = {
+      ...scope,
+      id: crmNewId("emt"),
+      name: input.name,
+      description: input.description,
+      subject: input.subject,
+      previewText: input.previewText,
+      htmlBody: input.htmlBody,
+      textBody: input.textBody,
+      source: input.source ?? "user",
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    return save(COLLECTIONS.templates, template);
+  },
+  async deleteTemplate(id, scope) {
+    const existing = await getScoped<EmailOutreachTemplate>(
+      COLLECTIONS.templates,
+      id,
+      scope
+    );
+    if (!existing) return false;
+    await getDb().collection(COLLECTIONS.templates).doc(id).delete();
+    return true;
   },
 
   async listQueue(scope, filters) {

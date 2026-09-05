@@ -3,8 +3,10 @@ import type {
   EmailCampaign,
   EmailCampaignFilters,
   EmailCampaignStatus,
+  EmailOutreachTemplate,
   EmailSendItem,
   EmailSendStatus,
+  EmailTemplateSource,
 } from "@/types/email-outreach";
 
 export type CreateEmailCampaignInput = {
@@ -32,6 +34,17 @@ export type CreateEmailSendItemInput = {
   subject: string;
   status?: EmailSendStatus;
   nextAttemptAt?: string;
+};
+
+export type CreateEmailOutreachTemplateInput = {
+  name: string;
+  description?: string;
+  subject: string;
+  previewText?: string;
+  htmlBody: string;
+  textBody: string;
+  source?: Exclude<EmailTemplateSource, "starter">;
+  createdBy?: string;
 };
 
 export interface EmailOutreachRepository {
@@ -65,6 +78,17 @@ export interface EmailOutreachRepository {
     >,
     scope: TenantScope
   ): Promise<EmailCampaign | null>;
+
+  listTemplates(scope: TenantScope): Promise<EmailOutreachTemplate[]>;
+  getTemplate(
+    id: string,
+    scope: TenantScope
+  ): Promise<EmailOutreachTemplate | null>;
+  createTemplate(
+    input: CreateEmailOutreachTemplateInput,
+    scope: TenantScope
+  ): Promise<EmailOutreachTemplate>;
+  deleteTemplate(id: string, scope: TenantScope): Promise<boolean>;
 
   listQueue(
     scope: TenantScope,
