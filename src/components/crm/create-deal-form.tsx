@@ -11,7 +11,7 @@ import {
   CrmFormDialog,
   crmInputClass,
 } from "@/components/crm/crm-form";
-import { MemberSelect } from "@/components/shared/member-select";
+import { OwnerPicker } from "@/components/crm/owner-picker";
 import { Button } from "@/components/ui/button";
 import {
   emptyCompanySelection,
@@ -20,6 +20,11 @@ import {
   type CompanyOption,
   type CompanySelection,
 } from "@/lib/crm/company-selection";
+import {
+  emptyOwnerSelection,
+  ensureOwnerId,
+  type OwnerSelection,
+} from "@/lib/crm/owner-selection";
 import type { MemberOption } from "@/lib/crm/members";
 import type { CrmPipeline } from "@/types/crm";
 import { contactDisplayName, type CrmContact } from "@/types/crm";
@@ -45,7 +50,7 @@ export function CreateDealForm({
   const [contactId, setContactId] = useState("");
   const [company, setCompany] = useState<CompanySelection>(emptyCompanySelection);
   const [stageId, setStageId] = useState(pipeline.stages[0]?.id ?? "");
-  const [ownerId, setOwnerId] = useState("");
+  const [owner, setOwner] = useState<OwnerSelection>(emptyOwnerSelection);
 
   const stages = [...pipeline.stages].sort((a, b) => a.order - b.order);
 
@@ -73,6 +78,7 @@ export function CreateDealForm({
       const contactRecord = contacts.find((c) => c.id === contactId);
       const accountId =
         (await ensureCompanyId(companies, company)) ?? contactRecord?.accountId;
+      const ownerId = await ensureOwnerId(members, owner);
       const res = await fetch("/api/deals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,7 +88,7 @@ export function CreateDealForm({
           stageId,
           contactId: contactId || undefined,
           accountId,
-          ownerId: ownerId || undefined,
+          ownerId,
           value: Number(value) || 0,
           currency: "GBP",
           probability: stage?.probability ?? 10,
@@ -97,7 +103,7 @@ export function CreateDealForm({
       setValue("");
       setContactId("");
       setCompany(emptyCompanySelection());
-      setOwnerId("");
+      setOwner(emptyOwnerSelection());
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -183,13 +189,11 @@ export function CreateDealForm({
               </select>
             </CrmField>
             <CrmField label="Owner" htmlFor={`${ids}-owner`}>
-              <MemberSelect
+              <OwnerPicker
                 id={`${ids}-owner`}
                 members={members}
-                value={ownerId}
-                onChange={setOwnerId}
-                placeholder="Unassigned"
-                className={crmInputClass}
+                value={owner}
+                onChange={setOwner}
               />
             </CrmField>
             {error ? (

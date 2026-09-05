@@ -12,7 +12,7 @@ import {
   crmChipClass,
   crmInputClass,
 } from "@/components/crm/crm-form";
-import { MemberSelect } from "@/components/shared/member-select";
+import { OwnerPicker } from "@/components/crm/owner-picker";
 import { Button } from "@/components/ui/button";
 import {
   emptyCompanySelection,
@@ -20,6 +20,11 @@ import {
   type CompanyOption,
   type CompanySelection,
 } from "@/lib/crm/company-selection";
+import {
+  emptyOwnerSelection,
+  ensureOwnerId,
+  type OwnerSelection,
+} from "@/lib/crm/owner-selection";
 import type { MemberOption } from "@/lib/crm/members";
 import { cn } from "@/lib/utils";
 import type { ContactTag } from "@/types/crm";
@@ -50,7 +55,7 @@ export function PersonComposeForm({
   const [phone, setPhone] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState<CompanySelection>(emptyCompanySelection);
-  const [ownerId, setOwnerId] = useState("");
+  const [owner, setOwner] = useState<OwnerSelection>(emptyOwnerSelection);
   const [tag, setTag] = useState<ContactTag>("prospect");
   const [notes, setNotes] = useState("");
 
@@ -63,7 +68,7 @@ export function PersonComposeForm({
     setPhone("");
     setJobTitle("");
     setCompany(emptyCompanySelection());
-    setOwnerId("");
+    setOwner(emptyOwnerSelection());
     setTag("prospect");
     setNotes("");
     setError(null);
@@ -82,6 +87,7 @@ export function PersonComposeForm({
     setError(null);
     try {
       const accountId = await ensureCompanyId(companies, company);
+      const ownerId = await ensureOwnerId(members, owner);
       const res = await fetch("/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -92,7 +98,7 @@ export function PersonComposeForm({
           phone: phone.trim() || undefined,
           jobTitle: jobTitle.trim() || undefined,
           accountId,
-          ownerId: ownerId || undefined,
+          ownerId,
           notes: isLead ? notes.trim() || undefined : undefined,
           tags: isLead ? [tag] : ["prospect"],
         }),
@@ -229,13 +235,11 @@ export function PersonComposeForm({
               htmlFor={`${ids}-owner`}
               className="sm:col-span-2"
             >
-              <MemberSelect
+              <OwnerPicker
                 id={`${ids}-owner`}
                 members={members}
-                value={ownerId}
-                onChange={setOwnerId}
-                placeholder="Unassigned"
-                className={crmInputClass}
+                value={owner}
+                onChange={setOwner}
               />
             </CrmField>
             {isLead ? (

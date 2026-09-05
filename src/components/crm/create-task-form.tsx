@@ -12,7 +12,7 @@ import {
   crmChipClass,
   crmInputClass,
 } from "@/components/crm/crm-form";
-import { MemberSelect } from "@/components/shared/member-select";
+import { OwnerPicker } from "@/components/crm/owner-picker";
 import { Button } from "@/components/ui/button";
 import {
   emptyCompanySelection,
@@ -20,6 +20,11 @@ import {
   type CompanyOption,
   type CompanySelection,
 } from "@/lib/crm/company-selection";
+import {
+  emptyOwnerSelection,
+  ensureOwnerId,
+  type OwnerSelection,
+} from "@/lib/crm/owner-selection";
 import type { MemberOption } from "@/lib/crm/members";
 import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
 import { cn } from "@/lib/utils";
@@ -50,7 +55,7 @@ export function CreateTaskForm({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [dueDate, setDueDate] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
+  const [owner, setOwner] = useState<OwnerSelection>(emptyOwnerSelection);
   const [assignedAgentType, setAssignedAgentType] = useState("");
   const [company, setCompany] = useState<CompanySelection>(emptyCompanySelection);
   const [busy, setBusy] = useState(false);
@@ -72,6 +77,9 @@ export function CreateTaskForm({
     try {
       const resolvedAccountId =
         accountId ?? (await ensureCompanyId(companies, company));
+      const assignedTo = assignedAgentType
+        ? undefined
+        : await ensureOwnerId(members, owner);
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,7 +88,7 @@ export function CreateTaskForm({
           description: description.trim() || undefined,
           priority,
           dueDate: dueDate || undefined,
-          assignedTo: assignedAgentType ? undefined : assignedTo || undefined,
+          assignedTo,
           assignedAgentType: assignedAgentType || undefined,
           contactId,
           accountId: resolvedAccountId,
@@ -95,7 +103,7 @@ export function CreateTaskForm({
       setTitle("");
       setDescription("");
       setDueDate("");
-      setAssignedTo("");
+      setOwner(emptyOwnerSelection());
       setAssignedAgentType("");
       setCompany(emptyCompanySelection());
       setOpen(false);
@@ -176,7 +184,7 @@ export function CreateTaskForm({
                   value={assignedAgentType}
                   onChange={(e) => {
                     setAssignedAgentType(e.target.value);
-                    if (e.target.value) setAssignedTo("");
+                    if (e.target.value) setOwner(emptyOwnerSelection());
                   }}
                   className={crmInputClass}
                 >
@@ -190,14 +198,12 @@ export function CreateTaskForm({
               </CrmField>
             </div>
             {!assignedAgentType ? (
-              <CrmField label="Teammate" htmlFor={`${ids}-owner`}>
-                <MemberSelect
+              <CrmField label="Owner" htmlFor={`${ids}-owner`}>
+                <OwnerPicker
                   id={`${ids}-owner`}
                   members={members}
-                  value={assignedTo}
-                  onChange={setAssignedTo}
-                  placeholder="Unassigned"
-                  className={crmInputClass}
+                  value={owner}
+                  onChange={setOwner}
                 />
               </CrmField>
             ) : (

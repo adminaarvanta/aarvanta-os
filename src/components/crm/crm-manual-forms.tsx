@@ -11,9 +11,14 @@ import {
   crmChipClass,
   crmInputClass,
 } from "@/components/crm/crm-form";
-import { MemberSelect } from "@/components/shared/member-select";
+import { OwnerPicker } from "@/components/crm/owner-picker";
 import { Button } from "@/components/ui/button";
 import type { MemberOption } from "@/lib/crm/members";
+import {
+  ensureOwnerId,
+  selectionFromOwnerId,
+  type OwnerSelection,
+} from "@/lib/crm/owner-selection";
 
 const ACTIVITY_TYPES = [
   { value: "note", label: "Note" },
@@ -40,7 +45,9 @@ export function LogActivityForm({
   const [type, setType] = useState<"call" | "meeting" | "note">("note");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [authorId, setAuthorId] = useState(defaultAuthorId ?? "");
+  const [author, setAuthor] = useState<OwnerSelection>(() =>
+    selectionFromOwnerId(defaultAuthorId, members)
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +63,7 @@ export function LogActivityForm({
     setBusy(true);
     setError(null);
     try {
+      const authorId = await ensureOwnerId(members, author);
       const res = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,7 +74,7 @@ export function LogActivityForm({
           contactId,
           accountId,
           dealId,
-          authorId: authorId || undefined,
+          authorId,
         }),
       });
       if (!res.ok) {
@@ -77,6 +85,8 @@ export function LogActivityForm({
       setDescription("");
       setOpen(false);
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
@@ -134,14 +144,11 @@ export function LogActivityForm({
               />
             </CrmField>
             <CrmField label="Logged by" htmlFor={`${ids}-author`}>
-              <MemberSelect
+              <OwnerPicker
                 id={`${ids}-author`}
                 members={members}
-                value={authorId}
-                onChange={setAuthorId}
-                placeholder="Logged by…"
-                allowUnassigned={false}
-                className={crmInputClass}
+                value={author}
+                onChange={setAuthor}
               />
             </CrmField>
             {error ? (
@@ -168,30 +175,34 @@ export function AssignOwnerField({
   members: MemberOption[];
   onSave: (ownerId: string) => Promise<void>;
 }) {
-  const [ownerId, setOwnerId] = useState(value ?? "");
+  const [owner, setOwner] = useState<OwnerSelection>(() =>
+    selectionFromOwnerId(value, members)
+  );
   const [busy, setBusy] = useState(false);
 
-  async function save(next: string) {
-    setOwnerId(next);
+  async function commit(next: OwnerSelection) {
+    setOwner(next);
     setBusy(true);
     try {
-      await onSave(next);
+      const ownerId = (await ensureOwnerId(members, next)) ?? "";
+      await onSave(ownerId);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div>
-      <label className="mb-1 block text-xs font-semibold text-foreground">
+    <div className={busy ? "opacity-60" : undefined}>
+      <label className="mb-1.5 block text-xs font-semibold text-foreground">
         {label}
       </label>
-      <MemberSelect
+      <OwnerPicker
         members={members}
-        value={ownerId}
-        onChange={save}
-        placeholder="Unassigned"
-        className={busy ? `${crmInputClass} opacity-60` : crmInputClass}
+        value={owner}
+        onChange={setOwner}
+        onCommit={(next) => {
+          void commit(next);
+        }}
       />
     </div>
   );

@@ -10,8 +10,13 @@ import {
   CrmFormDialog,
   crmInputClass,
 } from "@/components/crm/crm-form";
-import { MemberSelect } from "@/components/shared/member-select";
+import { OwnerPicker } from "@/components/crm/owner-picker";
 import { Button } from "@/components/ui/button";
+import {
+  emptyOwnerSelection,
+  ensureOwnerId,
+  type OwnerSelection,
+} from "@/lib/crm/owner-selection";
 import type { MemberOption } from "@/lib/crm/members";
 
 export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
@@ -26,7 +31,7 @@ export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
   const [size, setSize] = useState("");
   const [website, setWebsite] = useState("");
   const [notes, setNotes] = useState("");
-  const [ownerId, setOwnerId] = useState("");
+  const [owner, setOwner] = useState<OwnerSelection>(emptyOwnerSelection);
 
   const close = useCallback(() => {
     if (busy) return;
@@ -40,6 +45,7 @@ export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
     setBusy(true);
     setError(null);
     try {
+      const ownerId = await ensureOwnerId(members, owner);
       const res = await fetch("/api/companies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,7 +56,7 @@ export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
           size: size.trim() || undefined,
           website: website.trim() || undefined,
           notes: notes.trim() || undefined,
-          ownerId: ownerId || undefined,
+          ownerId,
           tags: ["prospect"],
         }),
       });
@@ -65,10 +71,12 @@ export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
       setSize("");
       setWebsite("");
       setNotes("");
-      setOwnerId("");
+      setOwner(emptyOwnerSelection());
       setOpen(false);
       router.push(`/crm/companies/${data.company.id}`);
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
@@ -148,13 +156,11 @@ export function CreateCompanyForm({ members }: { members: MemberOption[] }) {
               />
             </CrmField>
             <CrmField label="Owner" htmlFor={`${ids}-owner`}>
-              <MemberSelect
+              <OwnerPicker
                 id={`${ids}-owner`}
                 members={members}
-                value={ownerId}
-                onChange={setOwnerId}
-                placeholder="Unassigned"
-                className={crmInputClass}
+                value={owner}
+                onChange={setOwner}
               />
             </CrmField>
             {error ? (
