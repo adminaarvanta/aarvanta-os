@@ -1,5 +1,7 @@
 import {
   applyMergeFields,
+  applyPartnerLinkToEmailHtml,
+  wrapEmailHtml,
   type MergeContext,
 } from "@/lib/email-outreach/personalize";
 
@@ -11,6 +13,7 @@ export const PREVIEW_MERGE_CONTEXT: MergeContext = {
   email: "alex@example.com",
   company: "Northbridge Trading",
   jobTitle: "Buying Manager",
+  partnerLink: "https://example.com/r/preview",
 };
 
 /** Strip tags for a plaintext fallback. */
@@ -43,22 +46,42 @@ export function sanitizeEmailHtmlForPreview(html: string): string {
 
 export function buildEmailPreviewHtml(
   htmlBody: string,
-  textBody?: string
+  textBody?: string,
+  options?: {
+    partnerLinkUrl?: string;
+    linkHtmlAsPartner?: boolean;
+  }
 ): string {
   const source = htmlBody.trim() || textBody?.trim() || "";
-  const withMerges = applyMergeFields(source, PREVIEW_MERGE_CONTEXT);
-  const safe = sanitizeEmailHtmlForPreview(withMerges);
-  if (/<html[\s>]/i.test(safe)) return safe;
-  if (/<(p|div|table|h[1-6]|br)[\s>]/i.test(safe)) {
-    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f4f6fa;">${safe}</body></html>`;
+  const mergeCtx: MergeContext = {
+    ...PREVIEW_MERGE_CONTEXT,
+    partnerLink:
+      options?.partnerLinkUrl?.trim() || PREVIEW_MERGE_CONTEXT.partnerLink || "",
+  };
+  const withMerges = applyMergeFields(source, mergeCtx);
+  let safe = sanitizeEmailHtmlForPreview(withMerges);
+  if (!/<html[\s>]/i.test(safe)) {
+    if (/<(p|div|table|h[1-6]|br)[\s>]/i.test(safe)) {
+      safe = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f4f6fa;">${safe}</body></html>`;
+    } else {
+      const escaped = safe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      safe = `<!doctype html><html><body style="font-family:Georgia,serif;line-height:1.6;color:#1a1a1a;padding:24px;"><p>${escaped
+        .replace(/\n{2,}/g, "</p><p>")
+        .replace(/\n/g, "<br/>")}</p></body></html>`;
+    }
+  } else {
+    safe = wrapEmailHtml(safe);
   }
-  const escaped = safe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return `<!doctype html><html><body style="font-family:Georgia,serif;line-height:1.6;color:#1a1a1a;padding:24px;"><p>${escaped
-    .replace(/\n{2,}/g, "</p><p>")
-    .replace(/\n/g, "<br/>")}</p></body></html>`;
+
+  const shouldLink =
+    Boolean(options?.partnerLinkUrl?.trim()) &&
+    options?.linkHtmlAsPartner !== false;
+  return applyPartnerLinkToEmailHtml(safe, options?.partnerLinkUrl, {
+    enabled: shouldLink,
+  });
 }
 
 export function looksLikeHtml(value: string): boolean {

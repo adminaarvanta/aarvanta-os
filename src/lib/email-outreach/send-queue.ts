@@ -10,8 +10,8 @@ import type { EmailSendItem } from "@/types/email-outreach";
 import { resolveEmailAudience } from "@/lib/email-outreach/audience";
 import {
   applyMergeFields,
+  buildOutboundEmailHtml,
   mergeContextFromContact,
-  wrapEmailHtml,
 } from "@/lib/email-outreach/personalize";
 
 export type SendQueueResult = {
@@ -109,17 +109,25 @@ export async function processEmailSendQueue(
     const contact =
       contacts[0] ??
       (await getCrmRepository().getContact(item.contactId, scope));
-    const ctx = mergeContextFromContact({
-      firstName: contact && "firstName" in contact ? contact.firstName : item.toName,
-      lastName: contact && "lastName" in contact ? contact.lastName : "",
-      email: item.toEmail,
-      jobTitle: contact && "jobTitle" in contact ? contact.jobTitle : undefined,
-      companyName:
-        contact && "companyName" in contact ? contact.companyName : undefined,
-    });
+    const ctx = {
+      ...mergeContextFromContact({
+        firstName:
+          contact && "firstName" in contact ? contact.firstName : item.toName,
+        lastName: contact && "lastName" in contact ? contact.lastName : "",
+        email: item.toEmail,
+        jobTitle: contact && "jobTitle" in contact ? contact.jobTitle : undefined,
+        companyName:
+          contact && "companyName" in contact ? contact.companyName : undefined,
+      }),
+      partnerLink: campaign.partnerLinkUrl?.trim() || "",
+    };
     const subject = applyMergeFields(campaign.subject, ctx);
     const text = applyMergeFields(campaign.textBody, ctx);
-    const html = wrapEmailHtml(applyMergeFields(campaign.htmlBody, ctx));
+    const html = buildOutboundEmailHtml({
+      htmlBody: applyMergeFields(campaign.htmlBody, ctx),
+      partnerLinkUrl: campaign.partnerLinkUrl,
+      linkHtmlAsPartner: campaign.linkHtmlAsPartner,
+    });
     const simulate = !isBrevoConfigured();
 
     try {

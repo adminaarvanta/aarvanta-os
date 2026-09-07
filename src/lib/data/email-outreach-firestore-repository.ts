@@ -75,6 +75,8 @@ export const emailOutreachFirestoreRepository: EmailOutreachRepository = {
       fromName: input.fromName,
       fromEmail: input.fromEmail,
       replyTo: input.replyTo,
+      partnerLinkUrl: input.partnerLinkUrl,
+      linkHtmlAsPartner: input.linkHtmlAsPartner,
       filters: input.filters ?? {},
       status: input.status ?? "draft",
       dailySendLimit: input.dailySendLimit ?? 50,
