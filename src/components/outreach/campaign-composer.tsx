@@ -103,6 +103,15 @@ export function EmailCampaignComposer({
   const [dailySendLimit, setDailySendLimit] = useState(
     campaign?.dailySendLimit ?? 50
   );
+  const [partnerLinkUrl, setPartnerLinkUrl] = useState(
+    campaign?.partnerLinkUrl ?? ""
+  );
+  const [linkHtmlAsPartner, setLinkHtmlAsPartner] = useState(
+    campaign?.linkHtmlAsPartner ?? true
+  );
+  const [affiliateDefaultLink, setAffiliateDefaultLink] = useState<string | null>(
+    null
+  );
 
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiTone, setAiTone] = useState("professional");
@@ -118,6 +127,37 @@ export function EmailCampaignComposer({
   const textRef = useRef<HTMLTextAreaElement>(null);
   const htmlRef = useRef<HTMLTextAreaElement>(null);
   const templateAppliedRef = useRef(false);
+  const partnerPrefillDone = useRef(Boolean(campaign?.partnerLinkUrl));
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/affiliate/me");
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          affiliate?: { referralCode?: string; status?: string } | null;
+        };
+        const code = data.affiliate?.referralCode?.trim();
+        if (!code) return;
+        const origin =
+          typeof window !== "undefined" ? window.location.origin : "";
+        const link = `${origin}/r/${code}`;
+        if (cancelled) return;
+        setAffiliateDefaultLink(link);
+        if (!partnerPrefillDone.current && !campaign?.partnerLinkUrl) {
+          partnerPrefillDone.current = true;
+          setPartnerLinkUrl(link);
+          setAiCtaUrl((prev) => prev || link);
+        }
+      } catch {
+        /* optional default */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [campaign?.partnerLinkUrl]);
 
   const starters = useMemo(() => listEmailStarterTemplates(), []);
 
@@ -396,6 +436,8 @@ export function EmailCampaignComposer({
         htmlBody: bodies.htmlBody,
         textBody: bodies.textBody,
         fromName: fromName.trim() || undefined,
+        partnerLinkUrl: partnerLinkUrl.trim() || "",
+        linkHtmlAsPartner,
         filters: isDraft ? filters() : undefined,
         dailySendLimit,
       };
@@ -485,6 +527,52 @@ export function EmailCampaignComposer({
               value={dailySendLimit}
               onChange={(e) => setDailySendLimit(Number(e.target.value) || 50)}
             />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-muted">Partner / affiliate link</span>
+            <input
+              className={inputClass}
+              value={partnerLinkUrl}
+              onChange={(e) => setPartnerLinkUrl(e.target.value)}
+              placeholder="https://yoursite.com/r/your-code"
+            />
+            <span className="mt-1.5 block text-[11px] text-muted">
+              Prefills from your Partner profile when available. Used so the
+              email design (HTML / photos) can open this link when tapped.
+              {affiliateDefaultLink ? (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    className="font-medium text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-300"
+                    onClick={() => {
+                      setPartnerLinkUrl(affiliateDefaultLink);
+                      setAiCtaUrl((prev) => prev || affiliateDefaultLink);
+                    }}
+                  >
+                    Use my link
+                  </button>
+                </>
+              ) : null}
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={linkHtmlAsPartner}
+              onChange={(e) => setLinkHtmlAsPartner(e.target.checked)}
+              disabled={!partnerLinkUrl.trim()}
+            />
+            <span>
+              <span className="font-medium text-foreground">
+                Make HTML design clickable
+              </span>
+              <span className="mt-0.5 block text-[11px] text-muted">
+                Wraps the email layout / imagery so taps open your partner
+                link. Use {"{{partnerLink}}"} in HTML for explicit CTA buttons.
+              </span>
+            </span>
           </label>
         </div>
       </EmailSection>
@@ -636,7 +724,10 @@ export function EmailCampaignComposer({
                 title="Email preview"
                 sandbox=""
                 className="h-[420px] w-full bg-white"
-                srcDoc={buildEmailPreviewHtml(htmlBody, textBody)}
+                srcDoc={buildEmailPreviewHtml(htmlBody, textBody, {
+                  partnerLinkUrl,
+                  linkHtmlAsPartner,
+                })}
               />
             </div>
           ) : null}

@@ -29,6 +29,10 @@ export const createEmailCampaignSchema = z.object({
   fromName: z.string().max(120).optional(),
   fromEmail: z.string().email().optional(),
   replyTo: z.string().email().optional(),
+  partnerLinkUrl: z
+    .union([z.string().url().max(2000), z.literal("")])
+    .optional(),
+  linkHtmlAsPartner: z.boolean().optional(),
   filters: emailFiltersSchema.optional(),
   dailySendLimit: z.number().int().positive().max(2000).optional(),
   scheduledAt: z.string().optional(),

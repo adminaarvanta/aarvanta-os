@@ -19,8 +19,8 @@ Return ONLY a JSON object with keys: subject, previewText, htmlBody, textBody.
 Rules for htmlBody:
 - Email-safe HTML only: single-column table layout, inline CSS, no <script>, no external stylesheets, no forms.
 - Prefer width around 560–600px.
-- Use merge tokens exactly like {{firstName}}, {{lastName}}, {{fullName}}, {{email}}, {{company}}, {{jobTitle}} where personalization helps.
-- Include a clear CTA link (use the provided CTA URL when given).
+- Use merge tokens exactly like {{firstName}}, {{lastName}}, {{fullName}}, {{email}}, {{company}}, {{jobTitle}}, {{partnerLink}} where personalization helps.
+- Include a clear CTA link (use the provided CTA URL when given, otherwise {{partnerLink}}).
 - Do not use base64 images or huge embedded assets; text wordmark or a normal https image URL is fine.
 - Keep HTML under ~30k characters.
 

@@ -42,6 +42,14 @@ export interface EmailCampaign extends TenantScope {
   fromName?: string;
   fromEmail?: string;
   replyTo?: string;
+  /**
+   * Creator/initiator partner or affiliate URL for this campaign.
+   * When set (and linkHtmlAsPartner is not false), HTML design/content
+   * is made clickable to this URL on send and preview.
+   */
+  partnerLinkUrl?: string;
+  /** When true (default if partnerLinkUrl is set), wrap HTML content as a partner link. */
+  linkHtmlAsPartner?: boolean;
   filters: EmailCampaignFilters;
   status: EmailCampaignStatus;
   dailySendLimit: number;
@@ -81,6 +89,7 @@ export const EMAIL_MERGE_FIELDS = [
   "email",
   "company",
   "jobTitle",
+  "partnerLink",
 ] as const;
 
 export type EmailMergeField = (typeof EMAIL_MERGE_FIELDS)[number];
