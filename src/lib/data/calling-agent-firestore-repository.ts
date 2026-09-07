@@ -181,13 +181,29 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   },
   async listDueQueueItems(nowIso, limit = 20) {
     const db = getDb();
-    const snap = await db
-      .collection(COLLECTIONS.queue)
-      .where("status", "==", "pending")
-      .where("nextAttemptAt", "<=", nowIso)
-      .limit(limit * 3)
-      .get();
-    const items = snap.docs.map((d) => d.data() as CallQueueItem);
+    let items: CallQueueItem[];
+    try {
+      const snap = await db
+        .collection(COLLECTIONS.queue)
+        .where("status", "==", "pending")
+        .where("nextAttemptAt", "<=", nowIso)
+        .limit(limit * 3)
+        .get();
+      items = snap.docs.map((d) => d.data() as CallQueueItem);
+    } catch (error) {
+      console.warn(
+        "[call_queue] composite due-item query failed; scanning pending items",
+        error instanceof Error ? error.message : error
+      );
+      const snap = await db
+        .collection(COLLECTIONS.queue)
+        .where("status", "==", "pending")
+        .limit(Math.max(limit * 10, 200))
+        .get();
+      items = snap.docs
+        .map((d) => d.data() as CallQueueItem)
+        .filter((q) => q.nextAttemptAt <= nowIso);
+    }
     const campaignIds = [...new Set(items.map((i) => i.campaignId))];
     const running = new Set<string>();
     for (const id of campaignIds) {

@@ -24,7 +24,10 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 
 - Twilio + `VOICE_RELAY_*` (see `docs/VOICE_RELAY.md`)
 - `ELEVENLABS_API_KEY` — Instant Voice Clone upload + live cloned TTS (optional; catalog voices work without it)
-- `CRON_SECRET` — protects `/api/cron/call-campaigns` (every minute) and `/api/cron/meeting-reminders`
+- `CRON_SECRET` — protects `/api/cron/call-campaigns` and `/api/cron/meeting-reminders`
+- Starting or resuming a campaign places the first in-hours batch immediately
+- Vercel Hobby can only run crons once a day, so leftover queue is swept at 14:00 UTC (US/EU hours) and 05:00 UTC (South Asia hours). Upgrade to Pro for minute cadence.
+- Deploy Firestore indexes (`firebase deploy --only firestore:indexes`) so `call_queue` due-item queries succeed
 - `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` (or SSO Google client vars) for FreeBusy + event create
 - `NEXT_PUBLIC_APP_URL` — OAuth redirect + TwiML
 

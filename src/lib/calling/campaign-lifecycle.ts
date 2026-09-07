@@ -1,8 +1,20 @@
 import { resolveAudience } from "@/lib/calling/audience";
+import { runCampaignScheduler } from "@/lib/calling/campaign-scheduler";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { crmNow } from "@/lib/data/crm-helpers";
 import type { TenantScope } from "@/types/communication";
 import type { CallCampaign } from "@/types/calling-agent";
+
+async function kickCampaignDialer(campaign: CallCampaign) {
+  try {
+    await runCampaignScheduler(Math.min(campaign.dailyCallLimit, 10), campaign.id);
+  } catch (error) {
+    console.error(
+      "[campaign] initial dial batch failed",
+      error instanceof Error ? error.message : error
+    );
+  }
+}
 
 export async function generateQueueForCampaign(
   campaign: CallCampaign,
@@ -37,11 +49,15 @@ export async function startCampaign(campaignId: string, scope: TenantScope) {
   }
 
   await generateQueueForCampaign(campaign, scope);
-  return repo.updateCampaign(
+  const updated = await repo.updateCampaign(
     campaignId,
     { status: "running", startedAt: campaign.startedAt ?? crmNow() },
     scope
   );
+  if (updated) {
+    await kickCampaignDialer(updated);
+  }
+  return updated;
 }
 
 export async function pauseCampaign(campaignId: string, scope: TenantScope) {
@@ -56,7 +72,15 @@ export async function resumeCampaign(campaignId: string, scope: TenantScope) {
   if (campaign.status !== "paused") {
     throw new Error("Only paused campaigns can be resumed");
   }
-  return repo.updateCampaign(campaignId, { status: "running" }, scope);
+  const updated = await repo.updateCampaign(
+    campaignId,
+    { status: "running" },
+    scope
+  );
+  if (updated) {
+    await kickCampaignDialer(updated);
+  }
+  return updated;
 }
 
 export async function stopCampaign(campaignId: string, scope: TenantScope) {

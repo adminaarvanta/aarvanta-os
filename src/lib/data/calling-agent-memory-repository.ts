@@ -21,12 +21,37 @@ import {
   type VoiceAgent,
 } from "@/types/calling-agent";
 
-let agents = [...DEMO_VOICE_AGENTS];
-let campaigns = [...DEMO_CALL_CAMPAIGNS];
-let queue = [...DEMO_CALL_QUEUE];
-let sessions = [...DEMO_CALL_SESSIONS];
-let meetings = [...DEMO_MEETING_BOOKINGS];
-let reminders = [...DEMO_REMINDER_JOBS];
+type MemoryState = {
+  agents: VoiceAgent[];
+  campaigns: CallCampaign[];
+  queue: CallQueueItem[];
+  sessions: CallSession[];
+  meetings: MeetingBooking[];
+  reminders: ReminderJob[];
+};
+
+/**
+ * Share one in-memory Voice OS store across Next.js RSC and route-handler
+ * module graphs in `next dev`. Without this, starting a campaign via API
+ * never appears on `/voice/campaigns` after refresh.
+ */
+const globalStore = globalThis as typeof globalThis & {
+  __aarvantaCallingAgent?: MemoryState;
+};
+
+function state(): MemoryState {
+  if (!globalStore.__aarvantaCallingAgent) {
+    globalStore.__aarvantaCallingAgent = {
+      agents: [...DEMO_VOICE_AGENTS],
+      campaigns: [...DEMO_CALL_CAMPAIGNS],
+      queue: [...DEMO_CALL_QUEUE],
+      sessions: [...DEMO_CALL_SESSIONS],
+      meetings: [...DEMO_MEETING_BOOKINGS],
+      reminders: [...DEMO_REMINDER_JOBS],
+    };
+  }
+  return globalStore.__aarvantaCallingAgent;
+}
 
 function scoped<T extends TenantScope>(items: T[], scope: TenantScope) {
   return items.filter((item) => inCrmScope(item, scope));
@@ -34,10 +59,10 @@ function scoped<T extends TenantScope>(items: T[], scope: TenantScope) {
 
 export const callingAgentMemoryRepository: CallingAgentRepository = {
   async listAgents(scope) {
-    return scoped(agents, scope).sort((a, b) => a.name.localeCompare(b.name));
+    return scoped(state().agents, scope).sort((a, b) => a.name.localeCompare(b.name));
   },
   async getAgent(id, scope) {
-    const item = agents.find((a) => a.id === id);
+    const item = state().agents.find((a) => a.id === id);
     return item && inCrmScope(item, scope) ? item : null;
   },
   async createAgent(input, scope) {
@@ -54,10 +79,11 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    agents = [agent, ...agents];
+    state().agents = [agent, ...state().agents];
     return agent;
   },
   async updateAgent(id, patch, scope) {
+    const agents = state().agents;
     const idx = agents.findIndex((a) => a.id === id && inCrmScope(a, scope));
     if (idx < 0) return null;
     const { clonedVoice, ...rest } = patch;
@@ -76,12 +102,12 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   },
 
   async listCampaigns(scope) {
-    return scoped(campaigns, scope).sort(
+    return scoped(state().campaigns, scope).sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
   },
   async getCampaign(id, scope) {
-    const item = campaigns.find((c) => c.id === id);
+    const item = state().campaigns.find((c) => c.id === id);
     return item && inCrmScope(item, scope) ? item : null;
   },
   async createCampaign(input, scope) {
@@ -106,10 +132,11 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    campaigns = [campaign, ...campaigns];
+    state().campaigns = [campaign, ...state().campaigns];
     return campaign;
   },
   async updateCampaign(id, patch, scope) {
+    const campaigns = state().campaigns;
     const idx = campaigns.findIndex((c) => c.id === id && inCrmScope(c, scope));
     if (idx < 0) return null;
     campaigns[idx] = { ...campaigns[idx], ...patch, updatedAt: crmNow() };
@@ -117,7 +144,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   },
 
   async listQueue(scope, filters) {
-    let items = scoped(queue, scope);
+    let items = scoped(state().queue, scope);
     if (filters?.campaignId) {
       items = items.filter((q) => q.campaignId === filters.campaignId);
     }
@@ -127,7 +154,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
     return items.sort((a, b) => b.priority - a.priority);
   },
   async getQueueItem(id, scope) {
-    const item = queue.find((q) => q.id === id);
+    const item = state().queue.find((q) => q.id === id);
     return item && inCrmScope(item, scope) ? item : null;
   },
   async createQueueItem(input, scope) {
@@ -144,7 +171,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    queue = [item, ...queue];
+    state().queue = [item, ...state().queue];
     return item;
   },
   async createQueueItems(inputs, scope) {
@@ -155,12 +182,14 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
     return created;
   },
   async updateQueueItem(id, patch, scope) {
+    const queue = state().queue;
     const idx = queue.findIndex((q) => q.id === id && inCrmScope(q, scope));
     if (idx < 0) return null;
     queue[idx] = { ...queue[idx], ...patch, updatedAt: crmNow() };
     return queue[idx];
   },
   async listDueQueueItems(nowIso, limit = 20) {
+    const { queue, campaigns } = state();
     return queue
       .filter(
         (q) =>
@@ -172,14 +201,14 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       .slice(0, limit);
   },
   async listQueueItemsByStatus(status, limit = 100) {
-    return queue
-      .filter((q) => q.status === status)
+    return state()
+      .queue.filter((q) => q.status === status)
       .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))
       .slice(0, limit);
   },
 
   async listSessions(scope, filters) {
-    let items = scoped(sessions, scope);
+    let items = scoped(state().sessions, scope);
     if (filters?.campaignId) {
       items = items.filter((s) => s.campaignId === filters.campaignId);
     }
@@ -194,11 +223,11 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
     );
   },
   async getSession(id, scope) {
-    const item = sessions.find((s) => s.id === id);
+    const item = state().sessions.find((s) => s.id === id);
     return item && inCrmScope(item, scope) ? item : null;
   },
   async getSessionByCallSid(callSid) {
-    return sessions.find((s) => s.callSid === callSid) ?? null;
+    return state().sessions.find((s) => s.callSid === callSid) ?? null;
   },
   async createSession(input, scope) {
     const now = crmNow();
@@ -220,18 +249,19 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    sessions = [session, ...sessions];
+    state().sessions = [session, ...state().sessions];
     return session;
   },
   async updateSession(id, patch, scope) {
+    const sessions = state().sessions;
     const idx = sessions.findIndex((s) => s.id === id && inCrmScope(s, scope));
     if (idx < 0) return null;
     sessions[idx] = { ...sessions[idx], ...patch, updatedAt: crmNow() };
     return sessions[idx];
   },
   async listOpenSessions(limit = 100) {
-    return sessions
-      .filter((s) => s.status === "ringing" || s.status === "in_progress")
+    return state()
+      .sessions.filter((s) => s.status === "ringing" || s.status === "in_progress")
       .sort(
         (a, b) =>
           new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
@@ -240,7 +270,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   },
 
   async listMeetings(scope, filters) {
-    let items = scoped(meetings, scope);
+    let items = scoped(state().meetings, scope);
     if (filters?.leadId) items = items.filter((m) => m.leadId === filters.leadId);
     if (filters?.status) items = items.filter((m) => m.status === filters.status);
     return items.sort(
@@ -249,7 +279,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
     );
   },
   async getMeeting(id, scope) {
-    const item = meetings.find((m) => m.id === id);
+    const item = state().meetings.find((m) => m.id === id);
     return item && inCrmScope(item, scope) ? item : null;
   },
   async createMeeting(input, scope) {
@@ -273,10 +303,11 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    meetings = [meeting, ...meetings];
+    state().meetings = [meeting, ...state().meetings];
     return meeting;
   },
   async updateMeeting(id, patch, scope) {
+    const meetings = state().meetings;
     const idx = meetings.findIndex((m) => m.id === id && inCrmScope(m, scope));
     if (idx < 0) return null;
     meetings[idx] = { ...meetings[idx], ...patch, updatedAt: crmNow() };
@@ -284,7 +315,7 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   },
 
   async listReminders(scope, filters) {
-    let items = scoped(reminders, scope);
+    let items = scoped(state().reminders, scope);
     if (filters?.meetingBookingId) {
       items = items.filter((r) => r.meetingBookingId === filters.meetingBookingId);
     }
@@ -303,17 +334,18 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    reminders = [reminder, ...reminders];
+    state().reminders = [reminder, ...state().reminders];
     return reminder;
   },
   async updateReminder(id, patch, scope) {
+    const reminders = state().reminders;
     const idx = reminders.findIndex((r) => r.id === id && inCrmScope(r, scope));
     if (idx < 0) return null;
     reminders[idx] = { ...reminders[idx], ...patch, updatedAt: crmNow() };
     return reminders[idx];
   },
   async listDueReminders(nowIso) {
-    return reminders.filter(
+    return state().reminders.filter(
       (r) => r.status === "pending" && r.scheduledFor <= nowIso
     );
   },
