@@ -19,6 +19,8 @@ export type CreateEmailCampaignInput = {
   fromName?: string;
   fromEmail?: string;
   replyTo?: string;
+  partnerLinkUrl?: string;
+  linkHtmlAsPartner?: boolean;
   filters?: EmailCampaignFilters;
   dailySendLimit?: number;
   scheduledAt?: string;
@@ -68,6 +70,8 @@ export interface EmailOutreachRepository {
         | "fromName"
         | "fromEmail"
         | "replyTo"
+        | "partnerLinkUrl"
+        | "linkHtmlAsPartner"
         | "filters"
         | "status"
         | "dailySendLimit"

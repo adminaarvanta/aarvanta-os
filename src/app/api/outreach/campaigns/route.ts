@@ -33,8 +33,13 @@ export async function POST(req: Request) {
       );
     }
 
+    const data = parsed.data;
     const campaign = await getEmailOutreachRepository().createCampaign(
-      { ...parsed.data, createdBy: ctx.userId },
+      {
+        ...data,
+        partnerLinkUrl: data.partnerLinkUrl?.trim() || undefined,
+        createdBy: ctx.userId,
+      },
       ctx.scope
     );
     return NextResponse.json({ campaign }, { status: 201 });

@@ -40,9 +40,14 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
 
+    const data = { ...parsed.data };
+    if (data.partnerLinkUrl !== undefined) {
+      data.partnerLinkUrl = data.partnerLinkUrl.trim() || undefined;
+    }
+
     const campaign = await getEmailOutreachRepository().updateCampaign(
       id,
-      parsed.data,
+      data,
       ctx.scope
     );
     if (!campaign) {

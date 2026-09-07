@@ -34,7 +34,11 @@ export default async function EmailCampaignDetailPage({ params }: Params) {
   const stats = campaignQueueStats(queue);
   const previewHtml = buildEmailPreviewHtml(
     campaign.htmlBody,
-    campaign.textBody
+    campaign.textBody,
+    {
+      partnerLinkUrl: campaign.partnerLinkUrl,
+      linkHtmlAsPartner: campaign.linkHtmlAsPartner,
+    }
   );
 
   return (
@@ -94,6 +98,22 @@ export default async function EmailCampaignDetailPage({ params }: Params) {
           </p>
           {campaign.previewText ? (
             <p className="mt-1 text-xs text-muted">{campaign.previewText}</p>
+          ) : null}
+          {campaign.partnerLinkUrl ? (
+            <p className="mt-2 text-xs text-muted">
+              Partner link:{" "}
+              <a
+                href={campaign.partnerLinkUrl}
+                className="font-medium text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-300"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {campaign.partnerLinkUrl}
+              </a>
+              {campaign.linkHtmlAsPartner === false
+                ? " (HTML not wrapped)"
+                : " (HTML design is clickable)"}
+            </p>
           ) : null}
           <div className="mt-3 overflow-hidden rounded-xl border border-border/70 bg-white">
             <iframe
