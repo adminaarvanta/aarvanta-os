@@ -1,14 +1,16 @@
 import { CampaignWizard } from "@/components/voice/campaign-wizard";
 import { VoicePageShell } from "@/components/voice/voice-ui";
-import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
-import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
-import { getTenantScope } from "@/lib/tenant/context";
+import {
+  getUserPrimaryAgentId,
+  listVoiceAgentsForUser,
+} from "@/lib/calling/resolve-voice-agent";
+import { getSessionContext } from "@/lib/tenant/context";
 
 export default async function NewCampaignPage() {
-  const scope = await getTenantScope();
-  const [agents, settings] = await Promise.all([
-    getCallingAgentRepository().listAgents(scope),
-    getWorkspaceSettings(scope.workspaceId),
+  const ctx = await getSessionContext();
+  const [agents, primaryAgentId] = await Promise.all([
+    listVoiceAgentsForUser(ctx.scope, ctx.userId),
+    getUserPrimaryAgentId(ctx.scope, ctx.userId),
   ]);
 
   return (
@@ -19,7 +21,7 @@ export default async function NewCampaignPage() {
     >
       <CampaignWizard
         initialAgents={agents}
-        initialPrimaryAgentId={settings.voicePrimaryAgentId}
+        initialPrimaryAgentId={primaryAgentId}
       />
     </VoicePageShell>
   );

@@ -154,6 +154,9 @@ export interface VoiceAgent extends TenantScope {
   ttsVoice?: string;
   greetingName?: string;
   clonedVoice?: ClonedVoice;
+  /** Logged-in user who created this agent. Catalog templates may omit it. */
+  ownerUserId?: string;
+  createdBy?: string;
   flowConfig: VoiceAgentFlowConfig;
   createdAt: string;
   updatedAt: string;
@@ -312,7 +315,7 @@ export const DEFAULT_FLOW_CONFIG: VoiceAgentFlowConfig = {
       label: "Greeting",
       objective: "Confirm identity and ask if now is a good time.",
       samplePrompt:
-        "Hi, this is Ava calling from Aarvanta. Is this a good time for a quick 2-minute conversation?",
+        "Hi, is this a good time for a quick two-minute conversation?",
       transitions: [
         { when: "yes", to: "permission" },
         { when: "busy", to: "closing" },

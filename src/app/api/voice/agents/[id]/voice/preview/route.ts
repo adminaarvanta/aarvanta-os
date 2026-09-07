@@ -9,6 +9,7 @@ import {
   synthesizeElevenLabsMp3,
 } from "@/lib/channels/elevenlabs-voices";
 import { isDemoMode } from "@/lib/config/app-mode";
+import { canViewVoiceAgent } from "@/lib/calling/voice-agent-access";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getSessionContext } from "@/lib/tenant/context";
@@ -36,7 +37,7 @@ export async function POST(_req: Request, { params }: Params) {
 
   const { id } = await params;
   const agent = await getCallingAgentRepository().getAgent(id, ctx.scope);
-  if (!agent) {
+  if (!agent || !canViewVoiceAgent(agent, ctx.userId)) {
     return apiError("NOT_FOUND", "Voice agent not found", 404);
   }
 

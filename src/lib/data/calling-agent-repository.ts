@@ -24,6 +24,8 @@ export type CreateVoiceAgentInput = {
   ttsVoice?: string;
   greetingName?: string;
   flowConfig?: VoiceAgentFlowConfig;
+  ownerUserId?: string;
+  createdBy?: string;
 };
 
 export type CreateCampaignInput = {
@@ -89,6 +91,8 @@ export type CreateReminderInput = {
 export interface CallingAgentRepository {
   listAgents(scope: TenantScope): Promise<VoiceAgent[]>;
   getAgent(id: string, scope: TenantScope): Promise<VoiceAgent | null>;
+  /** Unscoped — live-call webhooks resolve the agent's own tenant. */
+  getAgentById(id: string): Promise<VoiceAgent | null>;
   createAgent(input: CreateVoiceAgentInput, scope: TenantScope): Promise<VoiceAgent>;
   updateAgent(
     id: string,
@@ -178,6 +182,8 @@ export interface CallingAgentRepository {
     }
   ): Promise<CallSession[]>;
   getSession(id: string, scope: TenantScope): Promise<CallSession | null>;
+  /** Unscoped — live-call webhooks resolve the session's own tenant. */
+  getSessionById(id: string): Promise<CallSession | null>;
   getSessionByCallSid(
     callSid: string,
     scope?: TenantScope

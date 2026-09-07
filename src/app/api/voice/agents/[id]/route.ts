@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
-import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
+import { canMutateVoiceAgent, canViewVoiceAgent } from "@/lib/calling/voice-agent-access";
+import { getSessionContext } from "@/lib/tenant/context";
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -34,16 +35,16 @@ const updateSchema = z.object({
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
-  let scope;
+  let ctx;
   try {
-    scope = await getTenantScope();
+    ctx = await getSessionContext();
   } catch {
     return unauthorized();
   }
 
   const { id } = await params;
-  const agent = await getCallingAgentRepository().getAgent(id, scope);
-  if (!agent) {
+  const agent = await getCallingAgentRepository().getAgent(id, ctx.scope);
+  if (!agent || !canViewVoiceAgent(agent, ctx.userId)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   return NextResponse.json({ agent });
@@ -65,6 +66,11 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const { id } = await params;
+  const existing = await getCallingAgentRepository().getAgent(id, ctx.scope);
+  if (!existing || !canMutateVoiceAgent(existing, ctx.userId)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const agent = await getCallingAgentRepository().updateAgent(
     id,
     parsed.data as Parameters<

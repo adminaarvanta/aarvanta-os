@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, parseJsonBody, unauthorized } from "@/lib/api/request";
+import {
+  getUserPrimaryAgentId,
+  setPrimaryVoiceAgent,
+} from "@/lib/calling/resolve-voice-agent";
+import { canViewVoiceAgent } from "@/lib/calling/voice-agent-access";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import {
   getWorkspaceSettings,
@@ -32,7 +37,10 @@ const patchSchema = z.object({
 export async function GET() {
   try {
     const ctx = await getSessionContext();
-    const settings = await getWorkspaceSettings(ctx.scope.workspaceId);
+    const [settings, primaryAgentId] = await Promise.all([
+      getWorkspaceSettings(ctx.scope.workspaceId),
+      getUserPrimaryAgentId(ctx.scope, ctx.userId),
+    ]);
     return NextResponse.json({
       settings: {
         voiceTtsProvider: settings.voiceTtsProvider,
@@ -41,7 +49,7 @@ export async function GET() {
         voiceCustomId: settings.voiceCustomId,
         callRecordingEnabled: settings.callRecordingEnabled ?? false,
         callRecordingAnnounce: settings.callRecordingAnnounce !== false,
-        voicePrimaryAgentId: settings.voicePrimaryAgentId,
+        voicePrimaryAgentId: primaryAgentId,
         voiceCallbackTimezone: settings.voiceCallbackTimezone,
         voiceMorningHour: settings.voiceMorningHour,
         voiceAfternoonHour: settings.voiceAfternoonHour,
@@ -65,14 +73,27 @@ export async function PATCH(req: Request) {
     }
 
     const d = parsed.data;
-    const primaryId = d.voicePrimaryAgentId?.trim() || undefined;
-    if (primaryId) {
-      const agent = await getCallingAgentRepository().getAgent(
-        primaryId,
-        ctx.scope
-      );
-      if (!agent) {
-        return apiError("NOT_FOUND", "Voice agent not found", 404);
+    if (d.voicePrimaryAgentId !== undefined) {
+      const primaryId = d.voicePrimaryAgentId?.trim() || undefined;
+      if (primaryId) {
+        const agent = await getCallingAgentRepository().getAgent(
+          primaryId,
+          ctx.scope
+        );
+        if (!agent || !canViewVoiceAgent(agent, ctx.userId)) {
+          return apiError("NOT_FOUND", "Voice agent not found", 404);
+        }
+        await setPrimaryVoiceAgent(ctx.scope, ctx.userId, primaryId);
+      } else {
+        const member = ctx.member;
+        if (member) {
+          const { getTenantRepository } = await import("@/lib/data/tenant-store");
+          await getTenantRepository().updateMemberPreferences(
+            member.id,
+            { voicePrimaryAgentId: undefined },
+            ctx.scope
+          );
+        }
       }
     }
 
@@ -91,9 +112,6 @@ export async function PATCH(req: Request) {
       ...(d.callRecordingAnnounce != null
         ? { callRecordingAnnounce: d.callRecordingAnnounce }
         : {}),
-      ...(d.voicePrimaryAgentId !== undefined
-        ? { voicePrimaryAgentId: primaryId }
-        : {}),
       ...(d.voiceCallbackTimezone != null
         ? { voiceCallbackTimezone: d.voiceCallbackTimezone.trim() }
         : {}),
@@ -106,7 +124,10 @@ export async function PATCH(req: Request) {
         : {}),
     });
 
-    return NextResponse.json({ settings });
+    const primaryAgentId = await getUserPrimaryAgentId(ctx.scope, ctx.userId);
+    return NextResponse.json({
+      settings: { ...settings, voicePrimaryAgentId: primaryAgentId },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Update failed";
     return apiError(

@@ -5,7 +5,7 @@ import { finalizeCallSession } from "@/lib/calling/session-outcomes";
 import { applyCallConclusion } from "@/lib/calling/apply-call-conclusion";
 import { syncCallOutcomeToCrm } from "@/lib/calling/crm-sync";
 import { getRepository } from "@/lib/data/repository";
-import { getWebhookTenantScope } from "@/lib/tenant/context";
+import { resolveVoiceCallScope } from "@/lib/calling/voice-call-scope";
 
 /**
  * Voice relay (EC2) posts call transcripts here after ConversationRelay disconnects.
@@ -20,6 +20,7 @@ const schema = z.object({
   summary: z.string().optional(),
   sessionId: z.string().optional(),
   campaignId: z.string().optional(),
+  voiceAgentId: z.string().optional(),
   queueId: z.string().optional(),
   contactId: z.string().optional(),
   outcome: z.string().optional(),
@@ -31,6 +32,7 @@ const schema = z.object({
   intent: z.string().optional(),
   intentConfidence: z.number().optional(),
   currentStage: z.string().optional(),
+  cloneFallback: z.boolean().optional(),
   turns: z
     .array(
       z.object({
@@ -64,8 +66,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const scope = getWebhookTenantScope();
-  const repo = getRepository();
   const {
     conversationId,
     from,
@@ -76,6 +76,13 @@ export async function POST(req: Request) {
     callSid,
     sessionId,
   } = parsed.data;
+
+  const scope = await resolveVoiceCallScope({
+    sessionId,
+    voiceAgentId: parsed.data.voiceAgentId,
+    campaignId: parsed.data.campaignId,
+  });
+  const repo = getRepository();
 
   const phone =
     (direction?.toLowerCase().startsWith("outbound") ? to : from) ||
@@ -142,6 +149,9 @@ export async function POST(req: Request) {
     intent: parsed.data.intent,
     intentConfidence: parsed.data.intentConfidence,
     currentStage: parsed.data.currentStage as never,
+    aiDecisions: parsed.data.cloneFallback
+      ? ["Cloned voice failed — used catalog TTS"]
+      : undefined,
   });
 
   if (session) {

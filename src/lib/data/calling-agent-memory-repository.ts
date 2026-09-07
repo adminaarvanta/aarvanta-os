@@ -40,6 +40,9 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
     const item = agents.find((a) => a.id === id);
     return item && inCrmScope(item, scope) ? item : null;
   },
+  async getAgentById(id) {
+    return agents.find((a) => a.id === id) ?? null;
+  },
   async createAgent(input, scope) {
     const now = crmNow();
     const agent: VoiceAgent = {
@@ -50,6 +53,8 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
       ttsProvider: input.ttsProvider,
       ttsVoice: input.ttsVoice,
       greetingName: input.greetingName ?? input.name,
+      ownerUserId: input.ownerUserId,
+      createdBy: input.createdBy,
       flowConfig: input.flowConfig ?? DEFAULT_FLOW_CONFIG,
       createdAt: now,
       updatedAt: now,
@@ -196,6 +201,9 @@ export const callingAgentMemoryRepository: CallingAgentRepository = {
   async getSession(id, scope) {
     const item = sessions.find((s) => s.id === id);
     return item && inCrmScope(item, scope) ? item : null;
+  },
+  async getSessionById(id) {
+    return sessions.find((s) => s.id === id) ?? null;
   },
   async getSessionByCallSid(callSid) {
     return sessions.find((s) => s.callSid === callSid) ?? null;

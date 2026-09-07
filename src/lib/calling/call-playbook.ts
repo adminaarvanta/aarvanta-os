@@ -44,6 +44,17 @@ export function playbookNextLabel(stageId: string, stages: FlowStage[]): string 
   return match?.label ?? stageId.replace(/_/g, " ");
 }
 
+/** Always-on manners when the workspace has no company copy or knowledge base. */
+export const BARE_CALL_MANNERS = [
+  "MANNERS AND SIMPLE OBJECTIONS:",
+  "- Greet once, ask if now is a good time, then one question at a time.",
+  "- Busy: offer a callback and close. Not interested: accept and hang up.",
+  "- Wrong person: apologize and end. Do not keep pitching.",
+  "- If they ask what this is about: say it is a short intro or follow-up call. Do not invent a product, price, customer, or feature.",
+  "- If they ask for details you do not have: say you do not have that yet and offer a human follow-up or a later callback.",
+  "- Take an email if they want information sent. Never talk over them. Never claim to be AI unless asked.",
+].join("\n");
+
 /** Compact playbook for the live-call LLM — coaching notes, not a teleprompter. */
 export function formatPlaybookForRelay(flow: VoiceAgentFlowConfig): string {
   if (!flow?.stages?.length) return "";

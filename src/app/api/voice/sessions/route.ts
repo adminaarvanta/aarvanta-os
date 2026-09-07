@@ -125,6 +125,15 @@ async function enrichLiveSession(
   }
 
   const verdict = classifyOpenSession(session);
+  const cloneFallback = session.aiDecisions?.some((d) =>
+    d.toLowerCase().includes("catalog")
+  );
+  const note = [
+    connectionNote(session, verdict),
+    cloneFallback ? "Custom voice failed — speaking with the catalog voice." : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return {
     ...session,
@@ -136,6 +145,7 @@ async function enrichLiveSession(
     agentName: agent?.name ?? agent?.greetingName,
     phase: verdict.phase,
     stale: verdict.stale,
-    connectionNote: connectionNote(session, verdict),
+    connectionNote: note,
+    cloneFallback: Boolean(cloneFallback),
   };
 }

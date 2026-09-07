@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
+import { resolveVoiceCallScope } from "@/lib/calling/voice-call-scope";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 import { isVoiceRelayBudgetMode } from "@/lib/channels/voice-relay-tts";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
-import { getWebhookTenantScope } from "@/lib/tenant/context";
 
 /**
  * Twilio fetches this URL when a Voice OS call connects (inbound or outbound).
@@ -13,14 +13,6 @@ import { getWebhookTenantScope } from "@/lib/tenant/context";
  *
  * When VOICE_RELAY_WSS_URL is set → ConversationRelay two-way AI on EC2.
  * Otherwise → one-shot <Say> TTS.
- *
- * Query params:
- * - message / goal — briefing (topic/context) for the AI; never spoken verbatim
- *   (capped at 1000 chars for ConversationRelay). In one-shot <Say> fallback
- *   (no relay) it IS spoken, since there is no AI.
- * - mode=say — force one-shot TTS
- * - direction=inbound|outbound
- * - conversationId — for transcript callback correlation
  */
 export async function GET(req: Request) {
   return twimlResponse(req);
@@ -68,7 +60,11 @@ async function twimlResponse(req: Request) {
 
   if (!direction) direction = "outbound";
 
-  const scope = getWebhookTenantScope();
+  const scope = await resolveVoiceCallScope({
+    sessionId,
+    voiceAgentId,
+    campaignId,
+  });
   const settings = await getWorkspaceSettings(scope.workspaceId);
   const voice = resolveVoiceCallingConfig(settings);
 
@@ -77,31 +73,25 @@ async function twimlResponse(req: Request) {
     campaignId,
   });
   const resolvedAgentId = agent?.id ?? "";
-  const clonedOnCall = Boolean(liveClonedVoiceId(agent));
-  // Workspace Relay locale — never the agent picker. An agent language like
-  // `multi` or an unsupported code with Amazon/Google ends the Twilio session.
+  const clonedVoiceId = liveClonedVoiceId(agent) ?? "";
   const language = voice.language;
+  const agentName = agent?.greetingName?.trim() || agent?.name?.trim() || "";
+  const businessName = settings.businessName?.trim() || "";
 
-  const businessName = settings.businessName?.trim() || "Aarvanta";
-  const defaultWelcome =
-    direction === "inbound"
-      ? `Hi, thanks for calling ${businessName}. How can I help?`
-      : `Hi, this is ${businessName}. Do you have a moment?`;
+  const defaultWelcome = buildImmediateWelcome({
+    direction,
+    agentName,
+    businessName,
+  });
 
   const brief = message?.trim() ?? "";
   const goal = brief.slice(0, 1000);
   const relayUrl =
     mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
-  let welcome = direction === "inbound" ? defaultWelcome : "";
-  if (clonedOnCall) {
-    // Cloned playback is ConversationRelay `play` from the EC2 relay.
-    // Skip catalog welcomeGreeting so the first spoken audio is the clone.
-    welcome = "";
-  } else if (voice.callRecordingEnabled && voice.callRecordingAnnounce) {
-    welcome = welcome
-      ? `${voice.recordingNotice} ${welcome}`
-      : voice.recordingNotice;
+  let welcome = defaultWelcome;
+  if (voice.callRecordingEnabled && voice.callRecordingAnnounce && !clonedVoiceId) {
+    welcome = `${voice.recordingNotice} ${welcome}`;
   }
 
   const twiml = relayUrl
@@ -119,7 +109,8 @@ async function twimlResponse(req: Request) {
         sessionId,
         contactId,
         voiceAgentId: resolvedAgentId,
-        skipOpening: Boolean(welcome),
+        clonedVoiceId,
+        skipOpening: true,
       })
     : buildSayTwiml(
         (brief || welcome || defaultWelcome).slice(0, 280),
@@ -133,6 +124,33 @@ async function twimlResponse(req: Request) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+function buildImmediateWelcome(input: {
+  direction: string;
+  agentName: string;
+  businessName: string;
+}) {
+  const { direction, agentName, businessName } = input;
+  if (direction === "inbound") {
+    if (businessName) {
+      return `Hi, thanks for calling ${businessName}. How can I help?`;
+    }
+    if (agentName) {
+      return `Hi, this is ${agentName}. How can I help?`;
+    }
+    return "Hi, thanks for calling. How can I help?";
+  }
+  if (businessName && agentName) {
+    return `Hi, this is ${agentName} from ${businessName}. Do you have a moment?`;
+  }
+  if (agentName) {
+    return `Hi, this is ${agentName}. Do you have a moment?`;
+  }
+  if (businessName) {
+    return `Hi, this is ${businessName}. Do you have a moment?`;
+  }
+  return "Hi, do you have a moment?";
 }
 
 function buildSayTwiml(spoken: string, pollyVoice: string) {
@@ -162,6 +180,7 @@ function buildConversationRelayTwiml(
     sessionId?: string;
     contactId?: string;
     voiceAgentId?: string;
+    clonedVoiceId?: string;
     skipOpening?: boolean;
   }
 ) {
@@ -185,6 +204,9 @@ function buildConversationRelayTwiml(
       : "",
     params.voiceAgentId
       ? `<Parameter name="voiceAgentId" value="${escapeXml(params.voiceAgentId)}" />`
+      : "",
+    params.clonedVoiceId
+      ? `<Parameter name="clonedVoiceId" value="${escapeXml(params.clonedVoiceId)}" />`
       : "",
     params.skipOpening
       ? `<Parameter name="skipOpening" value="true" />`

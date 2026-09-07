@@ -1,4 +1,4 @@
-import { DEMO_TENANT } from "@/lib/tenant/demo-context";
+import { DEMO_TENANT, DEMO_USER } from "@/lib/tenant/demo-context";
 import { crmNow } from "@/lib/data/crm-helpers";
 import {
   DEFAULT_FLOW_CONFIG,
@@ -24,6 +24,8 @@ export const DEMO_VOICE_AGENTS: VoiceAgent[] = [
     language: "en-US",
     ttsProvider: "ElevenLabs",
     greetingName: "Ava",
+    ownerUserId: DEMO_USER.userId,
+    createdBy: DEMO_USER.userId,
     flowConfig: DEFAULT_FLOW_CONFIG,
     createdAt: now,
     updatedAt: now,

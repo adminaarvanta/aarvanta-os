@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
-import { formatPlaybookForRelay } from "@/lib/calling/call-playbook";
+import { BARE_CALL_MANNERS, formatPlaybookForRelay } from "@/lib/calling/call-playbook";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
+import { resolveVoiceCallScope } from "@/lib/calling/voice-call-scope";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
@@ -11,7 +12,6 @@ import { getCrmRepository } from "@/lib/data/crm-store";
 import { getKnowledgeRepository } from "@/lib/data/knowledge-store";
 import { searchKnowledgeChunks } from "@/lib/knowledge/search";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
-import { getWebhookTenantScope } from "@/lib/tenant/context";
 import { DEFAULT_FLOW_CONFIG } from "@/types/calling-agent";
 import { contactDisplayName } from "@/types/crm";
 
@@ -33,8 +33,6 @@ const schema = z.object({
 });
 
 const DIGEST_MAX_CHARS = 1800;
-const DEFAULT_TOPIC =
-  "company overview products services pricing FAQ hours support what we do";
 
 export async function POST(req: Request) {
   const expected = process.env.VOICE_RELAY_CALLBACK_SECRET?.trim();
@@ -58,18 +56,57 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const scope = getWebhookTenantScope();
+  const scope = await resolveVoiceCallScope({
+    sessionId: parsed.data.sessionId,
+    voiceAgentId: parsed.data.voiceAgentId,
+    campaignId: parsed.data.campaignId,
+  });
   const settings = await getWorkspaceSettings(scope.workspaceId);
-  const businessName = settings.businessName?.trim() || "Aarvanta";
+  const businessName = settings.businessName?.trim() || "";
   const voicePrefs = resolveVoiceCallingConfig(settings);
+
+  const calling = getCallingAgentRepository();
+  let contactId = parsed.data.contactId;
+  let voiceAgentId = parsed.data.voiceAgentId;
+  let campaignGoal = "";
+  let memorySummary = "";
+  let contactName = "";
+  let contactTitle = "";
+  let companyName = "";
+
+  if (parsed.data.sessionId) {
+    const session =
+      (await calling.getSessionById(parsed.data.sessionId)) ??
+      (await calling.getSession(parsed.data.sessionId, scope));
+    if (session) {
+      contactId = contactId || session.contactId;
+      voiceAgentId = voiceAgentId || session.voiceAgentId;
+      memorySummary = session.memorySummary ?? "";
+    }
+  }
+
+  if (parsed.data.campaignId) {
+    const campaign = await calling.getCampaign(parsed.data.campaignId, scope);
+    if (campaign) {
+      campaignGoal = campaign.goal;
+      voiceAgentId = voiceAgentId || campaign.voiceAgentId;
+    }
+  }
 
   const knowledgeRepo = getKnowledgeRepository();
   const chunks = await knowledgeRepo.listChunks(scope);
-  const topic = parsed.data.topic?.trim() || DEFAULT_TOPIC;
+  const topic =
+    parsed.data.topic?.trim() || campaignGoal.trim() || "";
 
   let knowledgeDigest = "";
   if (chunks.length) {
-    const hits = await searchKnowledgeChunks(chunks, topic, 6);
+    const hits = topic
+      ? await searchKnowledgeChunks(chunks, topic, 6)
+        : chunks.slice(0, 4).map((chunk) => ({
+            chunk,
+            score: 1,
+            method: "keyword" as const,
+          }));
     if (hits.length) {
       const parts: string[] = [];
       let used = 0;
@@ -88,35 +125,6 @@ export async function POST(req: Request) {
         used += block.length + 2;
       }
       knowledgeDigest = parts.join("\n\n");
-    }
-  }
-
-  const calling = getCallingAgentRepository();
-  let contactId = parsed.data.contactId;
-  let voiceAgentId = parsed.data.voiceAgentId;
-  let campaignGoal = "";
-  let memorySummary = "";
-  let contactName = "";
-  let contactTitle = "";
-  let companyName = "";
-
-  if (parsed.data.sessionId) {
-    const session = await calling.getSession(parsed.data.sessionId, scope);
-    if (session) {
-      contactId = contactId || session.contactId;
-      voiceAgentId = voiceAgentId || session.voiceAgentId;
-      memorySummary = session.memorySummary ?? "";
-      if (session.callSid == null && parsed.data.from) {
-        /* noop — sid set later */
-      }
-    }
-  }
-
-  if (parsed.data.campaignId) {
-    const campaign = await calling.getCampaign(parsed.data.campaignId, scope);
-    if (campaign) {
-      campaignGoal = campaign.goal;
-      voiceAgentId = voiceAgentId || campaign.voiceAgentId;
     }
   }
 
@@ -145,6 +153,8 @@ export async function POST(req: Request) {
 
   const flowConfig = agent?.flowConfig ?? DEFAULT_FLOW_CONFIG;
   const stageBrief = formatPlaybookForRelay(flowConfig);
+  const informed = Boolean(knowledgeDigest || campaignGoal || businessName);
+  const knowledgeMode = informed ? "informed" : "bare";
 
   const clonedVoiceId = liveClonedVoiceId(agent);
   const recordingNotice =
@@ -156,6 +166,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     businessName,
+    knowledgeMode,
+    mannersBrief: BARE_CALL_MANNERS,
     knowledgeDigest,
     chunkCount: chunks.length,
     contactId,
@@ -164,7 +176,7 @@ export async function POST(req: Request) {
     companyName,
     campaignGoal,
     memorySummary,
-    voiceAgentName: agent?.greetingName ?? agent?.name ?? "Ava",
+    voiceAgentName: agent?.greetingName ?? agent?.name ?? "",
     language: voicePrefs.language,
     entryStage: flowConfig.entryStage,
     flowStages: stageBrief,

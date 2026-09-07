@@ -7,6 +7,7 @@ import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
 import { crmNow } from "@/lib/data/crm-helpers";
+import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { contactDisplayName } from "@/types/crm";
 import type { CallQueueItem } from "@/types/calling-agent";
 
@@ -170,8 +171,18 @@ export async function dialQueueItem(item: CallQueueItem) {
     scope
   );
 
+  const settings = await getWorkspaceSettings(scope.workspaceId);
+  const company = settings.businessName?.trim();
+  const agentName = agent?.greetingName ?? agent?.name ?? "";
+  const who = company
+    ? agentName
+      ? `${agentName} calling from ${company}`
+      : `calling from ${company}`
+    : agentName
+      ? agentName
+      : "a colleague";
   const briefing = [
-    `You are ${agent?.greetingName ?? agent?.name ?? "Ava"} calling from Aarvanta.`,
+    `You are ${who}.`,
     `Campaign goal: ${campaign.goal}.`,
     `Contact: ${contactDisplayName(contact)}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}.`,
     memorySummary ? `Prior context: ${memorySummary}` : "",

@@ -66,6 +66,10 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   async getAgent(id, scope) {
     return getScoped<VoiceAgent>(COLLECTIONS.agents, id, scope);
   },
+  async getAgentById(id) {
+    const snap = await getDb().collection(COLLECTIONS.agents).doc(id).get();
+    return snap.exists ? (snap.data() as VoiceAgent) : null;
+  },
   async createAgent(input, scope) {
     const now = crmNow();
     const agent: VoiceAgent = {
@@ -76,6 +80,8 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
       ttsProvider: input.ttsProvider,
       ttsVoice: input.ttsVoice,
       greetingName: input.greetingName ?? input.name,
+      ownerUserId: input.ownerUserId,
+      createdBy: input.createdBy,
       flowConfig: input.flowConfig ?? DEFAULT_FLOW_CONFIG,
       createdAt: now,
       updatedAt: now,
@@ -228,6 +234,10 @@ export const callingAgentFirestoreRepository: CallingAgentRepository = {
   },
   async getSession(id, scope) {
     return getScoped<CallSession>(COLLECTIONS.sessions, id, scope);
+  },
+  async getSessionById(id) {
+    const snap = await getDb().collection(COLLECTIONS.sessions).doc(id).get();
+    return snap.exists ? (snap.data() as CallSession) : null;
   },
   async getSessionByCallSid(callSid) {
     const snap = await getDb()

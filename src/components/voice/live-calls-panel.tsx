@@ -245,7 +245,7 @@ export function LiveCallsPanel() {
                       >
                         <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
                           {t.role === "assistant"
-                            ? session.agentName ?? "Ava"
+                            ? session.agentName || "Agent"
                             : "Lead"}
                         </p>
                         {t.content}

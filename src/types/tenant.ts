@@ -83,6 +83,8 @@ export interface WorkspaceMember extends TenantScope {
   /** Free first-run product walkthrough completed or skipped. */
   hasSeenWalkthrough?: boolean;
   walkthroughCompletedAt?: string;
+  /** This member's default Voice Agent for Dialer, inbound, and scheduled calls. */
+  voicePrimaryAgentId?: string;
   /** Platform super-admin grants for voice + Email OS outreach. */
   creditOverrides?: MemberCreditOverrides;
   joinedAt: string;

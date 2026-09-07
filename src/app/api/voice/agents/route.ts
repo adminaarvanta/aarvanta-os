@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import {
+  getUserPrimaryAgentId,
+  listVoiceAgentsForUser,
+} from "@/lib/calling/resolve-voice-agent";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
-import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
-import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
+import { getSessionContext } from "@/lib/tenant/context";
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -14,20 +17,20 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  let scope;
+  let ctx;
   try {
-    scope = await getTenantScope();
+    ctx = await getSessionContext();
   } catch {
     return unauthorized();
   }
 
-  const [agents, settings] = await Promise.all([
-    getCallingAgentRepository().listAgents(scope),
-    getWorkspaceSettings(scope.workspaceId),
+  const [agents, primaryAgentId] = await Promise.all([
+    listVoiceAgentsForUser(ctx.scope, ctx.userId),
+    getUserPrimaryAgentId(ctx.scope, ctx.userId),
   ]);
   return NextResponse.json({
     agents,
-    primaryAgentId: settings.voicePrimaryAgentId ?? null,
+    primaryAgentId: primaryAgentId ?? null,
   });
 }
 
@@ -47,7 +50,11 @@ export async function POST(req: Request) {
   }
 
   const agent = await getCallingAgentRepository().createAgent(
-    parsed.data,
+    {
+      ...parsed.data,
+      ownerUserId: ctx.userId,
+      createdBy: ctx.userId,
+    },
     ctx.scope
   );
   return NextResponse.json({ agent }, { status: 201 });

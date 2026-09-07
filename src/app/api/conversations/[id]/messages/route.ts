@@ -8,7 +8,9 @@ import {
   generateOutboundMessageId,
 } from "@/lib/data/email-threading";
 import { getRepository } from "@/lib/data/repository";
-import { getTenantScope } from "@/lib/tenant/context";
+import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
+import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
+import { getSessionContext, getTenantScope } from "@/lib/tenant/context";
 import { getSessionFromCookies } from "@/lib/auth/session";
 import { parseJsonBody, unauthorized } from "@/lib/api/request";
 import { canAccessWhatsAppOs } from "@/lib/channels/whatsapp-access";
@@ -116,6 +118,28 @@ export async function POST(
     }
 
     try {
+      let voiceAgentId: string | undefined;
+      let voiceSessionId: string | undefined;
+      if (channel === "voice") {
+        try {
+          const ctx = await getSessionContext();
+          const agent = await resolveCallVoiceAgent(ctx.scope, {
+            ownerUserId: ctx.userId,
+          });
+          voiceAgentId = agent?.id;
+          const session = await getCallingAgentRepository().createSession(
+            {
+              conversationId: id,
+              voiceAgentId,
+              status: "ringing",
+            },
+            ctx.scope
+          );
+          voiceSessionId = session.id;
+        } catch {
+          /* still place the call without session correlation */
+        }
+      }
       await deliverOutbound({
         channel,
         contact: existing.contact,
@@ -125,6 +149,8 @@ export async function POST(
         emailMessageId: outboundMessageId,
         conversationId: id,
         voiceDirection: channel === "voice" ? "outbound" : undefined,
+        sessionId: voiceSessionId,
+        voiceAgentId,
       });
     } catch (error) {
       return NextResponse.json(

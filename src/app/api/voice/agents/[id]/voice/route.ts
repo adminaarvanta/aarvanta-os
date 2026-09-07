@@ -3,6 +3,7 @@ import { apiError, unauthorized } from "@/lib/api/request";
 import { handlePlanError } from "@/lib/billing/api-guard";
 import { requireFeature } from "@/lib/billing/consume";
 import { promoteVoiceAgentAfterClone } from "@/lib/calling/resolve-voice-agent";
+import { canMutateVoiceAgent } from "@/lib/calling/voice-agent-access";
 import { demoClonedVoiceId } from "@/lib/channels/cloned-voice";
 import {
   collectCloneFiles,
@@ -53,7 +54,7 @@ export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
   const repo = getCallingAgentRepository();
   const agent = await repo.getAgent(id, ctx.scope);
-  if (!agent) {
+  if (!agent || !canMutateVoiceAgent(agent, ctx.userId)) {
     return apiError("NOT_FOUND", "Voice agent not found", 404);
   }
 
@@ -101,7 +102,8 @@ export async function POST(req: Request, { params }: Params) {
     };
     const updated = await repo.updateAgent(id, { clonedVoice }, ctx.scope);
     await promoteVoiceAgentAfterClone(
-      ctx.scope.workspaceId,
+      ctx.scope,
+      ctx.userId,
       id,
       formFlag(form, "setPrimary")
     );
@@ -139,7 +141,8 @@ export async function POST(req: Request, { params }: Params) {
     };
     const updated = await repo.updateAgent(id, { clonedVoice }, ctx.scope);
     await promoteVoiceAgentAfterClone(
-      ctx.scope.workspaceId,
+      ctx.scope,
+      ctx.userId,
       id,
       formFlag(form, "setPrimary")
     );
@@ -186,7 +189,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   const { id } = await params;
   const repo = getCallingAgentRepository();
   const agent = await repo.getAgent(id, ctx.scope);
-  if (!agent) {
+  if (!agent || !canMutateVoiceAgent(agent, ctx.userId)) {
     return apiError("NOT_FOUND", "Voice agent not found", 404);
   }
 

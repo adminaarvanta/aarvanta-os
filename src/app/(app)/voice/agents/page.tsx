@@ -1,22 +1,23 @@
 import { CreateVoiceAgentForm } from "@/components/voice/create-voice-agent-form";
 import { VoiceAgentCard } from "@/components/voice/voice-agent-card";
 import { VoicePageShell } from "@/components/voice/voice-ui";
-import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
-import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
-import { getTenantScope } from "@/lib/tenant/context";
+import {
+  getUserPrimaryAgentId,
+  listVoiceAgentsForUser,
+} from "@/lib/calling/resolve-voice-agent";
+import { getSessionContext } from "@/lib/tenant/context";
 
 export default async function VoiceAgentsPage() {
-  const scope = await getTenantScope();
-  const [agents, settings] = await Promise.all([
-    getCallingAgentRepository().listAgents(scope),
-    getWorkspaceSettings(scope.workspaceId),
+  const ctx = await getSessionContext();
+  const [agents, primaryId] = await Promise.all([
+    listVoiceAgentsForUser(ctx.scope, ctx.userId),
+    getUserPrimaryAgentId(ctx.scope, ctx.userId),
   ]);
-  const primaryId = settings.voicePrimaryAgentId?.trim() ?? "";
 
   return (
     <VoicePageShell
       title="Voice Agents"
-      subtitle="Create a new persona, then clone a custom voice. Set one as primary for Dialer, inbound, and scheduled calls."
+      subtitle="Your private personas. Create one, clone a custom voice, and set it as primary for your Dialer, inbound, and scheduled calls. Other teammates cannot see these agents."
       tone="navy"
     >
       <div className="space-y-4 p-4 sm:p-6">
@@ -26,7 +27,7 @@ export default async function VoiceAgentsPage() {
             <VoiceAgentCard
               key={agent.id}
               agent={agent}
-              isPrimary={agent.id === primaryId}
+              isPrimary={agent.id === (primaryId ?? "")}
             />
           ))}
         </div>

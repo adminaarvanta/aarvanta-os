@@ -47,13 +47,13 @@ AARVANTA_CONTEXT_URL = os.getenv("AARVANTA_VOICE_CONTEXT_URL", "").strip()
 BRAND_NAME = (os.getenv("VOICE_BRAND_NAME") or "Aarvanta").strip() or "Aarvanta"
 
 DEFAULT_SYSTEM = (
-    f"You are a warm, concise phone representative for {BRAND_NAME}. "
+    "You are a warm, concise phone representative. "
     "Speak like a real human on a short phone call — calm, clear, never scripted.\n"
     "HARD RULES (never break these):\n"
-    f"- BRAND: The company/product name is always \"{BRAND_NAME}\" — never use any other "
-    "company, product, or workspace name for who you represent (ignore other brand names "
-    "in knowledge or briefing for identity).\n"
-    "- ALWAYS GREET first on a new call, then continue. Do not skip the greeting.\n"
+    "- IDENTITY: Use only the name and company given in the extra instructions. "
+    "If no company is given, do not invent one.\n"
+    "- The opening greeting may already have been spoken by the phone system. "
+    "Do not greet again unless the caller asks who you are.\n"
     "- NO BLUFFING: Never invent facts, features, pricing, timelines, clients, case studies, "
     "integrations, or promises. If it is not in your briefing or company knowledge, say you "
     "do not have that detail and offer a human follow-up.\n"
@@ -76,7 +76,7 @@ TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-SERVICE_VERSION = "1.7.2"
+SERVICE_VERSION = "1.8.0"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -340,6 +340,11 @@ def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
         return None
     TTS_DIR.mkdir(parents=True, exist_ok=True)
     _cleanup_tts_dir()
+    digest = hashlib.sha256(f"{voice_id}:{text.strip()}".encode()).hexdigest()[:24]
+    filename = f"{digest}.mp3"
+    cached = TTS_DIR / filename
+    if cached.is_file() and cached.stat().st_size > 0:
+        return f"{public_base}/{filename}"
     payload = json.dumps(
         {"text": text.strip(), "model_id": "eleven_flash_v2_5"}
     ).encode("utf-8")
@@ -361,9 +366,7 @@ def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
         return None
     if not audio:
         return None
-    token = hashlib.sha256(f"{voice_id}:{time.time()}:{text[:48]}".encode()).hexdigest()[:24]
-    filename = f"{token}.mp3"
-    (TTS_DIR / filename).write_bytes(audio)
+    cached.write_bytes(audio)
     return f"{public_base}/{filename}"
 
 
@@ -376,16 +379,15 @@ async def end_session(ws: WebSocket, handoff: str = "completed") -> None:
 
 
 OUTBOUND_OPENING_INSTRUCTION = (
-    f"(The person just answered. ALWAYS start with a warm greeting: say hi, your name, "
-    f"and that you are calling from {BRAND_NAME}. Then in the same short turn, say why "
-    f"you are calling based on the briefing — one or two sentences total. "
-    f"Use only the name {BRAND_NAME} for the company. Never read the briefing word-for-word.)"
+    "(The person just answered. The phone system may already have greeted them. "
+    "Do not greet again. Continue with why you are calling in one short sentence. "
+    "Never invent a company or product. Never read the briefing word-for-word.)"
 )
 
 INBOUND_OPENING_INSTRUCTION = (
-    f"(Inbound call just connected. ALWAYS start with a warm greeting: thank them for "
-    f"calling {BRAND_NAME}, say your name, and ask how you can help — one or two short "
-    f"sentences. Use only {BRAND_NAME} as the company name.)"
+    "(Inbound call just connected. The phone system may already have greeted them. "
+    "Do not greet again. Ask how you can help in one short sentence. "
+    "Never invent a company or product.)"
 )
 
 
@@ -437,26 +439,44 @@ def build_system_prompt(
 ) -> str:
     ctx = context or {}
     parts = [SYSTEM_PROMPT]
-    # Always Aarvanta (or VOICE_BRAND_NAME) — never workspace/customer brand from context.
-    _ = business_name  # ignored for spoken identity
-    name = BRAND_NAME
-    agent_name = str(ctx.get("voiceAgentName") or "Ava").strip()
-    parts.append(
-        f"You are {agent_name} representing {name}. "
-        f"On the opening turn only: greet and introduce yourself as {agent_name} "
-        f"from {name}. Never say you represent any other company."
+    name = (
+        str(ctx.get("businessName") or "").strip()
+        or (business_name or "").strip()
+        or str(params.get("businessName") or "").strip()
     )
+    agent_name = str(ctx.get("voiceAgentName") or params.get("voiceAgentName") or "").strip()
+    knowledge_mode = str(ctx.get("knowledgeMode") or "").strip().lower()
+    if agent_name and name:
+        parts.append(f"You are {agent_name} representing {name}.")
+    elif agent_name:
+        parts.append(f"You are {agent_name} on a phone call. Do not invent a company name.")
+    elif name:
+        parts.append(f"You represent {name}.")
+    else:
+        parts.append("You are a polite phone representative. Do not invent a name or company.")
+
+    if knowledge_mode == "bare" or (not knowledge_digest and not name):
+        manners = str(ctx.get("mannersBrief") or "").strip()
+        parts.append(
+            manners
+            or (
+                "BARE MODE — no company knowledge is available. "
+                "Use basic manners and simple objection handling. "
+                "If asked about product, price, or customers, say you do not have that "
+                "detail yet and offer a human follow-up. Never invent offerings."
+            )
+        )
+
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
         parts.append(
-            f"Inbound call for {name}: always greet first, understand what they need, "
-            "answer clearly, then invite the next question."
+            "Inbound call: understand what they need, answer clearly, then invite "
+            "the next question. Do not re-greet unless they ask who you are."
         )
     elif direction == "outbound":
         parts.append(
-            f"Outbound discovery call for {name}. Always greet first. "
-            "Follow the STAGE MACHINE below — one stage at a time, never jump ahead, "
-            "never hard-pitch before permission. Keep each turn short. "
+            "Outbound discovery call. Follow the STAGE MACHINE below — one stage at a time, "
+            "never jump ahead, never hard-pitch before permission. Keep each turn short. "
             "When proposing a meeting, use light language (short strategy session, "
             "no obligation). When offering times, suggest only two concrete slots "
             "from tools — never invent."
@@ -504,9 +524,11 @@ def build_system_prompt(
             "follow-up is okay, then close politely."
         )
     if knowledge_digest:
+        identity = f" Your spoken identity is {agent_name or name}." if (agent_name or name) else ""
         parts.append(
-            f"Reference facts (use for answers only — your company name is still "
-            f"always {name}; do not adopt other brand names from this text as who you are):\n"
+            "INFORMED MODE — stay strictly on these retrieved facts. "
+            "If a detail is missing, say so and offer a follow-up."
+            f"{identity}\n"
             f"{knowledge_digest[:2000]}"
         )
     contact_id = str(ctx.get("contactId") or "").strip()
@@ -607,14 +629,57 @@ async def _speak_stream(ws: WebSocket, reply: str) -> None:
 async def speak(ws: WebSocket, reply: str, call_context: dict[str, Any] | None = None) -> None:
     """Speak via cloned ElevenLabs play, or catalog ConversationRelay TTS."""
     text = _cap_reply((reply or "").strip() or "Sorry — could you repeat that?")
-    cloned = str((call_context or {}).get("clonedVoiceId") or "").strip()
+    ctx = call_context or {}
+    cloned = str(ctx.get("clonedVoiceId") or "").strip()
     if cloned:
         url = await asyncio.to_thread(synthesize_cloned_mp3, cloned, text)
         if url:
             await send_play(ws, url)
             return
         log.warning("cloned TTS failed — falling back to catalog voice")
+        ctx["cloneFallback"] = True
     await _speak_stream(ws, text)
+
+
+async def _stream_catalog_reply(ws: WebSocket, kwargs: dict[str, Any]) -> str:
+    """Stream OpenAI tokens into ConversationRelay catalog TTS."""
+    if not openai_client:
+        return ""
+
+    def _run():
+        return openai_client.chat.completions.create(**kwargs, stream=True)
+
+    try:
+        stream = await asyncio.to_thread(_run)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("openai stream failed: %s", exc)
+        return ""
+
+    full = ""
+    buffer = ""
+    try:
+        for chunk in stream:
+            delta = ""
+            try:
+                delta = chunk.choices[0].delta.content or ""
+            except Exception:  # noqa: BLE001
+                continue
+            if not delta:
+                continue
+            full += delta
+            buffer += delta
+            if any(buffer.endswith(p) for p in (" ", ".", "!", "?", ",", ";", ":")) or len(
+                buffer
+            ) >= 24:
+                await send_text(ws, buffer, last=False)
+                buffer = ""
+    except Exception as exc:  # noqa: BLE001
+        log.warning("openai stream read failed: %s", exc)
+        return ""
+    if not full.strip():
+        return ""
+    await send_text(ws, buffer if buffer else " ", last=True)
+    return _cap_reply(full)
 
 
 async def stream_reply(
@@ -633,6 +698,15 @@ async def stream_reply(
         return reply
 
     tools_enabled = bool(resolve_api_base() and AARVANTA_CALLBACK_SECRET)
+    wants_tools = bool(
+        tools_enabled
+        and re.search(
+            r"\b(meeting|calendar|schedule|book|available|availability|thursday|monday|tuesday|wednesday|friday)\b",
+            user_text,
+            re.I,
+        )
+    )
+    cloned = bool(str(ctx.get("clonedVoiceId") or "").strip())
     # OpenAI message list may include tool rounds (not just plain chat turns).
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}, *history]
     filler_sent = False
@@ -646,9 +720,19 @@ async def stream_reply(
             "frequency_penalty": REPLY_FREQUENCY_PENALTY,
             "presence_penalty": REPLY_PRESENCE_PENALTY,
         }
-        if tools_enabled:
+        if wants_tools:
             kwargs["tools"] = BOOKING_TOOLS
             kwargs["tool_choice"] = "auto"
+
+        if not cloned and not wants_tools:
+            streamed = await _stream_catalog_reply(ws, kwargs)
+            if streamed:
+                reply = _dedupe_against_history(streamed, history)
+                reply = _cap_reply(reply)
+                history.append({"role": "assistant", "content": reply})
+                if len(history) > 16:
+                    del history[:-16]
+                return reply
 
         completion = await asyncio.to_thread(
             lambda: openai_client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
@@ -806,6 +890,10 @@ def post_transcript(session: dict[str, Any], turns: list[dict[str, str]], summar
             "promisedAt": conclusion["promisedAt"],
             "infoToSend": conclusion["infoToSend"],
             "conclusionNotes": conclusion["notes"],
+            "cloneFallback": bool(
+                (session.get("callContext") or {}).get("cloneFallback")
+            )
+            or None,
         }.items()
         if value is not None
     }
@@ -912,9 +1000,14 @@ async def conversation_relay(websocket: WebSocket) -> None:
 
                 context = await asyncio.to_thread(fetch_voice_context, params, session)
                 knowledge_digest = str(context.get("knowledgeDigest") or "")
+                business_name = str(
+                    context.get("businessName")
+                    or params.get("businessName")
+                    or ""
+                ).strip()
                 system = build_system_prompt(
                     params,
-                    business_name=BRAND_NAME,
+                    business_name=business_name,
                     knowledge_digest=knowledge_digest,
                     context=context,
                 )
@@ -932,9 +1025,14 @@ async def conversation_relay(websocket: WebSocket) -> None:
                         str(context.get("campaignId") or params.get("campaignId") or "")
                         .strip()
                     ),
-                    "voiceAgentName": str(context.get("voiceAgentName") or "Ava"),
+                    "voiceAgentName": str(
+                        context.get("voiceAgentName") or params.get("voiceAgentName") or ""
+                    ),
                     "timezone": "America/New_York",
-                    "clonedVoiceId": str(context.get("clonedVoiceId") or "").strip(),
+                    "clonedVoiceId": str(
+                        params.get("clonedVoiceId") or context.get("clonedVoiceId") or ""
+                    ).strip(),
+                    "cloneFallback": False,
                 }
                 session["callContext"] = call_context
                 direction = str(params.get("direction") or "").lower()
@@ -943,7 +1041,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     session.get("callSid"),
                     session.get("from"),
                     direction or "-",
-                    BRAND_NAME,
+                    business_name or "-",
                     "yes" if knowledge_digest else "no",
                     call_context.get("contactId") or "-",
                     "yes" if resolve_api_base() and AARVANTA_CALLBACK_SECRET else "no",
@@ -965,14 +1063,14 @@ async def conversation_relay(websocket: WebSocket) -> None:
                 )
                 if skip_opening:
                     log.info("skipping relay opening — TwiML already greeted")
-                    agent_name = str(call_context.get("voiceAgentName") or "Ava")
+                    agent_name = str(call_context.get("voiceAgentName") or "")
                 else:
                     opening_instruction = (
                         OUTBOUND_OPENING_INSTRUCTION
                         if direction.startswith("outbound")
                         else INBOUND_OPENING_INSTRUCTION
                     )
-                    agent_name = str(call_context.get("voiceAgentName") or "Ava")
+                    agent_name = str(call_context.get("voiceAgentName") or "")
                     try:
                         opening = await stream_reply(
                             websocket,
@@ -988,15 +1086,18 @@ async def conversation_relay(websocket: WebSocket) -> None:
                         transcript.append({"role": "assistant", "content": opening})
                     except Exception as exc:  # noqa: BLE001
                         log.exception("opening line failed: %s", exc)
+                        brand = business_name or agent_name
                         if direction.startswith("outbound"):
                             fallback = (
-                                f"Hi, this is {agent_name} calling from {BRAND_NAME}. "
+                                f"Hi{', this is ' + agent_name if agent_name else ''}"
+                                f"{' from ' + brand if brand and brand != agent_name else ''}. "
                                 "Do you have a moment?"
                             )
                         else:
                             fallback = (
-                                f"Hi, thanks for calling {BRAND_NAME}. "
-                                f"This is {agent_name} — how can I help?"
+                                f"Hi, thanks for calling"
+                                f"{' ' + brand if brand else ''}. "
+                                "How can I help?"
                             )
                         await speak(websocket, fallback, call_context)
                         transcript.append({"role": "assistant", "content": fallback})

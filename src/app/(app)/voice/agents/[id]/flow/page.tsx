@@ -2,33 +2,34 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FlowBuilder } from "@/components/voice/flow-builder";
 import { VoicePageShell } from "@/components/voice/voice-ui";
+import { getUserPrimaryAgentId } from "@/lib/calling/resolve-voice-agent";
+import { canViewVoiceAgent } from "@/lib/calling/voice-agent-access";
 import { isDefaultCatalogAgent } from "@/lib/channels/cloned-voice";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
-import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
-import { getTenantScope } from "@/lib/tenant/context";
+import { getSessionContext } from "@/lib/tenant/context";
 
 type Params = { params: Promise<{ id: string }> };
 
 export default async function AgentFlowPage({ params }: Params) {
   const { id } = await params;
-  const scope = await getTenantScope();
-  const [agent, settings] = await Promise.all([
-    getCallingAgentRepository().getAgent(id, scope),
-    getWorkspaceSettings(scope.workspaceId),
+  const ctx = await getSessionContext();
+  const [agent, primaryId] = await Promise.all([
+    getCallingAgentRepository().getAgent(id, ctx.scope),
+    getUserPrimaryAgentId(ctx.scope, ctx.userId),
   ]);
-  if (!agent) notFound();
+  if (!agent || !canViewVoiceAgent(agent, ctx.userId)) notFound();
   const catalogDefault = isDefaultCatalogAgent(agent);
-  const isPrimary = settings.voicePrimaryAgentId === agent.id;
+  const isPrimary = primaryId === agent.id;
 
   return (
     <VoicePageShell
       title={agent.name}
       subtitle={
         catalogDefault
-          ? "Default catalog agent — create a new agent to clone a custom voice."
+          ? "Catalog template — create your own agent to clone a custom voice."
           : isPrimary
-            ? "Primary agent for Dialer, inbound, and scheduled calls. Set how they sound, then optionally tune the call playbook."
-            : "Set how they sound, optionally tune the call playbook, then mark as primary so real calls use this agent."
+            ? "Your primary agent for Dialer, inbound, and scheduled calls."
+            : "Set how they sound, then mark as primary so your calls use this agent."
       }
       tone="navy"
       actions={

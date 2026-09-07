@@ -75,6 +75,7 @@ export async function POST(req: Request) {
 
   const agent = await resolveCallVoiceAgent(scope, {
     voiceAgentId: parsed.data.voiceAgentId,
+    ownerUserId: ctx.userId,
   });
   const memorySummary = crmContact
     ? await buildCallMemorySummary(crmContact.id, scope)
