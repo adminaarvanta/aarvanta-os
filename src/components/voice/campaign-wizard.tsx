@@ -717,8 +717,8 @@ export function CampaignWizard({
           <p className="text-xs text-muted">
             Launch starts dialing in-hours leads immediately. Use{" "}
             <strong className="text-foreground">Launch & call first now</strong>{" "}
-            to place the first call even outside working hours. Cron continues
-            the rest of the queue every minute.
+            to place the first call even outside working hours. Daily cron
+            continues the rest of the queue during working hours.
           </p>
         </div>
       )}
