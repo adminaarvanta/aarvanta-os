@@ -6,11 +6,11 @@
     },
     {
       "path": "/api/cron/scheduled-calls",
-      "schedule": "30 6 * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/call-campaigns",
-      "schedule": "0 7 * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/meeting-reminders",

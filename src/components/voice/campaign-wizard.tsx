@@ -197,6 +197,15 @@ export function CampaignWizard({
   }, []);
 
   useEffect(() => {
+    try {
+      const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (local) setTimezone(local);
+    } catch {
+      /* keep America/New_York */
+    }
+  }, []);
+
+  useEffect(() => {
     if (step !== 1 && step !== 5) return;
     if (audienceMode === "pick") {
       setAudienceCount(selectedContactIds.length);
@@ -706,10 +715,10 @@ export function CampaignWizard({
             {timezone} · {dailyCallLimit}/day
           </p>
           <p className="text-xs text-muted">
-            Tip for a live demo: use{" "}
+            Launch starts dialing in-hours leads immediately. Use{" "}
             <strong className="text-foreground">Launch & call first now</strong>{" "}
-            — the queue fills immediately and the first lead starts dialing in
-            seconds. Auto-dial cron alone is not second-by-second.
+            to place the first call even outside working hours. Cron continues
+            the rest of the queue every minute.
           </p>
         </div>
       )}

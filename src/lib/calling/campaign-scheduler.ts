@@ -3,6 +3,10 @@ import { isWithinWorkingHours, countCallsToday } from "@/lib/calling/working-hou
 import { shouldSimulateChannel } from "@/lib/channels/config";
 import { deliverOutbound } from "@/lib/channels/deliver";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
+import {
+  campaignWorkspaceScope,
+  campaignWriteScope,
+} from "@/lib/calling/campaign-scope";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
@@ -17,21 +21,22 @@ export type SchedulerResult = {
   skipped?: string;
 };
 
-export async function runCampaignScheduler(limit = 10): Promise<SchedulerResult[]> {
+export async function runCampaignScheduler(
+  limit = 10,
+  campaignId?: string
+): Promise<SchedulerResult[]> {
   const repo = getCallingAgentRepository();
   const now = crmNow();
-  const due = await repo.listDueQueueItems(now, limit * 2);
+  const due = (await repo.listDueQueueItems(now, limit * 2)).filter((item) =>
+    campaignId ? item.campaignId === campaignId : true
+  );
   const results: SchedulerResult[] = [];
   const dialedByCampaign = new Map<string, number>();
 
   for (const item of due) {
     if (results.filter((r) => r.ok).length >= limit) break;
 
-    const scope = {
-      tenantId: item.tenantId,
-      workspaceId: item.workspaceId,
-      companyId: item.companyId,
-    };
+    const scope = campaignWorkspaceScope(item);
 
     const campaign = await repo.getCampaign(item.campaignId, scope);
     if (!campaign || campaign.status !== "running") {
@@ -117,23 +122,20 @@ export async function dialQueueItemNow(
 }
 
 export async function dialQueueItem(item: CallQueueItem) {
-  const scope = {
-    tenantId: item.tenantId,
-    workspaceId: item.workspaceId,
-    companyId: item.companyId,
-  };
+  const workspace = campaignWorkspaceScope(item);
   const repo = getCallingAgentRepository();
-  const campaign = await repo.getCampaign(item.campaignId, scope);
+  const campaign = await repo.getCampaign(item.campaignId, workspace);
   if (!campaign) throw new Error("Campaign missing");
 
-  const contact = await getCrmRepository().getContact(item.contactId, scope);
+  const scope = campaignWriteScope(item, campaign);
+  const contact = await getCrmRepository().getContact(item.contactId, workspace);
   if (!contact?.phone) throw new Error("Contact has no phone");
 
-  const agent = await repo.getAgent(campaign.voiceAgentId, scope);
-  const memorySummary = await buildCallMemorySummary(item.contactId, scope);
+  const agent = await repo.getAgent(campaign.voiceAgentId, workspace);
+  const memorySummary = await buildCallMemorySummary(item.contactId, workspace);
 
   const inbox = getRepository();
-  let conversation = await inbox.findConversationByPhone(contact.phone, scope);
+  let conversation = await inbox.findConversationByPhone(contact.phone, workspace);
   if (!conversation) {
     conversation = await inbox.addInboundCall(
       {
@@ -167,7 +169,7 @@ export async function dialQueueItem(item: CallQueueItem) {
       lastAttemptAt: crmNow(),
       sessionId: session.id,
     },
-    scope
+    workspace
   );
 
   const briefing = [
@@ -205,7 +207,7 @@ export async function dialQueueItem(item: CallQueueItem) {
         callSid: delivery.callSid,
         durationSeconds: 0,
       },
-      scope,
+      workspace,
       { name: agent?.name ?? "Voice Agent", id: agent?.id ?? "voice-agent" }
     );
 
@@ -216,12 +218,12 @@ export async function dialQueueItem(item: CallQueueItem) {
         callSid: delivery.callSid,
         summary: briefing,
       },
-      scope
+      workspace
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Twilio voice delivery failed";
     await closeCallSession({
-      scope,
+      scope: workspace,
       sessionId: session.id,
       outcome: "failed",
       summary: message,
