@@ -103,8 +103,7 @@ export function shouldShowLaunchpad(
     onboarding?: { status?: string; launchpadDismissedAt?: string };
   } | null | undefined
 ): boolean {
-  return (
-    org?.onboarding?.status === "complete" &&
-    !org.onboarding.launchpadDismissedAt
-  );
+  if (org?.onboarding?.launchpadDismissedAt) return false;
+  if (org?.onboarding?.status === "pending") return false;
+  return true;
 }
