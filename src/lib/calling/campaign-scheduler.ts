@@ -186,7 +186,7 @@ export async function dialQueueItem(item: CallQueueItem) {
     `Campaign goal: ${campaign.goal}.`,
     `Contact: ${contactDisplayName(contact)}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}.`,
     memorySummary ? `Prior context: ${memorySummary}` : "",
-    "Talk like a person. Booking a meeting is the goal only if it fits — never force it.",
+    "Greet, then a light hook, then converse like a person. A meeting is great if it fits — never force it.",
   ]
     .filter(Boolean)
     .join(" ");

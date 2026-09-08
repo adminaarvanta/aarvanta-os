@@ -134,23 +134,23 @@ function buildImmediateWelcome(input: {
   const { direction, agentName, businessName } = input;
   if (direction === "inbound") {
     if (businessName) {
-      return `Hi, thanks for calling ${businessName}. How can I help?`;
+      return `Hi, thanks for calling ${businessName}.`;
     }
     if (agentName) {
-      return `Hi, this is ${agentName}. How can I help?`;
+      return `Hi, this is ${agentName}.`;
     }
-    return "Hi, thanks for calling. How can I help?";
+    return "Hi, thanks for calling.";
   }
   if (businessName && agentName) {
-    return `Hi, this is ${agentName} from ${businessName}. Do you have a moment?`;
+    return `Hi, this is ${agentName} from ${businessName}.`;
   }
   if (agentName) {
-    return `Hi, this is ${agentName}. Do you have a moment?`;
+    return `Hi, this is ${agentName}.`;
   }
   if (businessName) {
-    return `Hi, this is ${businessName}. Do you have a moment?`;
+    return `Hi, this is ${businessName}.`;
   }
-  return "Hi, do you have a moment?";
+  return "Hi there.";
 }
 
 function buildSayTwiml(spoken: string, pollyVoice: string) {

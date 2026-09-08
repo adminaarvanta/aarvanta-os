@@ -313,9 +313,9 @@ export const DEFAULT_FLOW_CONFIG: VoiceAgentFlowConfig = {
     {
       id: "greeting",
       label: "Greeting",
-      objective: "Confirm identity and ask if now is a good time.",
+      objective: "Warm greeting, then a light hook, then check that now is okay.",
       samplePrompt:
-        "Hi, is this a good time for a quick two-minute conversation?",
+        "I'll keep this quick — did I catch you at an alright time?",
       transitions: [
         { when: "yes", to: "permission" },
         { when: "busy", to: "closing" },
@@ -326,7 +326,7 @@ export const DEFAULT_FLOW_CONFIG: VoiceAgentFlowConfig = {
     {
       id: "permission",
       label: "Permission",
-      objective: "Share reason for calling without pitching hard.",
+      objective: "Share why you called in plain language, with a hook, not a pitch deck.",
       transitions: [
         { when: "continue", to: "qualification" },
         { when: "not_interested", to: "end_call" },

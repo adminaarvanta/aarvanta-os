@@ -47,31 +47,33 @@ AARVANTA_CONTEXT_URL = os.getenv("AARVANTA_VOICE_CONTEXT_URL", "").strip()
 BRAND_NAME = (os.getenv("VOICE_BRAND_NAME") or "").strip()
 
 DEFAULT_SYSTEM = (
-    "You are on a live phone call with a real person. Sound like one too.\n"
-    "Talk the way you would to someone who just picked up: warm, brief, easy.\n"
-    "Use contractions. One thought, then at most one question, then stop and listen.\n"
-    "React to the last thing they said before you add anything new.\n"
-    "Never sound like a website, a script, a playbook, or a list of features.\n"
-    "Never read notes, documents, or briefing text out loud.\n"
-    "Use only the name and company in the extra instructions. If none is given, do not invent one.\n"
-    "The phone system may already have greeted them — do not greet again unless they ask who you are.\n"
-    "Never invent a product, price, customer, timeline, or promise. "
-    "If you do not know, say so in one short sentence and offer a human follow-up.\n"
-    "Never say you are an AI unless asked. If they are done, one brief goodbye, then stop."
+    "You are a warm, sharp marketing person on a live phone call — "
+    "the kind people actually enjoy talking to.\n"
+    "Greet first if it has not already happened, then ease into a conversation "
+    "with a light hook. Never dump a pitch or read a script.\n"
+    "Talk like a smart colleague: contractions, easy rhythm, a little personality. "
+    "Two short spoken sentences is plenty, then listen.\n"
+    "React to what they just said. If they are busy, be gracious. "
+    "Never sound like an IVR, a website, a survey, or a flowchart.\n"
+    "Use only the name and company in the extra instructions. "
+    "If you have a real product fact, tease it in plain language as a hook. "
+    "If you do not, hook on a quick intro or follow-up — never invent features, "
+    "pricing, customers, or promises.\n"
+    "Never say you are an AI unless asked. If they are done, one warm goodbye, then stop."
 )
 SYSTEM_PROMPT = os.getenv("VOICE_AGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM).strip()
 VERIFY_SIGNATURES = os.getenv("VOICE_RELAY_VERIFY_SIGNATURES", "true").lower() != "false"
-MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "110"))
-MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "320"))
-REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.6"))
-REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.4"))
-REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.25"))
+MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "130"))
+MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "360"))
+REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.72"))
+REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.35"))
+REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.2"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-SERVICE_VERSION = "1.9.0"
+SERVICE_VERSION = "1.9.1"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -374,15 +376,23 @@ async def end_session(ws: WebSocket, handoff: str = "completed") -> None:
 
 
 OUTBOUND_OPENING_INSTRUCTION = (
-    "(The person just answered. The phone system may already have greeted them. "
-    "Do not greet again. Continue with why you are calling in one short sentence. "
-    "Never invent a company or product. Never read the briefing word-for-word.)"
+    "(They just picked up. If the phone already said your name, do not say hi again "
+    "and do not repeat your name or company. Immediately continue like a confident, "
+    "warm marketer: one light hook for why this might be worth twenty seconds, "
+    "then a natural 'did I catch you at an alright time?'. "
+    "Use a real product fact only if you have one. Otherwise hook on a quick intro "
+    "or follow-up — never invent. Sound curious, not scripted.)"
 )
 
 INBOUND_OPENING_INSTRUCTION = (
-    "(Inbound call just connected. The phone system may already have greeted them. "
-    "Do not greet again. Ask how you can help in one short sentence. "
-    "Never invent a company or product.)"
+    "(They called you. If the phone already said thanks for calling, do not repeat it. "
+    "Warmly ask what brought them in, like a sharp person at the front desk who also "
+    "knows how to sell — curious, easy, not a menu.)"
+)
+
+OUTBOUND_HOOK_INSTRUCTION = (
+    "(The greeting already played. Do not greet again. Keep the energy going: "
+    "one smooth hook, then check that now is okay. Marketing person, not a robot.)"
 )
 
 
@@ -442,9 +452,9 @@ def build_system_prompt(
     agent_name = str(ctx.get("voiceAgentName") or params.get("voiceAgentName") or "").strip()
     knowledge_mode = str(ctx.get("knowledgeMode") or "").strip().lower()
     speech = str(ctx.get("speechBrief") or "").strip() or (
-        "HOW TO TALK (this is a phone call, not a webpage): "
-        "Sound like a real person — contractions, short sentences, one idea then stop. "
-        "React to the last thing they said. No lists, no feature dump, no script recitation."
+        "HOW TO TALK — you are a marketing person, not a robot: "
+        "greet, then a light hook, then converse. Contractions, easy rhythm, a little personality. "
+        "Curious, not pushy. No lists, no scripts, no interrogation."
     )
     if speech:
         parts.append(speech)
@@ -462,9 +472,8 @@ def build_system_prompt(
         parts.append(
             manners
             or (
-                "No product notes are available. Be polite, ask if now is a good time, "
-                "and do not invent offerings. If they ask about product or price, say you "
-                "do not have that yet and offer a human follow-up."
+                "No product notes yet. Still sound like a marketer: greet, light hook "
+                "on a quick intro, then listen. Do not invent offerings."
             )
         )
     elif manners:
@@ -473,13 +482,13 @@ def build_system_prompt(
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
         parts.append(
-            "They called you. Find out what they need. Do not re-greet unless they ask who you are."
+            "They called you. Be warm and useful. Do not re-greet unless they ask who you are."
         )
     elif direction == "outbound":
         parts.append(
-            "You called them. After they confirm it is a good time, say why in one short sentence, "
-            "then listen. Do not pitch. If a meeting fits, offer it lightly — two real calendar "
-            "slots from tools, never invented times."
+            "You called them. Greet (or continue after the phone greeting), lead with a light hook, "
+            "then converse. If a meeting fits, offer it like a person — two real calendar slots "
+            "from tools, never invented times. Never force it."
         )
     language = (params.get("language") or ctx.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
@@ -499,7 +508,7 @@ def build_system_prompt(
     if goal and len(goal) < 280:
         parts.append(
             f"If this call has a purpose, keep it in mind quietly: {goal}. "
-            "Do not recite that line. Ask if now is a good time first."
+            "Turn it into a spoken hook, never a slogan you read out."
         )
     memory = str(ctx.get("memorySummary") or "").strip()
     if memory:
@@ -1041,52 +1050,55 @@ async def conversation_relay(websocket: WebSocket) -> None:
                         await speak(websocket, notice, call_context)
                     except Exception as exc:  # noqa: BLE001
                         log.warning("recording notice play failed: %s", exc)
-                # TwiML already spoke welcomeGreeting. Do not greet twice.
-                skip_opening = str(params.get("skipOpening") or "").strip().lower() in (
+                # TwiML already said the name. Keep talking: hook, then conversation.
+                skip_re_greet = str(params.get("skipOpening") or "").strip().lower() in (
                     "1",
                     "true",
                     "yes",
                 )
-                if skip_opening:
-                    log.info("skipping relay opening — TwiML already greeted")
-                    agent_name = str(call_context.get("voiceAgentName") or "")
+                if skip_re_greet and direction.startswith("outbound"):
+                    opening_instruction = OUTBOUND_HOOK_INSTRUCTION
+                elif direction.startswith("outbound"):
+                    opening_instruction = OUTBOUND_OPENING_INSTRUCTION
                 else:
-                    opening_instruction = (
-                        OUTBOUND_OPENING_INSTRUCTION
-                        if direction.startswith("outbound")
-                        else INBOUND_OPENING_INSTRUCTION
+                    opening_instruction = INBOUND_OPENING_INSTRUCTION
+                agent_name = str(call_context.get("voiceAgentName") or "")
+                try:
+                    opening = await stream_reply(
+                        websocket,
+                        history,
+                        system,
+                        opening_instruction,
+                        call_context,
                     )
-                    agent_name = str(call_context.get("voiceAgentName") or "")
-                    try:
-                        opening = await stream_reply(
-                            websocket,
-                            history,
-                            system,
-                            opening_instruction,
-                            call_context,
-                        )
-                        # Drop the synthetic instruction from history; keep the
-                        # assistant's opening so the conversation flows naturally.
-                        if len(history) >= 2 and history[-2]["role"] == "user":
-                            del history[-2]
-                        transcript.append({"role": "assistant", "content": opening})
-                    except Exception as exc:  # noqa: BLE001
-                        log.exception("opening line failed: %s", exc)
-                        brand = business_name or agent_name
-                        if direction.startswith("outbound"):
-                            fallback = (
+                    if len(history) >= 2 and history[-2]["role"] == "user":
+                        del history[-2]
+                    transcript.append({"role": "assistant", "content": opening})
+                except Exception as exc:  # noqa: BLE001
+                    log.exception("opening line failed: %s", exc)
+                    brand = business_name or agent_name
+                    if direction.startswith("outbound"):
+                        fallback = (
+                            "I'll keep this quick — did I catch you at an alright time?"
+                            if skip_re_greet
+                            else (
                                 f"Hi{', this is ' + agent_name if agent_name else ''}"
                                 f"{' from ' + brand if brand and brand != agent_name else ''}. "
-                                "Do you have a moment?"
+                                "I'll keep this quick — is now an alright time?"
                             )
-                        else:
-                            fallback = (
+                        )
+                    else:
+                        fallback = (
+                            "Hey — what can I help you with today?"
+                            if skip_re_greet
+                            else (
                                 f"Hi, thanks for calling"
                                 f"{' ' + brand if brand else ''}. "
-                                "How can I help?"
+                                "What can I help you with?"
                             )
-                        await speak(websocket, fallback, call_context)
-                        transcript.append({"role": "assistant", "content": fallback})
+                        )
+                    await speak(websocket, fallback, call_context)
+                    transcript.append({"role": "assistant", "content": fallback})
                 continue
 
             if msg_type == "prompt":

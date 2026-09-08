@@ -141,7 +141,7 @@ export const DEMO_CALL_SESSIONS: CallSession[] = [
       {
         role: "assistant",
         content:
-          "Great — we've been helping consulting teams automate customer operations with AI employees. I'd love to see if it could be relevant for Meridian.",
+          "I'll keep this quick — we help consulting teams cut the busywork around customer ops. Did I catch you at an alright time?",
         stage: "permission",
       },
     ],
