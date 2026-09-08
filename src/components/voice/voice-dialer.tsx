@@ -62,7 +62,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch("/api/contacts");
+        const res = await fetch("/api/contacts", { credentials: "include" });
         if (!res.ok) return;
         const data = (await res.json()) as { contacts: CrmContact[] };
         setContacts(data.contacts ?? []);
@@ -75,7 +75,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch("/api/voice/agents");
+        const res = await fetch("/api/voice/agents", { credentials: "include" });
         if (!res.ok) return;
         const data = (await res.json()) as {
           agents: VoiceAgent[];
@@ -98,7 +98,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
 
   async function loadScheduled() {
     try {
-      const res = await fetch("/api/calling/schedule");
+      const res = await fetch("/api/calling/schedule", { credentials: "include" });
       if (!res.ok) return;
       const data = (await res.json()) as { calls?: ScheduledCallItem[] };
       setScheduled(data.calls ?? []);
@@ -149,6 +149,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
         }
         const res = await fetch("/api/calling/schedule", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phone: phone.trim(),
@@ -179,6 +180,7 @@ export function VoiceDialer({ calls }: { calls: CallLogItem[] }) {
 
       const res = await fetch("/api/calling/outbound", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: phone.trim(),

@@ -31,6 +31,23 @@ export function authErrorResponse(error: unknown): NextResponse | null {
   return null;
 }
 
+/** 401/403 for auth throws; 500 with the real message for everything else. */
+export function sessionErrorResponse(
+  error: unknown,
+  logLabel = "[session]"
+): NextResponse {
+  const auth = authErrorResponse(error);
+  if (auth) return auth;
+  console.error(logLabel, error);
+  return NextResponse.json(
+    {
+      error:
+        error instanceof Error ? error.message : "Could not resolve session",
+    },
+    { status: 500 }
+  );
+}
+
 export function planEntitlementResponse(error: {
   code: string;
   message: string;

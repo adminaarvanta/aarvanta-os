@@ -1,6 +1,11 @@
 import { cache } from "react";
 import { isDemoMode } from "@/lib/config/app-mode";
-import { getSessionFromCookies, sessionToScope } from "@/lib/auth/session";
+import {
+  getSessionFromCookies,
+  getSessionFromRequest,
+  sessionToScope,
+  type SessionPayload,
+} from "@/lib/auth/session";
 import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import {
@@ -24,7 +29,11 @@ export interface SessionContext {
 
 const getSessionFromCookiesCached = cache(getSessionFromCookies);
 
-function withViewer(scope: TenantScope, userId: string, role: MemberRole): TenantScope {
+function withViewer(
+  scope: TenantScope,
+  userId: string,
+  role: MemberRole
+): TenantScope {
   return {
     tenantId: scope.tenantId,
     workspaceId: scope.workspaceId,
@@ -35,9 +44,19 @@ function withViewer(scope: TenantScope, userId: string, role: MemberRole): Tenan
 }
 
 async function getDemoScopeFromCookie(): Promise<TenantScope> {
-  const cookieStore = await cookies();
-  const raw = cookieStore.get(WORKSPACE_COOKIE)?.value;
-  if (!raw) return { ...DEMO_TENANT, ownerUserId: DEMO_USER.userId, viewerRole: DEMO_USER.role };
+  let raw: string | undefined;
+  try {
+    raw = (await cookies()).get(WORKSPACE_COOKIE)?.value;
+  } catch {
+    raw = undefined;
+  }
+  if (!raw) {
+    return {
+      ...DEMO_TENANT,
+      ownerUserId: DEMO_USER.userId,
+      viewerRole: DEMO_USER.role,
+    };
+  }
 
   try {
     const parsed = JSON.parse(raw) as TenantScope;
@@ -51,7 +70,85 @@ async function getDemoScopeFromCookie(): Promise<TenantScope> {
   } catch {
     /* fall through */
   }
-  return { ...DEMO_TENANT, ownerUserId: DEMO_USER.userId, viewerRole: DEMO_USER.role };
+  return {
+    ...DEMO_TENANT,
+    ownerUserId: DEMO_USER.userId,
+    viewerRole: DEMO_USER.role,
+  };
+}
+
+async function contextFromSession(
+  session: SessionPayload
+): Promise<SessionContext> {
+  const scope = sessionToScope(session);
+  let member: WorkspaceMember | null = null;
+  try {
+    const repo = getTenantRepository();
+    member = (await repo.getMemberByUser(session.userId, scope)) ?? null;
+
+    // Scope/userId mismatches: fall back to any membership for this email
+    // in the active workspace, then any active membership.
+    if (!member) {
+      const byEmail = await repo.listMembershipsForEmail(session.email);
+      member =
+        byEmail.find(
+          (m) =>
+            m.status === "active" &&
+            m.workspaceId === scope.workspaceId &&
+            m.tenantId === scope.tenantId
+        ) ??
+        byEmail.find((m) => m.status === "active") ??
+        null;
+    }
+
+    const { withResolvedCreditOverrides } = await import(
+      "@/lib/billing/member-credits"
+    );
+    member = await withResolvedCreditOverrides(session.email, member);
+  } catch (error) {
+    console.warn(
+      "[session] membership lookup failed; using JWT identity",
+      error instanceof Error ? error.message : error
+    );
+  }
+
+  const role = member?.role ?? session.role;
+  return {
+    userId: session.userId,
+    email: session.email,
+    name: member?.name || session.name,
+    // Prefer live membership role so hierarchy changes apply immediately.
+    role,
+    scope: withViewer(scope, session.userId, role),
+    member,
+  };
+}
+
+async function demoSessionContext(): Promise<SessionContext> {
+  const scope = await getDemoScopeFromCookie();
+  let member: WorkspaceMember | null = null;
+  try {
+    const repo = getTenantRepository();
+    member = (await repo.getMemberByUser(DEMO_USER.userId, scope)) ?? null;
+    const { withResolvedCreditOverrides } = await import(
+      "@/lib/billing/member-credits"
+    );
+    member = await withResolvedCreditOverrides(DEMO_USER.email, member);
+  } catch (error) {
+    console.warn(
+      "[session] demo membership lookup failed",
+      error instanceof Error ? error.message : error
+    );
+  }
+  const role = member?.role ?? DEMO_USER.role;
+  return {
+    userId: DEMO_USER.userId,
+    email: DEMO_USER.email,
+    name: member?.name || DEMO_USER.name,
+    role,
+    scope: withViewer(scope, DEMO_USER.userId, role),
+    member,
+  };
 }
 
 export const getTenantScope = cache(async (): Promise<TenantScope> => {
@@ -72,66 +169,32 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
   await ensureDatastoreReady();
 
   if (isDemoMode()) {
-    const scope = await getDemoScopeFromCookie();
-    const repo = getTenantRepository();
-    let member =
-      (await repo.getMemberByUser(DEMO_USER.userId, scope)) ?? null;
-    const { withResolvedCreditOverrides } = await import(
-      "@/lib/billing/member-credits"
-    );
-    member = await withResolvedCreditOverrides(DEMO_USER.email, member);
-    const role = member?.role ?? DEMO_USER.role;
-    return {
-      userId: DEMO_USER.userId,
-      email: DEMO_USER.email,
-      name: DEMO_USER.name,
-      role,
-      scope: withViewer(scope, DEMO_USER.userId, role),
-      member,
-    };
+    return demoSessionContext();
   }
 
   const session = await getSessionFromCookiesCached();
   if (!session) {
     throw new Error("Unauthorized");
   }
+  return contextFromSession(session);
+});
 
-  const scope = sessionToScope(session);
-  const repo = getTenantRepository();
-  let member =
-    (await repo.getMemberByUser(session.userId, scope)) ?? null;
+/** Route Handlers: read the session cookie from the incoming Request. */
+export async function getSessionContextFromRequest(
+  request: Request
+): Promise<SessionContext> {
+  await ensureDatastoreReady();
 
-  // Scope/userId mismatches: fall back to any membership for this email
-  // in the active workspace, then any active membership.
-  if (!member) {
-    const byEmail = await repo.listMembershipsForEmail(session.email);
-    member =
-      byEmail.find(
-        (m) =>
-          m.status === "active" &&
-          m.workspaceId === scope.workspaceId &&
-          m.tenantId === scope.tenantId
-      ) ??
-      byEmail.find((m) => m.status === "active") ??
-      null;
+  if (isDemoMode()) {
+    return demoSessionContext();
   }
 
-  const { withResolvedCreditOverrides } = await import(
-    "@/lib/billing/member-credits"
-  );
-  member = await withResolvedCreditOverrides(session.email, member);
-
-  const role = member?.role ?? session.role;
-  return {
-    userId: session.userId,
-    email: session.email,
-    name: member?.name || session.name,
-    // Prefer live membership role so hierarchy changes apply immediately.
-    role,
-    scope: withViewer(scope, session.userId, role),
-    member,
-  };
-});
+  const session = await getSessionFromRequest(request);
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+  return contextFromSession(session);
+}
 
 export async function requirePermission(permission: Permission) {
   const ctx = await getSessionContext();

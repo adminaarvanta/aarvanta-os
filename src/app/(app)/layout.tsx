@@ -53,7 +53,14 @@ export default async function AppLayout({
     showOutreachNav =
       Boolean(resolved.creditOverrides.unlimitedEmailOutreach) ||
       (await canAccessEmailOutreachAsync(sessionCtx.email, sessionCtx.member));
-  } catch {
+  } catch (error) {
+    if (
+      production &&
+      error instanceof Error &&
+      error.message === "Unauthorized"
+    ) {
+      redirect("/login");
+    }
     /* session missing — free fallback below */
   }
 
