@@ -299,6 +299,7 @@ export function CampaignWizard({
             if (first) {
               const dialRes = await fetch("/api/voice/queue/call-now", {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ queueId: first.id }),
               });

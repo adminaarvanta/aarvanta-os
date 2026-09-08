@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { listScheduledCalls } from "@/lib/calling/scheduled-call-store";
 import { scheduleVoiceFollowUp } from "@/lib/calling/schedule-voice-follow-up";
-import { parseJsonBody, unauthorized } from "@/lib/api/request";
-import { getSessionContext } from "@/lib/tenant/context";
+import { parseJsonBody, sessionErrorResponse } from "@/lib/api/request";
+import { getSessionContextFromRequest } from "@/lib/tenant/context";
 
 export const runtime = "nodejs";
 
@@ -16,12 +16,12 @@ const schema = z.object({
   voiceAgentId: z.string().optional(),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   let ctx;
   try {
-    ctx = await getSessionContext();
-  } catch {
-    return unauthorized();
+    ctx = await getSessionContextFromRequest(req);
+  } catch (error) {
+    return sessionErrorResponse(error, "[calling/schedule] session");
   }
 
   const calls = await listScheduledCalls(ctx.scope);
@@ -33,9 +33,9 @@ export async function GET() {
 export async function POST(req: Request) {
   let ctx;
   try {
-    ctx = await getSessionContext();
-  } catch {
-    return unauthorized();
+    ctx = await getSessionContextFromRequest(req);
+  } catch (error) {
+    return sessionErrorResponse(error, "[calling/schedule] session");
   }
 
   const body = await parseJsonBody<unknown>(req);

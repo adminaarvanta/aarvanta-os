@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { TenantScope } from "@/types/communication";
 import type { MemberRole } from "@/types/tenant";
 
@@ -65,11 +65,54 @@ export async function verifySessionToken(
   }
 }
 
+export function tokenFromCookieHeader(
+  raw: string | null | undefined
+): string | undefined {
+  if (!raw) return undefined;
+  const parts = raw.split(";");
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed.startsWith(`${SESSION_COOKIE}=`)) continue;
+    const value = trimmed.slice(SESSION_COOKIE.length + 1);
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+async function readSessionToken(): Promise<string | undefined> {
+  try {
+    const token = (await cookies()).get(SESSION_COOKIE)?.value;
+    if (token) return token;
+  } catch {
+    /* cookies() is unavailable in some route-handler contexts */
+  }
+  try {
+    return tokenFromCookieHeader((await headers()).get("cookie"));
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getSessionFromCookies(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const token = await readSessionToken();
   if (!token) return null;
   return verifySessionToken(token);
+}
+
+/** Prefer the incoming Request cookie header (reliable in Route Handlers). */
+export async function getSessionFromRequest(
+  request: Request
+): Promise<SessionPayload | null> {
+  const token = tokenFromCookieHeader(request.headers.get("cookie"));
+  if (token) {
+    const session = await verifySessionToken(token);
+    if (session) return session;
+  }
+  return getSessionFromCookies();
 }
 
 export function sessionToScope(session: SessionPayload): TenantScope {
