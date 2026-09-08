@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { AccountLifecyclePanel } from "@/components/account/account-lifecycle-panel";
+import { HelpTip } from "@/components/ui/help-tip";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BillingPlan, Subscription } from "@/types/platform-modules";
@@ -314,7 +316,13 @@ export function BillingClient({
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Plans</h3>
+        <h3 className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+          Plans
+          <HelpTip label="How upgrades work">
+            Pick a plan, then checkout. In demo, the plan activates immediately.
+            You can pause or change later from Stay or leave at the bottom.
+          </HelpTip>
+        </h3>
         <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
           {catalog.map((plan) => {
             const isCurrent = plan.id === entitlements.planId;
@@ -404,6 +412,43 @@ export function BillingClient({
         </p>
       </section>
 
+      <section className="overflow-x-auto">
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          Compare what you get
+        </h3>
+        <table className="min-w-full text-left text-xs">
+          <thead>
+            <tr className="border-b border-border text-muted">
+              <th className="py-2 pr-3 font-medium">Included</th>
+              {catalog.map((plan) => (
+                <th key={plan.id} className="px-2 py-2 font-semibold text-foreground">
+                  {plan.name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(
+              [
+                ["Users", "users"],
+                ["AI credits", "aiCredits"],
+                ["Voice minutes", "voiceMinutes"],
+                ["WhatsApp conversations", "whatsappConversations"],
+              ] as const
+            ).map(([label, key]) => (
+              <tr key={key} className="border-b border-border-subtle">
+                <td className="py-2 pr-3 text-muted">{label}</td>
+                {catalog.map((plan) => (
+                  <td key={plan.id} className="px-2 py-2 text-foreground">
+                    {formatLimit(plan.limits[key])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
       <section>
         <h3 className="mb-3 text-sm font-semibold text-foreground">Invoices</h3>
         <ul className="space-y-2">
@@ -479,6 +524,10 @@ export function BillingClient({
           )}
         </ul>
       </section>
+
+      {canManageBilling ? (
+        <AccountLifecyclePanel canManage={canManageBilling} />
+      ) : null}
 
       {payments.length > 0 ? (
         <section>

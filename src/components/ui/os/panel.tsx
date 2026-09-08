@@ -4,13 +4,16 @@ export function Panel({
   children,
   className,
   padding = "md",
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
   padding?: "none" | "sm" | "md" | "lg";
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={cn(
         "rounded-xl border border-border bg-surface-elevated",
         padding === "sm" && "p-3",

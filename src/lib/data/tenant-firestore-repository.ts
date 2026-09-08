@@ -344,6 +344,7 @@ export const tenantFirestoreRepository: TenantRepository = {
       status: "active",
       phone: input.phone,
       country: input.country,
+      location: input.location,
       companyName: input.companyName,
       authProvider: input.authProvider,
       profileComplete: input.profileComplete ?? true,

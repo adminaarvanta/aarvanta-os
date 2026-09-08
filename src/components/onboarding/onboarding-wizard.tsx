@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Search } from "lucide-react";
 import { BrandLogo } from "@/components/brand/logo";
 import { AuthAlert, AuthField, AuthSubmitButton } from "@/components/auth/auth-fields";
+import { HelpTip } from "@/components/ui/help-tip";
 import {
   ONBOARDING_CUSTOMER_COUNTS,
   ONBOARDING_INDUSTRIES,
@@ -255,7 +256,14 @@ export function OnboardingWizard() {
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         {titles[step].heading}
       </h1>
-      <p className="mt-1.5 text-sm text-muted">{titles[step].body}</p>
+      <p className="mt-1.5 text-sm text-muted">
+        {titles[step].body}{" "}
+        <HelpTip label="What happens next">
+          {step < 5
+            ? "Continue to the next setup question. You can change these later in Settings."
+            : "We open Home with a setup checklist: add a contact, try Automation, and compare plans when you are ready."}
+        </HelpTip>
+      </p>
 
       <div className="mt-6 space-y-4">
         {step === 1 ? (

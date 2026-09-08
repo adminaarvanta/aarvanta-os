@@ -190,10 +190,13 @@ export async function applyAsExternalPartner(input: {
   name: string;
   email: string;
   country: string;
+  city?: string;
   company?: string;
   website?: string;
   phone?: string;
   marketingChannels?: string;
+  /** Create the password in-app instead of emailing an activation link. */
+  password?: string;
   /** Parent partner referral code (optional). */
   parentReferralCode?: string;
   userId?: string;
@@ -215,6 +218,31 @@ export async function applyAsExternalPartner(input: {
     input.parentReferralCode
   );
 
+  let provisionedSession: import("@/lib/auth/session").SessionPayload | undefined;
+  let userId = input.userId;
+  let tenantId = input.tenantId;
+  let passwordSetAt: string | undefined;
+
+  if (input.password && input.password.length >= 8 && !userId) {
+    const { provisionFreeTierAccount } = await import(
+      "@/lib/auth/provision-free-account"
+    );
+    const provisioned = await provisionFreeTierAccount({
+      email,
+      name: input.name,
+      phone: input.phone?.trim() || "+0000000000",
+      country: input.country,
+      location: input.city,
+      companyName: input.company,
+      password: input.password,
+      authProvider: "password",
+    });
+    provisionedSession = provisioned.session;
+    userId = provisioned.session.userId;
+    tenantId = provisioned.organizationId;
+    passwordSetAt = crmNow();
+  }
+
   const now = crmNow();
   let affiliate = await affiliateStore.createAffiliate({
     referralCode: code,
@@ -222,8 +250,9 @@ export async function applyAsExternalPartner(input: {
     status: "active",
     role: "partner",
     parentAffiliateId,
-    userId: input.userId,
-    tenantId: input.tenantId,
+    userId,
+    tenantId,
+    passwordSetAt,
     approvedAt: now,
     profile: {
       name: input.name.trim(),
@@ -232,6 +261,7 @@ export async function applyAsExternalPartner(input: {
       website: input.website?.trim(),
       phone: input.phone?.trim(),
       country: input.country.trim(),
+      city: input.city?.trim(),
       regionCode,
       marketingChannels: input.marketingChannels?.trim(),
     },
@@ -245,10 +275,18 @@ export async function applyAsExternalPartner(input: {
     detail: `Partner auto-activated (${affiliate.referralCode})`,
   });
 
-  const activation = await ensurePartnerLoginAccess({
-    affiliate,
-    actorEmail: email,
-  });
+  const activation = provisionedSession
+    ? {
+        affiliate,
+        meta: {
+          needed: false,
+          emailSent: false,
+        },
+      }
+    : await ensurePartnerLoginAccess({
+        affiliate,
+        actorEmail: email,
+      });
   affiliate =
     (await affiliateStore.getAffiliate(affiliate.id)) ?? activation.affiliate;
 
@@ -272,7 +310,11 @@ export async function applyAsExternalPartner(input: {
     console.warn("[affiliate] application notify failed", err);
   }
 
-  return { affiliate, activation: activation.meta };
+  return {
+    affiliate,
+    activation: activation.meta,
+    session: provisionedSession,
+  };
 }
 
 export async function optInAsCustomerAffiliate(input: {
@@ -809,6 +851,7 @@ export type AffiliateApprovalResult = {
     activationUrl?: string;
     reason?: string;
   };
+  session?: import("@/lib/auth/session").SessionPayload;
 };
 
 export async function adminSetAffiliateStatus(input: {

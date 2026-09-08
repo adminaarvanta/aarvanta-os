@@ -1,3 +1,4 @@
+import { countryByName, regionCodeForCountry } from "@/lib/i18n/regions";
 import type { AffiliateRateCard } from "@/types/affiliate";
 
 export const AFFILIATE_COOKIE = "aarvanta_aff";
@@ -10,22 +11,15 @@ export const AFFILIATE_MAX_DEPTH = 3;
 
 /** Map free-text country (register form) → region code used by rate cards. */
 export function countryToRegionCode(country: string): string {
+  const exact = countryByName(country);
+  if (exact) return exact.regionCode;
+
   const c = country.trim().toLowerCase();
   if (!c) return "global";
-  if (
-    c.includes("united kingdom") ||
-    c === "uk" ||
-    c === "gb" ||
-    c.includes("britain")
-  ) {
+  if (c.includes("united kingdom") || c === "uk" || c === "gb" || c.includes("britain")) {
     return "uk";
   }
-  if (
-    c.includes("united states") ||
-    c === "usa" ||
-    c === "us" ||
-    c.includes("america")
-  ) {
+  if (c.includes("united states") || c === "usa" || c === "us" || c.includes("america")) {
     return "usa";
   }
   if (c.includes("india") || c === "in") return "india";
@@ -47,7 +41,7 @@ export function countryToRegionCode(country: string): string {
   if (c.includes("united arab") || c.includes("uae") || c.includes("dubai")) {
     return "global";
   }
-  return "global";
+  return regionCodeForCountry(country);
 }
 
 function stamp(now: string): Omit<

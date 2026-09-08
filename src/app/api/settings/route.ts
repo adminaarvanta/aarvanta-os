@@ -19,6 +19,15 @@ const patchSchema = z.object({
   inboxAutomationEnabled: z.boolean().optional(),
   aiAutoSummarize: z.boolean().optional(),
   crmQualificationThreshold: z.number().int().min(0).max(100).optional(),
+  defaultCurrency: z.string().min(3).max(8).optional(),
+  locale: z.string().min(2).max(16).optional(),
+  timezone: z.string().min(2).max(64).optional(),
+  dateFormat: z
+    .enum(["day_month_year", "month_day_year", "year_month_day"])
+    .optional(),
+  timeFormat: z.enum(["12h", "24h"]).optional(),
+  city: z.string().max(80).optional(),
+  countryCode: z.string().min(2).max(8).optional(),
 });
 
 export async function GET() {

@@ -29,8 +29,8 @@ export default function AffiliateLandingPage() {
         </div>
         <p className="mt-3 max-w-xl text-muted">
           Refer teams to Aarvanta. Earn CPA on qualified free signups and
-          revenue share on paid plans. Referred buyers get a regional discount —
-          rates are capped by country from our admin console.
+          revenue share on paid plans. Create your password, add phone and
+          location, and finish signup here — no email password links.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
@@ -59,8 +59,8 @@ export default function AffiliateLandingPage() {
             Apply as an external partner
           </h2>
           <p className="mt-1 text-sm text-muted">
-            You are activated immediately. We email you a link to create your
-            password.
+            You are activated immediately. Choose your own password on this
+            page, then we take you to onboarding and your partner dashboard.
           </p>
           <div className="mt-6">
             <AffiliateApplyForm />
