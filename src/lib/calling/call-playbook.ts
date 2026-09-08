@@ -44,15 +44,23 @@ export function playbookNextLabel(stageId: string, stages: FlowStage[]): string 
   return match?.label ?? stageId.replace(/_/g, " ");
 }
 
+/** How to sound on a live call — always on, even when a knowledge base exists. */
+export const HUMAN_CALL_STYLE = [
+  "HOW TO TALK (this is a phone call, not a webpage):",
+  "- Sound like a real person: contractions, short sentences, one idea then stop.",
+  "- React to the last thing they said before you add anything new.",
+  "- No lists, no markdown, no feature dump, no 'as I mentioned', no script recitation.",
+  "- If they are busy, not interested, or the wrong person: accept it and close. Do not keep pitching.",
+].join("\n");
+
 /** Always-on manners when the workspace has no company copy or knowledge base. */
 export const BARE_CALL_MANNERS = [
   "MANNERS AND SIMPLE OBJECTIONS:",
-  "- Greet once, ask if now is a good time, then one question at a time.",
+  "- Ask if now is a good time. One question at a time.",
   "- Busy: offer a callback and close. Not interested: accept and hang up.",
-  "- Wrong person: apologize and end. Do not keep pitching.",
-  "- If they ask what this is about: say it is a short intro or follow-up call. Do not invent a product, price, customer, or feature.",
-  "- If they ask for details you do not have: say you do not have that yet and offer a human follow-up or a later callback.",
-  "- Take an email if they want information sent. Never talk over them. Never claim to be AI unless asked.",
+  "- Wrong person: apologize and end.",
+  "- If they ask what this is about: a short intro or follow-up — do not invent a product, price, customer, or feature.",
+  "- If they ask for details you do not have: say so and offer a human follow-up. Take an email if they want something sent.",
 ].join("\n");
 
 /** Compact playbook for the live-call LLM — coaching notes, not a teleprompter. */
@@ -69,10 +77,7 @@ export function formatPlaybookForRelay(flow: VoiceAgentFlowConfig): string {
                   `if ${playbookWhenLabel(t.when)} → ${playbookNextLabel(t.to, flow.stages)}`
               )
               .join("; ")}.`;
-      const example = stage.samplePrompt?.trim()
-        ? ` Example line (paraphrase, never recite): "${stage.samplePrompt.trim()}"`
-        : "";
-      return `${index + 1}. ${stage.label} — ${stage.objective.trim()}${example} ${next}`;
+      return `${index + 1}. ${stage.label} — ${stage.objective.trim()} ${next}`;
     })
     .join("\n");
 }

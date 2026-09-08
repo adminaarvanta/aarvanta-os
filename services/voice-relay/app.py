@@ -44,39 +44,34 @@ AARVANTA_CALLBACK_URL = os.getenv("AARVANTA_VOICE_CALLBACK_URL", "").strip()
 AARVANTA_CALLBACK_SECRET = os.getenv("VOICE_RELAY_CALLBACK_SECRET", "").strip()
 AARVANTA_CONTEXT_URL = os.getenv("AARVANTA_VOICE_CONTEXT_URL", "").strip()
 
-BRAND_NAME = (os.getenv("VOICE_BRAND_NAME") or "Aarvanta").strip() or "Aarvanta"
+BRAND_NAME = (os.getenv("VOICE_BRAND_NAME") or "").strip()
 
 DEFAULT_SYSTEM = (
-    "You are a warm, concise phone representative. "
-    "Speak like a real human on a short phone call — calm, clear, never scripted.\n"
-    "HARD RULES (never break these):\n"
-    "- IDENTITY: Use only the name and company given in the extra instructions. "
-    "If no company is given, do not invent one.\n"
-    "- The opening greeting may already have been spoken by the phone system. "
-    "Do not greet again unless the caller asks who you are.\n"
-    "- NO BLUFFING: Never invent facts, features, pricing, timelines, clients, case studies, "
-    "integrations, or promises. If it is not in your briefing or company knowledge, say you "
-    "do not have that detail and offer a human follow-up.\n"
-    "- SHORT TURNS: Reply in 1–2 short sentences by default (max 3). Ask at most one question.\n"
-    "- NO REPEATS: Do not restate what you or the caller already said. Do not re-introduce "
-    "yourself after the opening. Do not loop the same pitch or question.\n"
-    "- STOP TALKING: After your answer or question, stop. Do not fill silence with more pitch.\n"
-    "- Never say you are an AI unless asked.\n"
-    "- If the caller is done, goodbye, or testing is complete: one brief goodbye only, then stop."
+    "You are on a live phone call with a real person. Sound like one too.\n"
+    "Talk the way you would to someone who just picked up: warm, brief, easy.\n"
+    "Use contractions. One thought, then at most one question, then stop and listen.\n"
+    "React to the last thing they said before you add anything new.\n"
+    "Never sound like a website, a script, a playbook, or a list of features.\n"
+    "Never read notes, documents, or briefing text out loud.\n"
+    "Use only the name and company in the extra instructions. If none is given, do not invent one.\n"
+    "The phone system may already have greeted them — do not greet again unless they ask who you are.\n"
+    "Never invent a product, price, customer, timeline, or promise. "
+    "If you do not know, say so in one short sentence and offer a human follow-up.\n"
+    "Never say you are an AI unless asked. If they are done, one brief goodbye, then stop."
 )
 SYSTEM_PROMPT = os.getenv("VOICE_AGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM).strip()
 VERIFY_SIGNATURES = os.getenv("VOICE_RELAY_VERIFY_SIGNATURES", "true").lower() != "false"
-MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "90"))
-MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "280"))
-REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.45"))
-REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.55"))
-REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.35"))
+MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "110"))
+MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "320"))
+REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.6"))
+REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.4"))
+REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.25"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-SERVICE_VERSION = "1.8.0"
+SERVICE_VERSION = "1.9.0"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -446,40 +441,45 @@ def build_system_prompt(
     )
     agent_name = str(ctx.get("voiceAgentName") or params.get("voiceAgentName") or "").strip()
     knowledge_mode = str(ctx.get("knowledgeMode") or "").strip().lower()
+    speech = str(ctx.get("speechBrief") or "").strip() or (
+        "HOW TO TALK (this is a phone call, not a webpage): "
+        "Sound like a real person — contractions, short sentences, one idea then stop. "
+        "React to the last thing they said. No lists, no feature dump, no script recitation."
+    )
+    if speech:
+        parts.append(speech)
     if agent_name and name:
-        parts.append(f"You are {agent_name} representing {name}.")
+        parts.append(f"Your name on this call is {agent_name}, with {name}.")
     elif agent_name:
-        parts.append(f"You are {agent_name} on a phone call. Do not invent a company name.")
+        parts.append(f"Your name on this call is {agent_name}. Do not invent a company.")
     elif name:
-        parts.append(f"You represent {name}.")
+        parts.append(f"You are calling on behalf of {name}.")
     else:
-        parts.append("You are a polite phone representative. Do not invent a name or company.")
+        parts.append("You are a polite person on a phone call. Do not invent a name or company.")
 
-    if knowledge_mode == "bare" or (not knowledge_digest and not name):
-        manners = str(ctx.get("mannersBrief") or "").strip()
+    manners = str(ctx.get("mannersBrief") or "").strip()
+    if knowledge_mode == "bare" or not knowledge_digest:
         parts.append(
             manners
             or (
-                "BARE MODE — no company knowledge is available. "
-                "Use basic manners and simple objection handling. "
-                "If asked about product, price, or customers, say you do not have that "
-                "detail yet and offer a human follow-up. Never invent offerings."
+                "No product notes are available. Be polite, ask if now is a good time, "
+                "and do not invent offerings. If they ask about product or price, say you "
+                "do not have that yet and offer a human follow-up."
             )
         )
+    elif manners:
+        parts.append(manners)
 
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
         parts.append(
-            "Inbound call: understand what they need, answer clearly, then invite "
-            "the next question. Do not re-greet unless they ask who you are."
+            "They called you. Find out what they need. Do not re-greet unless they ask who you are."
         )
     elif direction == "outbound":
         parts.append(
-            "Outbound discovery call. Follow the STAGE MACHINE below — one stage at a time, "
-            "never jump ahead, never hard-pitch before permission. Keep each turn short. "
-            "When proposing a meeting, use light language (short strategy session, "
-            "no obligation). When offering times, suggest only two concrete slots "
-            "from tools — never invent."
+            "You called them. After they confirm it is a good time, say why in one short sentence, "
+            "then listen. Do not pitch. If a meeting fits, offer it lightly — two real calendar "
+            "slots from tools, never invented times."
         )
     language = (params.get("language") or ctx.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
@@ -495,14 +495,11 @@ def build_system_prompt(
         if ctx.get("companyName"):
             bits.append(f"at {ctx.get('companyName')}")
         parts.append(". ".join(bits) + ".")
-    goal = (
-        str(ctx.get("campaignGoal") or "").strip()
-        or (params.get("goal") or params.get("context") or "").strip()
-    )
-    if goal:
+    goal = str(ctx.get("campaignGoal") or "").strip()
+    if goal and len(goal) < 280:
         parts.append(
-            "Call briefing — CONTEXT only, NEVER read aloud word-for-word:\n"
-            f"{goal[:1000]}"
+            f"If this call has a purpose, keep it in mind quietly: {goal}. "
+            "Do not recite that line. Ask if now is a good time first."
         )
     memory = str(ctx.get("memorySummary") or "").strip()
     if memory:
@@ -514,22 +511,15 @@ def build_system_prompt(
     entry = str(ctx.get("entryStage") or "greeting").strip()
     if flow:
         parts.append(
-            "CONVERSATION PLAYBOOK — start at "
-            f"'{entry}'. These are coaching notes, NOT a script to read aloud. "
-            "Paraphrase in your own short spoken sentences. Advance when the "
-            "caller's intent matches a next step:\n"
-            f"{flow[:2500]}\n"
-            "Capture qualification quietly: interested, current solution, company size, "
-            "urgency, decision maker. If they decline a meeting, ask if a future "
-            "follow-up is okay, then close politely."
+            "Quiet coaching for how the call can flow, starting at "
+            f"'{entry}'. Do not read this out loud:\n"
+            f"{flow[:1800]}"
         )
     if knowledge_digest:
-        identity = f" Your spoken identity is {agent_name or name}." if (agent_name or name) else ""
         parts.append(
-            "INFORMED MODE — stay strictly on these retrieved facts. "
-            "If a detail is missing, say so and offer a follow-up."
-            f"{identity}\n"
-            f"{knowledge_digest[:2000]}"
+            "Quiet facts — use only if they ask, in one spoken sentence. "
+            "Never quote these documents:\n"
+            f"{knowledge_digest[:1200]}"
         )
     contact_id = str(ctx.get("contactId") or "").strip()
     parts.append(
@@ -548,10 +538,8 @@ def build_system_prompt(
         )
     )
     parts.append(
-        "ANTI-BLUFF / ANTI-LOOP:\n"
-        "- Prefer 'I don't have that detail — I can have a teammate follow up' over guessing.\n"
-        "- Never pad with filler ('as I mentioned', 'again', restating the value prop).\n"
-        "- If the caller already answered a question, move forward — do not ask it again."
+        "If you do not know something, say so simply and offer a follow-up. "
+        "If they already answered, move on — do not repeat the question."
     )
     return "\n\n".join(parts)
 
@@ -1053,9 +1041,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
                         await speak(websocket, notice, call_context)
                     except Exception as exc:  # noqa: BLE001
                         log.warning("recording notice play failed: %s", exc)
-                # Twilio already spoke welcomeGreeting on inbound catalog calls.
-                # Opening again made the agent greet twice. Outbound / cloned
-                # calls have no TwiML welcome, so the relay still greets.
+                # TwiML already spoke welcomeGreeting. Do not greet twice.
                 skip_opening = str(params.get("skipOpening") or "").strip().lower() in (
                     "1",
                     "true",

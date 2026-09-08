@@ -2,9 +2,17 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/request";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
-import { BARE_CALL_MANNERS, formatPlaybookForRelay } from "@/lib/calling/call-playbook";
+import {
+  BARE_CALL_MANNERS,
+  HUMAN_CALL_STYLE,
+  formatPlaybookForRelay,
+} from "@/lib/calling/call-playbook";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
 import { resolveVoiceCallScope } from "@/lib/calling/voice-call-scope";
+import {
+  resolveKnowledgeSearchTopic,
+  resolveVoiceKnowledgeMode,
+} from "@/lib/calling/voice-knowledge";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
@@ -32,7 +40,7 @@ const schema = z.object({
   voiceAgentId: z.string().optional(),
 });
 
-const DIGEST_MAX_CHARS = 1800;
+const DIGEST_MAX_CHARS = 900;
 
 export async function POST(req: Request) {
   const expected = process.env.VOICE_RELAY_CALLBACK_SECRET?.trim();
@@ -95,22 +103,19 @@ export async function POST(req: Request) {
 
   const knowledgeRepo = getKnowledgeRepository();
   const chunks = await knowledgeRepo.listChunks(scope);
-  const topic =
-    parsed.data.topic?.trim() || campaignGoal.trim() || "";
+  const topic = resolveKnowledgeSearchTopic({
+    topic: parsed.data.topic,
+    campaignGoal,
+  });
 
   let knowledgeDigest = "";
-  if (chunks.length) {
-    const hits = topic
-      ? await searchKnowledgeChunks(chunks, topic, 6)
-        : chunks.slice(0, 4).map((chunk) => ({
-            chunk,
-            score: 1,
-            method: "keyword" as const,
-          }));
+  if (chunks.length && topic) {
+    const hits = await searchKnowledgeChunks(chunks, topic, 3);
     if (hits.length) {
       const parts: string[] = [];
       let used = 0;
       for (const hit of hits) {
+        if (hit.score < 0.15) continue;
         const title = hit.chunk.documentTitle?.trim() || "Document";
         const content = hit.chunk.content.trim().replace(/\s+/g, " ");
         const block = `[${title}] ${content}`;
@@ -153,8 +158,7 @@ export async function POST(req: Request) {
 
   const flowConfig = agent?.flowConfig ?? DEFAULT_FLOW_CONFIG;
   const stageBrief = formatPlaybookForRelay(flowConfig);
-  const informed = Boolean(knowledgeDigest || campaignGoal || businessName);
-  const knowledgeMode = informed ? "informed" : "bare";
+  const knowledgeMode = resolveVoiceKnowledgeMode(knowledgeDigest);
 
   const clonedVoiceId = liveClonedVoiceId(agent);
   const recordingNotice =
@@ -167,6 +171,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     businessName,
     knowledgeMode,
+    speechBrief: HUMAN_CALL_STYLE,
     mannersBrief: BARE_CALL_MANNERS,
     knowledgeDigest,
     chunkCount: chunks.length,
