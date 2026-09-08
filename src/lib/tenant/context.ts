@@ -44,12 +44,7 @@ function withViewer(
 }
 
 async function getDemoScopeFromCookie(): Promise<TenantScope> {
-  let raw: string | undefined;
-  try {
-    raw = (await cookies()).get(WORKSPACE_COOKIE)?.value;
-  } catch {
-    raw = undefined;
-  }
+  const raw = (await cookies()).get(WORKSPACE_COOKIE)?.value;
   if (!raw) {
     return {
       ...DEMO_TENANT,

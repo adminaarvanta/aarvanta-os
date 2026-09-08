@@ -84,17 +84,13 @@ export function tokenFromCookieHeader(
 }
 
 async function readSessionToken(): Promise<string | undefined> {
-  try {
-    const token = (await cookies()).get(SESSION_COOKIE)?.value;
-    if (token) return token;
-  } catch {
-    /* cookies() is unavailable in some route-handler contexts */
-  }
-  try {
-    return tokenFromCookieHeader((await headers()).get("cookie"));
-  } catch {
-    return undefined;
-  }
+  // Do not try/catch cookies()/headers(). Next uses those throws during
+  // prerender to mark the route dynamic. Swallowing them makes APP_MODE=
+  // production `next build` fail with Unauthorized on static pages.
+  return (
+    (await cookies()).get(SESSION_COOKIE)?.value ??
+    tokenFromCookieHeader((await headers()).get("cookie"))
+  );
 }
 
 export async function getSessionFromCookies(): Promise<SessionPayload | null> {
