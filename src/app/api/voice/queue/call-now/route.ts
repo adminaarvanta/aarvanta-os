@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { parseJsonBody, unauthorized } from "@/lib/api/request";
+import { parseJsonBody, sessionErrorResponse } from "@/lib/api/request";
 import { dialQueueItemNow } from "@/lib/calling/campaign-scheduler";
-import { getSessionContext } from "@/lib/tenant/context";
+import { getSessionContextFromRequest } from "@/lib/tenant/context";
+
+export const runtime = "nodejs";
 
 const schema = z.object({
   queueId: z.string().min(1),
@@ -11,9 +13,9 @@ const schema = z.object({
 export async function POST(req: Request) {
   let ctx;
   try {
-    ctx = await getSessionContext();
-  } catch {
-    return unauthorized();
+    ctx = await getSessionContextFromRequest(req);
+  } catch (error) {
+    return sessionErrorResponse(error, "[voice/queue/call-now] session");
   }
 
   const body = await parseJsonBody<unknown>(req);

@@ -48,8 +48,26 @@ function isPublicPath(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
+function sessionTokenFromRequest(request: NextRequest) {
+  const fromCookies = request.cookies.get(SESSION_COOKIE)?.value;
+  if (fromCookies) return fromCookies;
+  const raw = request.headers.get("cookie");
+  if (!raw) return undefined;
+  for (const part of raw.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed.startsWith(`${SESSION_COOKIE}=`)) continue;
+    const value = trimmed.slice(SESSION_COOKIE.length + 1);
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
+  return undefined;
+}
+
 async function hasValidSession(request: NextRequest) {
-  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const token = sessionTokenFromRequest(request);
   const secret = process.env.AUTH_SECRET;
   if (!token || !secret) return false;
 
@@ -61,7 +79,7 @@ async function hasValidSession(request: NextRequest) {
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (!isProductionMode()) {
     return NextResponse.next();
   }

@@ -9,8 +9,8 @@ import { normalizePhone } from "@/lib/data/conversation-helpers";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
-import { parseJsonBody, unauthorized } from "@/lib/api/request";
-import { getSessionContext } from "@/lib/tenant/context";
+import { parseJsonBody, sessionErrorResponse } from "@/lib/api/request";
+import { getSessionContextFromRequest } from "@/lib/tenant/context";
 import { contactDisplayName } from "@/types/crm";
 
 const schema = z.object({
@@ -21,12 +21,14 @@ const schema = z.object({
   voiceAgentId: z.string().optional(),
 });
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   let ctx;
   try {
-    ctx = await getSessionContext();
-  } catch {
-    return unauthorized();
+    ctx = await getSessionContextFromRequest(req);
+  } catch (error) {
+    return sessionErrorResponse(error, "[calling/outbound] session");
   }
 
   const body = await parseJsonBody<unknown>(req);
