@@ -2,6 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 
+// Stay on middleware.ts. Next 16 proxy.ts broke Vercel production deploys
+// (os.aarvanta.co stayed on the last successful middleware build).
+
 const SESSION_COOKIE = "aarvanta_session";
 
 const PUBLIC_PREFIXES = [
@@ -79,7 +82,7 @@ async function hasValidSession(request: NextRequest) {
   }
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (!isProductionMode()) {
     return NextResponse.next();
   }
