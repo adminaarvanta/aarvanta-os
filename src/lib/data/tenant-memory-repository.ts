@@ -261,6 +261,7 @@ export const tenantMemoryRepository: TenantRepository = {
       status: "active" as const,
       phone: input.phone,
       country: input.country,
+      location: input.location,
       companyName: input.companyName,
       authProvider: input.authProvider,
       profileComplete: input.profileComplete ?? true,

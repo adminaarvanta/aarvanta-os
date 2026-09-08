@@ -15,22 +15,14 @@ import {
   AuthSplitLayout,
   GoogleAuthButton,
 } from "@/components/auth/auth-split-layout";
+import { HelpTip } from "@/components/ui/help-tip";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
+import { COUNTRY_NAMES } from "@/lib/i18n/regions";
+import { cn } from "@/lib/utils";
 
 const REF_STORAGE_KEY = "aarvanta_aff_ref";
 
-const COUNTRY_OPTIONS = [
-  "United States",
-  "United Kingdom",
-  "India",
-  "Canada",
-  "Australia",
-  "Germany",
-  "France",
-  "Singapore",
-  "United Arab Emirates",
-  "Other",
-] as const;
+type AccountType = "workspace" | "affiliate";
 
 function RegisterFormInner({
   nextPath,
@@ -44,12 +36,19 @@ function RegisterFormInner({
   const safeNext = sanitizeNextPath(nextPath);
   const referralFromUrl =
     searchParams.get("ref") ?? searchParams.get("referralCode") ?? "";
+  const [accountType, setAccountType] = useState<AccountType>(
+    searchParams.get("type") === "affiliate" ? "affiliate" : "workspace"
+  );
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("United Kingdom");
+  const [location, setLocation] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [website, setWebsite] = useState("");
+  const [marketingChannels, setMarketingChannels] = useState("");
   const [referralCode, setReferralCode] = useState(referralFromUrl);
   const [busy, setBusy] = useState(false);
   const affHint = searchParams.get("aff");
@@ -87,6 +86,11 @@ function RegisterFormInner({
     e.preventDefault();
     setBusy(true);
     setError(null);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setBusy(false);
+      return;
+    }
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -95,9 +99,14 @@ function RegisterFormInner({
           name,
           email,
           password,
+          confirmPassword,
           phone,
           country,
+          location: location.trim() || undefined,
           companyName: companyName.trim() || undefined,
+          website: website.trim() || undefined,
+          marketingChannels: marketingChannels.trim() || undefined,
+          accountType,
           referralCode: referralCode.trim() || undefined,
           next: safeNext,
         }),
@@ -135,6 +144,47 @@ function RegisterFormInner({
         </>
       ) : null}
 
+      <div>
+        <p className="mb-2 inline-flex items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">
+          Account type
+          <HelpTip label="Account types">
+            Workspace is for running your business. Partner is for referring
+            teams and earning commissions. You can add the other later.
+          </HelpTip>
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(
+            [
+              {
+                id: "workspace" as const,
+                title: "Workspace",
+                body: "CRM, inbox, and AI for my business",
+              },
+              {
+                id: "affiliate" as const,
+                title: "Partner / affiliate",
+                body: "Refer teams and track commissions",
+              },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setAccountType(item.id)}
+              className={cn(
+                "rounded-2xl border px-3 py-3 text-left transition-colors",
+                accountType === item.id
+                  ? "border-gold/70 bg-gold/10"
+                  : "border-border/80 bg-surface-muted/60 hover:border-gold/40"
+              )}
+            >
+              <p className="text-sm font-semibold text-foreground">{item.title}</p>
+              <p className="mt-0.5 text-xs text-muted">{item.body}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <AuthField
         id="name"
         label="Full name"
@@ -165,7 +215,17 @@ function RegisterFormInner({
         onChange={(e) => setPassword(e.target.value)}
         autoComplete="new-password"
         placeholder="At least 8 characters"
-        hint="Use 8+ characters for a stronger password."
+        hint="Create it here. We never email a temporary password."
+      />
+      <AuthPasswordField
+        id="confirmPassword"
+        label="Confirm password"
+        required
+        minLength={8}
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        autoComplete="new-password"
+        placeholder="Type the same password again"
       />
       <div className="grid gap-4 sm:grid-cols-2">
         <AuthField
@@ -185,42 +245,63 @@ function RegisterFormInner({
           required
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          options={COUNTRY_OPTIONS}
+          options={COUNTRY_NAMES}
         />
       </div>
       <AuthField
+        id="location"
+        label="City / location"
+        icon="country"
+        required
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        placeholder="London"
+        autoComplete="address-level2"
+      />
+      <AuthField
         id="company"
-        label="Company / workspace"
+        label={accountType === "affiliate" ? "Company" : "Company / workspace"}
         icon="company"
         value={companyName}
         onChange={(e) => setCompanyName(e.target.value)}
         placeholder="Optional — we’ll name it for you"
       />
-      {referralCode ? (
+      {accountType === "affiliate" ? (
         <>
           <AuthField
-            id="referralCode"
-            label="Referral code"
-            icon="referral"
-            value={referralCode}
-            onChange={(e) => setReferralCode(e.target.value)}
+            id="website"
+            label="Website"
+            icon="company"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder="https://"
           />
-          <p className="text-xs text-muted">
-            Joining as a partner under this code?{" "}
-            <Link
-              href={`/affiliate?ref=${encodeURIComponent(referralCode.trim())}`}
-              className="text-gold hover:underline"
-            >
-              Apply to the partner program
-            </Link>
-            .
-          </p>
+          <AuthField
+            id="channels"
+            label="Marketing channels"
+            icon="referral"
+            value={marketingChannels}
+            onChange={(e) => setMarketingChannels(e.target.value)}
+            placeholder="LinkedIn, newsletter, community…"
+          />
         </>
       ) : null}
+      <AuthField
+        id="referralCode"
+        label="Referral code"
+        icon="referral"
+        value={referralCode}
+        onChange={(e) => setReferralCode(e.target.value)}
+        placeholder="Optional"
+      />
 
       {error ? <AuthAlert>{error}</AuthAlert> : null}
 
-      <AuthSubmitButton busy={busy}>Create free account</AuthSubmitButton>
+      <AuthSubmitButton busy={busy}>
+        {accountType === "affiliate"
+          ? "Create partner account"
+          : "Create free account"}
+      </AuthSubmitButton>
 
       <p className="pt-1 text-center text-xs text-muted">
         Free forever for getting started · No card required
@@ -241,7 +322,7 @@ export function RegisterPageShell({
   return (
     <AuthSplitLayout
       title="Start free"
-      subtitle="Create your Aarvanta workspace in under a minute — no card required."
+      subtitle="Choose workspace or partner, then finish signup here — password, phone, and location. No email password links."
       panelHeadline="Hire your first AI workforce"
       panelBody="Launch a modern operating system for sales, marketing, ops, and support — without stitching tools together."
       footer={

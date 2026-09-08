@@ -1,21 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
-
-const COUNTRIES = [
-  "United Kingdom",
-  "United States",
-  "India",
-  "Canada",
-  "Australia",
-  "Germany",
-  "France",
-  "Singapore",
-  "United Arab Emirates",
-  "Other",
-] as const;
+import { HelpTip } from "@/components/ui/help-tip";
+import { COUNTRY_NAMES } from "@/lib/i18n/regions";
 
 export function AffiliateApplyForm() {
   return (
@@ -26,6 +16,7 @@ export function AffiliateApplyForm() {
 }
 
 function AffiliateApplyFormInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const refFromUrl =
     searchParams.get("ref") ??
@@ -34,24 +25,24 @@ function AffiliateApplyFormInner() {
     "";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("United Kingdom");
+  const [city, setCity] = useState("");
   const [company, setCompany] = useState("");
   const [website, setWebsite] = useState("");
   const [channels, setChannels] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [parentReferralCode, setParentReferralCode] = useState(refFromUrl);
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<{
-    code: string;
-    status: string;
-    emailSent?: boolean;
-    alreadyHasPassword?: boolean;
-    activationUrl?: string;
-  } | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -61,35 +52,27 @@ function AffiliateApplyFormInner() {
         body: JSON.stringify({
           name,
           email,
+          phone,
           country,
+          city: city.trim() || undefined,
           company: company.trim() || undefined,
           website: website.trim() || undefined,
           marketingChannels: channels.trim() || undefined,
+          password,
+          confirmPassword,
           parentReferralCode: parentReferralCode.trim() || undefined,
         }),
       });
       const data = (await res.json()) as {
-        affiliate?: { referralCode: string; status: string };
-        activation?: {
-          needed: boolean;
-          emailSent: boolean;
-          activationUrl?: string;
-        };
+        next?: string;
         error?: { message?: string };
       };
       if (!res.ok) {
         setError(data.error?.message ?? "Application failed.");
         return;
       }
-      if (data.affiliate) {
-        setDone({
-          code: data.affiliate.referralCode,
-          status: data.affiliate.status,
-          emailSent: data.activation?.emailSent,
-          alreadyHasPassword: data.activation?.needed === false,
-          activationUrl: data.activation?.activationUrl,
-        });
-      }
+      router.push(data.next ?? "/onboarding");
+      router.refresh();
     } catch {
       setError("Application failed.");
     } finally {
@@ -97,67 +80,16 @@ function AffiliateApplyFormInner() {
     }
   }
 
-  if (done) {
-    return (
-      <div className="rounded-xl border border-border bg-surface-elevated p-6 text-sm">
-        <p className="font-medium text-foreground">You are in the partner program</p>
-        <p className="mt-2 text-muted">
-          Status: <span className="text-gold">{done.status}</span>. Your code{" "}
-          <code className="rounded bg-surface-muted px-1.5 py-0.5 text-foreground">
-            {done.code}
-          </code>{" "}
-          is active.
-        </p>
-        {done.alreadyHasPassword ? (
-          <p className="mt-3 text-muted">
-            You already have an Aarvanta password. Sign in and open Partners.
-          </p>
-        ) : done.emailSent ? (
-          <p className="mt-3 text-muted">
-            Check your email for a link to create your password. Then sign in
-            and open Partners.
-          </p>
-        ) : (
-          <div className="mt-3 space-y-3">
-            <p className="text-muted">
-              We could not email the set-password link. Use this link to create
-              your password:
-            </p>
-            {done.activationUrl ? (
-              <div className="rounded-lg border border-border bg-surface-muted p-3">
-                <p className="break-all font-mono text-xs text-foreground">
-                  {done.activationUrl}
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="mt-2"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(done.activationUrl!);
-                    setCopied(true);
-                  }}
-                >
-                  {copied ? "Copied" : "Copy link"}
-                </Button>
-              </div>
-            ) : (
-              <p className="text-muted">
-                Contact Aarvanta to resend a set-password link.
-              </p>
-            )}
-          </div>
-        )}
-        <p className="mt-3 text-xs text-muted">
-          After you set a password, sign in and open{" "}
-          <span className="text-foreground">/partners</span>.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      <p className="rounded-xl border border-border bg-surface-muted/70 px-3 py-2 text-xs text-muted">
+        Create your partner password here. We do not email temporary passwords
+        or set-password links.
+        <HelpTip label="Why no email password" className="ml-1">
+          You choose the password now, then we take you into onboarding and
+          your partner dashboard.
+        </HelpTip>
+      </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Full name" id="aff-name">
           <input
@@ -180,6 +112,17 @@ function AffiliateApplyFormInner() {
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Phone" id="aff-phone">
+          <input
+            id="aff-phone"
+            type="tel"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+44 7700 900123"
+            className={inputClass}
+          />
+        </Field>
         <Field label="Country" id="aff-country">
           <select
             id="aff-country"
@@ -187,13 +130,51 @@ function AffiliateApplyFormInner() {
             onChange={(e) => setCountry(e.target.value)}
             className={inputClass}
           >
-            {COUNTRIES.map((c) => (
+            {COUNTRY_NAMES.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
           </select>
         </Field>
+      </div>
+      <Field label="City / location" id="aff-city">
+        <input
+          id="aff-city"
+          required
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder="London"
+          className={inputClass}
+        />
+      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Password" id="aff-pass">
+          <input
+            id="aff-pass"
+            type="password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Confirm password" id="aff-pass2">
+          <input
+            id="aff-pass2"
+            type="password"
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Company" id="aff-company">
           <input
             id="aff-company"
@@ -202,16 +183,16 @@ function AffiliateApplyFormInner() {
             className={inputClass}
           />
         </Field>
+        <Field label="Website" id="aff-web">
+          <input
+            id="aff-web"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder="https://"
+            className={inputClass}
+          />
+        </Field>
       </div>
-      <Field label="Website" id="aff-web">
-        <input
-          id="aff-web"
-          value={website}
-          onChange={(e) => setWebsite(e.target.value)}
-          placeholder="https://"
-          className={inputClass}
-        />
-      </Field>
       <Field label="Marketing channels" id="aff-ch">
         <input
           id="aff-ch"
@@ -242,8 +223,15 @@ function AffiliateApplyFormInner() {
         </p>
       ) : null}
       <Button type="submit" disabled={busy}>
-        {busy ? "Submitting…" : "Apply to partner program"}
+        {busy ? "Creating account…" : "Create partner account"}
       </Button>
+      <p className="text-xs text-muted">
+        Prefer a workspace account instead?{" "}
+        <Link href="/register" className="text-gold hover:underline">
+          Start free
+        </Link>
+        .
+      </p>
     </form>
   );
 }

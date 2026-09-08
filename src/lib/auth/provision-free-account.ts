@@ -30,6 +30,7 @@ export type ProvisionFreeAccountInput = {
   name: string;
   phone: string;
   country: string;
+  location?: string;
   companyName?: string;
   password?: string;
   googleSub?: string;
@@ -68,6 +69,7 @@ export async function ensureFreeTierMembership(input: {
   name?: string;
   phone?: string;
   country?: string;
+  location?: string;
   companyName?: string;
 }): Promise<WorkspaceMember> {
   await ensureDatastoreReady();
@@ -118,6 +120,7 @@ export async function ensureFreeTierMembership(input: {
       role: "owner",
       phone: input.phone?.trim() || "+0000000000",
       country: input.country?.trim() || "United Kingdom",
+      location: input.location?.trim() || undefined,
       companyName: input.companyName?.trim() || undefined,
       authProvider: "password",
       profileComplete: true,
@@ -198,6 +201,7 @@ export async function provisionFreeTierAccount(
         role: "owner",
         phone: input.phone.trim(),
         country: input.country.trim(),
+        location: input.location?.trim() || undefined,
         companyName: input.companyName?.trim() || undefined,
         authProvider: input.authProvider,
         profileComplete: true,

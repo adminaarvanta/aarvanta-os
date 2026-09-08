@@ -12,6 +12,16 @@ export type WorkspaceSettings = {
   crmQualificationThreshold: number;
   /** Default currency for finance, payroll, and proposals. */
   defaultCurrency: string;
+  /** BCP-47 locale for dates, numbers, and copy defaults. */
+  locale?: string;
+  /** IANA timezone for dashboards and schedules. */
+  timezone?: string;
+  /** Display date order. */
+  dateFormat?: "day_month_year" | "month_day_year" | "year_month_day";
+  /** Clock format. */
+  timeFormat?: "12h" | "24h";
+  /** City or locality for the workspace. */
+  city?: string;
   /** Set by Launch OS — AGEB industry profile id. */
   industryProfileId?: string;
   /** Primary country code (ISO-style) from Launch OS. */
@@ -57,6 +67,11 @@ export type WorkspaceSettingsPatch = Partial<
     | "aiAutoSummarize"
     | "crmQualificationThreshold"
     | "defaultCurrency"
+    | "locale"
+    | "timezone"
+    | "dateFormat"
+    | "timeFormat"
+    | "city"
     | "industryProfileId"
     | "countryCode"
     | "businessName"

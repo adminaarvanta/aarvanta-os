@@ -31,6 +31,7 @@ export async function buildLaunchpadSnapshot(
     runs,
     members,
     invitations,
+    organization,
   ] = await Promise.all([
     getCrmRepository().listContacts(scope),
     getKnowledgeRepository().listDocuments(scope),
@@ -39,6 +40,7 @@ export async function buildLaunchpadSnapshot(
     getWorkforceRepository().listRuns(scope, { limit: 5 }),
     getTenantRepository().listMembers(scope),
     getTenantRepository().listInvitations(scope),
+    getTenantRepository().getOrganization(scope.tenantId),
   ]);
 
   const items: LaunchpadItem[] = [
@@ -83,6 +85,20 @@ export async function buildLaunchpadSnapshot(
       description: "Share the workspace with someone who will use it with you.",
       href: "/team?tab=manage",
       done: members.length > 1 || invitations.length > 0,
+    },
+    {
+      id: "profile",
+      title: "Review your profile and regional settings",
+      description: "Confirm phone, location, currency, and date format.",
+      href: "/settings#data-export",
+      done: members.some((member) => Boolean(member.phone && member.country)),
+    },
+    {
+      id: "billing",
+      title: "See plans when you are ready to go live",
+      description: "Compare Free, Launch, and Growth — upgrade in a few clicks.",
+      href: "/billing",
+      done: Boolean(organization && organization.plan !== "free"),
     },
   ];
 

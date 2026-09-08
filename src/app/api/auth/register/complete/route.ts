@@ -31,6 +31,7 @@ const completeSchema = z.object({
     .max(24)
     .regex(/^[+0-9()\-\s]+$/, "Enter a valid phone number"),
   country: z.string().min(2).max(80),
+  location: z.string().min(1).max(80),
   companyName: z.string().max(120).optional(),
   name: z.string().min(1).max(80).optional(),
   referralCode: z.string().max(32).optional(),
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
         name: parsed.data.name?.trim() || pending.name,
         phone: parsed.data.phone,
         country: parsed.data.country,
+        location: parsed.data.location,
         companyName: parsed.data.companyName,
         googleSub: pending.googleSub,
         authProvider: "google",

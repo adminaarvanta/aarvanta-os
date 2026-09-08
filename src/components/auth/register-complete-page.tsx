@@ -11,21 +11,9 @@ import {
 } from "@/components/auth/auth-fields";
 import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
+import { COUNTRY_NAMES } from "@/lib/i18n/regions";
 
 const REF_STORAGE_KEY = "aarvanta_aff_ref";
-
-const COUNTRY_OPTIONS = [
-  "United States",
-  "United Kingdom",
-  "India",
-  "Canada",
-  "Australia",
-  "Germany",
-  "France",
-  "Singapore",
-  "United Arab Emirates",
-  "Other",
-] as const;
 
 function CompleteFormInner({ nextPath }: { nextPath: string }) {
   const router = useRouter();
@@ -35,6 +23,7 @@ function CompleteFormInner({ nextPath }: { nextPath: string }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("United Kingdom");
+  const [location, setLocation] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [referralCode, setReferralCode] = useState(
     searchParams.get("ref") ?? searchParams.get("referralCode") ?? ""
@@ -100,6 +89,7 @@ function CompleteFormInner({ nextPath }: { nextPath: string }) {
           name,
           phone,
           country,
+          location: location.trim() || undefined,
           companyName: companyName.trim() || undefined,
           referralCode: referralCode.trim() || undefined,
           next: safeNext,
@@ -157,9 +147,18 @@ function CompleteFormInner({ nextPath }: { nextPath: string }) {
           required
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          options={COUNTRY_OPTIONS}
+          options={COUNTRY_NAMES}
         />
       </div>
+      <AuthField
+        id="location"
+        label="City / location"
+        icon="country"
+        required
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        placeholder="London"
+      />
       <AuthField
         id="company"
         label="Company / workspace"

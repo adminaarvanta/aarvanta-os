@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { assertPasswordConfirmation } from "@/lib/account/passwords";
 import { apiError, parseJsonBody } from "@/lib/api/request";
 import { AFFILIATE_COOKIE } from "@/lib/affiliate/cookie";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
@@ -30,7 +31,12 @@ const registerSchema = z.object({
     .max(24)
     .regex(/^[+0-9()\-\s]+$/, "Enter a valid phone number"),
   country: z.string().min(2).max(80),
+  location: z.string().min(1).max(80),
   companyName: z.string().max(120).optional(),
+  confirmPassword: z.string().min(8).max(128),
+  accountType: z.enum(["workspace", "affiliate"]).optional(),
+  website: z.string().max(200).optional(),
+  marketingChannels: z.string().max(240).optional(),
   referralCode: z.string().max(32).optional(),
   next: z.string().optional(),
 });
@@ -59,6 +65,13 @@ export async function POST(req: Request) {
     }
 
     const email = parsed.data.email.trim().toLowerCase();
+    const passwordError = assertPasswordConfirmation(
+      parsed.data.password,
+      parsed.data.confirmPassword
+    );
+    if (passwordError) {
+      return apiError("VALIDATION_ERROR", passwordError, 400);
+    }
 
     const cookieStore = await cookies();
     const referralCode =
@@ -71,16 +84,39 @@ export async function POST(req: Request) {
         throw new Error("EMAIL_EXISTS: An account with this email already exists.");
       }
 
-      return provisionFreeTierAccount({
+      const provisioned = await provisionFreeTierAccount({
         email,
         name: parsed.data.name,
         phone: parsed.data.phone,
         country: parsed.data.country,
+        location: parsed.data.location,
         companyName: parsed.data.companyName,
         password: parsed.data.password,
         authProvider: "password",
-        referralCode,
+        referralCode:
+          parsed.data.accountType === "affiliate" ? undefined : referralCode,
       });
+
+      if (parsed.data.accountType === "affiliate") {
+        const { applyAsExternalPartner } = await import(
+          "@/lib/affiliate/service"
+        );
+        await applyAsExternalPartner({
+          name: parsed.data.name,
+          email,
+          country: parsed.data.country,
+          city: parsed.data.location,
+          company: parsed.data.companyName,
+          website: parsed.data.website,
+          phone: parsed.data.phone,
+          marketingChannels: parsed.data.marketingChannels,
+          parentReferralCode: referralCode,
+          userId: provisioned.session.userId,
+          tenantId: provisioned.organizationId,
+        });
+      }
+
+      return provisioned;
     });
 
     const nextPath = sanitizeNextPath(parsed.data.next ?? "/onboarding");

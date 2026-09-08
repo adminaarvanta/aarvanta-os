@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Shield } from "lucide-react";
+import { AccountLifecyclePanel } from "@/components/account/account-lifecycle-panel";
+import { DataExportPanel } from "@/components/account/data-export-panel";
+import { RegionalSettingsPanel } from "@/components/account/regional-settings-panel";
 import { SystemStatusPanel } from "@/components/settings/system-status-panel";
 import { WorkspaceSettingsPanel } from "@/components/settings/workspace-settings-panel";
 import { Badge } from "@/components/ui/badge";
@@ -155,6 +158,15 @@ export function SettingsClient({
         initialSettings={workspaceSettings}
         canManage={canManageWorkspace}
       />
+
+      <RegionalSettingsPanel
+        initialSettings={workspaceSettings}
+        canManage={canManageWorkspace}
+      />
+
+      <DataExportPanel />
+
+      <AccountLifecyclePanel canManage={canManageOrg} />
 
       <SystemStatusPanel />
 

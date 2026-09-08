@@ -33,6 +33,7 @@ export interface AffiliateProfile {
   website?: string;
   phone?: string;
   country: string;
+  city?: string;
   regionCode: string;
   taxId?: string;
   payoutMethod?: string;

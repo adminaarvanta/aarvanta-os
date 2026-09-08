@@ -263,6 +263,24 @@ export function AffiliateDashboardClient({
         >
           Request payout ({money(balance.available, balance.currency)})
         </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            window.location.assign("/api/affiliate/me/export?format=csv");
+          }}
+        >
+          Download CSV
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            window.location.assign("/api/affiliate/me/export?format=json");
+          }}
+        >
+          Download JSON
+        </Button>
         <span className="text-xs text-muted">
           Minimum {money(rates.payoutMinimum, rates.currency)}
         </span>

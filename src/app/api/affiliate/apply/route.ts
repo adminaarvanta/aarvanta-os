@@ -1,8 +1,15 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { assertPasswordConfirmation } from "@/lib/account/passwords";
 import { apiError, parseJsonBody, unauthorized } from "@/lib/api/request";
 import { AFFILIATE_COOKIE } from "@/lib/affiliate/cookie";
+import {
+  createSessionToken,
+  getSessionCookieOptions,
+  SESSION_COOKIE,
+} from "@/lib/auth/session";
+import { isDemoMode } from "@/lib/config/app-mode";
 import {
   applyAsExternalPartner,
   optInAsCustomerAffiliate,
@@ -15,9 +22,16 @@ const applySchema = z.object({
   name: z.string().min(1).max(80),
   email: z.string().email().max(160),
   country: z.string().min(2).max(80),
+  city: z.string().min(1).max(80),
   company: z.string().max(120).optional(),
   website: z.string().max(200).optional(),
-  phone: z.string().max(24).optional(),
+  phone: z
+    .string()
+    .min(7)
+    .max(24)
+    .regex(/^[+0-9()\-\s]+$/, "Enter a valid phone number"),
+  password: z.string().min(8).max(128).optional(),
+  confirmPassword: z.string().min(8).max(128).optional(),
   marketingChannels: z.string().max(240).optional(),
   /** Optional parent partner referral code. */
   parentReferralCode: z.string().max(32).optional(),
@@ -54,6 +68,23 @@ export async function POST(req: Request) {
     /* anonymous apply */
   }
 
+  if (!userId) {
+    if (!parsed.data.password || !parsed.data.confirmPassword) {
+      return apiError(
+        "VALIDATION_ERROR",
+        "Create and confirm your password here. We do not email temporary passwords.",
+        400
+      );
+    }
+    const passwordError = assertPasswordConfirmation(
+      parsed.data.password,
+      parsed.data.confirmPassword
+    );
+    if (passwordError) {
+      return apiError("VALIDATION_ERROR", passwordError, 400);
+    }
+  }
+
   const cookieStore = await cookies();
   const parentReferralCode =
     parsed.data.parentReferralCode?.trim() ||
@@ -61,13 +92,38 @@ export async function POST(req: Request) {
     undefined;
 
   try {
-    const { affiliate, activation } = await applyAsExternalPartner({
-      ...parsed.data,
+    const { affiliate, activation, session } = await applyAsExternalPartner({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      country: parsed.data.country,
+      city: parsed.data.city,
+      company: parsed.data.company,
+      website: parsed.data.website,
+      phone: parsed.data.phone,
+      marketingChannels: parsed.data.marketingChannels,
+      password: userId ? undefined : parsed.data.password,
       parentReferralCode,
       userId,
       tenantId,
     });
-    return NextResponse.json({ affiliate, activation });
+    const response = NextResponse.json({
+      affiliate,
+      activation,
+      next: "/onboarding",
+    });
+    if (session && (!isDemoMode() || process.env.AUTH_SECRET)) {
+      try {
+        const token = await createSessionToken(session);
+        response.cookies.set(
+          SESSION_COOKIE,
+          token,
+          getSessionCookieOptions(undefined, req.url)
+        );
+      } catch {
+        /* demo without AUTH_SECRET */
+      }
+    }
+    return response;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Application failed.";

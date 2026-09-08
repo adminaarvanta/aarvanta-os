@@ -75,6 +75,8 @@ export interface WorkspaceMember extends TenantScope {
   phone?: string;
   /** ISO country code or display country name. */
   country?: string;
+  /** City or locality collected at signup. */
+  location?: string;
   /** Optional company label from signup. */
   companyName?: string;
   authProvider?: MemberAuthProvider;
