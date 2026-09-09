@@ -6,6 +6,7 @@ import {
   isGenericBookingGoal,
   knowledgeSearchTopic,
   spokenFirstName,
+  spokenVoiceBrand,
   voiceIdentityGreeting,
   voiceKnowledgeMode,
 } from "@/lib/calling/voice-knowledge";
@@ -47,8 +48,8 @@ describe("voice knowledge / first speech", () => {
       brandName: "Aarvanta",
       firstName: "Priya Sharma",
     });
-    assert.match(outbound, /^Hi Priya, this is Ava at Aarvanta\./);
-    assert.match(outbound, /alright time/);
+    assert.match(outbound, /^Hi Priya, it's Ava with Aarvanta\./);
+    assert.match(outbound, /Is now okay/);
     assert.doesNotMatch(outbound, /book|meeting|calendar|schedule/i);
 
     const inbound = voiceIdentityGreeting({
@@ -56,8 +57,13 @@ describe("voice knowledge / first speech", () => {
       agentName: "Ava",
       brandName: "Aarvanta",
     });
-    assert.match(inbound, /thanks for calling Aarvanta/);
+    assert.match(inbound, /you've reached Aarvanta/);
     assert.doesNotMatch(inbound, /book|meeting/i);
+  });
+
+  it("does not greet as a Launch OS workspace brand", () => {
+    assert.equal(spokenVoiceBrand("CandleCrafted"), "Aarvanta");
+    assert.equal(spokenVoiceBrand("AARVANTA LIMITED"), "Aarvanta");
   });
 
   it("ignores phone numbers and placeholders as first names", () => {

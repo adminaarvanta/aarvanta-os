@@ -43,6 +43,13 @@ export function callBriefingForRelay(
   return topic ?? "";
 }
 
+/** Live spoken company — matches EC2 VOICE_BRAND_NAME. Never a Launch OS site brand. */
+export const DEFAULT_SPOKEN_BRAND = "Aarvanta";
+
+export function spokenVoiceBrand(_workspaceBusinessName?: string): string {
+  return process.env.VOICE_BRAND_NAME?.trim() || DEFAULT_SPOKEN_BRAND;
+}
+
 /** Spoken first name from CRM / display name — never a phone number. */
 export function spokenFirstName(raw: string | undefined | null): string {
   const t = (raw ?? "").trim();
@@ -78,9 +85,9 @@ export function voiceIdentityGreeting(input: {
   const outbound = input.direction.toLowerCase().startsWith("outbound");
   if (outbound) {
     const hi = first ? `Hi ${first}` : "Hi";
-    return `${hi}, this is ${agent} at ${brand}. Did I catch you at an alright time?`;
+    return `${hi}, it's ${agent} with ${brand}. Is now okay?`;
   }
-  return `Hi, thanks for calling ${brand}. This is ${agent}. How can I help?`;
+  return `Hi, you've reached ${brand} — ${agent} here. What can I help with?`;
 }
 
 export function voiceKnowledgeMode(digest: string | undefined | null): VoiceKnowledgeMode {

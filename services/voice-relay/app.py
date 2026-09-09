@@ -47,42 +47,42 @@ AARVANTA_CONTEXT_URL = os.getenv("AARVANTA_VOICE_CONTEXT_URL", "").strip()
 BRAND_NAME = (os.getenv("VOICE_BRAND_NAME") or "Aarvanta").strip() or "Aarvanta"
 
 DEFAULT_SYSTEM = (
-    f"You are a warm, concise phone representative for {BRAND_NAME}. "
-    "Speak like a real person on a short live call — contractions, one thought, "
-    "never a script or a product dump.\n"
+    f"You are {BRAND_NAME}'s person on the phone — a real colleague, not a script. "
+    "Talk the way you'd talk to someone you just called: easy, a little informal, "
+    "contractions (I'm, that's, what's). Never sound like a call center or a stage machine.\n"
     "HARD RULES (never break these):\n"
-    f"- BRAND: The company/product name is always \"{BRAND_NAME}\" — never use any other "
-    "company, product, or workspace name for who you represent (ignore other brand names "
-    "in knowledge or briefing for identity).\n"
-    "- GREETING IS ALREADY DONE: The phone system already said your name and company. "
-    "Do not say hi, re-introduce yourself, or repeat the company name unless they ask who you are.\n"
-    "- NO INSTANT BOOKING: Never ask to book a call, meeting, or calendar slot until they "
-    "confirm now is a good time AND show real interest. Do not mention availability on the "
-    "first replies.\n"
-    "- NO BLUFFING: Never invent facts, features, pricing, timelines, clients, case studies, "
-    "integrations, or promises. If it is not in your briefing or company knowledge, say you "
-    "do not have that detail and offer a human follow-up.\n"
-    "- SHORT TURNS: Reply in 1–2 short sentences by default (max 3). Ask at most one question.\n"
-    "- NO REPEATS: Do not restate what you or the caller already said. Do not loop the same "
-    "pitch or question.\n"
-    "- STOP TALKING: After your answer or question, stop. Do not fill silence with more pitch.\n"
+    f"- BRAND: You represent \"{BRAND_NAME}\" only. Ignore other company names in knowledge "
+    "or workspace settings for who you are.\n"
+    "- GREETING ALREADY HAPPENED: The phone system already said your name and asked if now "
+    "is okay. Do not say hi, hello, your name, or the company name again. Do not thank them "
+    "for taking the call in a long way — three words max, then move on.\n"
+    "- FIRST YES: If they say now is fine, hook like a human: one short why-you-called, "
+    "then one real question about them. Paraphrase hooks like: 'I was hoping a quick chat "
+    "might actually help with what you're juggling' or 'I'll keep this light — what's the "
+    "main thing on your plate?' Never read a playbook. Never pitch a list of products.\n"
+    "- NO INSTANT BOOKING: Do not mention calendar, availability, or booking until they "
+    "clearly want a time. Discussing a meeting is not permission to check the calendar.\n"
+    "- NO BLUFFING: Never invent facts, pricing, timelines, clients, or promises. If you "
+    "do not have it, say you'll have a teammate follow up.\n"
+    "- SHORT TURNS: 1–2 sentences. One question. Then stop.\n"
+    "- NO REPEATS: Do not restate what anyone just said. Do not loop.\n"
     "- Never say you are an AI unless asked.\n"
-    "- If the caller is done, goodbye, or testing is complete: one brief goodbye only, then stop."
+    "- If they are done: one brief goodbye, then stop."
 )
 SYSTEM_PROMPT = os.getenv("VOICE_AGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM).strip()
 VERIFY_SIGNATURES = os.getenv("VOICE_RELAY_VERIFY_SIGNATURES", "true").lower() != "false"
-MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "140"))
-MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "360"))
-REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.65"))
-REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.45"))
-REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.25"))
+MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "160"))
+MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "380"))
+REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.72"))
+REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.35"))
+REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.2"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
 CLONE_TTS_TIMEOUT = float(os.getenv("VOICE_RELAY_CLONE_TTS_TIMEOUT", "6"))
-SERVICE_VERSION = "1.9.2"
+SERVICE_VERSION = "1.9.3"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -263,12 +263,18 @@ def execute_booking_tool(
         str(arguments.get("timezone") or call_context.get("timezone") or "America/New_York")
     )
     if name == "get_availability":
+        cached = call_context.get("lastAvailability")
+        if isinstance(cached, dict) and not cached.get("error"):
+            return cached
         days = int(arguments.get("days") or 3)
         days = max(1, min(days, 3))
-        return post_tool_json(
+        result = post_tool_json(
             "/api/voice/tools/calendar/availability",
             {"timezone": timezone, "days": days},
         )
+        if isinstance(result, dict) and not result.get("error"):
+            call_context["lastAvailability"] = result
+        return result
 
     if name == "book_meeting":
         lead_id = str(call_context.get("contactId") or "").strip()
@@ -465,7 +471,8 @@ def build_system_prompt(
         knowledge_mode = "informed" if knowledge_digest.strip() else "bare"
     parts.append(
         f"You are {agent_name} representing {name}. "
-        "The caller already heard your name from the phone greeting — never re-introduce."
+        "The caller already heard your name from the phone greeting — never re-introduce "
+        "and never say the company name unless they ask who you are."
     )
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
@@ -476,10 +483,10 @@ def build_system_prompt(
     elif direction == "outbound":
         parts.append(
             f"Outbound call for {name}. They already heard who you are and were asked "
-            "if now is a good time. If they say yes, briefly say why you called in one "
-            "sentence, then ask one question. Follow the STAGE MACHINE one step at a time. "
-            "Never jump to booking. When they later want a meeting, use light language "
-            "and only real calendar slots from tools."
+            "if now is okay. If they say yes: no greeting — a human hook (why you called) "
+            "plus one question about them. Do not follow a stage checklist out loud. "
+            "Never jump to booking. If they later want a time, offer at most two real slots "
+            "you already fetched — do not keep saying you are checking the calendar."
         )
     language = (params.get("language") or ctx.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
@@ -518,8 +525,8 @@ def build_system_prompt(
     if flow:
         parts.append(
             "CONVERSATION PLAYBOOK — start at "
-            f"'{entry}'. Coaching notes only — never read them aloud. "
-            "Stay in greeting/permission until they confirm now is a good time. "
+            f"'{entry}'. Coaching notes only — never read them aloud, never list stages. "
+            "Stay in a natural hello until they confirm now is okay. "
             "Do not skip ahead to meeting booking:\n"
             f"{flow[:1800]}"
         )
@@ -537,9 +544,11 @@ def build_system_prompt(
         )
     contact_id = str(ctx.get("contactId") or "").strip()
     parts.append(
-        "CALENDAR BOOKING TOOLS (locked until they ask or clearly want a meeting):\n"
-        "- Do not offer times, availability, or a booking on early turns.\n"
-        "- When they are ready, call get_availability first. Never invent dates or times.\n"
+        "CALENDAR BOOKING TOOLS (locked until they clearly want a time):\n"
+        "- Talking about a meeting is not enough. Wait until they ask to book, pick a day, "
+        "or ask what times you have.\n"
+        "- Call get_availability at most once. If you already have slots, speak two of them. "
+        "Never say 'checking the calendar' or 'let me look at the calendar'.\n"
         "- Offer at most two concrete slots from the tool result (day + time).\n"
         "- Only after they clearly pick a slot, call book_meeting with that "
         "slot's meetingStart and meetingEnd.\n"
@@ -618,6 +627,58 @@ def _dedupe_against_history(reply: str, history: list[dict[str, str]]) -> str:
     return reply
 
 
+_REINTRO_RE = re.compile(
+    r"(?:^|(?<=[.!?]\s))"
+    r"(?:hi|hey|hello)(?:\s+[A-Z][\w'-]{1,20})?"
+    r"[,.]?\s+(?:this is|it's|it is|i'm|i am)\s+[\w'-]+"
+    r"(?:\s+(?:calling\s+)?(?:from|at|with)\s+[^.]{2,40})?"
+    r"[.!]?\s*",
+    re.I,
+)
+_CHECK_CAL_RE = re.compile(
+    r"(?:okay[,.]?\s+|sure[,.]?\s+|one moment[,—. ]*)?"
+    r"(?:let me |i'll |i will )?"
+    r"(?:just )?"
+    r"(?:check(?:ing)?|look(?:ing)?(?:\s+(?:at|up))?|pull(?:ing)?|see)\s+"
+    r"(?:the )?(?:calendar|availability|schedule)"
+    r"[^.?!]*[.?!]?\s*",
+    re.I,
+)
+
+
+def _humanize_spoken(reply: str) -> str:
+    """Drop second intros and calendar-hold lines the model keeps repeating."""
+    text = (reply or "").strip()
+    text = _REINTRO_RE.sub("", text).strip()
+    text = _CHECK_CAL_RE.sub("", text).strip()
+    text = re.sub(r"\s{2,}", " ", text)
+    return text or reply
+
+
+_BOOKING_INTENT_RE = re.compile(
+    r"\b("
+    r"book(ing)?|"
+    r"schedule|"
+    r"availability|"
+    r"calendar|"
+    r"appointment|"
+    r"time slots?|timeslots?|"
+    r"what times?|"
+    r"when (are you|were you|works)|"
+    r"hold (a|that) (time|slot)"
+    r")\b",
+    re.I,
+)
+
+
+def booking_tools_allowed(history: list[dict[str, str]], user_text: str) -> bool:
+    """Keep calendar tools off until they clearly want a time — not merely 'a meeting'."""
+    if _BOOKING_INTENT_RE.search(user_text or ""):
+        return True
+    user_turns = sum(1 for turn in history if turn.get("role") == "user")
+    return user_turns >= 4
+
+
 async def _speak_stream(ws: WebSocket, reply: str) -> None:
     """Speak a completed reply in small chunks for ConversationRelay TTS."""
     reply = _cap_reply(reply.strip() or "Sorry — could you repeat that?")
@@ -660,20 +721,6 @@ def is_generic_booking_goal(text: str) -> bool:
     return bool(_GENERIC_BOOKING_GOAL_RE.match(t))
 
 
-_BOOKING_INTENT_RE = re.compile(
-    r"\b(book|booking|meeting|schedule|calendar|availability|appointment|timeslot|time slot)\b",
-    re.I,
-)
-
-
-def booking_tools_allowed(history: list[dict[str, str]], user_text: str) -> bool:
-    """Keep calendar tools off until the caller asks, or a few turns have passed."""
-    if _BOOKING_INTENT_RE.search(user_text or ""):
-        return True
-    user_turns = sum(1 for turn in history if turn.get("role") == "user")
-    return user_turns >= 3
-
-
 async def stream_reply(
     ws: WebSocket,
     history: list[dict[str, str]],
@@ -698,7 +745,6 @@ async def stream_reply(
         allow_tools = bool(allow_tools) and tools_configured
     # OpenAI message list may include tool rounds (not just plain chat turns).
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}, *history]
-    filler_sent = False
 
     for _round in range(MAX_TOOL_ROUNDS + 1):
         kwargs: dict[str, Any] = {
@@ -720,9 +766,9 @@ async def stream_reply(
         tool_calls = choice.tool_calls or []
 
         if tool_calls and allow_tools:
-            if not filler_sent:
-                await speak(ws, "One moment — checking the calendar.", ctx)
-                filler_sent = True
+            if not ctx.get("calendarFillerSpoken"):
+                await speak(ws, "One sec.", ctx)
+                ctx["calendarFillerSpoken"] = True
 
             assistant_msg: dict[str, Any] = {
                 "role": "assistant",
@@ -766,6 +812,7 @@ async def stream_reply(
 
         reply = (choice.content or "").strip() or "Sorry — could you repeat that?"
         reply = _dedupe_against_history(reply, history)
+        reply = _humanize_spoken(reply)
         reply = _cap_reply(reply)
         await speak(ws, reply, ctx)
         history.append({"role": "assistant", "content": reply})

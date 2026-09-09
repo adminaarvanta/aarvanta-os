@@ -39,7 +39,7 @@ ELEVENLABS_API_KEY=
 # Reply naturalness (defaults shown)
 VOICE_RELAY_MAX_TOKENS=160
 VOICE_RELAY_MAX_CHARS=480
-VOICE_RELAY_TEMPERATURE=0.65
+VOICE_RELAY_TEMPERATURE=0.72
 ```
 
 After pulling code that updates `services/voice-relay/app.py`:
@@ -48,7 +48,7 @@ After pulling code that updates `services/voice-relay/app.py`:
 sudo bash services/voice-relay/deploy/install-on-ec2.sh   # or rsync + pip install
 sudo systemctl restart voice-relay
 curl https://YOUR-HOST/voice-relay/health
-# Expect version >= 1.9.2. clonedTts is true only when ELEVENLABS_API_KEY is set
+# Expect version >= 1.9.3. clonedTts is true only when ELEVENLABS_API_KEY is set
 # AND /tts is publicly reachable. Catalog ElevenLabs (Sarah) still works without the key.
 ```
 
@@ -94,9 +94,9 @@ At ConversationRelay `setup`, the EC2 relay POSTs to `/api/voice/context` (same 
 
 If no documents are ingested, or the call only has a generic goal like “Book Meetings”, the digest stays empty (`knowledgeMode: bare`) and the agent must not invent a product dump.
 
-### 4b. In-call calendar booking (relay ≥ 1.9.2)
+### 4b. In-call calendar booking (relay ≥ 1.9.3)
 
-The relay can call OpenAI tools that hit Aarvanta, but **not on the opening turns**. Calendar tools stay locked until the caller asks to book / mentions a meeting, or a few conversational turns have passed. Generic campaign goals like “Book Meetings” are not treated as a spoken briefing.
+The relay can call OpenAI tools that hit Aarvanta, but **not on the opening turns**. Calendar tools stay locked until the caller asks for a time (not merely says “meeting”). `get_availability` is fetched at most once per call; the spoken hold is a single “One sec.” — never “checking the calendar” on a loop.
 
 | Tool | API |
 |------|-----|
@@ -108,7 +108,7 @@ Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
 **Call now / campaign dials** must pass `contactId` + `sessionId` in TwiML custom params (manual outbound resolves CRM by phone). Without `contactId`, the agent will not book.
 
 1. Each active user connects their own Google Calendar at `/voice/calendar` (optional — otherwise demo Meet link). Sync writes availability and bookings to that user’s calendar.
-2. Redeploy relay so `/health` shows `"version": "1.9.2"` and `"toolsEnabled": true`.
+2. Redeploy relay so `/health` shows `"version": "1.9.3"` and `"toolsEnabled": true`.
 3. Settings → Call now (CRM contact with phone) → agree a time on the call.
 4. Confirm under `/voice/meetings` (+ Google Calendar if connected).
 
@@ -126,7 +126,7 @@ Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
 
 ### 6. Health
 - `https://os.aarvanta.co/api/health` → Voice Relay item **ok**; `voiceRelay.elevenLabsApiKeyConfigured` is true only when `ELEVENLABS_API_KEY` is set on Vercel (required for clones/preview; catalog Sarah TTS does not need it)
-- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.9.2"`, `"contextConfigured": true`, `"toolsEnabled": true`, `"clonedTts": true` when `ELEVENLABS_API_KEY` is set on EC2
+- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.9.3"`, `"contextConfigured": true`, `"toolsEnabled": true`, `"clonedTts": true` when `ELEVENLABS_API_KEY` is set on EC2
 
 ## Voiceover (TTS) & cost
 
@@ -146,7 +146,7 @@ Twilio ConversationRelay can only speak **catalog** ElevenLabs/Google/Amazon voi
 2. On that agent’s page, upload **or record** 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
 3. Leave **Use this agent as the default for Dialer, inbound, and scheduled calls** checked (or later click **Set as primary** / pick it under Voice settings → Primary Voice Agent). Campaigns can still choose a different agent.
 4. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
-5. Redeploy the relay (`version` ≥ **1.9.2**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy). **Every call** uses Twilio `welcomeGreeting` for the first sentence (catalog voice, ~1s) so the line is never silent. The relay does not greet a second time (`skipOpening`). Custom clone audio, when `clonedTts` is true, starts on later turns.
+5. Redeploy the relay (`version` ≥ **1.9.3**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy). **Every call** uses Twilio `welcomeGreeting` for the first sentence (catalog voice, ~1s) so the line is never silent. The relay does not greet a second time (`skipOpening`). Custom clone audio, when `clonedTts` is true, starts on later turns.
 6. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live cloned speech still needs production + the API key. The primary agent’s **call playbook** is used on Dialer/inbound even in demo.
 
 The playbook on the agent page is coaching notes for each part of the call (greet, qualify, book, hang up). Example lines stay in the editor only — they are **not** sent to the live-call model.
@@ -178,11 +178,11 @@ Controlled in `/opt/aarvanta/voice-relay/.env` (restart `voice-relay` after chan
 
 | Env | Default | Effect |
 |-----|---------|--------|
-| `VOICE_RELAY_MAX_TOKENS` | `140` | Short turns (~1–2 sentences) |
-| `VOICE_RELAY_MAX_CHARS` | `360` | Hard spoken-length cap |
-| `VOICE_RELAY_TEMPERATURE` | `0.65` | Lower = flatter / more robotic |
-| `VOICE_RELAY_FREQUENCY_PENALTY` | `0.45` | Reduces repeated phrases |
-| `VOICE_RELAY_PRESENCE_PENALTY` | `0.25` | Encourages moving the call forward |
+| `VOICE_RELAY_MAX_TOKENS` | `160` | Short turns (~1–2 sentences) |
+| `VOICE_RELAY_MAX_CHARS` | `380` | Hard spoken-length cap |
+| `VOICE_RELAY_TEMPERATURE` | `0.72` | Lower = flatter / more robotic |
+| `VOICE_RELAY_FREQUENCY_PENALTY` | `0.35` | Reduces repeated phrases |
+| `VOICE_RELAY_PRESENCE_PENALTY` | `0.2` | Encourages moving the call forward |
 | `VOICE_RELAY_CLONE_TTS_TIMEOUT` | `6` | Seconds before clone synth falls back to catalog |
 | `VOICE_AGENT_SYSTEM_PROMPT` | anti-bluff concise | Override full system prompt (leave unset) |
 
