@@ -5,6 +5,7 @@ import {
   getPublicWebhookUrls,
   getWhatsAppManagementStatus,
 } from "@/lib/channels/config";
+import { elevenLabsConfigured } from "@/lib/channels/elevenlabs-voices";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
 import {
   getConversationRelayTts,
@@ -30,6 +31,7 @@ function voiceRelayPayload() {
     wssUrl,
     budgetMode: isVoiceRelayBudgetMode(),
     tts: { provider: tts.provider, voice: tts.voice },
+    elevenLabsApiKeyConfigured: elevenLabsConfigured(),
   };
 }
 

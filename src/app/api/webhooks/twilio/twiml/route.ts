@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
+import { callBriefingForRelay, voiceIdentityGreeting } from "@/lib/calling/voice-knowledge";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
@@ -41,6 +42,7 @@ async function twimlResponse(req: Request) {
   const sessionId = url.searchParams.get("sessionId") ?? "";
   const contactId = url.searchParams.get("contactId") ?? "";
   const voiceAgentId = url.searchParams.get("voiceAgentId") ?? "";
+  const firstName = url.searchParams.get("firstName") ?? "";
 
   if (req.method === "POST") {
     try {
@@ -83,25 +85,26 @@ async function twimlResponse(req: Request) {
   const language = voice.language;
 
   const businessName = settings.businessName?.trim() || "Aarvanta";
-  const defaultWelcome =
-    direction === "inbound"
-      ? `Hi, thanks for calling ${businessName}. How can I help?`
-      : `Hi, this is ${businessName}. Do you have a moment?`;
+  const agentName =
+    agent?.greetingName?.trim() || agent?.name?.trim() || "Ava";
+  const defaultWelcome = voiceIdentityGreeting({
+    direction,
+    agentName,
+    brandName: businessName,
+    firstName,
+  });
 
   const brief = message?.trim() ?? "";
-  const goal = brief.slice(0, 1000);
+  const goal = callBriefingForRelay(brief).slice(0, 1000);
   const relayUrl =
     mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
-  let welcome = direction === "inbound" ? defaultWelcome : "";
-  if (clonedOnCall) {
-    // Cloned playback is ConversationRelay `play` from the EC2 relay.
-    // Skip catalog welcomeGreeting so the first spoken audio is the clone.
-    welcome = "";
-  } else if (voice.callRecordingEnabled && voice.callRecordingAnnounce) {
-    welcome = welcome
-      ? `${voice.recordingNotice} ${welcome}`
-      : voice.recordingNotice;
+  // Always speak identity immediately via catalog TTS (~1s). Waiting for the
+  // relay opening (OpenAI + optional clone synth) is what made calls sit silent
+  // for ~20s. Cloned audio, when configured, starts on the next turn.
+  let welcome = defaultWelcome;
+  if (voice.callRecordingEnabled && voice.callRecordingAnnounce) {
+    welcome = `${voice.recordingNotice} ${welcome}`;
   }
 
   const twiml = relayUrl
@@ -119,10 +122,11 @@ async function twimlResponse(req: Request) {
         sessionId,
         contactId,
         voiceAgentId: resolvedAgentId,
-        skipOpening: Boolean(welcome),
+        clonedVoiceId: clonedOnCall ? liveClonedVoiceId(agent) : undefined,
+        skipOpening: true,
       })
     : buildSayTwiml(
-        (brief || welcome || defaultWelcome).slice(0, 280),
+        welcome.slice(0, 280),
         voice.provider === "Amazon" ? voice.voice : "Polly.Joanna"
       );
 
@@ -162,6 +166,7 @@ function buildConversationRelayTwiml(
     sessionId?: string;
     contactId?: string;
     voiceAgentId?: string;
+    clonedVoiceId?: string;
     skipOpening?: boolean;
   }
 ) {
@@ -185,6 +190,9 @@ function buildConversationRelayTwiml(
       : "",
     params.voiceAgentId
       ? `<Parameter name="voiceAgentId" value="${escapeXml(params.voiceAgentId)}" />`
+      : "",
+    params.clonedVoiceId
+      ? `<Parameter name="clonedVoiceId" value="${escapeXml(params.clonedVoiceId)}" />`
       : "",
     params.skipOpening
       ? `<Parameter name="skipOpening" value="true" />`

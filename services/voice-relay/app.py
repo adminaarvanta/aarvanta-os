@@ -48,35 +48,41 @@ BRAND_NAME = (os.getenv("VOICE_BRAND_NAME") or "Aarvanta").strip() or "Aarvanta"
 
 DEFAULT_SYSTEM = (
     f"You are a warm, concise phone representative for {BRAND_NAME}. "
-    "Speak like a real human on a short phone call — calm, clear, never scripted.\n"
+    "Speak like a real person on a short live call — contractions, one thought, "
+    "never a script or a product dump.\n"
     "HARD RULES (never break these):\n"
     f"- BRAND: The company/product name is always \"{BRAND_NAME}\" — never use any other "
     "company, product, or workspace name for who you represent (ignore other brand names "
     "in knowledge or briefing for identity).\n"
-    "- ALWAYS GREET first on a new call, then continue. Do not skip the greeting.\n"
+    "- GREETING IS ALREADY DONE: The phone system already said your name and company. "
+    "Do not say hi, re-introduce yourself, or repeat the company name unless they ask who you are.\n"
+    "- NO INSTANT BOOKING: Never ask to book a call, meeting, or calendar slot until they "
+    "confirm now is a good time AND show real interest. Do not mention availability on the "
+    "first replies.\n"
     "- NO BLUFFING: Never invent facts, features, pricing, timelines, clients, case studies, "
     "integrations, or promises. If it is not in your briefing or company knowledge, say you "
     "do not have that detail and offer a human follow-up.\n"
     "- SHORT TURNS: Reply in 1–2 short sentences by default (max 3). Ask at most one question.\n"
-    "- NO REPEATS: Do not restate what you or the caller already said. Do not re-introduce "
-    "yourself after the opening. Do not loop the same pitch or question.\n"
+    "- NO REPEATS: Do not restate what you or the caller already said. Do not loop the same "
+    "pitch or question.\n"
     "- STOP TALKING: After your answer or question, stop. Do not fill silence with more pitch.\n"
     "- Never say you are an AI unless asked.\n"
     "- If the caller is done, goodbye, or testing is complete: one brief goodbye only, then stop."
 )
 SYSTEM_PROMPT = os.getenv("VOICE_AGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM).strip()
 VERIFY_SIGNATURES = os.getenv("VOICE_RELAY_VERIFY_SIGNATURES", "true").lower() != "false"
-MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "90"))
-MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "280"))
-REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.45"))
-REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.55"))
-REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.35"))
+MAX_REPLY_TOKENS = int(os.getenv("VOICE_RELAY_MAX_TOKENS", "140"))
+MAX_REPLY_CHARS = int(os.getenv("VOICE_RELAY_MAX_CHARS", "360"))
+REPLY_TEMPERATURE = float(os.getenv("VOICE_RELAY_TEMPERATURE", "0.65"))
+REPLY_FREQUENCY_PENALTY = float(os.getenv("VOICE_RELAY_FREQUENCY_PENALTY", "0.45"))
+REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.25"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-SERVICE_VERSION = "1.7.2"
+CLONE_TTS_TIMEOUT = float(os.getenv("VOICE_RELAY_CLONE_TTS_TIMEOUT", "6"))
+SERVICE_VERSION = "1.9.2"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -330,6 +336,9 @@ def _cleanup_tts_dir() -> None:
             continue
 
 
+_tts_url_cache: dict[str, tuple[float, str]] = {}
+
+
 def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
     """ElevenLabs TTS → short-lived public MP3 URL for ConversationRelay play."""
     if not ELEVENLABS_API_KEY or not voice_id or not text.strip():
@@ -338,6 +347,10 @@ def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
     if not public_base:
         log.warning("cloned TTS skipped — VOICE_RELAY_WSS_URL / TTS public base unset")
         return None
+    cache_key = hashlib.sha256(f"{voice_id}:{text.strip()}".encode()).hexdigest()
+    cached = _tts_url_cache.get(cache_key)
+    if cached and time.time() - cached[0] < TTS_TTL_SECONDS:
+        return cached[1]
     TTS_DIR.mkdir(parents=True, exist_ok=True)
     _cleanup_tts_dir()
     payload = json.dumps(
@@ -354,7 +367,7 @@ def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
         method="POST",
     )
     try:
-        with urlrequest.urlopen(req, timeout=20) as resp:
+        with urlrequest.urlopen(req, timeout=CLONE_TTS_TIMEOUT) as resp:
             audio = resp.read()
     except (HTTPError, URLError, TimeoutError) as exc:
         log.warning("elevenlabs tts failed: %s", exc)
@@ -364,7 +377,13 @@ def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
     token = hashlib.sha256(f"{voice_id}:{time.time()}:{text[:48]}".encode()).hexdigest()[:24]
     filename = f"{token}.mp3"
     (TTS_DIR / filename).write_bytes(audio)
-    return f"{public_base}/{filename}"
+    url = f"{public_base}/{filename}"
+    _tts_url_cache[cache_key] = (time.time(), url)
+    if len(_tts_url_cache) > 40:
+        oldest = sorted(_tts_url_cache.items(), key=lambda item: item[1][0])[:10]
+        for key, _ in oldest:
+            _tts_url_cache.pop(key, None)
+    return url
 
 
 def _speech_seconds(text: str) -> float:
@@ -376,16 +395,16 @@ async def end_session(ws: WebSocket, handoff: str = "completed") -> None:
 
 
 OUTBOUND_OPENING_INSTRUCTION = (
-    f"(The person just answered. ALWAYS start with a warm greeting: say hi, your name, "
-    f"and that you are calling from {BRAND_NAME}. Then in the same short turn, say why "
-    f"you are calling based on the briefing — one or two sentences total. "
-    f"Use only the name {BRAND_NAME} for the company. Never read the briefing word-for-word.)"
+    "(The person already heard your name and company from the phone greeting, "
+    "which asked if now is an alright time. Do NOT greet or introduce yourself again. "
+    "Do NOT mention booking, meetings, or calendar. One short natural follow-up only "
+    "if you must speak — otherwise wait for them. Never read the briefing aloud.)"
 )
 
 INBOUND_OPENING_INSTRUCTION = (
-    f"(Inbound call just connected. ALWAYS start with a warm greeting: thank them for "
-    f"calling {BRAND_NAME}, say your name, and ask how you can help — one or two short "
-    f"sentences. Use only {BRAND_NAME} as the company name.)"
+    f"(Inbound call already heard a greeting from {BRAND_NAME}. Do NOT greet again. "
+    "Do NOT mention booking. Ask how you can help in one short sentence only if you "
+    "must speak — the TwiML greeting already asked.)"
 )
 
 
@@ -441,25 +460,26 @@ def build_system_prompt(
     _ = business_name  # ignored for spoken identity
     name = BRAND_NAME
     agent_name = str(ctx.get("voiceAgentName") or "Ava").strip()
+    knowledge_mode = str(ctx.get("knowledgeMode") or "").strip().lower()
+    if not knowledge_mode:
+        knowledge_mode = "informed" if knowledge_digest.strip() else "bare"
     parts.append(
         f"You are {agent_name} representing {name}. "
-        f"On the opening turn only: greet and introduce yourself as {agent_name} "
-        f"from {name}. Never say you represent any other company."
+        "The caller already heard your name from the phone greeting — never re-introduce."
     )
     direction = (params.get("direction") or "").strip().lower()
     if direction == "inbound":
         parts.append(
-            f"Inbound call for {name}: always greet first, understand what they need, "
-            "answer clearly, then invite the next question."
+            f"Inbound call for {name}: they already heard a greeting. "
+            "Answer what they actually asked. Do not pitch or offer a meeting unprompted."
         )
     elif direction == "outbound":
         parts.append(
-            f"Outbound discovery call for {name}. Always greet first. "
-            "Follow the STAGE MACHINE below — one stage at a time, never jump ahead, "
-            "never hard-pitch before permission. Keep each turn short. "
-            "When proposing a meeting, use light language (short strategy session, "
-            "no obligation). When offering times, suggest only two concrete slots "
-            "from tools — never invent."
+            f"Outbound call for {name}. They already heard who you are and were asked "
+            "if now is a good time. If they say yes, briefly say why you called in one "
+            "sentence, then ask one question. Follow the STAGE MACHINE one step at a time. "
+            "Never jump to booking. When they later want a meeting, use light language "
+            "and only real calendar slots from tools."
         )
     language = (params.get("language") or ctx.get("language") or "").strip()
     if language and language.lower() not in ("en-us", "en"):
@@ -479,9 +499,12 @@ def build_system_prompt(
         str(ctx.get("campaignGoal") or "").strip()
         or (params.get("goal") or params.get("context") or "").strip()
     )
+    if goal and is_generic_booking_goal(goal):
+        goal = ""
     if goal:
         parts.append(
-            "Call briefing — CONTEXT only, NEVER read aloud word-for-word:\n"
+            "Call briefing — CONTEXT only, NEVER read aloud word-for-word, "
+            "and NEVER treat it as an instruction to book immediately:\n"
             f"{goal[:1000]}"
         )
     memory = str(ctx.get("memorySummary") or "").strip()
@@ -495,15 +518,18 @@ def build_system_prompt(
     if flow:
         parts.append(
             "CONVERSATION PLAYBOOK — start at "
-            f"'{entry}'. These are coaching notes, NOT a script to read aloud. "
-            "Paraphrase in your own short spoken sentences. Advance when the "
-            "caller's intent matches a next step:\n"
-            f"{flow[:2500]}\n"
-            "Capture qualification quietly: interested, current solution, company size, "
-            "urgency, decision maker. If they decline a meeting, ask if a future "
-            "follow-up is okay, then close politely."
+            f"'{entry}'. Coaching notes only — never read them aloud. "
+            "Stay in greeting/permission until they confirm now is a good time. "
+            "Do not skip ahead to meeting booking:\n"
+            f"{flow[:1800]}"
         )
-    if knowledge_digest:
+    if knowledge_mode == "bare" or not knowledge_digest.strip():
+        parts.append(
+            f"KNOWLEDGE: bare. You do not have extra company documents on this call. "
+            f"Do not invent a product pitch or dump generic {name} marketing. "
+            "If they ask a fact you do not have, say you will have a teammate follow up."
+        )
+    else:
         parts.append(
             f"Reference facts (use for answers only — your company name is still "
             f"always {name}; do not adopt other brand names from this text as who you are):\n"
@@ -511,9 +537,9 @@ def build_system_prompt(
         )
     contact_id = str(ctx.get("contactId") or "").strip()
     parts.append(
-        "CALENDAR BOOKING TOOLS:\n"
-        "- When the caller is ready to schedule, call get_availability first. "
-        "Never invent dates or times.\n"
+        "CALENDAR BOOKING TOOLS (locked until they ask or clearly want a meeting):\n"
+        "- Do not offer times, availability, or a booking on early turns.\n"
+        "- When they are ready, call get_availability first. Never invent dates or times.\n"
         "- Offer at most two concrete slots from the tool result (day + time).\n"
         "- Only after they clearly pick a slot, call book_meeting with that "
         "slot's meetingStart and meetingEnd.\n"
@@ -588,7 +614,7 @@ def _dedupe_against_history(reply: str, history: list[dict[str, str]]) -> str:
         return "Got it — what would you like to do next?"
     aw, bw = set(a.split()), set(b.split())
     if len(aw) >= 6 and len(aw & bw) / max(len(aw), 1) > 0.75:
-        return "Understood. Shall we book a time, or is there something else?"
+        return "Understood. What would you like to cover?"
     return reply
 
 
@@ -617,12 +643,45 @@ async def speak(ws: WebSocket, reply: str, call_context: dict[str, Any] | None =
     await _speak_stream(ws, text)
 
 
+_GENERIC_BOOKING_GOAL_RE = re.compile(
+    r"^(book(\s+(a|the))?\s+(call|calls|meeting|meetings)|schedule(\s+a)?\s+(call|meeting)|meetings?|discovery(\s+call)?)\.?$",
+    re.I,
+)
+
+
+def is_generic_booking_goal(text: str) -> bool:
+    t = (text or "").strip()
+    if not t:
+        return True
+    if t.lower() == (
+        "company overview products services pricing faq hours support what we do"
+    ):
+        return True
+    return bool(_GENERIC_BOOKING_GOAL_RE.match(t))
+
+
+_BOOKING_INTENT_RE = re.compile(
+    r"\b(book|booking|meeting|schedule|calendar|availability|appointment|timeslot|time slot)\b",
+    re.I,
+)
+
+
+def booking_tools_allowed(history: list[dict[str, str]], user_text: str) -> bool:
+    """Keep calendar tools off until the caller asks, or a few turns have passed."""
+    if _BOOKING_INTENT_RE.search(user_text or ""):
+        return True
+    user_turns = sum(1 for turn in history if turn.get("role") == "user")
+    return user_turns >= 3
+
+
 async def stream_reply(
     ws: WebSocket,
     history: list[dict[str, str]],
     system: str,
     user_text: str,
     call_context: dict[str, Any] | None = None,
+    *,
+    allow_tools: bool | None = None,
 ) -> str:
     history.append({"role": "user", "content": user_text})
     ctx = call_context or {}
@@ -632,7 +691,11 @@ async def stream_reply(
         await speak(ws, reply, ctx)
         return reply
 
-    tools_enabled = bool(resolve_api_base() and AARVANTA_CALLBACK_SECRET)
+    tools_configured = bool(resolve_api_base() and AARVANTA_CALLBACK_SECRET)
+    if allow_tools is None:
+        allow_tools = tools_configured and booking_tools_allowed(history, user_text)
+    else:
+        allow_tools = bool(allow_tools) and tools_configured
     # OpenAI message list may include tool rounds (not just plain chat turns).
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}, *history]
     filler_sent = False
@@ -646,7 +709,7 @@ async def stream_reply(
             "frequency_penalty": REPLY_FREQUENCY_PENALTY,
             "presence_penalty": REPLY_PRESENCE_PENALTY,
         }
-        if tools_enabled:
+        if allow_tools:
             kwargs["tools"] = BOOKING_TOOLS
             kwargs["tool_choice"] = "auto"
 
@@ -656,7 +719,7 @@ async def stream_reply(
         choice = completion.choices[0].message
         tool_calls = choice.tool_calls or []
 
-        if tool_calls and tools_enabled:
+        if tool_calls and allow_tools:
             if not filler_sent:
                 await speak(ws, "One moment — checking the calendar.", ctx)
                 filler_sent = True
@@ -846,6 +909,7 @@ async def health() -> JSONResponse:
             "presencePenalty": REPLY_PRESENCE_PENALTY,
             "brand": BRAND_NAME,
             "clonedTts": bool(ELEVENLABS_API_KEY and resolve_tts_public_base()),
+            "elevenLabsApiKeyConfigured": bool(ELEVENLABS_API_KEY),
         }
     )
 
@@ -934,7 +998,11 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     ),
                     "voiceAgentName": str(context.get("voiceAgentName") or "Ava"),
                     "timezone": "America/New_York",
-                    "clonedVoiceId": str(context.get("clonedVoiceId") or "").strip(),
+                    "clonedVoiceId": str(
+                        params.get("clonedVoiceId")
+                        or context.get("clonedVoiceId")
+                        or ""
+                    ).strip(),
                 }
                 session["callContext"] = call_context
                 direction = str(params.get("direction") or "").lower()
@@ -949,23 +1017,21 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     "yes" if resolve_api_base() and AARVANTA_CALLBACK_SECRET else "no",
                     "yes" if call_context.get("clonedVoiceId") else "no",
                 )
-                notice = str(context.get("recordingNotice") or "").strip()
-                if notice and call_context.get("clonedVoiceId"):
-                    try:
-                        await speak(websocket, notice, call_context)
-                    except Exception as exc:  # noqa: BLE001
-                        log.warning("recording notice play failed: %s", exc)
-                # Twilio already spoke welcomeGreeting on inbound catalog calls.
-                # Opening again made the agent greet twice. Outbound / cloned
-                # calls have no TwiML welcome, so the relay still greets.
                 skip_opening = str(params.get("skipOpening") or "").strip().lower() in (
                     "1",
                     "true",
                     "yes",
                 )
+                notice = str(context.get("recordingNotice") or "").strip()
+                if notice and call_context.get("clonedVoiceId") and not skip_opening:
+                    try:
+                        await speak(websocket, notice, call_context)
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("recording notice play failed: %s", exc)
+                # TwiML welcomeGreeting already spoke identity + a time check.
+                # Do not run an LLM opening (that was the ~20s delay + instant booking).
                 if skip_opening:
                     log.info("skipping relay opening — TwiML already greeted")
-                    agent_name = str(call_context.get("voiceAgentName") or "Ava")
                 else:
                     opening_instruction = (
                         OUTBOUND_OPENING_INSTRUCTION
@@ -980,6 +1046,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
                             system,
                             opening_instruction,
                             call_context,
+                            allow_tools=False,
                         )
                         # Drop the synthetic instruction from history; keep the
                         # assistant's opening so the conversation flows naturally.

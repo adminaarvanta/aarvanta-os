@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npx --yes tsx --test src/lib/site-builder/apply-client-media.test.ts src/lib/calling/working-hours.test.ts src/lib/calling/campaign-scope.test.ts src/lib/i18n/regions.test.ts src/lib/account/export.test.ts src/lib/account/lifecycle.test.ts src/lib/auth/place-call-auth.guard.test.ts",
+    "test": "npx --yes tsx --test src/lib/site-builder/apply-client-media.test.ts src/lib/calling/working-hours.test.ts src/lib/calling/campaign-scope.test.ts src/lib/calling/voice-knowledge.test.ts src/lib/i18n/regions.test.ts src/lib/account/export.test.ts src/lib/account/lifecycle.test.ts src/lib/auth/place-call-auth.guard.test.ts",
     "seed:firestore": "node --env-file=.env.local scripts/seed-firestore.mjs",
     "bootstrap:production": "node --env-file=.env.local scripts/bootstrap-production.mjs",
     "simulate:channels": "node --env-file=.env.local scripts/simulate-channels.mjs",
