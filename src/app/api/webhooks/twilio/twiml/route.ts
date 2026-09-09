@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
-import { callBriefingForRelay, voiceIdentityGreeting } from "@/lib/calling/voice-knowledge";
+import {
+  callBriefingForRelay,
+  spokenVoiceBrand,
+  voiceIdentityGreeting,
+} from "@/lib/calling/voice-knowledge";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
@@ -84,7 +88,7 @@ async function twimlResponse(req: Request) {
   // `multi` or an unsupported code with Amazon/Google ends the Twilio session.
   const language = voice.language;
 
-  const businessName = settings.businessName?.trim() || "Aarvanta";
+  const businessName = spokenVoiceBrand(settings.businessName);
   const agentName =
     agent?.greetingName?.trim() || agent?.name?.trim() || "Ava";
   const defaultWelcome = voiceIdentityGreeting({
