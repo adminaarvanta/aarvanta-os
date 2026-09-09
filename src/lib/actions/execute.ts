@@ -22,6 +22,7 @@ import {
   handleStartWorkflow,
 } from "@/lib/actions/m2-handlers";
 import { validateAgainstRules } from "@/lib/rules/validate-mutation";
+import { gateAgentExecution, HIGH_IMPACT_INTENTS } from "@/lib/workforce/ai-controls";
 import type { SessionContext } from "@/lib/tenant/context";
 import type {
   BusinessActionRequest,
@@ -48,6 +49,17 @@ export async function executeBusinessAction(
     return {
       status: "error",
       error: { code: "RULE_BLOCKED", message: ruleCheck.message },
+    };
+  }
+
+  const gate = await gateAgentExecution({
+    scope,
+    highImpact: HIGH_IMPACT_INTENTS.has(intent),
+  });
+  if (!gate.allowed && (metadata?.source === "ai" || metadata?.source === "workflow")) {
+    return {
+      status: "error",
+      error: { code: "AI_GATED", message: gate.message },
     };
   }
 

@@ -17,11 +17,11 @@ import { buildWorkforceReport } from "@/lib/workforce/pipeline/reporting";
 import { buildTaskPlan } from "@/lib/workforce/pipeline/task-planner";
 import { agentLabel } from "@/lib/workforce/pipeline/labels";
 import { appendTimeline } from "@/lib/workforce/pipeline/timeline";
-import {
-  completeLinkedCrmTask,
+import { completeLinkedCrmTask,
   createLinkedCrmTask,
   runWorkforceTool,
 } from "@/lib/workforce/pipeline/tools";
+import { gateAgentExecution } from "@/lib/workforce/ai-controls";
 import type { TenantScope } from "@/types/communication";
 import type {
   AgentType,
@@ -394,6 +394,14 @@ export async function startGoalPipeline(input: {
   goal: WorkforceGoal;
   execution: WorkforceExecution;
 }> {
+  const gate = await gateAgentExecution({
+    scope: input.scope,
+    highImpact: false,
+  });
+  if (!gate.allowed) {
+    throw new Error(gate.message);
+  }
+
   const goal = buildWorkforceGoal(input.goalInput, input.scope);
   await getWorkforceGoalsStore().create(goal);
 

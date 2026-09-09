@@ -2,26 +2,35 @@ import {
   BarChart3,
   Briefcase,
   Brain,
+  Building2,
   Globe2,
+  Hammer,
   Handshake,
+  Inbox,
+  Kanban,
   Landmark,
   LayoutDashboard,
   LayoutGrid,
   Mail,
   MessageCircle,
   Phone,
+  Plug,
   Settings,
   Sparkles,
+  Users,
   Wallet,
+  Workflow,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { maturityForHref } from "@/lib/product/maturity";
+import type { MaturityStatus } from "@/lib/product/maturity";
 
 export type CommandNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
   badgeKey?: "whatsapp" | "voice";
-  /** Plan feature key; omit for always-visible items. */
+  maturity?: MaturityStatus;
   featureKey?:
     | "crm"
     | "whatsappChannel"
@@ -39,96 +48,82 @@ export type OperatingSystemItem = {
   id: string;
   label: string;
   href: string;
-  /** Theme-safe token classes (not fixed light-only Tailwind hues) */
   dotClass: string;
   iconClass: string;
   description?: string;
   featureKey?: CommandNavItem["featureKey"];
 };
 
-/** Primary sidebar navigation — Command Center design */
+function withMaturity(item: CommandNavItem): CommandNavItem {
+  return {
+    ...item,
+    maturity: item.maturity ?? maturityForHref(item.href)?.status,
+  };
+}
+
+/** Primary sidebar — Business OS information architecture. */
 export const COMMAND_CENTER_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
-  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
-  { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
-  { href: "/automation", label: "Automation", icon: Sparkles, featureKey: "workflows" },
-  { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
+  { href: "/crm", label: "Customers", icon: Building2, featureKey: "crm" },
+  { href: "/projects", label: "Work", icon: Kanban, featureKey: "projects" },
+  { href: "/inbox", label: "Inbox", icon: Inbox, featureKey: "ungated" },
+  {
+    href: "/automation?view=ask",
+    label: "AI",
+    icon: Sparkles,
+    featureKey: "aiWorkforce",
+  },
+  { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
+  { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
   { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
-  { href: "/analytics", label: "Insights", icon: BarChart3, featureKey: "analytics" },
+  { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
+  { href: "/build", label: "Website", icon: Hammer, featureKey: "ungated" },
+  { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
   { href: "#all-tools", label: "More", icon: LayoutGrid, featureKey: "ungated" },
-];
+].map(withMaturity);
 
-/**
- * Super-admin-only WhatsApp OS. Email-gated (not plan-gated) via
- * `canAccessWhatsAppOs` — currently `admin@aarvanta.co`.
- */
-export const WHATSAPP_NAV_ITEM: CommandNavItem = {
+export const WHATSAPP_NAV_ITEM: CommandNavItem = withMaturity({
   href: "/whatsapp",
   label: "WhatsApp",
   icon: MessageCircle,
   badgeKey: "whatsapp",
   featureKey: "ungated",
-};
+});
 
 export const WHATSAPP_OS_ITEM: OperatingSystemItem = {
   id: "whatsapp",
-  label: "WhatsApp OS",
+  label: "WhatsApp",
   href: "/whatsapp",
   description: "Business inbox, templates & profile",
   dotClass: "bg-success",
   iconClass: "text-success bg-success/10",
 };
 
-/**
- * Super-admin-only Email Outreach (Brevo). Email-gated via
- * `canAccessEmailOutreach` — production super admins + demo mode.
- */
-export const OUTREACH_NAV_ITEM: CommandNavItem = {
+export const OUTREACH_NAV_ITEM: CommandNavItem = withMaturity({
   href: "/outreach",
   label: "Email",
   icon: Mail,
   featureKey: "ungated",
-};
+});
 
 export const EMAIL_OS_ITEM: OperatingSystemItem = {
   id: "outreach",
-  label: "Email OS",
+  label: "Email outreach",
   href: "/outreach",
-  description: "Brevo outreach campaigns",
+  description: "Gated campaigns — not a Marketing OS",
   dotClass: "bg-accent-cyan",
   iconClass: "text-accent-cyan bg-accent-cyan/10",
 };
 
-/**
- * Sidebar shortcuts — unique destinations not already in primary nav.
- */
 export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
   {
-    id: "leads",
-    label: "Leads",
-    href: "/crm/leads",
-    description: "Capture and qualify new leads",
-    dotClass: "bg-gold",
-    iconClass: "text-gold bg-gold/10",
-    featureKey: "crm",
-  },
-  {
-    id: "build",
-    label: "Website Builder",
-    href: "/build",
-    description: "Create and publish websites",
-    dotClass: "bg-accent-cyan",
-    iconClass: "text-accent-cyan bg-accent-cyan/10",
-    featureKey: "ungated",
-  },
-  {
-    id: "knowledge",
-    label: "Knowledge hub",
-    href: "/knowledge",
-    description: "Docs, FAQs, and company brain",
+    id: "voice",
+    label: "Voice",
+    href: "/voice",
+    description: "Calls, dialer, and campaigns",
     dotClass: "bg-primary-bright",
     iconClass: "text-primary-bright bg-primary-soft",
-    featureKey: "ungated",
+    featureKey: "voiceAi",
   },
   {
     id: "team",
@@ -137,6 +132,15 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
     description: "People, roles, and collaboration",
     dotClass: "bg-success",
     iconClass: "text-success bg-success/10",
+    featureKey: "ungated",
+  },
+  {
+    id: "integrations",
+    label: "Integrations",
+    href: "/integrations",
+    description: "Connect calendar, email, and channels",
+    dotClass: "bg-accent-cyan",
+    iconClass: "text-accent-cyan bg-accent-cyan/10",
     featureKey: "ungated",
   },
   {
@@ -150,85 +154,68 @@ export const SIDEBAR_SHORTCUTS: OperatingSystemItem[] = [
   },
 ];
 
-/**
- * Dashboard OS map — branded modules.
- */
 export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
   {
-    id: "lead",
-    label: "LeadOS",
-    href: "/crm/leads",
-    description: "Lead capture & qualification",
-    dotClass: "bg-gold",
-    iconClass: "text-gold bg-gold/10",
-  },
-  {
-    id: "crm",
-    label: "CRMOS",
+    id: "customers",
+    label: "Customers",
     href: "/crm",
-    description: "Customers, deals & pipelines",
+    description: "Customer 360, leads, and deals",
     dotClass: "bg-accent-cyan",
     iconClass: "text-accent-cyan bg-accent-cyan/10",
   },
   {
-    id: "voice",
-    label: "Voice OS",
-    href: "/voice",
-    description: "AI calling campaigns, dialer & queue",
+    id: "inbox",
+    label: "Inbox",
+    href: "/inbox",
+    description: "Relationship conversations",
+    dotClass: "bg-gold",
+    iconClass: "text-gold bg-gold/10",
+  },
+  {
+    id: "ai",
+    label: "AI Workforce",
+    href: "/automation?view=ask",
+    description: "Ask Aarvanta and specialist agents",
     dotClass: "bg-primary-bright",
     iconClass: "text-primary-bright bg-primary-soft",
   },
   {
-    id: "site",
-    label: "Build OS",
-    href: "/build",
-    description: "Websites & landing pages",
+    id: "work",
+    label: "Work",
+    href: "/projects",
+    description: "Projects and tasks",
     dotClass: "bg-gold-dark",
     iconClass: "text-gold-dark bg-gold/10",
   },
-  {
-    id: "analytics",
-    label: "AnalyticsOS",
-    href: "/analytics",
-    description: "Reports & performance",
-    dotClass: "bg-gold",
-    iconClass: "text-gold bg-gold/10",
-  },
-  {
-    id: "content",
-    label: "ContentOS",
-    href: "/knowledge",
-    description: "Knowledge & content",
-    dotClass: "bg-accent-cyan",
-    iconClass: "text-accent-cyan bg-accent-cyan/10",
-  },
-  {
-    id: "affiliate",
-    label: "PartnerOS",
-    href: "/partners",
-    description: "Share links, commissions & payouts",
-    dotClass: "bg-gold",
-    iconClass: "text-gold bg-gold/10",
-  },
 ];
 
-/** Primary mobile bottom tabs — max 4 + More sheet (see MobileNav). */
 export const MOBILE_NAV: CommandNavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
-  { href: "/crm", label: "CRM", icon: Briefcase, featureKey: "crm" },
-  { href: "/automation", label: "Auto", icon: Sparkles, featureKey: "workflows" },
-  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
-];
+  { href: "/crm", label: "Customers", icon: Building2, featureKey: "crm" },
+  { href: "/inbox", label: "Inbox", icon: Inbox, featureKey: "ungated" },
+  {
+    href: "/automation?view=ask",
+    label: "AI",
+    icon: Sparkles,
+    featureKey: "aiWorkforce",
+  },
+].map(withMaturity);
 
-/** Extra destinations opened from the mobile More sheet. */
 export const MOBILE_NAV_MORE: CommandNavItem[] = [
+  { href: "/projects", label: "Work", icon: Kanban, featureKey: "projects" },
+  { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
+  { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
+  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
   { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
   { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
-  { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
+  { href: "/build", label: "Website", icon: Hammer, featureKey: "ungated" },
+  { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
+  { href: "/team", label: "Team", icon: Users, featureKey: "ungated" },
+  { href: "/integrations", label: "Integrations", icon: Plug, featureKey: "ungated" },
   { href: "/partners", label: "Partners", icon: Handshake, featureKey: "ungated" },
   { href: "/settings", label: "Settings", icon: Settings, featureKey: "ungated" },
   { href: "/billing", label: "Billing", icon: Wallet, featureKey: "ungated" },
-];
+].map(withMaturity);
 
 export const SIDEBAR_BRAND = {
   title: "AARVANTA",
@@ -253,14 +240,10 @@ export function commandCenterNav(
 ): CommandNavItem[] {
   let nav = COMMAND_CENTER_NAV;
   if (showWhatsApp) {
-    nav = insertAfterHref(nav, "/voice", WHATSAPP_NAV_ITEM);
+    nav = insertAfterHref(nav, "/inbox", WHATSAPP_NAV_ITEM);
   }
   if (showOutreach) {
-    nav = insertAfterHref(
-      nav,
-      showWhatsApp ? "/whatsapp" : "/voice",
-      OUTREACH_NAV_ITEM
-    );
+    nav = insertAfterHref(nav, "/inbox", OUTREACH_NAV_ITEM);
   }
   return nav;
 }
@@ -281,15 +264,35 @@ export function operatingSystems(
 ): OperatingSystemItem[] {
   let systems = OPERATING_SYSTEMS;
   if (showWhatsApp) {
-    const idx = systems.findIndex((item) => item.id === "voice");
-    const at = idx === -1 ? 0 : idx + 1;
-    systems = [...systems.slice(0, at), WHATSAPP_OS_ITEM, ...systems.slice(at)];
+    systems = [...systems, WHATSAPP_OS_ITEM];
   }
   if (showOutreach) {
-    const afterId = showWhatsApp ? "whatsapp" : "voice";
-    const idx = systems.findIndex((item) => item.id === afterId);
-    const at = idx === -1 ? 0 : idx + 1;
-    systems = [...systems.slice(0, at), EMAIL_OS_ITEM, ...systems.slice(at)];
+    systems = [...systems, EMAIL_OS_ITEM];
   }
   return systems;
+}
+
+export function navPath(href: string) {
+  return href.split("?")[0];
+}
+
+export function isCommandNavActive(pathname: string, href: string) {
+  if (href === "#all-tools") return false;
+  const path = navPath(href);
+  if (path === "/dashboard") return pathname.startsWith("/dashboard");
+  if (path === "/crm") return pathname.startsWith("/crm") || pathname.startsWith("/customers");
+  if (path === "/inbox") {
+    return (
+      pathname.startsWith("/inbox") ||
+      pathname.startsWith("/voice") ||
+      pathname.startsWith("/whatsapp") ||
+      pathname.startsWith("/communications")
+    );
+  }
+  if (path === "/automation") {
+    return pathname.startsWith("/automation") || pathname.startsWith("/workforce");
+  }
+  if (path === "/workflows") return pathname.startsWith("/workflows");
+  if (path === "/projects") return pathname.startsWith("/projects");
+  return pathname.startsWith(path);
 }

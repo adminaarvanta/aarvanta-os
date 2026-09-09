@@ -14,6 +14,7 @@ import {
 import { PendingLink } from "@/components/layout/navigation-provider";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { MaturityBadge } from "@/components/ui/maturity-badge";
 
 export const FINANCE_TABS = [
   { href: "/finance", label: "Overview", exact: true, icon: LayoutDashboard },
@@ -93,8 +94,9 @@ export function FinancePageHeader({
           <Wallet className="h-5 w-5" aria-hidden />
         </div>
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-            Finance OS
+          <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+            Finance
+            <MaturityBadge status="beta" />
           </p>
           <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {title}

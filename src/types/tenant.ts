@@ -30,6 +30,13 @@ export type CustomerCountRange =
   | "200+"
   | "none_yet";
 
+export type StartingWorkflow =
+  | "sales_crm"
+  | "customer_communication"
+  | "projects_operations"
+  | "ai_assistance"
+  | "website";
+
 /** Post-signup profile collected by `/onboarding`. Absent on legacy orgs. */
 export interface OrganizationOnboarding {
   status: OnboardingStatus;
@@ -38,6 +45,10 @@ export interface OrganizationOnboarding {
   industry?: string;
   customerCountRange?: CustomerCountRange;
   tools?: string[];
+  primaryGoal?: string;
+  startingWorkflow?: StartingWorkflow;
+  connectSkipped?: boolean;
+  sampleDataOptIn?: boolean;
   completedAt?: string;
   launchpadDismissedAt?: string;
 }
@@ -85,6 +96,8 @@ export interface WorkspaceMember extends TenantScope {
   /** Free first-run product walkthrough completed or skipped. */
   hasSeenWalkthrough?: boolean;
   walkthroughCompletedAt?: string;
+  /** Per-module first-use tours, keyed by tour id → ISO timestamp. */
+  toursCompleted?: Record<string, string>;
   /** Platform super-admin grants for voice + Email OS outreach. */
   creditOverrides?: MemberCreditOverrides;
   joinedAt: string;

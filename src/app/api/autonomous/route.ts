@@ -6,6 +6,7 @@ import { apiError, parseJsonBody } from "@/lib/api/request";
 import { getSessionContext } from "@/lib/tenant/context";
 import { isAgentType } from "@/lib/workforce/agents";
 import { executeCrmTaskForAgent } from "@/lib/workforce/execute-crm-task";
+import { gateAgentExecution } from "@/lib/workforce/ai-controls";
 import { AGENT_TYPE_ZOD } from "@/lib/workforce/agent-types";
 
 const createTaskSchema = z.object({
@@ -76,8 +77,13 @@ export async function POST(req: Request) {
 
     const executeNow =
       parsed.data.executeNow !== false && !parsed.data.requiresApproval;
+    const gate = await gateAgentExecution({
+      scope: ctx.scope,
+      agentType: parsed.data.agentType,
+      highImpact: Boolean(parsed.data.requiresApproval),
+    });
 
-    if (executeNow) {
+    if (executeNow && gate.allowed) {
       task = {
         ...task,
         status: "executing",

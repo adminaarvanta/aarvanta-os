@@ -470,6 +470,10 @@ export const PLAN_CATALOG: PlanDefinition[] = [
   },
 ];
 
+export function formatPlanLimit(value: number | "unlimited"): string {
+  return value === "unlimited" ? "Unlimited" : value.toLocaleString("en-GB");
+}
+
 export function getPlan(id: PublicPlanId): PlanDefinition | undefined {
   return PLAN_CATALOG.find((p) => p.id === id);
 }

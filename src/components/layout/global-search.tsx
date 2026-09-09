@@ -205,9 +205,28 @@ export function GlobalSearch({
             {loading && flatResults.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-muted">Searching…</p>
             ) : flatResults.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-muted">
-                {query ? `No results for “${query}”` : "Start typing to search"}
-              </p>
+              <div className="space-y-2 px-2 py-3">
+                <p className="px-1 text-xs text-muted">
+                  Search customers, or jump:
+                </p>
+                {[
+                  { href: "/automation?view=ask", title: "Ask Aarvanta" },
+                  { href: "/crm/people", title: "Create a contact" },
+                  { href: "/dashboard?help=open", title: "Open help" },
+                ].map((item) => (
+                  <button
+                    key={item.href}
+                    type="button"
+                    onClick={() => {
+                      router.push(item.href);
+                      close();
+                    }}
+                    className="flex w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-hover"
+                  >
+                    {item.title}
+                  </button>
+                ))}
+              </div>
             ) : (
               Object.entries(grouped).map(([group, items]) => (
                 <div key={group} className="mb-1">

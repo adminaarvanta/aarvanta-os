@@ -2,20 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   BookOpen,
   CircleHelp,
   Compass,
   Keyboard,
   Play,
-  Sparkles,
   X,
 } from "lucide-react";
 import { NinetySecondDemoPanel } from "@/components/demo/ninety-second-demo-panel";
 import { useDemoTourOptional } from "@/components/demo/demo-tour-provider";
 import { usePlan } from "@/components/billing/plan-context";
-import { DEMO_TOUR_STEPS } from "@/lib/demo/tour-steps";
+import { Drawer } from "@/components/ui/overlay";
+import { helpForPath } from "@/lib/help/page-help";
+import { tourIdForPath } from "@/lib/demo/tour-steps";
 import { cn } from "@/lib/utils";
 
 function HelpLiveDemoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -63,6 +64,7 @@ function HelpLiveDemoModal({ open, onClose }: { open: boolean; onClose: () => vo
 export function HelpMenu() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const tour = useDemoTourOptional();
   const plan = usePlan();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -70,6 +72,9 @@ export function HelpMenu() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [liveDemoOpen, setLiveDemoOpen] = useState(false);
+  const [pageHelpOpen, setPageHelpOpen] = useState(false);
+  const pageHelp = helpForPath(pathname, searchParams.toString());
+  const moduleTourId = tourIdForPath(pathname, searchParams.toString());
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -78,30 +83,30 @@ export function HelpMenu() {
     tour?.startTour(0);
   }, [closeMenu, tour]);
 
+  const startPageTour = useCallback(() => {
+    closeMenu();
+    if (moduleTourId) tour?.startModuleTour(moduleTourId);
+    else tour?.startTour(0);
+  }, [closeMenu, moduleTourId, tour]);
+
   const openLiveDemo = useCallback(() => {
     closeMenu();
     setLiveDemoOpen(true);
   }, [closeMenu]);
 
-  const jumpToLiveDemoTour = useCallback(() => {
-    closeMenu();
-    // Live-demo highlight exists only on the full (paid) tour.
-    const index = DEMO_TOUR_STEPS.findIndex((s) => s.id === "live-demo");
-    tour?.startTour(index >= 0 ? index : 0);
-  }, [closeMenu, tour]);
-
   useEffect(() => {
     const help = searchParams.get("help");
     if (!help) return;
 
-    if (help === "open") setMenuOpen(true);
+    if (help === "open") setPageHelpOpen(true);
     if (help === "tour") tour?.startTour(0);
+    if (help === "page-tour" && moduleTourId) tour?.startModuleTour(moduleTourId);
     if (help === "live") setLiveDemoOpen(true);
 
     const url = new URL(window.location.href);
     url.searchParams.delete("help");
     router.replace(url.pathname + url.search, { scroll: false });
-  }, [router, searchParams, tour]);
+  }, [moduleTourId, router, searchParams, tour]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -159,6 +164,51 @@ export function HelpMenu() {
                 <button
                   type="button"
                   role="menuitem"
+                  onClick={() => {
+                    closeMenu();
+                    setPageHelpOpen(true);
+                  }}
+                  className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
+                >
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-gold">
+                    <CircleHelp className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-medium text-gold-bright">
+                      This page
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted">
+                      What you can do here, and what happens next
+                    </span>
+                  </span>
+                </button>
+              </li>
+              {moduleTourId ? (
+                <li>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={startPageTour}
+                    className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
+                  >
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-gold">
+                      <Compass className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-medium text-gold-bright">
+                        Tour this page
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted">
+                        A 3-step first-use walkthrough for {pageHelp.title}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ) : null}
+              <li>
+                <button
+                  type="button"
+                  role="menuitem"
                   onClick={startTour}
                   className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
                 >
@@ -171,7 +221,7 @@ export function HelpMenu() {
                     </span>
                     <span className="mt-0.5 block text-xs text-muted">
                       {isFree
-                        ? "Walk through Free features — CRM, Build, Projects, AI Team"
+                        ? "Walk through Free features — Today, Customers, Inbox, AI"
                         : "Step-by-step walkthrough with spotlight highlights"}
                     </span>
                   </span>
@@ -198,28 +248,6 @@ export function HelpMenu() {
                   </span>
                 </button>
               </li>
-              {!isFree ? (
-                <li>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={jumpToLiveDemoTour}
-                    className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-surface"
-                  >
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-gold">
-                      <Sparkles className="h-4 w-4" />
-                    </span>
-                    <span>
-                      <span className="block text-sm font-medium text-gold-bright">
-                        Tour demo step only
-                      </span>
-                      <span className="mt-0.5 block text-xs text-muted">
-                        Jump to the live demo highlight in the tour
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ) : null}
             </ul>
 
             <div className="border-t border-border px-4 py-3 space-y-2">
@@ -233,7 +261,7 @@ export function HelpMenu() {
                 className="flex items-center gap-2 text-xs text-gold hover:underline"
               >
                 <BookOpen className="h-3 w-3" />
-                Browse knowledge base
+                Browse Company Brain
               </Link>
             </div>
           </div>
@@ -241,6 +269,16 @@ export function HelpMenu() {
       </div>
 
       <HelpLiveDemoModal open={liveDemoOpen} onClose={() => setLiveDemoOpen(false)} />
+      <Drawer
+        open={pageHelpOpen}
+        title={pageHelp.title}
+        onClose={() => setPageHelpOpen(false)}
+      >
+        <p className="text-sm text-foreground">{pageHelp.what}</p>
+        <p className="mt-3 text-sm text-muted">
+          What happens next: {pageHelp.next}
+        </p>
+      </Drawer>
     </>
   );
 }

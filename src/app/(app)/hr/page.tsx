@@ -30,7 +30,7 @@ export default async function HrOverviewPage() {
     <div className="space-y-6">
       <HrPageHeader
         title="People lifecycle"
-        description="From candidates to exit documents — one colourful HR workspace."
+        description="People lifecycle from candidates to exit. Beta — not a payroll or HRIS replacement. Payroll stays preview."
         actions={
           <div className="flex flex-wrap gap-2">
             <AskAiButton module="hr" />

@@ -15,6 +15,8 @@ import {
 } from "@/lib/settings/workspace-settings";
 import { getSessionContext, requirePermission } from "@/lib/tenant/context";
 
+import { AGENT_TYPE_ZOD } from "@/lib/workforce/agent-types";
+
 const patchSchema = z.object({
   inboxAutomationEnabled: z.boolean().optional(),
   aiAutoSummarize: z.boolean().optional(),
@@ -28,6 +30,22 @@ const patchSchema = z.object({
   timeFormat: z.enum(["12h", "24h"]).optional(),
   city: z.string().max(80).optional(),
   countryCode: z.string().min(2).max(8).optional(),
+  aiPaused: z.boolean().optional(),
+  agentControls: z
+    .record(
+      z.enum(AGENT_TYPE_ZOD),
+      z.object({
+        status: z.enum(["active", "paused", "error"]),
+        autonomy: z.enum([
+          "observe",
+          "recommend",
+          "draft",
+          "approval_required",
+          "automatic",
+        ]),
+      })
+    )
+    .optional(),
 });
 
 export async function GET() {

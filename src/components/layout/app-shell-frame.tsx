@@ -49,6 +49,12 @@ export function AppShellFrame({
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[90] focus:rounded-lg focus:bg-gold focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-black"
+      >
+        Skip to content
+      </a>
       <div className="flex h-[100dvh] overflow-hidden bg-background">
         <AppSidebar
           production={production}
@@ -60,7 +66,7 @@ export function AppShellFrame({
           showWhatsAppNav={showWhatsAppNav}
           showOutreachNav={showOutreachNav}
         />
-        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+        <main id="main-content" className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
           {!hideHeader ? <AppHeader /> : null}
           {children}
         </main>

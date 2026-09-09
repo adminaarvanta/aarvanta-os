@@ -7,6 +7,7 @@ import { publishDomainEvent } from "@/lib/events/publish";
 import { aiAgentActor } from "@/lib/identity/from-session";
 import { getAgentDefinition, isAgentType } from "@/lib/workforce/agents";
 import { executeCrmTaskForAgent } from "@/lib/workforce/execute-crm-task";
+import { gateAgentExecution } from "@/lib/workforce/ai-controls";
 import { contactDisplayName } from "@/types/crm";
 import type { TenantScope } from "@/types/communication";
 import type { DomainEvent } from "@/types/events";
@@ -47,6 +48,13 @@ export function scheduleBrainEvent(event: DomainEvent): void {
 }
 
 export async function handleBrainEvent(event: DomainEvent): Promise<void> {
+  const gate = await gateAgentExecution({
+    scope: event,
+    agentType: "sales_manager",
+    highImpact: false,
+  });
+  if (!gate.allowed) return;
+
   switch (event.type) {
     case "task.created":
       await onTaskCreated(event);

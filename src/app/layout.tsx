@@ -25,12 +25,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://os.aarvanta.co"
+  ),
   title: {
-    default: "Aarvanta Business OS — Hire Your First AI Workforce",
+    default: "Aarvanta Business OS — Your business, one operating system",
     template: "%s | Aarvanta Business OS",
   },
   description:
-    "Run sales, marketing, operations and customer support from one dashboard. CRM, projects, AI employees, and automation for SMEs.",
+    "Run customers, work, communications, knowledge, AI and automation from one operating system. AI Workforce is the execution layer — not a separate product.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Aarvanta Business OS",
+    description:
+      "Customers, work, communications, knowledge, AI and automation connected in one place.",
+    type: "website",
+  },
   icons: {
     icon: [
       { url: "/icon.png", sizes: "32x32", type: "image/png" },

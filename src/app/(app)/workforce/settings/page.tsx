@@ -1,4 +1,5 @@
 import { AgentCard } from "@/components/workforce/agent-card";
+import { AiControlPanel } from "@/components/workforce/ai-control-panel";
 import { WorkforceNav } from "@/components/workforce/workforce-nav";
 import { WfHeader } from "@/components/workforce/workforce-shell";
 import { getDirectoryAgentCards } from "@/lib/workforce/pipeline/agent-status";
@@ -13,14 +14,16 @@ export default async function WorkforceSettingsPage() {
     <>
       <WfHeader
         title="AI Employees"
-        subtitle="Profiles, memory, and specialist tools"
+        subtitle="Autonomy, pause, data access, and activity — high-impact actions stay approval-gated"
       />
       <WorkforceNav />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8">
-        <div
-          className="mx-auto max-w-5xl overflow-hidden rounded-xl border bg-white shadow-[0_1px_3px_rgba(14,21,37,0.04)]"
-          style={{ borderColor: "var(--wf-line)" }}
-        >
+        <div className="mx-auto max-w-5xl space-y-6">
+          <AiControlPanel />
+          <div
+            className="overflow-hidden rounded-xl border bg-white shadow-[0_1px_3px_rgba(14,21,37,0.04)]"
+            style={{ borderColor: "var(--wf-line)" }}
+          >
           <div className="divide-y" style={{ borderColor: "var(--wf-line)" }}>
             {directory.map(({ agent, status, performance }) => (
               <div key={agent.type} style={{ borderColor: "var(--wf-line)" }}>
@@ -31,6 +34,7 @@ export default async function WorkforceSettingsPage() {
                 />
               </div>
             ))}
+          </div>
           </div>
         </div>
       </div>

@@ -22,6 +22,7 @@ export default async function AppLayout({
   let userRole = "Owner";
   let userId: string | null = null;
   let hasSeenWalkthrough = false;
+  let toursCompleted: Record<string, string> = {};
   let showLaunchpad = false;
   let pendingOnboarding = false;
   let whatsappUnread = 0;
@@ -40,6 +41,7 @@ export default async function AppLayout({
     userId = sessionCtx.userId;
     showWhatsAppNav = canAccessWhatsAppOs(sessionCtx.email);
     hasSeenWalkthrough = Boolean(sessionCtx.member?.hasSeenWalkthrough);
+    toursCompleted = sessionCtx.member?.toursCompleted ?? {};
 
     const { resolveEntitlements, toClientEntitlements } = await import(
       "@/lib/billing/entitlements"
@@ -146,6 +148,7 @@ export default async function AppLayout({
       userRole={userRole}
       userId={userId}
       hasSeenWalkthrough={hasSeenWalkthrough}
+      toursCompleted={toursCompleted}
       showLaunchpad={showLaunchpad}
       whatsappUnread={whatsappUnread}
       voiceUnread={voiceUnread}

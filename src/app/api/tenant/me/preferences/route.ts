@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 
 const patchSchema = z.object({
   hasSeenWalkthrough: z.boolean().optional(),
+  toursCompleted: z.record(z.string(), z.string()).optional(),
 });
 
 export async function GET() {
@@ -16,6 +17,7 @@ export async function GET() {
     return NextResponse.json({
       hasSeenWalkthrough: Boolean(ctx.member?.hasSeenWalkthrough),
       walkthroughCompletedAt: ctx.member?.walkthroughCompletedAt ?? null,
+      toursCompleted: ctx.member?.toursCompleted ?? {},
       userId: ctx.userId,
     });
   } catch (error) {
@@ -43,6 +45,7 @@ export async function PATCH(req: Request) {
     const patch: {
       hasSeenWalkthrough?: boolean;
       walkthroughCompletedAt?: string;
+      toursCompleted?: Record<string, string>;
     } = {};
 
     if (typeof parsed.data.hasSeenWalkthrough === "boolean") {
@@ -50,6 +53,13 @@ export async function PATCH(req: Request) {
       if (parsed.data.hasSeenWalkthrough) {
         patch.walkthroughCompletedAt = new Date().toISOString();
       }
+    }
+
+    if (parsed.data.toursCompleted) {
+      patch.toursCompleted = {
+        ...(ctx.member.toursCompleted ?? {}),
+        ...parsed.data.toursCompleted,
+      };
     }
 
     if (Object.keys(patch).length === 0) {
@@ -70,6 +80,7 @@ export async function PATCH(req: Request) {
       ok: true,
       hasSeenWalkthrough: Boolean(updated.hasSeenWalkthrough),
       walkthroughCompletedAt: updated.walkthroughCompletedAt ?? null,
+      toursCompleted: updated.toursCompleted ?? {},
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Update failed";

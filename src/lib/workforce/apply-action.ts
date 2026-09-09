@@ -3,6 +3,8 @@ import { crmNow } from "@/lib/data/crm-helpers";
 import { getHrStore } from "@/lib/data/platform-store";
 import { publishDomainEvent } from "@/lib/events/publish";
 import { scheduleProcessHrCase } from "@/lib/hr/process-case";
+import { gateAgentExecution, HIGH_IMPACT_ACTION_TYPES } from "@/lib/workforce/ai-controls";
+import { isAgentType } from "@/lib/workforce/agents";
 import type { TenantScope } from "@/types/communication";
 import type { AgentAction } from "@/types/workforce";
 import type { HrDocumentType } from "@/types/platform-modules";
@@ -26,6 +28,19 @@ export async function applyAgentAction(
   scope: TenantScope,
   options?: { agentType?: string; runId?: string }
 ): Promise<{ kind: string; id?: string; message: string }> {
+  const agentType =
+    options?.agentType && isAgentType(options.agentType)
+      ? options.agentType
+      : undefined;
+  const gate = await gateAgentExecution({
+    scope,
+    agentType,
+    highImpact: HIGH_IMPACT_ACTION_TYPES.has(action.type),
+  });
+  if (!gate.allowed) {
+    throw new Error(gate.message);
+  }
+
   const crm = getCrmRepository();
 
   switch (action.type) {

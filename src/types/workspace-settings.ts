@@ -56,6 +56,15 @@ export type WorkspaceSettings = {
   voiceScheduleSlotIds?: Array<
     "next_morning" | "next_afternoon" | "in_2_hours" | "tomorrow_same"
   >;
+  /** Workspace kill switch — stops scheduled/external AI actions. */
+  aiPaused?: boolean;
+  /** Per-agent autonomy and pause. */
+  agentControls?: Partial<
+    Record<
+      import("@/types/workforce").AgentType,
+      import("@/types/workforce").AgentControlState
+    >
+  >;
   updatedAt: string;
 };
 
@@ -89,5 +98,7 @@ export type WorkspaceSettingsPatch = Partial<
     | "voiceMorningHour"
     | "voiceAfternoonHour"
     | "voiceScheduleSlotIds"
+    | "aiPaused"
+    | "agentControls"
   >
 >;

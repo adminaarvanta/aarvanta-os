@@ -8,6 +8,7 @@ import {
   WfSecondaryButton,
 } from "@/components/workforce/workforce-shell";
 import type { WorkforceApproval } from "@/types/workforce";
+import { trackClient } from "@/lib/analytics/track-client";
 
 export function ApprovalActions({
   executionId,
@@ -43,6 +44,11 @@ export function ApprovalActions({
         setError(data.error?.message ?? "Failed to resolve approval");
         return;
       }
+      trackClient("approval_action", {
+        path: "/workforce/waiting",
+        outcome: resolution,
+        module: "ai",
+      });
       router.refresh();
     } catch {
       setError("Network error");
@@ -75,6 +81,10 @@ export function ApprovalActions({
           </h3>
           <p className="text-sm" style={{ color: "var(--wf-muted)" }}>
             {approval.reason}
+          </p>
+          <p className="mt-2 text-xs" style={{ color: "var(--wf-muted)" }}>
+            Action: {approval.proposedAction}. Approving runs it. Rejecting
+            leaves records unchanged.
           </p>
         </div>
       </div>
