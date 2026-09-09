@@ -17,7 +17,9 @@ export type VoiceKnowledgeMode = "bare" | "informed";
 export function isGenericBookingGoal(raw: string | undefined | null): boolean {
   const t = (raw ?? "").trim();
   if (!t) return true;
-  if (t.toLowerCase() === LEGACY_DEFAULT_KNOWLEDGE_TOPIC) return true;
+  if (t.toLowerCase() === LEGACY_DEFAULT_KNOWLEDGE_TOPIC.toLowerCase()) {
+    return true;
+  }
   return GENERIC_BOOKING_GOAL.test(t);
 }
 
