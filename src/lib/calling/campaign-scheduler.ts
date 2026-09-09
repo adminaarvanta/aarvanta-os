@@ -7,6 +7,7 @@ import {
   campaignWorkspaceScope,
   campaignWriteScope,
 } from "@/lib/calling/campaign-scope";
+import { isGenericBookingGoal } from "@/lib/calling/voice-knowledge";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
 import { getRepository } from "@/lib/data/repository";
@@ -173,11 +174,11 @@ export async function dialQueueItem(item: CallQueueItem) {
   );
 
   const briefing = [
-    `You are ${agent?.greetingName ?? agent?.name ?? "Ava"} calling from Aarvanta.`,
-    `Campaign goal: ${campaign.goal}.`,
+    campaign.goal && !isGenericBookingGoal(campaign.goal)
+      ? `Campaign context: ${campaign.goal}.`
+      : "",
     `Contact: ${contactDisplayName(contact)}${contact.jobTitle ? `, ${contact.jobTitle}` : ""}.`,
     memorySummary ? `Prior context: ${memorySummary}` : "",
-    "Follow the conversation stages: greeting → permission → qualification → meeting proposal.",
   ]
     .filter(Boolean)
     .join(" ");

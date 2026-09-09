@@ -1,4 +1,5 @@
 import type { Channel, ContactRef } from "@/types/communication";
+import { spokenFirstName } from "@/lib/calling/voice-knowledge";
 import {
   getChannelStatus,
   shouldSimulateChannel,
@@ -98,6 +99,7 @@ async function initiateTwilioVoiceCall(
     sessionId?: string;
     contactId?: string;
     voiceAgentId?: string;
+    firstName?: string;
   }
 ): Promise<string> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -121,6 +123,7 @@ async function initiateTwilioVoiceCall(
   if (opts?.sessionId) params.set("sessionId", opts.sessionId);
   if (opts?.contactId) params.set("contactId", opts.contactId);
   if (opts?.voiceAgentId) params.set("voiceAgentId", opts.voiceAgentId);
+  if (opts?.firstName) params.set("firstName", opts.firstName);
   const twimlUrl = `${base}/api/webhooks/twilio/twiml?${params.toString()}`;
   const statusCallback = `${base}/api/webhooks/twilio`;
   const recordingCallback = `${base}/api/webhooks/twilio/recording`;
@@ -233,6 +236,7 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<DeliveryRes
         sessionId: ctx.sessionId,
         contactId: ctx.contactId,
         voiceAgentId: ctx.voiceAgentId,
+        firstName: spokenFirstName(ctx.contact.name),
       });
       return { callSid };
     }

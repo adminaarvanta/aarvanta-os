@@ -172,6 +172,7 @@ export async function synthesizeElevenLabsMp3(input: {
         text: input.text,
         model_id: "eleven_flash_v2_5",
       }),
+      signal: AbortSignal.timeout(6_000),
     }
   );
   if (!res.ok) {

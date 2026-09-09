@@ -48,7 +48,8 @@ After pulling code that updates `services/voice-relay/app.py`:
 sudo bash services/voice-relay/deploy/install-on-ec2.sh   # or rsync + pip install
 sudo systemctl restart voice-relay
 curl https://YOUR-HOST/voice-relay/health
-# Expect version >= 1.6.0, clonedTts true when ELEVENLABS_API_KEY is set
+# Expect version >= 1.9.2. clonedTts is true only when ELEVENLABS_API_KEY is set
+# AND /tts is publicly reachable. Catalog ElevenLabs (Sarah) still works without the key.
 ```
 
 Add nginx (path proxy or `voice.aarvanta.co`) from `deploy/nginx-voice-relay.conf`, then:
@@ -91,11 +92,11 @@ At ConversationRelay `setup`, the EC2 relay POSTs to `/api/voice/context` (same 
 2. Confirm EC2 can reach `https://os.aarvanta.co/api/voice/context` (no IP allowlist blocking outbound HTTPS).
 3. On a test call, ask a question that exists in Knowledge Hub — the agent should answer from those facts (not invent).
 
-If no documents are ingested, the digest is empty and the agent falls back to the dialer briefing only.
+If no documents are ingested, or the call only has a generic goal like “Book Meetings”, the digest stays empty (`knowledgeMode: bare`) and the agent must not invent a product dump.
 
-### 4b. In-call calendar booking (relay ≥ 1.5.0)
+### 4b. In-call calendar booking (relay ≥ 1.9.2)
 
-The relay can call OpenAI tools that hit Aarvanta:
+The relay can call OpenAI tools that hit Aarvanta, but **not on the opening turns**. Calendar tools stay locked until the caller asks to book / mentions a meeting, or a few conversational turns have passed. Generic campaign goals like “Book Meetings” are not treated as a spoken briefing.
 
 | Tool | API |
 |------|-----|
@@ -107,7 +108,7 @@ Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
 **Call now / campaign dials** must pass `contactId` + `sessionId` in TwiML custom params (manual outbound resolves CRM by phone). Without `contactId`, the agent will not book.
 
 1. Each active user connects their own Google Calendar at `/voice/calendar` (optional — otherwise demo Meet link). Sync writes availability and bookings to that user’s calendar.
-2. Redeploy relay so `/health` shows `"version": "1.5.0"` and `"toolsEnabled": true`.
+2. Redeploy relay so `/health` shows `"version": "1.9.2"` and `"toolsEnabled": true`.
 3. Settings → Call now (CRM contact with phone) → agree a time on the call.
 4. Confirm under `/voice/meetings` (+ Google Calendar if connected).
 
@@ -116,7 +117,7 @@ Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
 1. Sign in → `/calling` or `/voice`
 2. In Voice settings, pick **ElevenLabs — Sarah** (or Rachel); do **not** enable budget mode
 3. Call a **verified** trial number (or leave trial)
-4. Answer — AI should greet warmly and answer in 2–4 sentences when asked to elaborate
+4. Answer — you should hear an identity greeting in about a second (“Hi … this is Ava at Aarvanta. Did I catch you at an alright time?”). The agent must **not** jump to booking a call.
 
 **Inbound**
 1. From your phone, dial `+1 716 703 2574`
@@ -124,8 +125,8 @@ Both require `X-Voice-Relay-Secret` (= `VOICE_RELAY_CALLBACK_SECRET`).
 3. Check `/voice` for call log + transcript note after hangup
 
 ### 6. Health
-- `https://os.aarvanta.co/api/health` → Voice Relay item **ok**
-- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.6.0"`, `"contextConfigured": true`, `"toolsEnabled": true`, `"clonedTts": true` when `ELEVENLABS_API_KEY` is set
+- `https://os.aarvanta.co/api/health` → Voice Relay item **ok**; `voiceRelay.elevenLabsApiKeyConfigured` is true only when `ELEVENLABS_API_KEY` is set on Vercel (required for clones/preview; catalog Sarah TTS does not need it)
+- `https://YOUR-HOST/voice-relay/health` → `"openai": true`, `"version": "1.9.2"`, `"contextConfigured": true`, `"toolsEnabled": true`, `"clonedTts": true` when `ELEVENLABS_API_KEY` is set on EC2
 
 ## Voiceover (TTS) & cost
 
@@ -145,10 +146,10 @@ Twilio ConversationRelay can only speak **catalog** ElevenLabs/Google/Amazon voi
 2. On that agent’s page, upload **or record** 1–2 minutes of clean speech (MP3 192kbps preferred), confirm consent, and clone.
 3. Leave **Use this agent as the default for Dialer, inbound, and scheduled calls** checked (or later click **Set as primary** / pick it under Voice settings → Primary Voice Agent). Campaigns can still choose a different agent.
 4. Set `ELEVENLABS_API_KEY` on **Vercel** (clone + in-app preview) **and** EC2 `/opt/aarvanta/voice-relay/.env` (live call TTS). Same key.
-5. Redeploy the relay (`version` ≥ **1.7.1**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy). Inbound catalog calls use Twilio `welcomeGreeting` only — the relay does not greet a second time. Outbound and cloned calls still open from the relay.
+5. Redeploy the relay (`version` ≥ **1.9.2**, `clonedTts: true`). Nginx must expose `/tts/` (path-based `/voice-relay/tts/` already works via the existing prefix proxy). **Every call** uses Twilio `welcomeGreeting` for the first sentence (catalog voice, ~1s) so the line is never silent. The relay does not greet a second time (`skipOpening`). Custom clone audio, when `clonedTts` is true, starts on later turns.
 6. Demo mode (`APP_MODE` unset) stores a simulated clone for the UI; live cloned speech still needs production + the API key. The primary agent’s **call playbook** is used on Dialer/inbound even in demo.
 
-The playbook on the agent page is coaching notes for each part of the call (greet, qualify, book, hang up). It is **not** a word-for-word script — the model paraphrases. Optional example lines are hints only.
+The playbook on the agent page is coaching notes for each part of the call (greet, qualify, book, hang up). Example lines stay in the editor only — they are **not** sent to the live-call model.
 
 Agents without a ready clone keep the workspace Voice settings (Sarah/Rachel/etc.). Live calls resolve the agent in this order: explicit Dialer/campaign id → workspace primary → first agent with a custom clone → first agent.
 
@@ -177,11 +178,12 @@ Controlled in `/opt/aarvanta/voice-relay/.env` (restart `voice-relay` after chan
 
 | Env | Default | Effect |
 |-----|---------|--------|
-| `VOICE_RELAY_MAX_TOKENS` | `90` | Short turns (~1–2 sentences) |
-| `VOICE_RELAY_MAX_CHARS` | `280` | Hard spoken-length cap |
-| `VOICE_RELAY_TEMPERATURE` | `0.45` | Lower = less ramble / invent |
-| `VOICE_RELAY_FREQUENCY_PENALTY` | `0.55` | Reduces repeated phrases |
-| `VOICE_RELAY_PRESENCE_PENALTY` | `0.35` | Encourages moving the call forward |
+| `VOICE_RELAY_MAX_TOKENS` | `140` | Short turns (~1–2 sentences) |
+| `VOICE_RELAY_MAX_CHARS` | `360` | Hard spoken-length cap |
+| `VOICE_RELAY_TEMPERATURE` | `0.65` | Lower = flatter / more robotic |
+| `VOICE_RELAY_FREQUENCY_PENALTY` | `0.45` | Reduces repeated phrases |
+| `VOICE_RELAY_PRESENCE_PENALTY` | `0.25` | Encourages moving the call forward |
+| `VOICE_RELAY_CLONE_TTS_TIMEOUT` | `6` | Seconds before clone synth falls back to catalog |
 | `VOICE_AGENT_SYSTEM_PROMPT` | anti-bluff concise | Override full system prompt (leave unset) |
 
 ### Call recording

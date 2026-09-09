@@ -58,10 +58,7 @@ export function formatPlaybookForRelay(flow: VoiceAgentFlowConfig): string {
                   `if ${playbookWhenLabel(t.when)} → ${playbookNextLabel(t.to, flow.stages)}`
               )
               .join("; ")}.`;
-      const example = stage.samplePrompt?.trim()
-        ? ` Example line (paraphrase, never recite): "${stage.samplePrompt.trim()}"`
-        : "";
-      return `${index + 1}. ${stage.label} — ${stage.objective.trim()}${example} ${next}`;
+      return `${index + 1}. ${stage.label} — ${stage.objective.trim()} ${next}`;
     })
     .join("\n");
 }

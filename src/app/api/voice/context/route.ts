@@ -4,6 +4,12 @@ import { parseJsonBody } from "@/lib/api/request";
 import { buildCallMemorySummary } from "@/lib/calling/call-memory";
 import { formatPlaybookForRelay } from "@/lib/calling/call-playbook";
 import { resolveCallVoiceAgent } from "@/lib/calling/resolve-voice-agent";
+import {
+  callBriefingForRelay,
+  knowledgeSearchTopic,
+  spokenFirstName,
+  voiceKnowledgeMode,
+} from "@/lib/calling/voice-knowledge";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
@@ -33,8 +39,6 @@ const schema = z.object({
 });
 
 const DIGEST_MAX_CHARS = 1800;
-const DEFAULT_TOPIC =
-  "company overview products services pricing FAQ hours support what we do";
 
 export async function POST(req: Request) {
   const expected = process.env.VOICE_RELAY_CALLBACK_SECRET?.trim();
@@ -65,10 +69,10 @@ export async function POST(req: Request) {
 
   const knowledgeRepo = getKnowledgeRepository();
   const chunks = await knowledgeRepo.listChunks(scope);
-  const topic = parsed.data.topic?.trim() || DEFAULT_TOPIC;
+  const topic = knowledgeSearchTopic(parsed.data.topic);
 
   let knowledgeDigest = "";
-  if (chunks.length) {
+  if (topic && chunks.length) {
     const hits = await searchKnowledgeChunks(chunks, topic, 6);
     if (hits.length) {
       const parts: string[] = [];
@@ -145,6 +149,8 @@ export async function POST(req: Request) {
 
   const flowConfig = agent?.flowConfig ?? DEFAULT_FLOW_CONFIG;
   const stageBrief = formatPlaybookForRelay(flowConfig);
+  const briefing = callBriefingForRelay(parsed.data.topic, campaignGoal);
+  const firstName = spokenFirstName(contactName);
 
   const clonedVoiceId = liveClonedVoiceId(agent);
   const recordingNotice =
@@ -157,12 +163,14 @@ export async function POST(req: Request) {
   return NextResponse.json({
     businessName,
     knowledgeDigest,
+    knowledgeMode: voiceKnowledgeMode(knowledgeDigest),
     chunkCount: chunks.length,
     contactId,
     contactName,
+    firstName,
     contactTitle,
     companyName,
-    campaignGoal,
+    campaignGoal: briefing,
     memorySummary,
     voiceAgentName: agent?.greetingName ?? agent?.name ?? "Ava",
     language: voicePrefs.language,
