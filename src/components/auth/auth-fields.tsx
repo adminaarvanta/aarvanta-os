@@ -13,7 +13,13 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import { useId, useState, type InputHTMLAttributes, type SelectHTMLAttributes } from "react";
+import {
+  useId,
+  useState,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+} from "react";
 import { cn } from "@/lib/utils";
 
 const FIELD_ICONS = {
@@ -83,6 +89,7 @@ export function AuthField({
 
 type AuthPasswordFieldProps = Omit<AuthFieldProps, "type" | "icon"> & {
   icon?: AuthFieldIcon;
+  labelExtra?: ReactNode;
 };
 
 export function AuthPasswordField({
@@ -90,6 +97,7 @@ export function AuthPasswordField({
   label,
   hint,
   icon = "password",
+  labelExtra,
   className,
   ...props
 }: AuthPasswordFieldProps) {
@@ -100,12 +108,15 @@ export function AuthPasswordField({
 
   return (
     <div className="group/field space-y-1.5">
-      <label
-        htmlFor={fieldId}
-        className="block text-[12px] font-semibold uppercase tracking-[0.08em] text-muted transition-colors group-focus-within/field:text-gold"
-      >
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-3">
+        <label
+          htmlFor={fieldId}
+          className="block text-[12px] font-semibold uppercase tracking-[0.08em] text-muted transition-colors group-focus-within/field:text-gold"
+        >
+          {label}
+        </label>
+        {labelExtra}
+      </div>
       <div className="relative">
         <Icon
           className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-dim transition-colors group-focus-within/field:text-gold"
@@ -220,6 +231,17 @@ export function AuthAlert({ children }: { children: React.ReactNode }) {
     <p
       className="rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-3.5 py-2.5 text-sm text-red-500"
       role="alert"
+    >
+      {children}
+    </p>
+  );
+}
+
+export function AuthSuccess({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.08] px-3.5 py-2.5 text-sm text-success"
+      role="status"
     >
       {children}
     </p>

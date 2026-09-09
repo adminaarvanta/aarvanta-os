@@ -1,5 +1,8 @@
 import type { SessionPayload } from "@/lib/auth/session";
-import { verifyUserPassword } from "@/lib/auth/user-credentials";
+import {
+  getUserCredentials,
+  verifyUserPassword,
+} from "@/lib/auth/user-credentials";
 import { ensureFreeTierMembership } from "@/lib/auth/provision-free-account";
 import { ensureDatastoreReady } from "@/lib/data/datastore";
 import { getTenantRepository } from "@/lib/data/tenant-store";
@@ -156,6 +159,12 @@ export async function authenticateUser(
       normalized,
       creds.userId
     );
+  }
+
+  const stored = await getUserCredentials(normalized);
+  if (stored?.passwordHash && stored.passwordSalt) {
+    // A stored password exists and did not match — do not fall back to AUTH_PASSWORD.
+    return null;
   }
 
   return validateBootstrapCredentials(normalized, password);
