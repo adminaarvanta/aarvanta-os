@@ -8,6 +8,7 @@ import {
   AuthField,
   AuthPasswordField,
   AuthSubmitButton,
+  AuthSuccess,
 } from "@/components/auth/auth-fields";
 import {
   AuthDivider,
@@ -33,6 +34,7 @@ function LoginFormInner({
   const searchParams = useSearchParams();
   const safeNextPath = sanitizeNextPath(nextPath);
   const errorCode = searchParams.get("error");
+  const resetOk = searchParams.get("reset") === "success";
   const error =
     errorCode && LOGIN_ERRORS[errorCode]
       ? LOGIN_ERRORS[errorCode]
@@ -79,7 +81,21 @@ function LoginFormInner({
         required
         autoComplete="current-password"
         placeholder="Enter your password"
+        labelExtra={
+          <Link
+            href="/forgot-password"
+            className="text-[12px] font-semibold text-gold hover:underline"
+          >
+            Forgot password?
+          </Link>
+        }
       />
+
+      {resetOk && !error ? (
+        <AuthSuccess>
+          Your password was updated. Sign in with your new password.
+        </AuthSuccess>
+      ) : null}
 
       {error ? <AuthAlert>{error}</AuthAlert> : null}
 

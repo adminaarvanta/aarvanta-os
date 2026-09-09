@@ -77,6 +77,8 @@ npm start
 
 Sign in at `/login`, then open `/inbox`.
 
+Forgot password: open `/forgot-password` to receive a 6-digit verification code by email (Gmail SMTP) and create a new password, then sign in again.
+
 ### 4. Register webhooks
 
 | Provider | URL | Notes |
