@@ -19,6 +19,20 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       - run: npm run build
         env:
           APP_MODE: demo
+      # Catches APP_MODE=production prerender failures (Unauthorized on
+      # static pages) that demo CI misses. Dummy tenant/auth is enough.
+      - run: rm -rf .next
+      - run: npm run build
+        env:
+          APP_MODE: production
+          AUTH_SECRET: ci-production-build-secret
+          AUTH_EMAIL: ci@example.com
+          AUTH_PASSWORD: ci
+          TENANT_ID: tenant_ci
+          WORKSPACE_ID: ws_ci
+          COMPANY_ID: company_ci
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
