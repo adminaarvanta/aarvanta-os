@@ -143,7 +143,7 @@ export const PRODUCT_MODULES: ProductModule[] = [
     label: "Email outreach",
     href: "/outreach",
     status: "preview",
-    description: "Gated email campaigns. Not a Marketing OS.",
+    description: "Gated email campaigns — not a full marketing suite.",
     public: false,
   },
   {
@@ -159,11 +159,11 @@ export const PRODUCT_MODULES: ProductModule[] = [
 const byId = new Map(PRODUCT_MODULES.map((module) => [module.id, module]));
 
 export function getProductModule(id: ProductModuleId): ProductModule {
-  const module = byId.get(id);
-  if (!module) {
+  const productModule = byId.get(id);
+  if (!productModule) {
     throw new Error(`Unknown product module: ${id}`);
   }
-  return module;
+  return productModule;
 }
 
 export function publicCapabilities(): ProductModule[] {

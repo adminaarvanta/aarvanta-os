@@ -1,54 +1,15 @@
-import type { BrandSystem, GeneratedSite, SitePlanTheme } from "@/types/site-builder";
+import { A48_STUDIO_EDITS } from "@/lib/product/flags";
+import { extractThemePatch, parseRefineOps } from "@/lib/site-builder/parse-refine-ops";
+import { applySiteEdits, bumpSiteVersion } from "@/lib/site-builder/site-edits";
 import {
   isCopyRefine,
   isThemeRefine,
 } from "@/lib/site-builder/refine-history";
 import { normalizeHex } from "@/lib/site-builder/theme-presets";
+import type { BrandSystem, GeneratedSite, SitePlanTheme } from "@/types/site-builder";
 
 export { isThemeRefine } from "@/lib/site-builder/refine-history";
-
-const NAMED_PALETTES: Record<
-  string,
-  { primary: string; secondary: string; background?: string }
-> = {
-  green: { primary: "#16A34A", secondary: "#86EFAC" },
-  emerald: { primary: "#059669", secondary: "#6EE7B7" },
-  teal: { primary: "#0D9488", secondary: "#5EEAD4" },
-  blue: { primary: "#2563EB", secondary: "#93C5FD" },
-  navy: { primary: "#1A2B48", secondary: "#3D6B9F", background: "#F8FAFC" },
-  red: { primary: "#DC2626", secondary: "#FCA5A5" },
-  rose: { primary: "#E11D48", secondary: "#FDA4AF" },
-  pink: { primary: "#DB2777", secondary: "#F9A8D4" },
-  purple: { primary: "#7C3AED", secondary: "#C4B5FD" },
-  violet: { primary: "#6D28D9", secondary: "#DDD6FE" },
-  orange: { primary: "#EA580C", secondary: "#FDBA74" },
-  amber: { primary: "#D97706", secondary: "#FCD34D" },
-  gold: { primary: "#B8965D", secondary: "#C9AA72" },
-  yellow: { primary: "#CA8A04", secondary: "#FDE047" },
-  black: { primary: "#111827", secondary: "#6B7280", background: "#FFFFFF" },
-  dark: { primary: "#0F172A", secondary: "#64748B", background: "#F8FAFC" },
-  white: { primary: "#111827", secondary: "#9CA3AF", background: "#FFFFFF" },
-  warm: { primary: "#C2410C", secondary: "#FDBA74", background: "#FFF7ED" },
-  cool: { primary: "#0284C7", secondary: "#7DD3FC", background: "#F0F9FF" },
-};
-
-function extractHex(text: string): string | undefined {
-  const m = text.match(/#([0-9A-Fa-f]{6})\b/);
-  return m ? normalizeHex(`#${m[1]}`, "#2563EB") : undefined;
-}
-
-function extractNamedPalette(text: string) {
-  const lower = text.toLowerCase();
-  for (const name of Object.keys(NAMED_PALETTES)) {
-    if (new RegExp(`\\b${name}\\b`, "i").test(lower)) {
-      return NAMED_PALETTES[name]!;
-    }
-  }
-  if (/green(?:er)?|forest|mint/.test(lower)) return NAMED_PALETTES.green;
-  if (/blu(?:e|ish)|ocean|sky/.test(lower)) return NAMED_PALETTES.blue;
-  if (/purpl|lilac|lavender/.test(lower)) return NAMED_PALETTES.purple;
-  return undefined;
-}
+export { extractHex, extractNamedPalette, NAMED_PALETTES } from "@/lib/site-builder/parse-refine-ops";
 
 /** Apply color/theme instructions onto a brand system. */
 export function applyBrandRefine(
@@ -57,44 +18,14 @@ export function applyBrandRefine(
 ): BrandSystem {
   const refine = refineInstructions?.trim();
   if (!refine || !isThemeRefine(refine)) return brand;
-
-  const hex = extractHex(refine);
-  const named = extractNamedPalette(refine);
-  const lower = refine.toLowerCase();
-
-  let primary = brand.primary;
-  let secondary = brand.secondary;
-  let background = brand.background;
-
-  if (hex) {
-    primary = hex;
-    if (!named) {
-      secondary = brand.secondary;
-    }
-  }
-  if (named) {
-    primary = named.primary;
-    secondary = named.secondary;
-    if (named.background) background = named.background;
-  }
-
-  if (/accent|secondary/.test(lower) && hex && !named) {
-    secondary = hex;
-    primary = brand.primary;
-  }
-  if (/background|bg\b/.test(lower) && hex) {
-    background = hex;
-    if (!/primary|accent|theme|palette/.test(lower)) {
-      primary = brand.primary;
-      secondary = brand.secondary;
-    }
-  }
+  const patch = extractThemePatch(refine);
+  if (!patch) return brand;
 
   return {
     ...brand,
-    primary: normalizeHex(primary, brand.primary),
-    secondary: normalizeHex(secondary, brand.secondary),
-    background: normalizeHex(background, brand.background),
+    primary: normalizeHex(patch.primary ?? brand.primary, brand.primary),
+    secondary: normalizeHex(patch.accent ?? brand.secondary, brand.secondary),
+    background: normalizeHex(patch.background ?? brand.background, brand.background),
   };
 }
 
@@ -113,7 +44,7 @@ function themeFromPartialBrand(
 
 /**
  * Apply common refine phrases without AI so studio updates always reflect.
- * Supports copy edits and theme/color changes across home (and simple page) heroes.
+ * Uses the structured edit engine when A48_STUDIO_EDITS is on.
  */
 export function applyRefineHeuristics(
   site: GeneratedSite,
@@ -122,6 +53,21 @@ export function applyRefineHeuristics(
   const refine = refineInstructions?.trim();
   if (!refine) return site;
 
+  if (!A48_STUDIO_EDITS) {
+    return applyRefineHeuristicsLegacy(site, refine);
+  }
+
+  const result = applySiteEdits(site, parseRefineOps(refine));
+  return result.changed ? bumpSiteVersion(result.site) : site;
+}
+
+/**
+ * Legacy home-hero regex path (flag off). Kept so billing/edit rollout can roll back.
+ */
+function applyRefineHeuristicsLegacy(
+  site: GeneratedSite,
+  refine: string
+): GeneratedSite {
   let next: GeneratedSite = { ...site };
 
   if (isThemeRefine(refine) && site.brand) {
@@ -152,7 +98,6 @@ export function applyRefineHeuristics(
       lower
     );
 
-  // Free-form “change X to Y” without quotes — take text after “to”
   const toPhrase =
     refine.match(
       /(?:headline|title|subhead(?:line)?|tagline|cta|button)\s+(?:to|as|:)\s*[“"']?([^"”'\n]{2,90})/i
@@ -169,7 +114,6 @@ export function applyRefineHeuristics(
   const patch = (quoted ?? toPhrase ?? refine.replace(/^.*?:\s*/, "").slice(0, 90)).trim();
 
   const pages = next.pages.map((page) => {
-    // Prefer home, but also patch the first hero found if home missing
     return {
       ...page,
       blocks: page.blocks.map((block) => {

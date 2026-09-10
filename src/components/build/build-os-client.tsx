@@ -476,13 +476,13 @@ export function BuildOsClient({
   }
 
   async function generate(extraPrompt?: string) {
-    if (!selectedDesignOptionId) {
+    const isRefine = Boolean(extraPrompt?.trim() && jobRef.current?.generatedSite);
+    if (!isRefine && !selectedDesignOptionId) {
       setError("Pick a design direction first.");
       setStep("designs");
       return;
     }
     const preferences = buildPreferences(extraPrompt);
-    const isRefine = Boolean(extraPrompt?.trim());
     setBusy(true);
     setError(null);
     setStatusMessage(null);
@@ -517,13 +517,38 @@ export function BuildOsClient({
       const res = await fetch(`/api/build/${jobId}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify({
+          ...preferences,
+          mode: isRefine ? "refine" : "generate",
+        }),
       });
       if (!res.ok || !res.body) {
         const body = (await res.json().catch(() => null)) as {
-          error?: { message?: string };
+          error?: { message?: string; code?: string };
         } | null;
-        setError(body?.error?.message ?? "Could not generate your site.");
+        if (isRefine) {
+          setJob((prev) => {
+            if (!prev) return prev;
+            const chat = [...(prev.refineChat ?? [])];
+            for (let i = chat.length - 1; i >= 0; i--) {
+              if (chat[i]?.role === "user" && chat[i]?.status === "pending") {
+                chat[i] = { ...chat[i]!, status: "failed", applied: false };
+                break;
+              }
+            }
+            return { ...prev, refineChat: chat };
+          });
+        }
+        const blockedRegen =
+          !isRefine &&
+          (body?.error?.code === "PLAN_LIMIT" ||
+            /1 AI generate/i.test(body?.error?.message ?? ""));
+        setError(
+          blockedRegen
+            ? (body?.error?.message ??
+              "Free includes 1 AI generate. Copy and theme edits stay available in the assistant.")
+            : (body?.error?.message ?? "Could not generate your site.")
+        );
         return;
       }
 
@@ -531,6 +556,8 @@ export function BuildOsClient({
       const decoder = new TextDecoder();
       let buffer = "";
       let finalJob: import("@/types/site-builder").SiteBuildJob | null = null;
+      let refineApplied = false;
+      let refineSummary: string | undefined;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -549,6 +576,8 @@ export function BuildOsClient({
               message?: string;
               job?: import("@/types/site-builder").SiteBuildJob;
               usedAi?: boolean;
+              refineApplied?: boolean;
+              refineSummary?: string;
               partial?: { site?: import("@/types/site-builder").GeneratedSite };
             };
             if (payload.type === "progress") {
@@ -567,6 +596,8 @@ export function BuildOsClient({
             } else if (payload.type === "complete" && payload.job) {
               finalJob = payload.job;
               setUsedAi(payload.usedAi ?? false);
+              refineApplied = payload.refineApplied ?? false;
+              refineSummary = payload.refineSummary;
             } else if (payload.type === "error") {
               setError((payload as { message?: string }).message ?? "Generation failed.");
             }
@@ -587,8 +618,18 @@ export function BuildOsClient({
           finalJob.preferences.selectedDesignOptionId ?? selectedDesignOptionId
         );
         if (isRefine) {
-          setRefineInput("");
-          setStatusMessage("Site updated with your changes.");
+          const summary =
+            refineSummary ??
+            finalJob.refineLastResult?.summary ??
+            (refineApplied
+              ? "Updated the site from your prompt."
+              : "Could not apply — try naming the page or quoting the new text.");
+          if (refineApplied || finalJob.refineLastResult?.changed) {
+            setRefineInput("");
+            setStatusMessage(summary);
+          } else {
+            setError(summary);
+          }
         } else {
           setStudioRightTab("photos");
           setStatusMessage(

@@ -276,8 +276,9 @@ export function BuildStudioLayout({
           <div className="flex min-h-0 flex-1 flex-col p-4">
             <div className="flex-1 space-y-3 overflow-y-auto text-sm">
               <div className="rounded-xl bg-surface-muted px-3 py-2 text-muted">
-                Try “make the theme green”, “use blue buttons”, or “change the headline to …”.
-                Your prompts are saved with this site.
+                Try “Make the hero say Welcome Home”, “CTA to Book a call”,
+                “replace Acme with Nebula”, or “make the theme green”.
+                Quote the new text so we can apply it. Your prompts are saved with this site.
               </div>
               {refineChat.map((turn) =>
                 turn.role === "user" ? (
@@ -329,7 +330,7 @@ export function BuildStudioLayout({
               ) : null}
               {done && refineChat.length === 0 ? (
                 <div className="rounded-xl border border-border bg-surface px-3 py-2 text-xs text-muted">
-                  Ask for theme, headline, or CTA changes — each request stays in this history.
+                  Ask for a headline, about-page title, find/replace, or theme change — each request stays in this history.
                 </div>
               ) : null}
               <div ref={chatEndRef} />

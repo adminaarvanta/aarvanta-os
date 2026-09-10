@@ -24,6 +24,7 @@ import type { CustomerTimelineItem } from "@/lib/crm/customer-360";
 import { formatRelative } from "@/lib/utils";
 import type { Conversation } from "@/types/communication";
 import type { CrmCompany, CrmContact, CrmDeal, CrmTask } from "@/types/crm";
+import type { FinanceInvoice } from "@/types/platform-modules";
 import type { Project } from "@/types/project";
 import type { MemberOption } from "@/lib/crm/members";
 

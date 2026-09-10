@@ -257,34 +257,54 @@ export async function requireBuildDraftCreate(
   return fresh;
 }
 
+/** Pure Free-plan generate gate — surgical refine is not a second generate. */
+export function isBuildGenerateAllowed(input: {
+  isSuperAdmin?: boolean;
+  buildDraftsLimit: number | "unlimited" | undefined;
+  allowRefine?: boolean;
+  alreadyGenerated: boolean;
+}): boolean {
+  if (input.isSuperAdmin) return true;
+  const limit = input.buildDraftsLimit ?? "unlimited";
+  if (limit === "unlimited") return true;
+  if (input.allowRefine) return true;
+  return !input.alreadyGenerated;
+}
+
 /**
- * Free: one AI generate per draft; refines after first generate require upgrade.
- * Jobs that already have a generatedSite (or status generated) are blocked on Free.
+ * Free: one AI generate (or full regenerate) per draft.
+ * Surgical refine — copy, theme, find/replace — is allowed after first generate.
  */
 export async function requireBuildGenerate(
   scope: TenantScope,
-  job: { generatedSite?: unknown; status?: string }
+  job: { generatedSite?: unknown; status?: string },
+  options?: { allowRefine?: boolean }
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
   if (entitlements.isSuperAdmin) return entitlements;
   await requireFeature(scope, "websiteBuilder", "explore");
   const fresh = await resolveEntitlements(scope);
-  const limit = fresh.limits.buildDrafts ?? "unlimited";
-  if (limit === "unlimited") return fresh;
-
   const alreadyGenerated =
     Boolean(job.generatedSite) || job.status === "generated";
 
-  if (alreadyGenerated) {
-    throw new PlanEntitlementError(
-      "PLAN_LIMIT",
-      `Free includes 1 AI generate for your draft. Upgrade to refine or regenerate.`,
-      {
-        metric: "build_drafts",
-        feature: "websiteBuilder",
-        upgradeHint: suggestUpgrade(fresh.planId),
-      }
-    );
+  if (
+    isBuildGenerateAllowed({
+      isSuperAdmin: fresh.isSuperAdmin,
+      buildDraftsLimit: fresh.limits.buildDrafts,
+      allowRefine: options?.allowRefine,
+      alreadyGenerated,
+    })
+  ) {
+    return fresh;
   }
-  return fresh;
+
+  throw new PlanEntitlementError(
+    "PLAN_LIMIT",
+    "Free includes 1 AI generate for your draft. Copy and theme edits stay available. Upgrade to regenerate the whole site.",
+    {
+      metric: "build_drafts",
+      feature: "websiteBuilder",
+      upgradeHint: suggestUpgrade(fresh.planId),
+    }
+  );
 }
