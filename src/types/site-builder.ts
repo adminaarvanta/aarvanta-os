@@ -499,6 +499,13 @@ export type SiteRefineTurn = {
   status?: "pending" | "applied" | "failed";
 };
 
+/** Last studio refine outcome — never claim applied if nothing changed. */
+export type SiteRefineLastResult = {
+  changed: boolean;
+  summary: string;
+  applied: string[];
+};
+
 export type SiteBuildJob = TenantScope & {
   id: string;
   status: SiteBuildJobStatus;
@@ -511,6 +518,8 @@ export type SiteBuildJob = TenantScope & {
   progress?: SiteGenerationProgress;
   /** Persisted AI Assistant refine transcript (survives refresh). */
   refineChat?: SiteRefineTurn[];
+  /** Result of the latest surgical refine (copy/theme), if any. */
+  refineLastResult?: SiteRefineLastResult;
   /** Client-owned work photos (refs only — binaries are in the media store). */
   clientMedia?: SiteClientMedia[];
   usedAi?: boolean;

@@ -78,7 +78,9 @@ export function Button({
         className={classes}
         aria-disabled={disabled || loading}
         aria-busy={loading || undefined}
-        onClick={props.onClick}
+        onClick={
+          props.onClick as React.MouseEventHandler<HTMLAnchorElement> | undefined
+        }
       >
         {content}
       </Link>

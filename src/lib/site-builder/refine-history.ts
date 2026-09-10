@@ -19,8 +19,14 @@ export function isThemeRefine(refineInstructions?: string): boolean {
 
 export function isImageRefine(refineInstructions?: string): boolean {
   if (!refineInstructions?.trim()) return false;
-  return /\b(image|photo|picture|imagery|hero\s*image|stock|unsplash|gallery|lookbook)\b/i.test(
-    refineInstructions
+  const lower = refineInstructions.toLowerCase();
+  return (
+    /\b(swap|change|replace|new|regenerate|pick|use|refresh)\b.{0,40}\b(image|photo|picture|imagery|hero\s*image|stock|unsplash|gallery|lookbook)\b/.test(
+      lower
+    ) ||
+    /^(change|update|replace|regenerate)\s+(the\s+)?(hero\s+)?(image|photo|picture)s?\b/.test(
+      lower
+    )
   );
 }
 
@@ -40,8 +46,28 @@ export function isCopyRefine(refineInstructions?: string): boolean {
   return (
     /headline|title|hero\s*text|main\s*heading|subhead|sub-?headline|tagline|supporting|\bcta\b|call to action|button\s*label|copy|wording|rewrite|change\s+the\s+text/.test(
       lower
-    ) || /["“']([^"”']{3,120})["”']/.test(refineInstructions)
+    ) ||
+    /make(?:\s+the)?\s+(?:hero|headline|it|this|site)\s+say/.test(lower) ||
+    /update\s+(the\s+)?(about|home|pricing|contact|hero)/.test(lower) ||
+    /more professional|friendlier|warmer tone|clearer/.test(lower) ||
+    /["“']([^"”']{3,120})["”']/.test(refineInstructions)
   );
+}
+
+export type BuildGenerateMode = "generate" | "refine" | "regenerate";
+
+/** Copy/theme/find-replace refine — not a new generate and not a layout rebuild. */
+export function isSurgicalRefine(
+  mode: BuildGenerateMode | undefined,
+  job: { generatedSite?: unknown },
+  refineInstructions?: string
+): boolean {
+  if (mode !== "refine") return false;
+  if (!job.generatedSite) return false;
+  const text = refineInstructions?.trim();
+  if (!text) return false;
+  if (isStructuralRefine(text) || isImageRefine(text)) return false;
+  return true;
 }
 
 /** Join applied user turns so multi-step studio edits compound. */

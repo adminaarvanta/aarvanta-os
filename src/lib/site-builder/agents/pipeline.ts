@@ -11,16 +11,14 @@ import {
   includedPageSlugs,
   runPagePlanner,
 } from "@/lib/site-builder/agents/page-planner";
-import { isAiConfigured } from "@/lib/ai/config";
-import { completeJson } from "@/lib/ai/provider";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import { applyClientMediaToSite } from "@/lib/site-builder/apply-client-media";
 import { applyBrandRefine, applyRefineHeuristics } from "@/lib/site-builder/apply-refine";
 import {
-  isCopyRefine,
   isImageRefine,
   isStructuralRefine,
 } from "@/lib/site-builder/refine-history";
+import { applySurgicalRefine } from "@/lib/site-builder/surgical-refine";
 import { ensureShareToken } from "@/lib/site-builder/share-token";
 import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
 import { themeFromBrand } from "@/lib/site-builder/theme-presets";
@@ -54,6 +52,7 @@ export type PipelineResult = {
   site: GeneratedSite;
   preferences: SitePreferences;
   usedAi: boolean;
+  refine?: import("@/types/site-builder").SiteRefineLastResult;
 };
 
 function slugify(name: string): string {
@@ -101,54 +100,10 @@ export async function runGenerationPipeline(
   ) {
     await emit("brand", 20, "Applying your changes…", { site: priorSite });
 
-    let brand: BrandSystem;
-    if (preferences.brandSystem) {
-      brand = preferences.brandSystem;
-    } else if (priorSite.brand) {
-      brand = priorSite.brand;
-    } else {
-      const business =
-        preferences.businessProfile ??
-        (await runBusinessIntel(preferences)).profile;
-      brand = (await runBrandIntel(preferences, business)).brand;
-      usedAi = true;
-    }
-    brand = applyBrandRefine(brand, refineText);
+    let workingSite: GeneratedSite = priorSite;
     if (preferences.brandLogo?.dataUrl) {
-      brand = { ...brand, logoUrl: preferences.brandLogo.dataUrl };
-    }
-    const theme = themeFromBrand(brand, "custom");
-    preferences = {
-      ...preferences,
-      brandSystem: brand,
-      themePreset: "custom",
-      customTheme: {
-        primaryColor: brand.primary,
-        accentColor: brand.secondary,
-        backgroundColor: brand.background,
-        fontPackId: brand.fontPackId,
-      },
-      designOptions: preferences.designOptions?.map((option) =>
-        option.id === preferences.selectedDesignOptionId
-          ? { ...option, brand }
-          : option
-      ),
-    };
-
-    await emit("content", 55, "Updating copy & theme…", {
-      brand,
-      site: priorSite,
-    });
-
-    let site: GeneratedSite = {
-      ...priorSite,
-      brand,
-      theme,
-      business: preferences.businessProfile ?? priorSite.business,
-    };
-    if (preferences.brandLogo?.dataUrl) {
-      site = {
-        ...site,
+      workingSite = {
+        ...workingSite,
         assets: [
           {
             id: "asset_brand_logo",
@@ -156,113 +111,96 @@ export async function runGenerationPipeline(
             url: preferences.brandLogo.dataUrl,
             alt: `${preferences.businessName} logo`,
           },
-          ...(site.assets ?? []).filter((a) => a.kind !== "logo"),
+          ...(workingSite.assets ?? []).filter((a) => a.kind !== "logo"),
         ],
       };
     }
-    site = applyRefineHeuristics(site, refineText);
 
-    // Light AI hero refresh for copy-oriented prompts (does not rebuild the site).
-    if (isAiConfigured() && isCopyRefine(refineText)) {
-      try {
-        const home = site.pages.find((p) => p.slug === "home" || p.slug === "");
-        const hero = home?.blocks.find((b) => b.type === "hero");
-        if (hero && home) {
-          const heroCopy = await completeJson<{
-            headline?: string;
-            subheadline?: string;
-            cta?: string;
-          }>({
-            system: `Update homepage hero copy to satisfy the change request. Return JSON with headline, subheadline, cta. Keep brand voice. Apply exactly: ${refineText}`,
-            user: JSON.stringify({
-              businessName: preferences.businessName,
-              idea: preferences.businessIdea,
-              current: {
-                headline: hero.props.headline,
-                subheadline: hero.props.subheadline,
-                cta: hero.props.cta,
-              },
-            }),
-            temperature: 0.5,
-          });
-          usedAi = true;
-          site = {
-            ...site,
-            pages: site.pages.map((page) =>
-              page.slug === home.slug
-                ? {
-                    ...page,
-                    blocks: page.blocks.map((block) =>
-                      block.id === hero.id
-                        ? {
-                            ...block,
-                            props: {
-                              ...block.props,
-                              ...(heroCopy.headline
-                                ? { headline: heroCopy.headline }
-                                : {}),
-                              ...(heroCopy.subheadline
-                                ? { subheadline: heroCopy.subheadline }
-                                : {}),
-                              ...(heroCopy.cta ? { cta: heroCopy.cta } : {}),
-                            },
-                          }
-                        : block
-                    ),
-                  }
-                : page
-            ),
-          };
-          site = applyRefineHeuristics(site, refineText);
-        }
-      } catch {
-        /* heuristics already applied */
-      }
+    await emit("content", 55, "Updating copy & theme…", {
+      brand: workingSite.brand,
+      site: priorSite,
+    });
+
+    const refineResult = await applySurgicalRefine(workingSite, refineText, {
+      businessName: preferences.businessName,
+      idea: preferences.businessIdea,
+    });
+    usedAi = usedAi || refineResult.usedAi;
+
+    if (!refineResult.changed) {
+      await emit("done", 100, refineResult.summary, {
+        brand: priorSite.brand,
+        site: priorSite,
+      });
+      const updatedJob: SiteBuildJob = ensureShareToken({
+        ...job,
+        status: "generated",
+        preferences: job.preferences,
+        plan: job.plan,
+        generatedSite: priorSite,
+        refineLastResult: refineResult.outcome,
+        progress: progress("done", 100, refineResult.summary),
+        usedAi,
+        error: undefined,
+        updatedAt: crmNow(),
+      });
+      return {
+        job: updatedJob,
+        plan:
+          job.plan ??
+          emptyPlanFromSite(
+            priorSite,
+            job.preferences,
+            priorSite.brand,
+            priorSite.theme
+          ),
+        site: priorSite,
+        preferences: job.preferences,
+        usedAi,
+        refine: refineResult.outcome,
+      };
     }
 
-    site = overlayClientPhotos(
+    const brand = refineResult.site.brand
+      ? applyBrandRefine(refineResult.site.brand, refineText)
+      : preferences.brandSystem;
+    const theme = refineResult.site.theme;
+    if (brand) {
+      preferences = {
+        ...preferences,
+        brandSystem: brand,
+        themePreset: "custom",
+        customTheme: {
+          primaryColor: brand.primary,
+          accentColor: brand.secondary,
+          backgroundColor: brand.background,
+          fontPackId: brand.fontPackId,
+        },
+        designOptions: preferences.designOptions?.map((option) =>
+          option.id === preferences.selectedDesignOptionId
+            ? { ...option, brand }
+            : option
+        ),
+      };
+    }
+
+    const site = overlayClientPhotos(
       {
-        ...site,
-        brand,
+        ...refineResult.site,
+        brand: brand ?? refineResult.site.brand,
         theme,
-        generatedAt: crmNow(),
-        version: (priorSite.version ?? 1) + 1,
+        business: preferences.businessProfile ?? refineResult.site.business,
       },
       job
     );
 
-    await emit("done", 100, "Updates applied", { brand, site });
+    await emit("done", 100, refineResult.summary, {
+      brand: site.brand,
+      site,
+    });
 
     const plan: SitePlan =
-      job.plan ??
-      ({
-        siteName: site.siteName,
-        slug: site.slug,
-        summary: site.tagline ?? site.siteName,
-        theme,
-        navigation: site.navigation,
-        pages: site.pages.map((p) => ({
-          slug: p.slug,
-          title: p.title,
-          purpose: p.title,
-          sections: p.blocks.map((b) => ({
-            type: String(b.type),
-            label: String(b.type),
-            description: "",
-            variantId: b.variantId,
-          })),
-        })),
-        deployment: {
-          hostingProvider: "aws_ec2" as const,
-          domain: preferences.deployment.domain,
-          ec2: preferences.deployment.ec2,
-          previewUrl: `https://${site.slug}.sites.aarvanta.cloud`,
-          deployNotes: [],
-        },
-        business: site.business,
-        brand,
-        version: 1,
-      } satisfies SitePlan);
+      job.plan ?? emptyPlanFromSite(site, preferences, site.brand, site.theme);
 
     const updatedJob: SiteBuildJob = ensureShareToken({
       ...job,
@@ -270,13 +208,21 @@ export async function runGenerationPipeline(
       preferences,
       plan,
       generatedSite: site,
-      progress: progress("done", 100, "Updates applied"),
+      refineLastResult: refineResult.outcome,
+      progress: progress("done", 100, refineResult.summary),
       usedAi,
       error: undefined,
       updatedAt: crmNow(),
     });
 
-    return { job: updatedJob, plan, site, preferences, usedAi };
+    return {
+      job: updatedJob,
+      plan,
+      site,
+      preferences,
+      usedAi,
+      refine: refineResult.outcome,
+    };
   }
 
   await emit("business", 8, "Understanding your business…");
@@ -500,6 +446,42 @@ export async function runGenerationPipeline(
 function overlayClientPhotos(site: GeneratedSite, job: SiteBuildJob): GeneratedSite {
   const media = job.clientMedia ?? [];
   return media.length ? applyClientMediaToSite(site, media) : site;
+}
+
+function emptyPlanFromSite(
+  site: GeneratedSite,
+  preferences: SitePreferences,
+  brand: BrandSystem | undefined,
+  theme: GeneratedSite["theme"]
+): SitePlan {
+  return {
+    siteName: site.siteName,
+    slug: site.slug,
+    summary: site.tagline ?? site.siteName,
+    theme,
+    navigation: site.navigation,
+    pages: site.pages.map((page) => ({
+      slug: page.slug,
+      title: page.title,
+      purpose: page.title,
+      sections: page.blocks.map((block) => ({
+        type: String(block.type),
+        label: String(block.type),
+        description: "",
+        variantId: block.variantId,
+      })),
+    })),
+    deployment: {
+      hostingProvider: "aws_ec2",
+      domain: preferences.deployment.domain,
+      ec2: preferences.deployment.ec2,
+      previewUrl: `https://${site.slug}.sites.aarvanta.cloud`,
+      deployNotes: [],
+    },
+    business: site.business,
+    brand,
+    version: 1,
+  };
 }
 
 function inferCategoryFromIndustry(

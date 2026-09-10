@@ -62,25 +62,27 @@ function withMaturity(item: CommandNavItem): CommandNavItem {
 }
 
 /** Primary sidebar — Business OS information architecture. */
-export const COMMAND_CENTER_NAV: CommandNavItem[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
-  { href: "/crm", label: "Customers", icon: Building2, featureKey: "crm" },
-  { href: "/projects", label: "Work", icon: Kanban, featureKey: "projects" },
-  { href: "/inbox", label: "Inbox", icon: Inbox, featureKey: "ungated" },
-  {
-    href: "/automation?view=ask",
-    label: "AI",
-    icon: Sparkles,
-    featureKey: "aiWorkforce",
-  },
-  { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
-  { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
-  { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
-  { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
-  { href: "/build", label: "Website", icon: Hammer, featureKey: "ungated" },
-  { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
-  { href: "#all-tools", label: "More", icon: LayoutGrid, featureKey: "ungated" },
-].map(withMaturity);
+export const COMMAND_CENTER_NAV: CommandNavItem[] = (
+  [
+    { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
+    { href: "/crm", label: "Customers", icon: Building2, featureKey: "crm" },
+    { href: "/projects", label: "Work", icon: Kanban, featureKey: "projects" },
+    { href: "/inbox", label: "Inbox", icon: Inbox, featureKey: "ungated" },
+    {
+      href: "/automation?view=ask",
+      label: "AI",
+      icon: Sparkles,
+      featureKey: "aiWorkforce",
+    },
+    { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
+    { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
+    { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
+    { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
+    { href: "/build", label: "Website", icon: Hammer, featureKey: "ungated" },
+    { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
+    { href: "#all-tools", label: "More", icon: LayoutGrid, featureKey: "ungated" },
+  ] satisfies CommandNavItem[]
+).map(withMaturity);
 
 export const WHATSAPP_NAV_ITEM: CommandNavItem = withMaturity({
   href: "/whatsapp",
@@ -189,33 +191,37 @@ export const OPERATING_SYSTEMS: OperatingSystemItem[] = [
   },
 ];
 
-export const MOBILE_NAV: CommandNavItem[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
-  { href: "/crm", label: "Customers", icon: Building2, featureKey: "crm" },
-  { href: "/inbox", label: "Inbox", icon: Inbox, featureKey: "ungated" },
-  {
-    href: "/automation?view=ask",
-    label: "AI",
-    icon: Sparkles,
-    featureKey: "aiWorkforce",
-  },
-].map(withMaturity);
+export const MOBILE_NAV: CommandNavItem[] = (
+  [
+    { href: "/dashboard", label: "Home", icon: LayoutDashboard, featureKey: "ungated" },
+    { href: "/crm", label: "Customers", icon: Building2, featureKey: "crm" },
+    { href: "/inbox", label: "Inbox", icon: Inbox, featureKey: "ungated" },
+    {
+      href: "/automation?view=ask",
+      label: "AI",
+      icon: Sparkles,
+      featureKey: "aiWorkforce",
+    },
+  ] satisfies CommandNavItem[]
+).map(withMaturity);
 
-export const MOBILE_NAV_MORE: CommandNavItem[] = [
-  { href: "/projects", label: "Work", icon: Kanban, featureKey: "projects" },
-  { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
-  { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
-  { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
-  { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
-  { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
-  { href: "/build", label: "Website", icon: Hammer, featureKey: "ungated" },
-  { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
-  { href: "/team", label: "Team", icon: Users, featureKey: "ungated" },
-  { href: "/integrations", label: "Integrations", icon: Plug, featureKey: "ungated" },
-  { href: "/partners", label: "Partners", icon: Handshake, featureKey: "ungated" },
-  { href: "/settings", label: "Settings", icon: Settings, featureKey: "ungated" },
-  { href: "/billing", label: "Billing", icon: Wallet, featureKey: "ungated" },
-].map(withMaturity);
+export const MOBILE_NAV_MORE: CommandNavItem[] = (
+  [
+    { href: "/projects", label: "Work", icon: Kanban, featureKey: "projects" },
+    { href: "/knowledge", label: "Knowledge", icon: Brain, featureKey: "ungated" },
+    { href: "/workflows", label: "Automations", icon: Workflow, featureKey: "workflows" },
+    { href: "/voice", label: "Voice", icon: Phone, badgeKey: "voice", featureKey: "voiceAi" },
+    { href: "/hr", label: "People", icon: Landmark, featureKey: "hr" },
+    { href: "/finance", label: "Finance", icon: Wallet, featureKey: "finance" },
+    { href: "/build", label: "Website", icon: Hammer, featureKey: "ungated" },
+    { href: "/analytics", label: "Analytics", icon: BarChart3, featureKey: "analytics" },
+    { href: "/team", label: "Team", icon: Users, featureKey: "ungated" },
+    { href: "/integrations", label: "Integrations", icon: Plug, featureKey: "ungated" },
+    { href: "/partners", label: "Partners", icon: Handshake, featureKey: "ungated" },
+    { href: "/settings", label: "Settings", icon: Settings, featureKey: "ungated" },
+    { href: "/billing", label: "Billing", icon: Wallet, featureKey: "ungated" },
+  ] satisfies CommandNavItem[]
+).map(withMaturity);
 
 export const SIDEBAR_BRAND = {
   title: "AARVANTA",

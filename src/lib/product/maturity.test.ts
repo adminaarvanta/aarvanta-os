@@ -9,10 +9,10 @@ import { TRIAL_POLICY } from "@/lib/product/trial";
 
 describe("product truth", () => {
   it("never lists MarketingOS as a module", () => {
-    for (const module of PRODUCT_MODULES) {
-      assert.equal(containsMarketingOs(module.label), false);
-      assert.equal(containsMarketingOs(module.description), false);
-      assert.equal(containsMarketingOs(module.href), false);
+    for (const productModule of PRODUCT_MODULES) {
+      assert.equal(containsMarketingOs(productModule.label), false);
+      assert.equal(containsMarketingOs(productModule.description), false);
+      assert.equal(containsMarketingOs(productModule.href), false);
     }
   });
 
