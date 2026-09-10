@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { usePlan } from "@/components/billing/plan-context";
 import {
   DEMO_TOUR_NAME_KEY,
@@ -130,7 +130,6 @@ export function DemoTourProvider({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const plan = usePlan();
   const planId = plan?.planId ?? null;
 
@@ -303,7 +302,9 @@ export function DemoTourProvider({
     if (!autoStartModuleTours) return;
     if (active) return;
     if (autoStartWalkthrough && !seen) return;
-    const moduleId = tourIdForPath(pathname, searchParams.toString());
+    const query =
+      typeof window === "undefined" ? "" : window.location.search.replace(/^\?/, "");
+    const moduleId = tourIdForPath(pathname, query);
     if (!moduleId) return;
     if (toursCompleted[moduleId]) return;
     if (sessionStorage.getItem(DEMO_TOUR_STORAGE_KEY) === "1") return;
@@ -317,7 +318,6 @@ export function DemoTourProvider({
     autoStartModuleTours,
     autoStartWalkthrough,
     pathname,
-    searchParams,
     seen,
     startModuleTour,
     toursCompleted,

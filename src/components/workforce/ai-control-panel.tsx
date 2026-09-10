@@ -8,7 +8,7 @@ import { AGENT_DEFINITIONS } from "@/lib/workforce/agents";
 import {
   autonomyLabel,
   DEFAULT_AGENT_AUTONOMY,
-} from "@/lib/workforce/ai-controls";
+} from "@/lib/workforce/ai-control-policy";
 import type { AgentAutonomy, AgentControlState, AgentType } from "@/types/workforce";
 
 const AUTONOMY_OPTIONS: AgentAutonomy[] = [
