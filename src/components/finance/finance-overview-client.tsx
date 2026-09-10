@@ -84,7 +84,7 @@ export function FinanceOverviewClient({
     <div className="space-y-6">
       <FinancePageHeader
         title="Money in and out"
-        description="Type an invoice or expense below. Reports and the ledger update from those entries."
+        description="Operational invoices, expenses, and cash snapshots. This is not a full accounting ledger, tax engine, or payroll replacement."
         actions={
           <div className="flex flex-wrap gap-2">
             <AskAiButton module="finance" />

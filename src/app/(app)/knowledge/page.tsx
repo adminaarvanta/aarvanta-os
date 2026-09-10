@@ -22,11 +22,11 @@ export default async function KnowledgePage() {
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
               <Brain className="h-5 w-5 text-gold" />
-              Knowledge Hub
+              Company Brain
             </h2>
             <p className="text-xs text-muted sm:text-sm">
-              Upload SOPs and policies so AI Team and Ask AI stay grounded —
-              search, ask with citations, summaries, and tags.
+              Upload SOPs and policies so Ask Aarvanta cites your documents —
+              search, summaries, and tags. We do not invent missing sources.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -46,7 +46,9 @@ export default async function KnowledgePage() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-8 sm:p-6">
-        <KnowledgeUploadForm />
+        <div id="upload">
+          <KnowledgeUploadForm />
+        </div>
 
         <section className="grid gap-6 xl:grid-cols-2">
           <KnowledgeAskPanel />
@@ -56,12 +58,17 @@ export default async function KnowledgePage() {
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground">
-              Knowledge library
+              Document index
             </h3>
             <p className="text-xs text-muted">
               {documents.length} document{documents.length === 1 ? "" : "s"}
               {documents.length > 0
-                ? ` · ${documents.filter((d) => d.status === "ready").length} ready`
+                ? ` · ${documents.filter((d) => d.status === "ready").length} ready · ${documents.filter((d) => d.status === "processing").length} indexing · ${documents.filter((d) => d.status === "failed").length} failed`
+                : ""}
+              {documents.length > 0
+                ? ` · freshest ${documents
+                    .slice()
+                    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]?.updatedAt.slice(0, 10)}`
                 : ""}
             </p>
           </div>
@@ -72,4 +79,4 @@ export default async function KnowledgePage() {
   );
 }
 
-export const metadata = { title: "Knowledge Hub" };
+export const metadata = { title: "Company Brain" };

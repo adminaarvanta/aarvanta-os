@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { PRICING_TIERS } from "@/lib/marketing/content";
+import { PLAN_CATALOG, VOICE_METERING_NOTE, formatPlanLimit } from "@/lib/billing/plan-catalog";
+import { TRIAL_POLICY } from "@/lib/product/trial";
 import { cn } from "@/lib/utils";
 
 function tierHref(id: string) {
   if (id === "enterprise") return "/contact";
-  if (id === "free") return "/dashboard";
+  if (id === "free") return "/register";
   return "/billing";
 }
 
 export default function PricingPage() {
-  const standard = PRICING_TIERS.filter((t) => t.id !== "enterprise");
-  const enterprise = PRICING_TIERS.find((t) => t.id === "enterprise");
+  const standard = PLAN_CATALOG.filter((t) => t.id !== "enterprise");
+  const enterprise = PLAN_CATALOG.find((t) => t.id === "enterprise");
 
   return (
     <div className="relative overflow-hidden">
@@ -25,8 +26,8 @@ export default function PricingPage() {
             Pricing that grows with you
           </h1>
           <p className="mt-3 text-sm text-muted sm:text-base">
-            Start free to build and explore. Upgrade when you launch — annual
-            billing saves two months.
+            {TRIAL_POLICY.copy}. Upgrade when you launch — annual billing saves
+            two months. Usage is capped; extra capacity is sold as add-on packs.
           </p>
         </div>
 
@@ -54,7 +55,7 @@ export default function PricingPage() {
                   {tier.name}
                 </h2>
                 <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted">
-                  {tier.description}
+                  {tier.tagline}
                 </p>
               </div>
 
@@ -62,28 +63,56 @@ export default function PricingPage() {
                 <span
                   className={cn(
                     "font-bold tracking-tight text-foreground",
-                    tier.price === "£0" ? "text-3xl" : "text-4xl"
+                    tier.priceMonthly === 0 ? "text-3xl" : "text-4xl"
                   )}
                 >
-                  {tier.price}
+                  {tier.priceMonthly === 0
+                    ? "£0"
+                    : tier.priceMonthly === null
+                      ? "Custom"
+                      : `£${tier.priceMonthly}`}
                 </span>
-                {tier.period ? (
-                  <span className="text-sm text-muted">{tier.period}</span>
+                {tier.priceMonthly ? (
+                  <span className="text-sm text-muted">/month</span>
                 ) : (
                   <span className="text-sm text-muted">forever</span>
                 )}
               </p>
 
+              <dl className="mt-4 grid grid-cols-2 gap-2 rounded-xl border border-border-subtle bg-background/40 p-3 text-[11px]">
+                <div>
+                  <dt className="text-muted">Users</dt>
+                  <dd className="font-semibold text-foreground">
+                    {formatPlanLimit(tier.limits.users)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Workspaces</dt>
+                  <dd className="font-semibold text-foreground">
+                    {formatPlanLimit(tier.limits.businessWorkspaces)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">AI credits</dt>
+                  <dd className="font-semibold text-foreground">
+                    {formatPlanLimit(tier.limits.aiCredits)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Voice minutes</dt>
+                  <dd className="font-semibold text-foreground">
+                    {formatPlanLimit(tier.limits.voiceMinutes)}
+                  </dd>
+                </div>
+              </dl>
+
               <ul className="mt-6 flex-1 space-y-2.5 border-t border-border-subtle pt-5">
-                {tier.features.map((feature) => (
+                {tier.highlights.map((feature) => (
                   <li
                     key={feature}
                     className="flex gap-2.5 text-xs leading-snug text-muted"
                   >
-                    <span
-                      className="mt-0.5 text-gold"
-                      aria-hidden
-                    >
+                    <span className="mt-0.5 text-gold" aria-hidden>
                       ✓
                     </span>
                     <span>{feature}</span>
@@ -119,10 +148,10 @@ export default function PricingPage() {
                   </span>
                 </div>
                 <p className="mt-2 max-w-2xl text-sm text-muted">
-                  {enterprise.description}
+                  {enterprise.tagline}
                 </p>
                 <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-                  {enterprise.features.slice(0, 4).map((feature) => (
+                  {enterprise.highlights.slice(0, 4).map((feature) => (
                     <li
                       key={feature}
                       className="flex items-center gap-2 text-xs text-muted"
@@ -138,7 +167,7 @@ export default function PricingPage() {
 
               <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
                 <p className="text-3xl font-bold tracking-tight text-foreground">
-                  {enterprise.price}
+                  Custom
                 </p>
                 <Link
                   href={tierHref(enterprise.id)}
@@ -150,6 +179,11 @@ export default function PricingPage() {
             </div>
           </article>
         ) : null}
+
+        <p className="mx-auto mt-10 max-w-3xl text-center text-xs text-muted">
+          {VOICE_METERING_NOTE} Extra users, credit packs, and voice packs are
+          optional add-ons. We do not silently overage your card.
+        </p>
       </div>
     </div>
   );

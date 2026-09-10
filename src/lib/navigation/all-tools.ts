@@ -4,13 +4,22 @@ import { CORE_MODULES, PLATFORM_MODULES } from "@/lib/platform/modules";
 /** Modules retired from primary nav that should not reappear under More. */
 export const HIDDEN_FROM_ALL_TOOLS = new Set([
   "help",
+  "dashboard",
+  "crm",
   "projects",
   "inbox",
+  "knowledge",
+  "workflows",
+  "workforce",
   "launch",
   "whatsapp",
   "whatsapp-manage",
   "affiliate-admin",
   "outreach",
+  "analytics",
+  "finance",
+  "hr",
+  "build",
 ]);
 
 const WHATSAPP_TOOL_IDS = new Set(["whatsapp", "whatsapp-manage"]);

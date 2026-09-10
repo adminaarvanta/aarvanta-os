@@ -11,7 +11,9 @@ import { normalizeSitePreferences } from "@/lib/site-builder/normalize-preferenc
 import {
   accumulateRefineInstructions,
   appendRefineTurn,
+  isSurgicalRefine,
   markLatestUserRefine,
+  type BuildGenerateMode,
 } from "@/lib/site-builder/refine-history";
 import { sitePreferencesSchema } from "@/lib/site-builder/schemas";
 import { crmNow } from "@/lib/data/crm-helpers";
@@ -23,6 +25,22 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 function encodeSse(data: unknown): string {
   return `data: ${JSON.stringify(data)}\n\n`;
+}
+
+function takeGenerateMode(body: unknown): {
+  mode?: BuildGenerateMode;
+  prefs: unknown;
+} {
+  if (!body || typeof body !== "object") return { prefs: body };
+  const rec = body as Record<string, unknown>;
+  const raw = rec.mode;
+  const mode =
+    raw === "refine" || raw === "generate" || raw === "regenerate"
+      ? raw
+      : undefined;
+  const prefs = { ...rec };
+  delete prefs.mode;
+  return { mode, prefs };
 }
 
 export async function POST(req: Request, context: RouteContext) {
@@ -43,9 +61,19 @@ export async function POST(req: Request, context: RouteContext) {
     );
   }
 
+  const body = await parseJsonBody<unknown>(req);
+  if (body instanceof NextResponse) return body;
+
+  const { mode, prefs } = takeGenerateMode(body);
+  const latestRefine =
+    prefs && typeof prefs === "object"
+      ? (prefs as { refineInstructions?: string }).refineInstructions?.trim()
+      : undefined;
+  const surgical = isSurgicalRefine(mode, job, latestRefine);
+
   try {
     const { requireBuildGenerate } = await import("@/lib/billing/consume");
-    await requireBuildGenerate(scope, job);
+    await requireBuildGenerate(scope, job, { allowRefine: surgical });
   } catch (error) {
     const { isPlanEntitlementError, planErrorStatus } = await import(
       "@/lib/billing/errors"
@@ -59,14 +87,11 @@ export async function POST(req: Request, context: RouteContext) {
     throw error;
   }
 
-  const body = await parseJsonBody<unknown>(req);
-  if (body instanceof NextResponse) return body;
-
   // Allow empty body to regenerate with existing preferences
   const library = await getSiteMediaRepository().listByJob(id, scope);
   let working: SiteBuildJob = withClientMediaRefs(job, library);
-  if (body && typeof body === "object" && Object.keys(body as object).length > 0) {
-    const parsed = sitePreferencesSchema.safeParse(body);
+  if (prefs && typeof prefs === "object" && Object.keys(prefs as object).length > 0) {
+    const parsed = sitePreferencesSchema.safeParse(prefs);
     if (!parsed.success) {
       return NextResponse.json(
         { error: { code: "VALIDATION", message: parsed.error.message } },
@@ -74,13 +99,13 @@ export async function POST(req: Request, context: RouteContext) {
       );
     }
     const incoming = normalizeSitePreferences(parsed.data);
-    const latestRefine = incoming.refineInstructions?.trim();
     const isRefine = Boolean(latestRefine && job.generatedSite);
 
-    // Compound prior applied turns + this prompt so multi-step edits stick.
-    const accumulated = isRefine
-      ? accumulateRefineInstructions(job.refineChat, latestRefine)
-      : latestRefine;
+    // Surgical edits apply this turn only — prior edits already live on the tree.
+    const accumulated =
+      isRefine && !surgical
+        ? accumulateRefineInstructions(job.refineChat, latestRefine)
+        : latestRefine;
 
     working = updateSitePreferences(
       working,
@@ -122,11 +147,13 @@ export async function POST(req: Request, context: RouteContext) {
       };
 
       try {
-        const { consumeCredits } = await import("@/lib/billing/consume");
-        const siteType = working.preferences.siteType;
-        const tariff =
-          siteType === "landing" ? "generate_landing" : "generate_website";
-        await consumeCredits(scope, tariff);
+        if (!surgical) {
+          const { consumeCredits } = await import("@/lib/billing/consume");
+          const siteType = working.preferences.siteType;
+          const tariff =
+            siteType === "landing" ? "generate_landing" : "generate_website";
+          await consumeCredits(scope, tariff);
+        }
 
         send({
           type: "progress",
@@ -156,6 +183,7 @@ export async function POST(req: Request, context: RouteContext) {
               generatedSite:
                 event.partial?.site ?? working.generatedSite,
               refineChat: working.refineChat,
+              refineLastResult: working.refineLastResult,
               progress: {
                 stage: event.stage,
                 percent: event.percent,
@@ -192,18 +220,31 @@ export async function POST(req: Request, context: RouteContext) {
         let saved: SiteBuildJob = {
           ...resultJob,
           refineChat: working.refineChat ?? resultJob.refineChat,
+          refineLastResult:
+            resultJob.refineLastResult ?? working.refineLastResult,
         };
 
-        if (working.preferences.refineInstructions?.trim()) {
+        const outcome = saved.refineLastResult;
+        const isRefineTurn = Boolean(
+          latestRefine && (working.preferences.refineInstructions?.trim() || outcome)
+        );
+
+        if (isRefineTurn) {
+          const changed = outcome?.changed ?? false;
+          const summary =
+            outcome?.summary ??
+            (changed
+              ? "Applied your changes to the site."
+              : "Could not apply — try naming the page or quoting the new text.");
           saved = markLatestUserRefine(saved, {
-            status: "applied",
+            status: changed ? "applied" : "failed",
             resultVersion: saved.generatedSite?.version,
-            applied: true,
+            applied: changed,
           });
           saved = appendRefineTurn(saved, {
             role: "assistant",
-            content: "Applied your changes to the site.",
-            status: "applied",
+            content: summary,
+            status: changed ? "applied" : "failed",
             resultVersion: saved.generatedSite?.version,
           });
         }
@@ -213,6 +254,8 @@ export async function POST(req: Request, context: RouteContext) {
           type: "complete",
           job: saved,
           usedAi: saved.usedAi ?? false,
+          refineApplied: outcome?.changed ?? false,
+          refineSummary: outcome?.summary,
         });
       } catch (error) {
         const { isPlanEntitlementError } = await import("@/lib/billing/errors");
@@ -220,12 +263,13 @@ export async function POST(req: Request, context: RouteContext) {
           error instanceof Error ? error.message : "Generation failed.";
         let failed: SiteBuildJob = {
           ...working,
-          status: "failed",
-          error: message,
+          status: surgical ? working.status : "failed",
+          generatedSite: surgical ? working.generatedSite : working.generatedSite,
+          error: surgical ? undefined : message,
           updatedAt: crmNow(),
         };
         if (working.preferences.refineInstructions?.trim()) {
-          failed = markLatestUserRefine(failed, { status: "failed" });
+          failed = markLatestUserRefine(failed, { status: "failed", applied: false });
           failed = appendRefineTurn(failed, {
             role: "assistant",
             content: `Could not apply that change: ${message}`,

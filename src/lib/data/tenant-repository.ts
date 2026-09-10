@@ -54,7 +54,10 @@ export interface TenantRepository {
   updateMemberPreferences(
     id: string,
     patch: Partial<
-      Pick<WorkspaceMember, "hasSeenWalkthrough" | "walkthroughCompletedAt">
+      Pick<
+        WorkspaceMember,
+        "hasSeenWalkthrough" | "walkthroughCompletedAt" | "toursCompleted"
+      >
     >,
     scope: TenantScope
   ): Promise<WorkspaceMember | null>;

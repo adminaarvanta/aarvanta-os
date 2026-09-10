@@ -6,6 +6,7 @@ import { Lock, LogOut, MoreHorizontal, X } from "lucide-react";
 import { PendingLink } from "@/components/layout/navigation-provider";
 import {
   MOBILE_NAV,
+  isCommandNavActive,
   mobileMoreNav,
 } from "@/lib/navigation/command-center-nav";
 import { cn } from "@/lib/utils";
@@ -13,20 +14,12 @@ import { isNavHrefLocked, usePlan } from "@/components/billing/plan-context";
 import { PremiumBadge } from "@/components/billing/plan-ui";
 
 function tourNavId(href: string) {
-  return href.replace(/^\//, "").replace(/\//g, "-") || "home";
+  const path = href.split("?")[0] ?? href;
+  return path.replace(/^\//, "").replace(/\//g, "-") || "home";
 }
 
 function isMobileActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname.startsWith("/dashboard");
-  if (href === "/crm") return pathname.startsWith("/crm");
-  if (href === "/automation") {
-    return (
-      pathname.startsWith("/automation") ||
-      pathname.startsWith("/workforce") ||
-      pathname.startsWith("/workflows")
-    );
-  }
-  return pathname.startsWith(href);
+  return isCommandNavActive(pathname, href);
 }
 
 export function MobileNav({

@@ -114,9 +114,15 @@ export function ConversationList({
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 line-clamp-2 text-xs text-muted">
-                {conversationListPreview(conv)}
-              </p>
+              {conv.aiSummary ? (
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted">
+                  {conv.aiSummary}
+                </p>
+              ) : (
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted">
+                  {conversationListPreview(conv)}
+                </p>
+              )}
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Badge className="bg-surface-elevated text-muted ring-border text-[10px]">
                   {CHANNEL_LABELS[conv.channels[0]]}
@@ -124,6 +130,15 @@ export function ConversationList({
                 </Badge>
                 <IdentityBadge identity={conv.identity} compact />
                 <SentimentBadge sentiment={conv.sentiment} />
+                {conv.assignedTo ? (
+                  <Badge className="bg-surface-elevated text-muted ring-border text-[10px]">
+                    Owner {conv.assignedTo}
+                  </Badge>
+                ) : (
+                  <Badge className="bg-surface-elevated text-dim ring-border text-[10px]">
+                    Unassigned
+                  </Badge>
+                )}
                 {conv.tags.slice(0, 1).map((t) => (
                   <Badge
                     key={t}
@@ -142,7 +157,8 @@ export function ConversationList({
       })}
       {visible.length === 0 && (
         <li className="px-4 py-8 text-center text-sm text-muted">
-          No conversations yet
+          No conversations yet. Website chat, email, and WhatsApp land here when
+          a channel is connected — we will not invent threads.
         </li>
       )}
     </ul>

@@ -25,7 +25,7 @@ export default async function KnowledgeDocumentPage({
           href="/knowledge"
           className="text-xs text-gold hover:underline"
         >
-          ← Knowledge Hub
+          ← Company Brain
         </Link>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">

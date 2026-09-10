@@ -24,6 +24,9 @@ import {
 } from "@/components/workflow/workflow-shell";
 import { isAutomationBackground } from "@/lib/workflow/preset-kinds";
 import type { Workflow } from "@/types/workflow";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { Workflow as WorkflowIcon } from "lucide-react";
 
 type Template = Omit<
   Workflow,
@@ -129,6 +132,19 @@ export function AutomationHome({
         Ask us to do something now. Switch Automatic on only for the ones that
         should keep going without you.
       </p>
+
+      {presets.length === 0 && extras.length === 0 ? (
+        <EmptyState
+          icon={WorkflowIcon}
+          title="No automations yet"
+          description="Start from a template. Nothing emails or calls until you switch Automatic on."
+          action={
+            <Button href="/automation?view=ask" variant="secondary" size="sm">
+              Ask Aarvanta instead
+            </Button>
+          }
+        />
+      ) : null}
 
       {askNow.length > 0 ? (
         <section className="space-y-3">

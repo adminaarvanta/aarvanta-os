@@ -20,6 +20,20 @@ export type AgentDepartment =
 
 export type AgentRunStatus = "running" | "completed" | "failed";
 
+export type AgentAutonomy =
+  | "observe"
+  | "recommend"
+  | "draft"
+  | "approval_required"
+  | "automatic";
+
+export type AgentRuntimeStatus = "active" | "paused" | "error";
+
+export type AgentControlState = {
+  status: AgentRuntimeStatus;
+  autonomy: AgentAutonomy;
+};
+
 export type AgentActionType =
   | "create_task"
   | "create_activity"

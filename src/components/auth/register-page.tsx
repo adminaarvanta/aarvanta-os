@@ -19,6 +19,7 @@ import { HelpTip } from "@/components/ui/help-tip";
 import { sanitizeNextPath } from "@/lib/auth/cookie-options";
 import { COUNTRY_NAMES } from "@/lib/i18n/regions";
 import { cn } from "@/lib/utils";
+import { trackClient } from "@/lib/analytics/track-client";
 
 const REF_STORAGE_KEY = "aarvanta_aff_ref";
 
@@ -64,6 +65,10 @@ function RegisterFormInner({
             ? "That referral link was not recognized. You can still create a free account."
             : null
   );
+
+  useEffect(() => {
+    trackClient("signup_start", { path: "/register" });
+  }, []);
 
   useEffect(() => {
     if (referralFromUrl) {
@@ -119,6 +124,7 @@ function RegisterFormInner({
         setError(data?.error?.message ?? "Could not create your account.");
         return;
       }
+      trackClient("signup_complete", { path: "/register", outcome: accountType });
       router.push(data?.next ?? safeNext);
       router.refresh();
     } catch {
@@ -323,8 +329,8 @@ export function RegisterPageShell({
     <AuthSplitLayout
       title="Start free"
       subtitle="Choose workspace or partner, then finish signup here — password, phone, and location. No email password links."
-      panelHeadline="Hire your first AI workforce"
-      panelBody="Launch a modern operating system for sales, marketing, ops, and support — without stitching tools together."
+      panelHeadline="Your business, one operating system"
+      panelBody="Customers, work, communications, knowledge, and an approval-controlled AI workforce — connected in one place."
       footer={
         <p className="text-center text-sm text-muted">
           Already have an account?{" "}

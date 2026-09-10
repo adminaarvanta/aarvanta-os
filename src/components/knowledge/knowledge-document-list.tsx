@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { FileText, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
 import type { KnowledgeDocument } from "@/types/knowledge";
 import { formatRelative } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -45,18 +47,16 @@ export function KnowledgeDocumentList({
 
   if (documents.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-surface-muted/50 px-6 py-10 text-center">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gold/15 ring-1 ring-gold/30">
-          <Upload className="h-5 w-5 text-gold" />
-        </div>
-        <p className="text-sm font-medium text-foreground">
-          No documents yet — AI Team has nothing to ground on
-        </p>
-        <p className="mx-auto mt-2 max-w-md text-xs text-muted leading-relaxed">
-          Upload SOPs, policies, pricing sheets, or playbooks (PDF, DOCX, TXT).
-          Ask AI and AI Team agents will cite these instead of inventing answers.
-        </p>
-      </div>
+      <EmptyState
+        icon={Upload}
+        title="Company Brain is empty"
+        description="Upload one SOP, policy, or playbook (PDF, DOCX, TXT). Ask Aarvanta will cite it — we will not invent sources."
+        action={
+          <Button href="/knowledge#upload" variant="secondary" size="sm">
+            Upload a document
+          </Button>
+        }
+      />
     );
   }
 

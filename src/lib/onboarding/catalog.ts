@@ -1,6 +1,7 @@
 import type {
   CustomerCountRange,
   OnboardingUseCase,
+  StartingWorkflow,
 } from "@/types/tenant";
 
 export const ONBOARDING_USE_CASES: {
@@ -57,6 +58,53 @@ export const ONBOARDING_CUSTOMER_COUNTS: {
   { id: "none_yet", label: "None yet" },
 ];
 
+export const ONBOARDING_STARTING_WORKFLOWS: {
+  id: StartingWorkflow;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "sales_crm",
+    label: "Sales / CRM",
+    description: "Capture leads, run a pipeline, and keep one customer record.",
+  },
+  {
+    id: "customer_communication",
+    label: "Customer communication",
+    description: "Put inbox, WhatsApp, email, and voice in one timeline.",
+  },
+  {
+    id: "projects_operations",
+    label: "Projects / operations",
+    description: "Track delivery work and overdue tasks.",
+  },
+  {
+    id: "ai_assistance",
+    label: "AI assistance",
+    description: "Ask Aarvanta and keep high-impact actions on approval.",
+  },
+  {
+    id: "website",
+    label: "Website",
+    description: "Publish a business site whose forms land in CRM.",
+  },
+];
+
+export const ONBOARDING_TIMEZONES = [
+  "Europe/London",
+  "Europe/Dublin",
+  "Europe/Paris",
+  "America/New_York",
+  "America/Chicago",
+  "America/Los_Angeles",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Australia/Sydney",
+] as const;
+
+export const ONBOARDING_CURRENCIES = ["GBP", "USD", "EUR", "AED", "INR"] as const;
+
 export const ONBOARDING_TOOLS = [
   "Google Workspace",
   "Microsoft 365",
@@ -67,7 +115,6 @@ export const ONBOARDING_TOOLS = [
   "WordPress",
   "Wix",
   "Calendly",
-  "Mailchimp",
   "Excel / Sheets",
   "Other",
 ] as const;

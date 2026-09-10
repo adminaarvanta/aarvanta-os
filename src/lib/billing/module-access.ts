@@ -45,7 +45,7 @@ export const MODULE_FEATURE_MAP: Record<string, PlanFeatureKey | "ungated"> = {
   calling: "voiceAi",
   crm: "crm",
   workforce: "aiWorkforce",
-  automation: "workflows",
+  automation: "aiWorkforce",
   projects: "projects",
   workflows: "workflows",
   hr: "hr",
@@ -76,7 +76,8 @@ export const MODULE_FEATURE_MAP: Record<string, PlanFeatureKey | "ungated"> = {
 
 /** Resolve feature key from a pathname like /finance/invoices. */
 export function featureKeyForPath(pathname: string): PlanFeatureKey | "ungated" | null {
-  const segment = pathname.split("/").filter(Boolean)[0];
+  const clean = pathname.split("?")[0].split("#")[0];
+  const segment = clean.split("/").filter(Boolean)[0];
   if (!segment) return "ungated";
   return MODULE_FEATURE_MAP[segment] ?? null;
 }

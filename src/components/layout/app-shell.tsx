@@ -15,6 +15,7 @@ export function AppShell({
   userRole,
   userId,
   hasSeenWalkthrough = false,
+  toursCompleted,
   showLaunchpad = false,
   whatsappUnread,
   voiceUnread,
@@ -33,6 +34,7 @@ export function AppShell({
   userRole?: string;
   userId?: string | null;
   hasSeenWalkthrough?: boolean;
+  toursCompleted?: Record<string, string>;
   showLaunchpad?: boolean;
   whatsappUnread?: number;
   voiceUnread?: number;
@@ -54,7 +56,9 @@ export function AppShell({
           <DemoTourProvider
             userId={userId ?? null}
             hasSeenWalkthrough={hasSeenWalkthrough}
+            toursCompleted={toursCompleted}
             autoStartWalkthrough={autoStartWalkthrough}
+            autoStartModuleTours={production}
           >
             <ScrollRestoration />
             <AppShellFrame

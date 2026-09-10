@@ -1,29 +1,15 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { apiError, parseJsonBody } from "@/lib/api/request";
 import { crmNow } from "@/lib/data/crm-helpers";
 import { getTenantRepository } from "@/lib/data/tenant-store";
 import { getSessionContext, requirePermission } from "@/lib/tenant/context";
 import { guessWebsiteFromEmail } from "@/lib/onboarding/catalog";
 import { buildLaunchpadSnapshot } from "@/lib/onboarding/launchpad";
+import { parseOnboardingPatch } from "@/lib/onboarding/onboarding-patch";
+import { setWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import type { OrganizationOnboarding } from "@/types/tenant";
 
 export const runtime = "nodejs";
-
-const patchSchema = z.object({
-  name: z.string().min(1).max(120).optional(),
-  website: z.string().max(200).optional(),
-  useCase: z
-    .enum(["own_business", "agency", "internal_team", "exploring"])
-    .optional(),
-  industry: z.string().min(1).max(80).optional(),
-  customerCountRange: z
-    .enum(["1-10", "11-50", "51-200", "200+", "none_yet"])
-    .optional(),
-  tools: z.array(z.string().max(60)).max(20).optional(),
-  complete: z.boolean().optional(),
-  dismissLaunchpad: z.boolean().optional(),
-});
 
 export async function GET() {
   try {
@@ -60,7 +46,7 @@ export async function PATCH(req: Request) {
     const body = await parseJsonBody<unknown>(req);
     if (body instanceof NextResponse) return body;
 
-    const parsed = patchSchema.safeParse(body);
+    const parsed = parseOnboardingPatch(body);
     if (!parsed.success) {
       return apiError("VALIDATION_ERROR", "Invalid onboarding payload", 400);
     }
@@ -84,6 +70,16 @@ export async function PATCH(req: Request) {
       nextOnboarding.customerCountRange = parsed.data.customerCountRange;
     }
     if (parsed.data.tools) nextOnboarding.tools = parsed.data.tools;
+    if (parsed.data.primaryGoal !== undefined) {
+      nextOnboarding.primaryGoal = parsed.data.primaryGoal.trim();
+    }
+    if (parsed.data.startingWorkflow) {
+      nextOnboarding.startingWorkflow = parsed.data.startingWorkflow;
+    }
+    if (parsed.data.connectSkipped) nextOnboarding.connectSkipped = true;
+    if (parsed.data.sampleDataOptIn !== undefined) {
+      nextOnboarding.sampleDataOptIn = parsed.data.sampleDataOptIn;
+    }
     if (parsed.data.complete) {
       nextOnboarding.status = "complete";
       nextOnboarding.completedAt = now;
@@ -97,6 +93,13 @@ export async function PATCH(req: Request) {
       onboarding: nextOnboarding,
     });
     if (!updated) return apiError("NOT_FOUND", "Organization not found", 404);
+
+    if (parsed.data.timezone || parsed.data.currency) {
+      await setWorkspaceSettings(ctx.scope.workspaceId, {
+        ...(parsed.data.timezone ? { timezone: parsed.data.timezone } : {}),
+        ...(parsed.data.currency ? { defaultCurrency: parsed.data.currency } : {}),
+      });
+    }
 
     return NextResponse.json({
       organization: {

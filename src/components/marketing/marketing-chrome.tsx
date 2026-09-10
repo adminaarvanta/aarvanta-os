@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { TRIAL_POLICY } from "@/lib/product/trial";
 import { BrandLogo } from "@/components/brand/logo";
 
 const links = [
   { href: "/pricing", label: "Pricing" },
-  { href: "/affiliate", label: "Partners" },
+  { href: "/docs", label: "Docs" },
+  { href: "/security", label: "Security" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
-  { href: "/privacy", label: "Privacy" },
 ];
 
 export function MarketingNav({ production }: { production: boolean }) {
@@ -40,10 +41,10 @@ export function MarketingNav({ production }: { production: boolean }) {
             </Link>
           ) : null}
           <Link
-            href="/inbox"
+            href={production ? "/register" : "/dashboard"}
             className="rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-black hover:bg-gold-bright sm:px-4"
           >
-            {production ? "Open app" : "Launch demo"}
+            {production ? "Start Free" : "View Interactive Demo"}
           </Link>
         </div>
       </div>
@@ -65,20 +66,32 @@ export function MarketingFooter() {
           <Link href="/pricing" className="hover:text-gold">
             Pricing
           </Link>
-          <Link href="/affiliate" className="hover:text-gold">
-            Partners
+          <Link href="/docs" className="hover:text-gold">
+            Docs
           </Link>
-          <Link href="/about" className="hover:text-gold">
-            About
+          <Link href="/security" className="hover:text-gold">
+            Security
           </Link>
-          <Link href="/contact" className="hover:text-gold">
-            Contact
+          <Link href="/status" className="hover:text-gold">
+            Status
+          </Link>
+          <Link href="/changelog" className="hover:text-gold">
+            Changelog
+          </Link>
+          <Link href="/subprocessors" className="hover:text-gold">
+            Subprocessors
           </Link>
           <Link href="/privacy" className="hover:text-gold">
             Privacy
           </Link>
-          <Link href="/inbox" className="hover:text-gold">
-            App
+          <Link href="/affiliate" className="hover:text-gold">
+            Partners
+          </Link>
+          <Link href="/contact" className="hover:text-gold">
+            Contact
+          </Link>
+          <Link href="/register" className="hover:text-gold">
+            {TRIAL_POLICY.shortCopy}
           </Link>
         </div>
       </div>

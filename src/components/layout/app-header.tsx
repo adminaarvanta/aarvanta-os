@@ -3,12 +3,15 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   EllipsisVertical,
   FileText,
-  Handshake,
+  Inbox,
+  Kanban,
   Plus,
+  Sparkles,
   Target,
   UserPlus,
   Workflow,
@@ -53,17 +56,34 @@ const NotificationsMenu = dynamic(
   }
 );
 
-const quickActions = [
-  { label: "Add New Lead", href: "/crm/leads", icon: Target },
-  { label: "Create Workflow", href: "/automation", icon: Workflow },
-  { label: "Generate Report", href: "/analytics", icon: FileText },
-  { label: "Open Partners", href: "/partners", icon: Handshake },
-  { label: "Invite Team Member", href: "/team?tab=manage", icon: UserPlus },
-];
+function contextualCreates(pathname: string) {
+  if (pathname.startsWith("/crm")) {
+    return [
+      { label: "Add contact", href: "/crm/people", icon: Target },
+      { label: "Add deal", href: "/crm/sales", icon: FileText },
+    ];
+  }
+  if (pathname.startsWith("/inbox") || pathname.startsWith("/voice")) {
+    return [{ label: "Open inbox", href: "/inbox", icon: Inbox }];
+  }
+  if (pathname.startsWith("/projects")) {
+    return [{ label: "Open work", href: "/projects", icon: Kanban }];
+  }
+  if (pathname.startsWith("/automation") || pathname.startsWith("/workforce")) {
+    return [{ label: "Ask Aarvanta", href: "/automation?view=ask", icon: Sparkles }];
+  }
+  return [
+    { label: "Add contact", href: "/crm/people", icon: Target },
+    { label: "Create workflow", href: "/workflows", icon: Workflow },
+    { label: "Invite teammate", href: "/team?tab=manage", icon: UserPlus },
+  ];
+}
 
 export function AppHeader() {
+  const pathname = usePathname();
   const [quickOpen, setQuickOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const quickActions = contextualCreates(pathname);
 
   useEffect(() => {
     if (!mobileMoreOpen) return;
@@ -87,7 +107,7 @@ export function AppHeader() {
       <div className="min-w-0 flex-1">
         <GlobalSearch
           className="w-full max-w-xl"
-          placeholder="Search…"
+          placeholder="Search customers or type a command"
         />
       </div>
 
@@ -119,11 +139,11 @@ export function AppHeader() {
             type="button"
             onClick={() => setQuickOpen((v) => !v)}
             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-gold px-2.5 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-gold-bright sm:gap-2 sm:px-4"
-            aria-label="Quick actions"
+            aria-label="Create"
             aria-expanded={quickOpen}
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Quick Action</span>
+            <span className="hidden sm:inline">Create</span>
             <ChevronDown className="hidden h-4 w-4 opacity-80 sm:block" />
           </button>
 

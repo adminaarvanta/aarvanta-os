@@ -18,9 +18,9 @@ export const PRICING_TIERS = PLAN_CATALOG.map((plan) => ({
 
 export const COMPANY = {
   name: "Aarvanta Limited",
-  tagline: "Hire Your First AI Workforce",
+  tagline: "Run your business from one intelligent operating system.",
   subtagline:
-    "Run Sales, Marketing, Operations and Customer Support From One Dashboard",
+    "Customers, work, communications, knowledge, AI and automation connected in one place.",
   email: "hello@aarvanta.com",
   location: "United Kingdom",
 };

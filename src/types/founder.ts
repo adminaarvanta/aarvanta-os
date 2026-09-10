@@ -35,6 +35,44 @@ export interface FounderSnapshot {
   focus: string[];
 }
 
+export type TodayAttentionItem = {
+  id: string;
+  title: string;
+  reason: string;
+  href: string;
+  actionLabel: string;
+};
+
+export type TodayApprovalItem = {
+  id: string;
+  title: string;
+  reason: string;
+  href: string;
+  consequence: string;
+};
+
+export type TodayRecommendedAction = {
+  id: string;
+  title: string;
+  reason: string;
+  expectedOutcome: string;
+  href: string;
+};
+
+export type TodayEventItem = {
+  id: string;
+  title: string;
+  href: string;
+  time: string;
+};
+
+export interface TodaySnapshot extends FounderSnapshot {
+  attention: TodayAttentionItem[];
+  approvals: TodayApprovalItem[];
+  recommended: TodayRecommendedAction[];
+  recentEvents: TodayEventItem[];
+}
+
 export interface FounderChatMessage extends TenantScope {
   id: string;
   role: "user" | "assistant";

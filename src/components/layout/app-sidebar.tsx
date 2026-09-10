@@ -11,32 +11,23 @@ import { AllToolsPanel } from "@/components/layout/all-tools-panel";
 import { useSidebarCollapse } from "@/components/layout/sidebar-collapse";
 import {
   commandCenterNav,
+  isCommandNavActive,
   SIDEBAR_BRAND,
   SIDEBAR_SHORTCUTS,
 } from "@/lib/navigation/command-center-nav";
 import { cn } from "@/lib/utils";
 import type { Organization, Workspace } from "@/types/tenant";
 import { usePlan, isNavHrefLocked, isNavHrefVisible } from "@/components/billing/plan-context";
+import { MaturityBadge } from "@/components/ui/maturity-badge";
 import { PremiumBadge } from "@/components/billing/plan-ui";
 
 function isActive(pathname: string, href: string) {
-  if (href === "#all-tools") return false;
-  const path = href.split("?")[0];
-  if (path === "/dashboard") return pathname.startsWith("/dashboard");
-  if (path === "/crm") return pathname.startsWith("/crm");
-  if (path === "/automation") {
-    return (
-      pathname.startsWith("/automation") ||
-      pathname.startsWith("/workforce") ||
-      pathname.startsWith("/workflows")
-    );
-  }
-  if (path === "/analytics") return pathname.startsWith("/analytics");
-  return pathname.startsWith(path);
+  return isCommandNavActive(pathname, href);
 }
 
 function tourNavId(href: string) {
-  return href.replace(/^\//, "").replace(/\//g, "-") || "home";
+  const path = href.split("?")[0] ?? href;
+  return path.replace(/^\//, "").replace(/\//g, "-") || "home";
 }
 
 export function AppSidebar({
@@ -182,9 +173,14 @@ export function AppSidebar({
                 );
               }
 
-              const isAutomation = item.href === "/automation";
+              const isAskAi = item.href.includes("view=ask");
               const showFreeBadge =
-                isAutomation && plan?.planId === "free" && !locked;
+                isAskAi && plan?.planId === "free" && !locked;
+              const showMaturity =
+                !locked &&
+                !showFreeBadge &&
+                item.maturity &&
+                item.maturity !== "live";
 
               return (
                 <li key={item.href}>
@@ -215,6 +211,8 @@ export function AppSidebar({
                           <span className="rounded-md bg-accent-cyan/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent-cyan">
                             Free
                           </span>
+                        ) : showMaturity ? (
+                          <MaturityBadge status={item.maturity!} />
                         ) : badge !== null ? (
                           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-semibold text-black">
                             {badge > 99 ? "99+" : badge}

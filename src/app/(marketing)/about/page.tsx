@@ -9,21 +9,19 @@ export default function AboutPage() {
 
       <div className="mt-10 space-y-6 text-sm leading-relaxed text-muted">
         <p>
-          Aarvanta OS is built by {COMPANY.name} with a single mission: create the
-          world&apos;s first AI Workforce &amp; Business Operating System — one
-          platform where AI employees, human teams, knowledge, processes, projects,
-          customers, and operations work together.
+          Aarvanta OS is built by {COMPANY.name} with a single mission: one
+          operating system where customers, work, communications, knowledge, and
+          an approval-controlled AI workforce run together.
         </p>
         <p>
           Most tools solve one piece of the puzzle — a chatbot here, a CRM there, a
-          workflow builder somewhere else. Aarvanta OS unifies them into a coherent
-          system designed for SMEs who want to operate at the speed of AI without
-          losing control.
+          workflow builder somewhere else. Aarvanta OS unifies the live core:
+          Customers, Inbox, Knowledge, Automations, Website, and AI as the
+          execution layer. Finance and People are labelled at their true maturity.
         </p>
         <p>
-          Our stack is built on Next.js, Firebase, and OpenAI — deployed on Vercel
-          for global performance with enterprise-grade security foundations including
-          RBAC, audit logs, and multi-tenant architecture.
+          Human control is the default for external messages, money, permissions,
+          and destructive actions. We do not sell a Marketing OS from this product.
         </p>
       </div>
 
@@ -38,10 +36,10 @@ export default function AboutPage() {
       </section>
 
       <Link
-        href="/inbox"
+        href="/register"
         className="mt-10 inline-flex rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-gold-bright"
       >
-        Explore the demo
+        Start Free
       </Link>
     </div>
   );

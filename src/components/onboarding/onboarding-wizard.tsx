@@ -2,36 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Search } from "lucide-react";
 import { BrandLogo } from "@/components/brand/logo";
-import { AuthAlert, AuthField, AuthSubmitButton } from "@/components/auth/auth-fields";
+import { AuthAlert, AuthField, AuthSelect, AuthSubmitButton } from "@/components/auth/auth-fields";
 import { HelpTip } from "@/components/ui/help-tip";
+import { Button } from "@/components/ui/button";
 import {
+  ONBOARDING_CURRENCIES,
   ONBOARDING_CUSTOMER_COUNTS,
   ONBOARDING_INDUSTRIES,
-  ONBOARDING_TOOLS,
-  ONBOARDING_USE_CASES,
+  ONBOARDING_STARTING_WORKFLOWS,
+  ONBOARDING_TIMEZONES,
 } from "@/lib/onboarding/catalog";
 import { cn } from "@/lib/utils";
 import type {
   CustomerCountRange,
-  OnboardingUseCase,
   OrganizationOnboarding,
+  StartingWorkflow,
 } from "@/types/tenant";
 
-type WizardStep = 1 | 2 | 3 | 4 | 5;
-
-const STEP_COUNT = 5;
-
-type LoadPayload = {
-  organization: {
-    id: string;
-    name: string;
-    onboarding: OrganizationOnboarding | null;
-  };
-  suggestedWebsite: string;
-  firstName: string;
-};
+type WizardStep = 1 | 2 | 3 | 4;
+const STEP_COUNT = 4;
 
 function ChoiceButton({
   selected,
@@ -70,39 +60,41 @@ export function OnboardingWizard() {
   const [firstName, setFirstName] = useState("there");
   const [name, setName] = useState("");
   const [website, setWebsite] = useState("");
-  const [useCase, setUseCase] = useState<OnboardingUseCase | "">("");
   const [industry, setIndustry] = useState("");
-  const [industryQuery, setIndustryQuery] = useState("");
-  const [customerCount, setCustomerCount] = useState<CustomerCountRange | "">(
-    ""
-  );
-  const [tools, setTools] = useState<string[]>([]);
+  const [customerCount, setCustomerCount] = useState<CustomerCountRange | "">("");
+  const [timezone, setTimezone] = useState("Europe/London");
+  const [currency, setCurrency] = useState("GBP");
+  const [primaryGoal, setPrimaryGoal] = useState("");
+  const [workflow, setWorkflow] = useState<StartingWorkflow | "">("");
+  const [imported, setImported] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/tenant/onboarding");
-        const data = (await res.json()) as LoadPayload & {
+        const data = (await res.json()) as {
+          firstName?: string;
+          suggestedWebsite?: string;
+          organization: { name: string; onboarding: OrganizationOnboarding | null };
           error?: { message?: string };
         };
-        if (!res.ok) {
-          throw new Error(data.error?.message ?? "Could not load onboarding.");
-        }
+        if (!res.ok) throw new Error(data.error?.message ?? "Could not load onboarding.");
         if (cancelled) return;
         if (data.organization.onboarding?.status === "complete") {
           router.replace("/dashboard");
           return;
         }
+        const ob = data.organization.onboarding;
         setFirstName(data.firstName || "there");
         setName(data.organization.name);
-        setWebsite(
-          data.organization.onboarding?.website || data.suggestedWebsite || ""
-        );
-        setUseCase(data.organization.onboarding?.useCase ?? "");
-        setIndustry(data.organization.onboarding?.industry ?? "");
-        setCustomerCount(data.organization.onboarding?.customerCountRange ?? "");
-        setTools(data.organization.onboarding?.tools ?? []);
+        setWebsite(ob?.website || data.suggestedWebsite || "");
+        setIndustry(ob?.industry ?? "");
+        setCustomerCount(ob?.customerCountRange ?? "");
+        setPrimaryGoal(ob?.primaryGoal ?? "");
+        setWorkflow(ob?.startingWorkflow ?? "");
+        if (ob?.startingWorkflow) setStep(ob.connectSkipped ? 4 : 3);
+        else if (ob?.industry) setStep(2);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Could not load onboarding.");
@@ -116,13 +108,7 @@ export function OnboardingWizard() {
     };
   }, [router]);
 
-  const industries = useMemo(() => {
-    const q = industryQuery.trim().toLowerCase();
-    if (!q) return [...ONBOARDING_INDUSTRIES];
-    return ONBOARDING_INDUSTRIES.filter((item) =>
-      item.toLowerCase().includes(q)
-    );
-  }, [industryQuery]);
+  const industries = useMemo(() => [...ONBOARDING_INDUSTRIES], []);
 
   async function save(payload: Record<string, unknown>) {
     setBusy(true);
@@ -136,9 +122,17 @@ export function OnboardingWizard() {
       const data = (await res.json().catch(() => null)) as {
         error?: { message?: string };
       } | null;
-      if (!res.ok) {
-        throw new Error(data?.error?.message ?? "Could not save.");
-      }
+      if (!res.ok) throw new Error(data?.error?.message ?? "Could not save.");
+      void fetch("/api/telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: payload.complete ? "first_useful_action" : "onboarding_step",
+          step: String(step),
+          module: "onboarding",
+          outcome: payload.complete ? "workspace_ready" : undefined,
+        }),
+      });
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save.");
@@ -150,85 +144,77 @@ export function OnboardingWizard() {
 
   async function goNext() {
     if (step === 1) {
-      if (!name.trim()) {
-        setError("Add your company or workspace name.");
+      if (!name.trim() || !industry || !customerCount) {
+        setError("Company name, industry, and size are required.");
         return;
       }
       const ok = await save({
         name: name.trim(),
         website: website.trim(),
+        industry,
+        customerCountRange: customerCount,
+        primaryGoal: primaryGoal.trim(),
+        timezone,
+        currency,
       });
       if (ok) setStep(2);
       return;
     }
     if (step === 2) {
-      if (!useCase) {
-        setError("Choose how you plan to use Aarvanta.");
+      if (!workflow) {
+        setError("Choose a starting workflow. Marketing is not an option.");
         return;
       }
-      const ok = await save({ useCase });
+      const ok = await save({ startingWorkflow: workflow });
       if (ok) setStep(3);
       return;
     }
     if (step === 3) {
-      if (!industry) {
-        setError("Choose the industry that best fits.");
-        return;
-      }
-      const ok = await save({ industry });
+      const ok = await save({ connectSkipped: true });
       if (ok) setStep(4);
       return;
     }
-    if (step === 4) {
-      if (!customerCount) {
-        setError("Select how many customers you serve.");
-        return;
-      }
-      const ok = await save({ customerCountRange: customerCount });
-      if (ok) setStep(5);
-      return;
-    }
-    const ok = await save({ tools, complete: true });
+    const ok = await save({ complete: true });
     if (ok) router.replace("/dashboard");
   }
 
-  function toggleTool(tool: string) {
-    setTools((current) =>
-      current.includes(tool)
-        ? current.filter((item) => item !== tool)
-        : [...current, tool]
-    );
+  async function onCsv(file: File) {
+    setBusy(true);
+    setError(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("entity", "contacts");
+      const res = await fetch("/api/crm/import", { method: "POST", body });
+      if (!res.ok) {
+        throw new Error("Import failed. Check the CSV template and try again.");
+      }
+      setImported(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Import failed.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const titles: Record<WizardStep, { heading: string; body: string }> = {
     1: {
       heading: `Welcome, ${firstName}`,
-      body: "A few details so we can set up your workspace — not another password.",
+      body: "Tell us about the business so the workspace uses the right currency, timezone, and language.",
     },
     2: {
-      heading: "How will you use Aarvanta?",
-      body: "This shapes your Home setup list. You can change it later.",
+      heading: "Choose a starting workflow",
+      body: "Begin with one useful path. You can open every live module afterwards.",
     },
     3: {
-      heading: "What industry are you in?",
-      body: "Pick the closest match so we can tailor CRM and Knowledge prompts.",
+      heading: "Connect or import",
+      body: "CSV import is available now. Other connectors can be skipped safely.",
     },
     4: {
-      heading: "How many customers do you have?",
-      body: "Helps us size pipelines and AI Team suggestions.",
-    },
-    5: {
-      heading: "What do you use today?",
-      body: "Optional. We’ll use this to suggest integrations — skip if you prefer.",
+      heading: "Your workspace is ready",
+      body: "Home opens with a five-item checklist for your first useful outcome. High-impact AI stays on approval.",
     },
   };
-
-  const canContinue =
-    (step === 1 && Boolean(name.trim())) ||
-    (step === 2 && Boolean(useCase)) ||
-    (step === 3 && Boolean(industry)) ||
-    (step === 4 && Boolean(customerCount)) ||
-    step === 5;
 
   if (loading) {
     return (
@@ -252,16 +238,14 @@ export function OnboardingWizard() {
           style={{ width: `${(step / STEP_COUNT) * 100}%` }}
         />
       </div>
-
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         {titles[step].heading}
       </h1>
       <p className="mt-1.5 text-sm text-muted">
         {titles[step].body}{" "}
         <HelpTip label="What happens next">
-          {step < 5
-            ? "Continue to the next setup question. You can change these later in Settings."
-            : "We open Home with a setup checklist: add a contact, try Automation, and compare plans when you are ready."}
+          Progress is saved after each step. You can skip optional integrations
+          and resume later.
         </HelpTip>
       </p>
 
@@ -270,7 +254,7 @@ export function OnboardingWizard() {
           <>
             <AuthField
               id="company"
-              label="Company / workspace"
+              label="Business name"
               icon="company"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -279,108 +263,114 @@ export function OnboardingWizard() {
             <AuthField
               id="website"
               label="Website"
-              hint="Optional. We guessed from your email if it looked like a company domain."
-              icon="country"
+              hint="Optional."
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
               placeholder="https://"
+            />
+            <AuthSelect
+              id="industry"
+              label="Industry"
+              required
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              options={["", ...industries]}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <AuthSelect
+                id="size"
+                label="Business size"
+                required
+                value={customerCount}
+                onChange={(e) =>
+                  setCustomerCount(e.target.value as CustomerCountRange | "")
+                }
+                options={["", ...ONBOARDING_CUSTOMER_COUNTS.map((item) => item.id)]}
+              />
+              <AuthSelect
+                id="currency"
+                label="Currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                options={[...ONBOARDING_CURRENCIES]}
+              />
+            </div>
+            <AuthSelect
+              id="timezone"
+              label="Timezone"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              options={[...ONBOARDING_TIMEZONES]}
+            />
+            <AuthField
+              id="goal"
+              label="Primary goal"
+              hint="Optional. Example: close more leads this month."
+              value={primaryGoal}
+              onChange={(e) => setPrimaryGoal(e.target.value)}
             />
           </>
         ) : null}
 
         {step === 2 ? (
           <div className="space-y-2.5">
-            {ONBOARDING_USE_CASES.map((item) => (
+            {ONBOARDING_STARTING_WORKFLOWS.map((item) => (
               <ChoiceButton
                 key={item.id}
-                selected={useCase === item.id}
+                selected={workflow === item.id}
                 title={item.label}
                 subtitle={item.description}
-                onClick={() => setUseCase(item.id)}
+                onClick={() => setWorkflow(item.id)}
               />
             ))}
           </div>
         ) : null}
 
         {step === 3 ? (
-          <>
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-dim" />
-              <input
-                value={industryQuery}
-                onChange={(e) => setIndustryQuery(e.target.value)}
-                placeholder="Search industry"
-                className="h-12 w-full rounded-2xl border border-border/80 bg-surface-muted/80 pl-11 pr-3.5 text-sm outline-none focus:border-gold/70"
-              />
-            </label>
-            <div className="grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2">
-              {industries.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setIndustry(item)}
-                  className={cn(
-                    "rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                    industry === item
-                      ? "border-gold/70 bg-gold/10 text-foreground"
-                      : "border-border/80 bg-surface-muted/50 text-muted hover:border-gold/40 hover:text-foreground"
-                  )}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </>
+          <div className="space-y-4">
+            <p className="text-sm text-muted">
+              Import contacts from CSV, or skip and add the first customer from
+              Home. Gmail, Outlook, and WhatsApp OAuth are not invented here —
+              connect them later from Integrations if they are live.
+            </p>
+            <a
+              href="/api/crm/import/template"
+              className="inline-flex text-sm font-medium text-gold hover:underline"
+            >
+              Download CSV template
+            </a>
+            <input
+              type="file"
+              accept=".csv,.xlsx"
+              aria-label="Import contacts CSV"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void onCsv(file);
+              }}
+            />
+            {imported ? (
+              <p className="text-sm text-success">Contacts imported. Continue when ready.</p>
+            ) : null}
+            <Button href="/integrations" variant="secondary" size="sm">
+              Open integrations
+            </Button>
+          </div>
         ) : null}
 
         {step === 4 ? (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-            {ONBOARDING_CUSTOMER_COUNTS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setCustomerCount(item.id)}
-                className={cn(
-                  "rounded-2xl border px-3 py-4 text-sm font-semibold transition-colors",
-                  customerCount === item.id
-                    ? "border-gold/70 bg-gold/10 text-foreground"
-                    : "border-border/80 bg-surface-muted/50 text-muted hover:border-gold/40 hover:text-foreground"
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        {step === 5 ? (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {ONBOARDING_TOOLS.map((tool) => {
-              const selected = tools.includes(tool);
-              return (
-                <button
-                  key={tool}
-                  type="button"
-                  onClick={() => toggleTool(tool)}
-                  className={cn(
-                    "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors",
-                    selected
-                      ? "border-accent-cyan/50 bg-accent-cyan/10 text-foreground"
-                      : "border-border/80 bg-surface-muted/50 text-muted hover:border-accent-cyan/30 hover:text-foreground"
-                  )}
-                >
-                  <span className="min-w-0 truncate">{tool}</span>
-                  {selected ? (
-                    <Check className="h-3.5 w-3.5 shrink-0 text-accent-cyan" />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+          <ul className="space-y-2 text-sm text-muted">
+            <li>Starter checklist on Home until the first useful outcome.</li>
+            <li>AI permissions default to Approval required for high-impact actions.</li>
+            <li>No sample data was created unless you already used the demo workspace.</li>
+          </ul>
         ) : null}
       </div>
 
-      {error ? <div className="mt-4"><AuthAlert>{error}</AuthAlert></div> : null}
+      {error ? (
+        <div className="mt-4">
+          <AuthAlert>{error}</AuthAlert>
+        </div>
+      ) : null}
 
       <div className="mt-6 flex items-center gap-3">
         {step > 1 ? (
@@ -398,26 +388,15 @@ export function OnboardingWizard() {
         ) : null}
         <AuthSubmitButton
           busy={busy}
-          disabled={!canContinue}
           onClick={(e) => {
             e.preventDefault();
             void goNext();
           }}
           type="button"
         >
-          {step === 5 ? "Set up my workspace" : "Continue"}
+          {step === 3 ? "Skip and continue" : step === 4 ? "Open Home" : "Continue"}
         </AuthSubmitButton>
       </div>
-      {step === 5 ? (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void save({ tools: [], complete: true }).then((ok) => ok && router.replace("/dashboard"))}
-          className="mt-3 w-full text-center text-sm font-medium text-muted hover:text-foreground"
-        >
-          Skip tools and go to Home
-        </button>
-      ) : null}
     </div>
   );
 }
