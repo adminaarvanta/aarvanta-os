@@ -21,7 +21,11 @@ function heuristicBusiness(preferences: SitePreferences): BusinessProfile {
     industry = "Manufacturing";
     subcategory = "Building Materials";
     primaryGoal = "Showcase Products";
-  } else if (/(toy|shop|store|ecommerce|retail|\bproducts?\b)/.test(idea)) {
+  } else if (
+    /(online\s+store|e-?commerce|webshop|boutique|retail\s+shop|gift\s+shop)/.test(idea) ||
+    /(sell|selling)\b.{0,40}\b(online|products?|goods)\b/.test(idea) ||
+    (/\b(shop|store)\b/.test(idea) && /(product|retail|buy|purchase)/.test(idea))
+  ) {
     industry = "Retail";
     subcategory = /toy/.test(idea) ? "Educational Toys" : "Online Store";
     primaryGoal = "Sell Products";

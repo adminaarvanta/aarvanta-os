@@ -20,6 +20,7 @@ import {
   isCopyRefine,
   isImageRefine,
   isStructuralRefine,
+  isThemeRefine,
 } from "@/lib/site-builder/refine-history";
 import { ensureShareToken } from "@/lib/site-builder/share-token";
 import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
@@ -162,8 +163,14 @@ export async function runGenerationPipeline(
     }
     site = applyRefineHeuristics(site, refineText);
 
-    // Light AI hero refresh for copy-oriented prompts (does not rebuild the site).
-    if (isAiConfigured() && isCopyRefine(refineText)) {
+    // Light AI hero refresh for copy-oriented (or unmatched free-form) prompts.
+    if (
+      isAiConfigured() &&
+      (isCopyRefine(refineText) ||
+        (!isThemeRefine(refineText) &&
+          !isStructuralRefine(refineText) &&
+          !isImageRefine(refineText)))
+    ) {
       try {
         const home = site.pages.find((p) => p.slug === "home" || p.slug === "");
         const hero = home?.blocks.find((b) => b.type === "hero");

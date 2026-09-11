@@ -25,22 +25,6 @@ export type SiteThemePresetDefinition = {
 
 export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
   {
-    id: "gold_navy",
-    label: "Gold & Navy",
-    description: "Premium dark canvas with gold accents — Aarvanta signature.",
-    primaryColor: "#B8965D",
-    accentColor: "#C9AA72",
-    backgroundColor: "#040608",
-    fontStyle: "Modern sans-serif, generous spacing",
-    fontFamily: '"DM Sans", system-ui, sans-serif',
-    headingFont: '"Fraunces", Georgia, serif',
-    googleFontsUrl:
-      "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap",
-    fontPackId: "luxury_serif",
-    colorMood: "warm",
-    designStyle: "modern",
-  },
-  {
     id: "minimal_light",
     label: "Minimal Light",
     description: "Clean white layout with subtle navy typography.",
@@ -55,6 +39,22 @@ export const SITE_THEME_PRESETS: SiteThemePresetDefinition[] = [
     fontPackId: "editorial",
     colorMood: "neutral",
     designStyle: "minimal",
+  },
+  {
+    id: "gold_navy",
+    label: "Gold & Navy",
+    description: "Premium dark canvas with gold accents.",
+    primaryColor: "#B8965D",
+    accentColor: "#C9AA72",
+    backgroundColor: "#040608",
+    fontStyle: "Modern sans-serif, generous spacing",
+    fontFamily: '"DM Sans", system-ui, sans-serif',
+    headingFont: '"Fraunces", Georgia, serif',
+    googleFontsUrl:
+      "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap",
+    fontPackId: "luxury_serif",
+    colorMood: "warm",
+    designStyle: "modern",
   },
   {
     id: "bold_dark",
@@ -157,7 +157,7 @@ export function getThemePreset(id: SiteThemePreset): SiteThemePresetDefinition {
 }
 
 export function defaultCustomThemeFromPreset(
-  presetId: Exclude<SiteThemePreset, "custom"> = "gold_navy"
+  presetId: Exclude<SiteThemePreset, "custom"> = "minimal_light"
 ): SiteCustomTheme {
   const preset = getThemePreset(presetId);
   return {
@@ -179,7 +179,7 @@ export function normalizeHex(value: string, fallback: string): string {
 export function resolveSiteTheme(preferences: SitePreferences): SitePlanTheme {
   const base =
     preferences.themePreset === "custom"
-      ? getThemePreset("gold_navy")
+      ? getThemePreset("minimal_light")
       : getThemePreset(preferences.themePreset);
 
   const custom = preferences.customTheme;

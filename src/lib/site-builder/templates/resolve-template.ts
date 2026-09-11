@@ -34,6 +34,15 @@ export function defaultTemplateForCategory(
   return list[0];
 }
 
+/** Neutral business default — never fall back to the first ecommerce template. */
+function defaultBusinessTemplate(): SiteTemplateDefinition {
+  return (
+    getTemplateById("local_trust") ??
+    SITE_TEMPLATES.find((t) => t.siteType === "business") ??
+    SITE_TEMPLATES[0]!
+  );
+}
+
 /** Resolve an optional template prior for the ARIA pipeline (never throws). */
 export function resolveTemplatePrior(
   templateId?: string,
@@ -50,5 +59,5 @@ export function resolveTemplatePrior(
       /* fall through */
     }
   }
-  return SITE_TEMPLATES[0]!;
+  return defaultBusinessTemplate();
 }

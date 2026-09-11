@@ -30,7 +30,7 @@ import {
   writeComposeDraftCache,
 } from "@/lib/site-builder/compose-draft-cache";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
-import { EXAMPLE_PROMPTS, inferPreferencesFromPrompt } from "@/lib/site-builder/infer-preferences";
+import { EXAMPLE_PROMPTS, inferPreferencesFromPrompt, promptImpliesStore } from "@/lib/site-builder/infer-preferences";
 import { countClientMediaOnSite } from "@/lib/site-builder/apply-client-media";
 import { publicSharePath } from "@/lib/site-builder/share-path";
 import {
@@ -109,14 +109,11 @@ export function BuildOsClient({
   const [businessName, setBusinessName] = useState("");
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState<SiteTone>("friendly");
-  const [goals, setGoals] = useState<string[]>(["Sell more products online"]);
-  const [features, setFeatures] = useState<SiteFeatureOption[]>([
-    "ecommerce",
-    "contact_form",
-  ]);
-  const [themePreset, setThemePreset] = useState<SiteThemePreset>("gold_navy");
+  const [goals, setGoals] = useState<string[]>(["Generate leads"]);
+  const [features, setFeatures] = useState<SiteFeatureOption[]>(["contact_form"]);
+  const [themePreset, setThemePreset] = useState<SiteThemePreset>("minimal_light");
   const [customTheme, setCustomTheme] = useState<SiteCustomTheme>(() =>
-    defaultCustomThemeFromPreset("gold_navy")
+    defaultCustomThemeFromPreset("minimal_light")
   );
   const [screenshots, setScreenshots] = useState<SiteReferenceScreenshot[]>([]);
   const [clientMedia, setClientMedia] = useState<SiteClientMedia[]>([]);
@@ -215,7 +212,9 @@ export function BuildOsClient({
     setCustomTheme(
       next.preferences.customTheme ??
         defaultCustomThemeFromPreset(
-          next.preferences.themePreset === "custom" ? "gold_navy" : next.preferences.themePreset
+          next.preferences.themePreset === "custom"
+            ? "minimal_light"
+            : next.preferences.themePreset
         )
     );
     setBrandLogo(
@@ -308,6 +307,7 @@ export function BuildOsClient({
     (extraPrompt?: string): SitePreferences => {
       const basePrompt = prompt.trim() || "Untitled draft";
       const refine = extraPrompt?.trim();
+      const prior = jobRef.current?.preferences;
       return inferPreferencesFromPrompt(basePrompt, {
         businessName: businessName.trim() || undefined,
         targetAudience: audience.trim() || undefined,
@@ -322,9 +322,16 @@ export function BuildOsClient({
         brandLogo: brandLogo ?? undefined,
         designOptions: designOptions.length ? designOptions : undefined,
         selectedDesignOptionId: selectedDesignOptionId ?? undefined,
-        deployment: jobRef.current?.preferences.deployment,
-        businessProfile: jobRef.current?.preferences.businessProfile,
-        brandSystem: jobRef.current?.preferences.brandSystem,
+        deployment: prior?.deployment,
+        businessProfile: prior?.businessProfile,
+        brandSystem: prior?.brandSystem,
+        // Keep prior type/template so refine does not collapse into a store site.
+        categoryId: prior?.categoryId,
+        templateId: prior?.templateId,
+        siteType: prior?.siteType,
+        ctaGoal: prior?.ctaGoal,
+        pages: prior?.pages,
+        pageCandidates: prior?.pageCandidates,
       });
     },
     [
@@ -748,8 +755,10 @@ export function BuildOsClient({
     setBusinessName("");
     setAudience("");
     setTone("friendly");
-    setGoals(["Sell more products online"]);
-    setFeatures(["ecommerce", "contact_form"]);
+    setGoals(["Generate leads"]);
+    setFeatures(["contact_form"]);
+    setThemePreset("minimal_light");
+    setCustomTheme(defaultCustomThemeFromPreset("minimal_light"));
     setDesignOptions([]);
     setSelectedDesignOptionId(null);
     setScreenshots([]);
@@ -784,9 +793,19 @@ export function BuildOsClient({
     setPrompt(cache.prompt);
     setBusinessName(cache.businessName ?? "");
     setAudience(cache.audience ?? "");
-    setGoals(cache.goals?.length ? cache.goals : ["Sell more products online"]);
-    setThemePreset(cache.themePreset);
-    setCustomTheme(cache.customTheme);
+    setGoals(cache.goals?.length ? cache.goals : ["Generate leads"]);
+    setFeatures(["contact_form"]);
+    setThemePreset(cache.themePreset ?? "minimal_light");
+    setCustomTheme(
+      cache.customTheme ??
+        defaultCustomThemeFromPreset(
+          cache.themePreset === "custom" || !cache.themePreset
+            ? "minimal_light"
+            : cache.themePreset === "gold_navy"
+              ? "minimal_light"
+              : cache.themePreset
+        )
+    );
     setScreenshots(cache.screenshots ?? []);
     setBrandLogo(cache.brandLogo ?? null);
     setSelectedDesignOptionId(cache.selectedDesignOptionId ?? null);
@@ -1052,7 +1071,7 @@ export function BuildOsClient({
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={5}
-                placeholder="We sell handmade wooden toys for kids of all ages. Our toys are safe, educational and fun."
+                placeholder="North Peak Dental — a calm family dentist in Manchester. We want a simple website to explain services and book appointments."
                 className="w-full rounded-2xl border border-border bg-surface-elevated px-4 py-3 text-base leading-relaxed text-foreground outline-none placeholder:text-dim focus:border-gold/40"
               />
               <div className="flex flex-wrap gap-2">
@@ -1060,11 +1079,45 @@ export function BuildOsClient({
                   <button
                     key={tag}
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
                       setPrompt((prev) =>
                         prev.includes(tag) ? prev : prev ? `${prev} (${tag})` : tag
-                      )
-                    }
+                      );
+                      if (tag === "Online Store") {
+                        setFeatures((prev) =>
+                          prev.includes("ecommerce") ? prev : [...prev, "ecommerce"]
+                        );
+                        setGoals((prev) =>
+                          prev.includes("Sell more products online")
+                            ? prev
+                            : ["Sell more products online", ...prev.filter((g) => g !== "Generate leads")]
+                        );
+                      } else if (tag === "Portfolio") {
+                        setFeatures((prev) => prev.filter((f) => f !== "ecommerce"));
+                        setGoals((prev) =>
+                          prev.includes("Showcase portfolio work")
+                            ? prev
+                            : ["Showcase portfolio work"]
+                        );
+                      } else if (tag === "Local Service" || tag === "SaaS" || tag === "Blog") {
+                        setFeatures((prev) =>
+                          prev.includes("ecommerce")
+                            ? prev.filter((f) => f !== "ecommerce").concat(
+                                prev.includes("contact_form") ? [] : ["contact_form"]
+                              )
+                            : prev.includes("contact_form")
+                              ? prev
+                              : [...prev, "contact_form"]
+                        );
+                        if (tag === "Local Service") {
+                          setGoals(["Generate leads", "Book more appointments"]);
+                        } else if (tag === "SaaS") {
+                          setGoals(["Increase brand awareness", "Generate leads"]);
+                        } else {
+                          setGoals(["Increase brand awareness", "Build a loyal customer base"]);
+                        }
+                      }
+                    }}
                     className="rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs text-muted hover:border-gold/40 hover:text-foreground"
                   >
                     {tag}
@@ -1079,6 +1132,19 @@ export function BuildOsClient({
                     onClick={() => {
                       setPrompt(ex.prompt);
                       setBusinessName(ex.prompt.split(/[—–\-:]/)[0]?.trim() || "");
+                      if (ex.categoryId === "ecommerce") {
+                        setFeatures(["ecommerce", "contact_form"]);
+                        setGoals(["Sell more products online"]);
+                      } else if (ex.categoryId === "portfolio") {
+                        setFeatures(["contact_form", "testimonials"]);
+                        setGoals(["Showcase portfolio work"]);
+                      } else if (ex.categoryId === "healthcare") {
+                        setFeatures(["contact_form", "booking"]);
+                        setGoals(["Book more appointments", "Generate leads"]);
+                      } else {
+                        setFeatures(["contact_form"]);
+                        setGoals(["Generate leads", "Increase brand awareness"]);
+                      }
                     }}
                     className="rounded-full border border-border px-3 py-1.5 text-[11px] text-dim hover:text-foreground"
                   >
@@ -1091,6 +1157,24 @@ export function BuildOsClient({
                   type="button"
                   disabled={prompt.trim().length < 12}
                   onClick={() => {
+                    // Align apps/goals with the brief so a simple site is not forced into store mode.
+                    if (promptImpliesStore(prompt)) {
+                      setFeatures((prev) =>
+                        prev.includes("ecommerce") ? prev : [...prev, "ecommerce"]
+                      );
+                      setGoals((prev) =>
+                        prev.includes("Sell more products online")
+                          ? prev
+                          : ["Sell more products online", ...prev.filter((g) => g !== "Generate leads")]
+                      );
+                    } else {
+                      setFeatures((prev) => prev.filter((f) => f !== "ecommerce"));
+                      setGoals((prev) =>
+                        prev.includes("Sell more products online") && prev.length === 1
+                          ? ["Generate leads"]
+                          : prev.filter((g) => g !== "Sell more products online")
+                      );
+                    }
                     setStep("name");
                     syncLocalCache(job?.id, "name");
                   }}

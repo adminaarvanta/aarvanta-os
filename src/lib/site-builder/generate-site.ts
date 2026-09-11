@@ -547,7 +547,7 @@ async function heuristicGenerate(
     siteName: preferences.businessName,
     slug: plan.slug,
     tagline: brief.tagline,
-    footerNote: `© ${new Date().getFullYear()} ${preferences.businessName}. Built with Aarvanta Build OS · ${template.inspiredBy}`,
+    footerNote: `© ${new Date().getFullYear()} ${preferences.businessName}`,
     theme: {
       ...plan.theme,
       primaryColor: theme.primaryColor,

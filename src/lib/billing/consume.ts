@@ -258,33 +258,15 @@ export async function requireBuildDraftCreate(
 }
 
 /**
- * Free: one AI generate per draft; refines after first generate require upgrade.
- * Jobs that already have a generatedSite (or status generated) are blocked on Free.
+ * Free plan limits draft count (see requireBuildDraftCreate). Refines and
+ * regenerates on an existing draft stay available so studio updates work.
  */
 export async function requireBuildGenerate(
   scope: TenantScope,
-  job: { generatedSite?: unknown; status?: string }
+  _job?: { generatedSite?: unknown; status?: string }
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
   if (entitlements.isSuperAdmin) return entitlements;
   await requireFeature(scope, "websiteBuilder", "explore");
-  const fresh = await resolveEntitlements(scope);
-  const limit = fresh.limits.buildDrafts ?? "unlimited";
-  if (limit === "unlimited") return fresh;
-
-  const alreadyGenerated =
-    Boolean(job.generatedSite) || job.status === "generated";
-
-  if (alreadyGenerated) {
-    throw new PlanEntitlementError(
-      "PLAN_LIMIT",
-      `Free includes 1 AI generate for your draft. Upgrade to refine or regenerate.`,
-      {
-        metric: "build_drafts",
-        feature: "websiteBuilder",
-        upgradeHint: suggestUpgrade(fresh.planId),
-      }
-    );
-  }
-  return fresh;
+  return resolveEntitlements(scope);
 }
