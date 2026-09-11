@@ -45,7 +45,7 @@ export async function POST(req: Request, context: RouteContext) {
 
   try {
     const { requireBuildGenerate } = await import("@/lib/billing/consume");
-    await requireBuildGenerate(scope, job);
+    await requireBuildGenerate(scope);
   } catch (error) {
     const { isPlanEntitlementError, planErrorStatus } = await import(
       "@/lib/billing/errors"

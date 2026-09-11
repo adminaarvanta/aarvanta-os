@@ -262,8 +262,7 @@ export async function requireBuildDraftCreate(
  * regenerates on an existing draft stay available so studio updates work.
  */
 export async function requireBuildGenerate(
-  scope: TenantScope,
-  _job?: { generatedSite?: unknown; status?: string }
+  scope: TenantScope
 ): Promise<Entitlements> {
   const entitlements = await resolveEntitlements(scope);
   if (entitlements.isSuperAdmin) return entitlements;
