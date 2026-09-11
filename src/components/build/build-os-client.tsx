@@ -205,16 +205,26 @@ export function BuildOsClient({
     setBusinessName(next.preferences.businessName ?? "");
     setAudience(next.preferences.targetAudience ?? "");
     setTone(next.preferences.tone);
-    setFeatures(next.preferences.features ?? ["contact_form"]);
+    setFeatures(
+      next.preferences.features?.length
+        ? next.preferences.features
+        : ["contact_form"]
+    );
     setDesignOptions(next.preferences.designOptions ?? []);
-    setSelectedDesignOptionId(next.preferences.selectedDesignOptionId ?? null);
-    setThemePreset(next.preferences.themePreset);
+    setSelectedDesignOptionId(
+      next.preferences.selectedDesignOptionId ??
+        next.preferences.designOptions?.[0]?.id ??
+        null
+    );
+    const nextTheme =
+      next.preferences.themePreset === ("gold_navy" as SiteThemePreset)
+        ? "minimal_light"
+        : next.preferences.themePreset;
+    setThemePreset(nextTheme);
     setCustomTheme(
       next.preferences.customTheme ??
         defaultCustomThemeFromPreset(
-          next.preferences.themePreset === "custom"
-            ? "minimal_light"
-            : next.preferences.themePreset
+          nextTheme === "custom" ? "minimal_light" : nextTheme
         )
     );
     setBrandLogo(
@@ -239,7 +249,8 @@ export function BuildOsClient({
       ?.split("|")
       .map((s) => s.trim())
       .filter(Boolean);
-    if (fromKeys?.length) setGoals(fromKeys);
+    setGoals(fromKeys?.length ? fromKeys : ["Generate leads"]);
+    setScreenshots(next.preferences.referenceScreenshots ?? []);
     setSharePath(next.shareToken ? publicSharePath(next.shareToken) : null);
     setClientMedia(next.clientMedia ?? []);
     setStatusMessage(null);
@@ -261,13 +272,29 @@ export function BuildOsClient({
   const loadJob = useCallback(
     async (id: string) => {
       const res = await fetch(`/api/build/${id}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Stale local draft / restarted demo store — clear the dead pointer so
+        // the wizard can create a fresh draft instead of spinning on a ghost id.
+        if (res.status === 404) {
+          const cache = readComposeDraftCache();
+          if (cache?.jobId === id) {
+            writeComposeDraftCache({ ...cache, jobId: undefined });
+          }
+          if (jobRef.current?.id === id) setJob(null);
+          setError(
+            "That draft is no longer on this device. Continue editing to save a new draft, or pick another site from All sites."
+          );
+          router.replace("/build?new=1");
+        }
+        return;
+      }
       const data = (await res.json()) as {
         job: import("@/types/site-builder").SiteBuildJob;
       };
       hydrateFromJob(data.job);
+      setError(null);
     },
-    [hydrateFromJob]
+    [hydrateFromJob, router]
   );
 
   useEffect(() => {
@@ -320,8 +347,13 @@ export function BuildOsClient({
         keyMessages: goals.join(" | "),
         referenceScreenshots: screenshots,
         brandLogo: brandLogo ?? undefined,
-        designOptions: designOptions.length ? designOptions : undefined,
-        selectedDesignOptionId: selectedDesignOptionId ?? undefined,
+        designOptions: designOptions.length
+          ? designOptions
+          : prior?.designOptions,
+        selectedDesignOptionId:
+          selectedDesignOptionId ??
+          prior?.selectedDesignOptionId ??
+          undefined,
         deployment: prior?.deployment,
         businessProfile: prior?.businessProfile,
         brandSystem: prior?.brandSystem,
@@ -358,11 +390,14 @@ export function BuildOsClient({
         businessName,
         audience,
         goals,
+        features,
+        tone,
         step: nextStep ?? step,
         themePreset,
         customTheme,
         screenshots,
         brandLogo,
+        designOptions,
         selectedDesignOptionId,
         savedAt: new Date().toISOString(),
       });
@@ -372,11 +407,14 @@ export function BuildOsClient({
       businessName,
       audience,
       goals,
+      features,
+      tone,
       step,
       themePreset,
       customTheme,
       screenshots,
       brandLogo,
+      designOptions,
       selectedDesignOptionId,
     ]
   );
@@ -391,12 +429,36 @@ export function BuildOsClient({
     preferences: SitePreferences
   ): Promise<string | null> {
     if (job?.id) {
-      await fetch(`/api/build/${job.id}`, {
+      const patchRes = await fetch(`/api/build/${job.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...preferences, referenceScreenshots: [] }),
       });
-      return job.id;
+      if (patchRes.status === 404) {
+        // Draft vanished (demo restart) — fall through and create a new one.
+        setJob(null);
+      } else if (patchRes.ok) {
+        const data = (await patchRes.json()) as {
+          job: import("@/types/site-builder").SiteBuildJob;
+        };
+        // Keep client job in sync with server merge (design options, brand, etc.).
+        setJob((prev) =>
+          prev
+            ? {
+                ...data.job,
+                generatedSite: data.job.generatedSite ?? prev.generatedSite,
+                clientMedia: prev.clientMedia ?? data.job.clientMedia,
+              }
+            : data.job
+        );
+        return data.job.id;
+      } else {
+        const body = (await patchRes.json().catch(() => null)) as {
+          error?: { message?: string };
+        } | null;
+        setError(body?.error?.message ?? "Could not save draft.");
+        return null;
+      }
     }
     const createRes = await fetch("/api/build", {
       method: "POST",
@@ -483,12 +545,25 @@ export function BuildOsClient({
   }
 
   async function generate(extraPrompt?: string) {
-    if (!selectedDesignOptionId) {
+    const priorDesignId =
+      selectedDesignOptionId ??
+      jobRef.current?.preferences.selectedDesignOptionId ??
+      null;
+    const canRefineExisting = Boolean(
+      extraPrompt?.trim() && jobRef.current?.generatedSite
+    );
+    if (!priorDesignId && !canRefineExisting) {
       setError("Pick a design direction first.");
       setStep("designs");
       return;
     }
+    if (priorDesignId && priorDesignId !== selectedDesignOptionId) {
+      setSelectedDesignOptionId(priorDesignId);
+    }
     const preferences = buildPreferences(extraPrompt);
+    if (!preferences.selectedDesignOptionId && priorDesignId) {
+      preferences.selectedDesignOptionId = priorDesignId;
+    }
     const isRefine = Boolean(extraPrompt?.trim());
     setBusy(true);
     setError(null);
@@ -790,28 +865,45 @@ export function BuildOsClient({
     const cache = readComposeDraftCache();
     if (!cache?.prompt) return;
     setView("compose");
+    // If we already have a server draft, load it fully — don't clobber features/
+    // design options with empty wizard defaults before the fetch returns.
+    if (cache.jobId) {
+      setPrompt(cache.prompt);
+      setBusinessName(cache.businessName ?? "");
+      setAudience(cache.audience ?? "");
+      setGoals(cache.goals?.length ? cache.goals : ["Generate leads"]);
+      if (cache.features?.length) setFeatures(cache.features);
+      if (cache.tone) setTone(cache.tone);
+      if (cache.designOptions?.length) setDesignOptions(cache.designOptions);
+      setSelectedDesignOptionId(cache.selectedDesignOptionId ?? null);
+      setStep(cache.step ?? "about");
+      router.replace(`/build?job=${cache.jobId}`);
+      void loadJob(cache.jobId);
+      return;
+    }
     setPrompt(cache.prompt);
     setBusinessName(cache.businessName ?? "");
     setAudience(cache.audience ?? "");
     setGoals(cache.goals?.length ? cache.goals : ["Generate leads"]);
-    setFeatures(["contact_form"]);
+    setFeatures(cache.features?.length ? cache.features : ["contact_form"]);
+    if (cache.tone) setTone(cache.tone);
     setThemePreset(cache.themePreset ?? "minimal_light");
     setCustomTheme(
       cache.customTheme ??
         defaultCustomThemeFromPreset(
           cache.themePreset === "custom" || !cache.themePreset
             ? "minimal_light"
-            : cache.themePreset === "gold_navy"
+            : cache.themePreset === ("gold_navy" as SiteThemePreset)
               ? "minimal_light"
               : cache.themePreset
         )
     );
     setScreenshots(cache.screenshots ?? []);
     setBrandLogo(cache.brandLogo ?? null);
+    setDesignOptions(cache.designOptions ?? []);
     setSelectedDesignOptionId(cache.selectedDesignOptionId ?? null);
     setStep(cache.step ?? "about");
-    router.replace(cache.jobId ? `/build?job=${cache.jobId}` : "/build?new=1");
-    if (cache.jobId) void loadJob(cache.jobId);
+    router.replace("/build?new=1");
   }
 
   async function discardJob(id: string) {
@@ -895,8 +987,12 @@ export function BuildOsClient({
           onCreateNew={startOver}
           onResumeLocal={resumeLocalDraft}
           onOpenJob={(item) => {
+            // Always refetch the full job (list payloads omit clientMedia and can
+            // be stale). Optimistic hydrate keeps the UI snappy meanwhile.
             hydrateFromJob(item);
+            setView("compose");
             router.replace(`/build?job=${item.id}`);
+            void loadJob(item.id);
           }}
           onDeleteJob={(id) => void discardJob(id)}
         />
