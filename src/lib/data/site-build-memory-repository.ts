@@ -3,11 +3,26 @@ import type { SiteBuildRepository } from "@/lib/data/site-build-repository";
 import type { TenantScope } from "@/types/communication";
 import type { SiteBuildJob, SitePreferences } from "@/types/site-builder";
 
-const jobs: SiteBuildJob[] = [];
+/**
+ * Persist on globalThis so Turbopack/HMR and RSC vs route-handler module
+ * graphs share the same draft list in demo mode. A plain module array is
+ * wiped (or forked) on reload — which makes "open existing / resume draft"
+ * look broken.
+ */
+const globalStore = globalThis as typeof globalThis & {
+  __aarvantaSiteBuildJobs?: SiteBuildJob[];
+};
+
+function jobs(): SiteBuildJob[] {
+  if (!globalStore.__aarvantaSiteBuildJobs) {
+    globalStore.__aarvantaSiteBuildJobs = [];
+  }
+  return globalStore.__aarvantaSiteBuildJobs;
+}
 
 export const siteBuildMemoryRepository: SiteBuildRepository = {
   async list(scope) {
-    return jobs
+    return jobs()
       .filter((j) => inCrmScope(j, scope))
       .sort(
         (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -15,30 +30,34 @@ export const siteBuildMemoryRepository: SiteBuildRepository = {
   },
 
   async get(id, scope) {
-    const item = jobs.find((j) => j.id === id);
+    const item = jobs().find((j) => j.id === id);
     return item && inCrmScope(item, scope) ? item : null;
   },
 
   async getByShareToken(token) {
     const normalized = token.trim();
     if (!normalized) return null;
-    return jobs.find((j) => j.shareToken === normalized && j.generatedSite) ?? null;
+    return (
+      jobs().find((j) => j.shareToken === normalized && j.generatedSite) ?? null
+    );
   },
 
   async save(job) {
-    const idx = jobs.findIndex((j) => j.id === job.id);
+    const list = jobs();
+    const idx = list.findIndex((j) => j.id === job.id);
     if (idx === -1) {
-      jobs.unshift(job);
+      list.unshift(job);
     } else {
-      jobs[idx] = job;
+      list[idx] = job;
     }
     return job;
   },
 
   async remove(id, scope) {
-    const idx = jobs.findIndex((j) => j.id === id && inCrmScope(j, scope));
+    const list = jobs();
+    const idx = list.findIndex((j) => j.id === id && inCrmScope(j, scope));
     if (idx === -1) return false;
-    jobs.splice(idx, 1);
+    list.splice(idx, 1);
     return true;
   },
 };

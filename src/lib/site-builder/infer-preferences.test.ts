@@ -56,6 +56,22 @@ describe("inferPreferencesFromPrompt", () => {
     assert.equal(prefs.siteType, "store");
     assert.equal(prefs.features.includes("ecommerce"), true);
   });
+
+  it("demotes a stale ecommerce prior when the brief and apps are not a store", () => {
+    const prefs = inferPreferencesFromPrompt(
+      "Bright Smile Dental — calm family dentist. Simple website for bookings.",
+      {
+        categoryId: "ecommerce",
+        templateId: "ecom_boutique",
+        siteType: "store",
+        features: ["contact_form"],
+        keyMessages: "Generate leads",
+      }
+    );
+    assert.notEqual(prefs.siteType, "store");
+    assert.notEqual(prefs.categoryId, "ecommerce");
+    assert.equal(prefs.features.includes("ecommerce"), false);
+  });
 });
 
 describe("resolveTemplatePrior", () => {
