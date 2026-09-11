@@ -29,7 +29,7 @@ function heuristicBusiness(preferences: SitePreferences): BusinessProfile {
     industry = "Retail";
     subcategory = /toy/.test(idea) ? "Educational Toys" : "Online Store";
     primaryGoal = "Sell Products";
-  } else if (/(saas|software|app|platform)/.test(idea)) {
+  } else if (/(saas|software|\bapp\b|platform|bookkeeping)/.test(idea)) {
     industry = "Software";
     subcategory = "SaaS";
     primaryGoal = "Acquire Users";

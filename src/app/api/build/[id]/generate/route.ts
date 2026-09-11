@@ -124,8 +124,15 @@ export async function POST(req: Request, context: RouteContext) {
       try {
         const { consumeCredits } = await import("@/lib/billing/consume");
         const siteType = working.preferences.siteType;
-        const tariff =
-          siteType === "landing" ? "generate_landing" : "generate_website";
+        const isRefinePass = Boolean(
+          working.preferences.refineInstructions?.trim() && working.generatedSite
+        );
+        // Studio refine is a light edit — do not charge a full multi-page generate.
+        const tariff = isRefinePass
+          ? "generate_landing"
+          : siteType === "landing"
+            ? "generate_landing"
+            : "generate_website";
         await consumeCredits(scope, tariff);
 
         send({
@@ -218,9 +225,11 @@ export async function POST(req: Request, context: RouteContext) {
         const { isPlanEntitlementError } = await import("@/lib/billing/errors");
         const message =
           error instanceof Error ? error.message : "Generation failed.";
+        // Keep a previously generated site usable after a failed refine.
+        const keepGenerated = Boolean(working.generatedSite);
         let failed: SiteBuildJob = {
           ...working,
-          status: "failed",
+          status: keepGenerated ? "generated" : "failed",
           error: message,
           updatedAt: crmNow(),
         };
