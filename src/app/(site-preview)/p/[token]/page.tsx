@@ -32,6 +32,6 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: `${name} · Preview`,
     description:
-      job?.generatedSite?.tagline ?? "Website preview from Aarvanta Build OS",
+      job?.generatedSite?.tagline ?? job?.generatedSite?.siteName ?? "Website preview",
   };
 }

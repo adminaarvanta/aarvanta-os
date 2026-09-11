@@ -289,7 +289,7 @@ export const sitePreferencesSchema = z.object({
   siteType: siteTypeSchema.default("business"),
   designStyle: siteDesignStyleSchema.default("modern"),
   colorMood: siteColorMoodSchema.default("neutral"),
-  themePreset: siteThemePresetSchema.default("gold_navy"),
+  themePreset: siteThemePresetSchema.default("minimal_light"),
   customTheme: siteCustomThemeSchema.optional(),
   pages: z.array(sitePageOptionSchema).min(1).default(["home", "about", "contact"]),
   features: z.array(siteFeatureOptionSchema).default(["contact_form"]),

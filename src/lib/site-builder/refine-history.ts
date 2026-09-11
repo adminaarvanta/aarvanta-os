@@ -38,7 +38,7 @@ export function isCopyRefine(refineInstructions?: string): boolean {
     return false;
   }
   return (
-    /headline|title|hero\s*text|main\s*heading|subhead|sub-?headline|tagline|supporting|\bcta\b|call to action|button\s*label|copy|wording|rewrite|change\s+the\s+text/.test(
+    /headline|title|hero\s*text|main\s*heading|subhead|sub-?headline|tagline|supporting|\bcta\b|call to action|button\s*label|copy|wording|rewrite|change\s+the\s+text|update\s+(the\s+)?(hero|copy|text|headline)|make\s+(the\s+)?(hero|headline)|say\s+that|rename/.test(
       lower
     ) || /["“']([^"”']{3,120})["”']/.test(refineInstructions)
   );

@@ -204,10 +204,13 @@ function directionsFor(
   if (industrial) return SERVICE_DIRECTIONS;
 
   const store =
+    prefs.siteType === "store" ||
     prefs.features.includes("ecommerce") ||
     prefs.categoryId === "ecommerce" ||
     prefs.ctaGoal === "buy" ||
-    /(sell|retail|shop|store)/i.test(`${business.primaryGoal} ${business.industry}`);
+    /(sell products|retail|online shop|online store|ecommerce)/i.test(
+      `${business.primaryGoal} ${business.industry} ${business.subcategory}`
+    );
   return store ? STORE_DIRECTIONS : SERVICE_DIRECTIONS;
 }
 

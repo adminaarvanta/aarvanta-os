@@ -73,24 +73,77 @@ function inferTone(prompt: string): SiteTone {
   return "professional";
 }
 
+/** True when the brief clearly asks for a product catalog / checkout site. */
+export function promptImpliesStore(prompt: string): boolean {
+  const p = prompt.toLowerCase();
+  if (
+    /(online\s+store|e-?commerce|webshop|shopify|add to cart|checkout|product\s+catalog|merchandise)/.test(
+      p
+    )
+  ) {
+    return true;
+  }
+  if (/(boutique|retail\s+shop|gift\s+shop|dtc)\b/.test(p)) return true;
+  if (/(sell|selling|sold)\b.{0,48}\b(online|products?|goods|merchandise)\b/.test(p)) {
+    return true;
+  }
+  if (/\b(shop|store)\b/.test(p) && /(product|retail|buy|purchase)/.test(p)) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Category prior inferred straight from the raw prompt, before any template is
- * resolved. Catches cases like "cement precast" that would otherwise fall
- * through to whatever the default template happens to be.
+ * resolved. Defaults stay non-store unless the brief clearly asks for retail.
  */
-function inferCategoryFromPrompt(prompt: string): SiteCategoryId | undefined {
+export function inferCategoryFromPrompt(prompt: string): SiteCategoryId | undefined {
   const p = prompt.toLowerCase();
   if (
     /(cement|concrete|pre-?cast|construction|building materials?|industrial|manufactur)/.test(p)
   ) {
     return "professional";
   }
+  if (promptImpliesStore(p)) return "ecommerce";
+  if (/(saas|software|\bapp\b|platform|bookkeeping|startup)/.test(p)) return "saas";
+  if (/(portfolio|photographer|architect|illustrator|freelancer|case stud)/.test(p)) {
+    return "portfolio";
+  }
+  if (/(clinic|dental|dentist|health|therapy|wellness|doctor|physio)/.test(p)) {
+    return "healthcare";
+  }
+  if (/(restaurant|cafe|café|bistro|dining|bakery|bar\b)/.test(p)) return "restaurant";
+  if (/(agency|marketing firm|design studio|creative studio)/.test(p)) return "agency";
+  if (/(nonprofit|charity|foundation|ngo)\b/.test(p)) return "nonprofit";
+  if (/(blog|newsletter|magazine|publisher)/.test(p)) return "blog";
+  if (/(conference|festival|workshop|event\b)/.test(p)) return "event";
+  if (
+    /(plumber|cleaner|electrician|landscap|coach|consultant|lawyer|solicitor|accountant|local service|book appointment)/.test(
+      p
+    )
+  ) {
+    return "local_service";
+  }
+  // Simple / generic business websites → professional services, not store.
+  if (/(simple\s+website|business\s+website|company\s+website|landing\s+page)/.test(p)) {
+    return "professional";
+  }
   return undefined;
+}
+
+function featuresImplyStore(features?: SiteFeatureOption[]): boolean {
+  return Boolean(features?.includes("ecommerce"));
+}
+
+function goalsImplyStore(keyMessages?: string): boolean {
+  if (!keyMessages) return false;
+  return /sell more products|online store|checkout|product sales/i.test(keyMessages);
 }
 
 /**
  * Enrich preferences from a prompt.
  * Category/template are optional priors — the ARIA pipeline can infer them.
+ * Unspecified briefs default to a simple business site (not a store).
  */
 export function inferPreferencesFromPrompt(
   prompt: string,
@@ -100,19 +153,57 @@ export function inferPreferencesFromPrompt(
   } = {}
 ): SitePreferences {
   const trimmed = prompt.trim();
-  const categoryPrior = overrides.categoryId ?? inferCategoryFromPrompt(trimmed);
+  const storeFromBrief =
+    promptImpliesStore(trimmed) ||
+    featuresImplyStore(overrides.features) ||
+    goalsImplyStore(overrides.keyMessages);
+
+  const categoryPrior =
+    overrides.categoryId ??
+    inferCategoryFromPrompt(trimmed) ??
+    (storeFromBrief ? "ecommerce" : "professional");
+
   const template = resolveTemplatePrior(overrides.templateId, categoryPrior);
 
-  const siteType: SiteType = overrides.siteType ?? template.siteType;
+  const siteType: SiteType =
+    overrides.siteType ??
+    (storeFromBrief ? "store" : template.siteType === "store" && !storeFromBrief
+      ? "business"
+      : template.siteType);
+
   const themePreset: SiteThemePreset =
     overrides.themePreset ?? template.defaultTheme;
-  const presetBaseId = themePreset === "custom" ? "gold_navy" : themePreset;
+  const presetBaseId = themePreset === "custom" ? "minimal_light" : themePreset;
   const preset = getThemePreset(presetBaseId);
   const businessName = overrides.businessName ?? extractBusinessName(trimmed);
-  const pages: SitePageOption[] = overrides.pages ?? template.defaultPages;
-  const features: SiteFeatureOption[] =
-    overrides.features ?? template.defaultFeatures;
-  const ctaGoal: SiteCtaGoal = overrides.ctaGoal ?? template.defaultCta;
+
+  const pages: SitePageOption[] =
+    overrides.pages ??
+    (siteType === "store"
+      ? template.defaultPages
+      : template.defaultPages.filter((p) => p !== "products"));
+
+  const features: SiteFeatureOption[] = overrides.features
+    ? storeFromBrief
+      ? overrides.features
+      : overrides.features.filter((f) => f !== "ecommerce")
+    : siteType === "store"
+      ? template.defaultFeatures
+      : template.defaultFeatures.filter((f) => f !== "ecommerce");
+
+  const ctaGoal: SiteCtaGoal =
+    overrides.ctaGoal ??
+    (siteType === "store"
+      ? template.defaultCta
+      : template.defaultCta === "buy"
+        ? "contact"
+        : template.defaultCta);
+
+  const resolvedTemplateId =
+    overrides.templateId ??
+    (template.siteType === "store" && siteType !== "store"
+      ? resolveTemplatePrior(undefined, categoryPrior).id
+      : template.id);
 
   const fullIdea =
     trimmed || overrides.businessIdea || `${businessName} website`;
@@ -125,15 +216,15 @@ export function inferPreferencesFromPrompt(
     countryBase: overrides.countryBase ?? "UK",
     categoryId: overrides.categoryId ?? categoryPrior ?? template.categoryId,
     customCategoryLabel: overrides.customCategoryLabel,
-    templateId: overrides.templateId ?? template.id,
+    templateId: resolvedTemplateId,
     tone: overrides.tone ?? template.defaultTone ?? inferTone(trimmed),
     siteType,
     designStyle: overrides.designStyle ?? preset.designStyle,
     colorMood: overrides.colorMood ?? preset.colorMood,
     themePreset,
     customTheme: overrides.customTheme,
-    pages,
-    features,
+    pages: pages.length ? pages : ["home", "about", "contact"],
+    features: features.length ? features : ["contact_form"],
     ctaGoal,
     keyMessages: overrides.keyMessages,
     customPrompt: fullPrompt ? clip(fullPrompt, CUSTOM_PROMPT_MAX) : undefined,

@@ -140,7 +140,7 @@ export function applyRefineHeuristics(
   const themeish = isThemeRefine(refine) && !isCopyRefine(refine);
   const wantsHeadline =
     !themeish &&
-    (/headline|title|hero\s*text|main\s*heading|change\s+the\s+(hero\s+)?(text|copy)/.test(
+    (/headline|title|hero\s*text|main\s*heading|change\s+the\s+(hero\s+)?(text|copy)|update\s+(the\s+)?hero|make\s+(the\s+)?(hero|headline)/.test(
       lower
     ) ||
       (!/cta|button|subhead|sub-?headline|tagline/.test(lower) && Boolean(quoted)));
@@ -152,13 +152,24 @@ export function applyRefineHeuristics(
       lower
     );
 
-  // Free-form “change X to Y” without quotes — take text after “to”
+  // Free-form “change X to Y” without quotes — take text after “to” / “as” / “:”
   const toPhrase =
     refine.match(
-      /(?:headline|title|subhead(?:line)?|tagline|cta|button)\s+(?:to|as|:)\s*[“"']?([^"”'\n]{2,90})/i
-    )?.[1]?.trim() ?? undefined;
+      /(?:headline|title|subhead(?:line)?|tagline|cta|button|hero(?:\s+text)?|copy)\s+(?:to|as|:)\s*[“"']?([^"”'\n]{2,90})/i
+    )?.[1]?.trim() ??
+    refine.match(
+      /(?:change|update|set|make)\s+(?:the\s+)?(?:headline|title|hero(?:\s+text)?|copy)\s+(?:to|as|:)\s*[“"']?([^"”'\n]{2,90})/i
+    )?.[1]?.trim() ??
+    undefined;
 
-  if (!wantsHeadline && !wantsSub && !wantsCta) {
+  // Bare “say …” / “rename to …” as hero headline when short enough
+  const sayMatch = refine.match(
+    /^(?:please\s+)?(?:say|use|rename\s+to)\s*[“"']?([^"”'\n]{2,90})[”"']?\.?$/i
+  );
+  const sayPhrase: string | undefined =
+    !wantsSub && !wantsCta ? sayMatch?.[1]?.trim() : undefined;
+
+  if (!wantsHeadline && !wantsSub && !wantsCta && !sayPhrase && !quoted) {
     return {
       ...next,
       generatedAt: new Date().toISOString(),
@@ -166,17 +177,31 @@ export function applyRefineHeuristics(
     };
   }
 
-  const patch = (quoted ?? toPhrase ?? refine.replace(/^.*?:\s*/, "").slice(0, 90)).trim();
+  const rawPatch =
+    quoted ??
+    toPhrase ??
+    sayPhrase ??
+    refine.replace(/^.*?(?:to|as|:)\s*/i, "").slice(0, 90);
+  const patch = rawPatch.trim();
+
+  if (!patch) {
+    return {
+      ...next,
+      generatedAt: new Date().toISOString(),
+      version: (next.version ?? 1) + 1,
+    };
+  }
+
+  const applyHeadline = wantsHeadline || Boolean(sayPhrase) || (Boolean(quoted) && !wantsSub && !wantsCta);
 
   const pages = next.pages.map((page) => {
-    // Prefer home, but also patch the first hero found if home missing
     return {
       ...page,
       blocks: page.blocks.map((block) => {
         if (block.type !== "hero") return block;
         if (page.slug !== "home" && page.slug !== "") return block;
         const props = { ...block.props };
-        if (wantsHeadline && patch) props.headline = patch;
+        if (applyHeadline && patch) props.headline = patch;
         if (wantsSub && patch) props.subheadline = patch;
         if (wantsCta && patch) {
           const ctaMatch = refine.match(
