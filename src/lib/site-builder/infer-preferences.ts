@@ -158,18 +158,37 @@ export function inferPreferencesFromPrompt(
     featuresImplyStore(overrides.features) ||
     goalsImplyStore(overrides.keyMessages);
 
+  // Prior store classification must not stick when the brief/apps are no longer a store
+  // (common after resuming an old ecommerce-default draft).
+  const priorForcesStore =
+    (overrides.siteType === "store" || overrides.categoryId === "ecommerce") &&
+    featuresImplyStore(overrides.features);
+
+  const keepStore = storeFromBrief || priorForcesStore;
+
   const categoryPrior =
-    overrides.categoryId ??
+    (keepStore || overrides.categoryId !== "ecommerce"
+      ? overrides.categoryId
+      : undefined) ??
     inferCategoryFromPrompt(trimmed) ??
-    (storeFromBrief ? "ecommerce" : "professional");
+    (keepStore ? "ecommerce" : "professional");
 
-  const template = resolveTemplatePrior(overrides.templateId, categoryPrior);
+  const template = resolveTemplatePrior(
+    keepStore || overrides.siteType !== "store"
+      ? overrides.templateId
+      : undefined,
+    categoryPrior
+  );
 
-  const siteType: SiteType =
-    overrides.siteType ??
-    (storeFromBrief ? "store" : template.siteType === "store" && !storeFromBrief
-      ? "business"
-      : template.siteType);
+  const siteType: SiteType = keepStore
+    ? overrides.siteType === "landing" || overrides.siteType === "portfolio"
+      ? overrides.siteType
+      : "store"
+    : overrides.siteType && overrides.siteType !== "store"
+      ? overrides.siteType
+      : template.siteType === "store"
+        ? "business"
+        : template.siteType;
 
   const themePreset: SiteThemePreset =
     overrides.themePreset ?? template.defaultTheme;
@@ -184,7 +203,7 @@ export function inferPreferencesFromPrompt(
       : template.defaultPages.filter((p) => p !== "products"));
 
   const features: SiteFeatureOption[] = overrides.features
-    ? storeFromBrief
+    ? keepStore
       ? overrides.features
       : overrides.features.filter((f) => f !== "ecommerce")
     : siteType === "store"
@@ -200,10 +219,13 @@ export function inferPreferencesFromPrompt(
         : template.defaultCta);
 
   const resolvedTemplateId =
-    overrides.templateId ??
-    (template.siteType === "store" && siteType !== "store"
-      ? resolveTemplatePrior(undefined, categoryPrior).id
-      : template.id);
+    keepStore && overrides.templateId
+      ? overrides.templateId
+      : template.siteType === "store" && siteType !== "store"
+        ? resolveTemplatePrior(undefined, categoryPrior).id
+        : (overrides.templateId && template.siteType !== "store"
+            ? overrides.templateId
+            : template.id);
 
   const fullIdea =
     trimmed || overrides.businessIdea || `${businessName} website`;
@@ -214,7 +236,7 @@ export function inferPreferencesFromPrompt(
     businessIdea: clip(fullIdea, BUSINESS_IDEA_MAX),
     targetAudience: overrides.targetAudience,
     countryBase: overrides.countryBase ?? "UK",
-    categoryId: overrides.categoryId ?? categoryPrior ?? template.categoryId,
+    categoryId: categoryPrior ?? template.categoryId,
     customCategoryLabel: overrides.customCategoryLabel,
     templateId: resolvedTemplateId,
     tone: overrides.tone ?? template.defaultTone ?? inferTone(trimmed),
