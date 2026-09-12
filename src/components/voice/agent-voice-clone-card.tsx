@@ -301,7 +301,7 @@ export function AgentVoiceCloneCard({
             </h3>
             <p className="mt-0.5 text-xs text-muted">
               Ava is the default agent and keeps the workspace catalog voice
-              (Sarah, Rachel, or whatever you pick in Voice settings). Clone a
+              (Jessica, Sarah, or whatever you pick in Voice settings). Clone a
               custom voice on a <span className="font-medium">new</span> agent
               instead of editing this one.
             </p>

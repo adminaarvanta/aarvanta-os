@@ -1,8 +1,9 @@
 /**
  * ConversationRelay TTS provider selection.
  *
- * Defaults to ElevenLabs Sarah — warmer reception voice, billed within the same
- * ~$0.07/min Relay fee (no separate ElevenLabs account).
+ * Defaults to ElevenLabs Jessica — conversational catalog voice, billed within
+ * the same ~$0.07/min Relay fee (no separate ElevenLabs account). Bare IDs are
+ * upgraded to Turbo 2.5 + phone tuning in resolveVoiceCallingConfig.
  *
  * Set VOICE_RELAY_TTS_PROVIDER=Amazon for the basic Polly voice.
  * Set VOICE_RELAY_BUDGET_MODE=true to skip ConversationRelay entirely (one-shot <Say> only —
@@ -12,8 +13,8 @@
  */
 export type ConversationRelayTtsProvider = "Amazon" | "Google" | "ElevenLabs";
 
-/** Default ElevenLabs voice — Sarah (warmer than Mark flash). */
-export const DEFAULT_ELEVENLABS_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
+/** Default ElevenLabs voice — Jessica (tagged conversational). */
+export const DEFAULT_ELEVENLABS_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
 
 export function isVoiceRelayBudgetMode(): boolean {
   const v = process.env.VOICE_RELAY_BUDGET_MODE?.trim().toLowerCase();
