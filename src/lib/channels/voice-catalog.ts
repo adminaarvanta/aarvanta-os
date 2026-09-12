@@ -123,7 +123,7 @@ export const VOICE_CATALOG: VoiceCatalogEntry[] = [
   },
   {
     id: "UgBBYS2sOqTuMpoF3BR0",
-    label: "ElevenLabs — Mark (en-US default)",
+    label: "ElevenLabs — Mark (male, en-US)",
     provider: "ElevenLabs",
     languages: ["en-US", "multi"],
   },
@@ -569,9 +569,10 @@ export function voicesForProvider(
     return languageMatches(v.languages, language);
   });
 
-  if (!language || language === "multi") return matches;
+  // Keep ElevenLabs catalog order (Jessica first). Locale-specific Amazon/Google
+  // voices still sort ahead of generic ones so the default pick is right.
+  if (!language || language === "multi" || provider === "ElevenLabs") return matches;
 
-  // Prefer locale-specific voices, then multilingual, so the default pick is right.
   return [...matches].sort((a, b) => {
     const aSpecific = a.languages.includes(language) ? 0 : 1;
     const bSpecific = b.languages.includes(language) ? 0 : 1;

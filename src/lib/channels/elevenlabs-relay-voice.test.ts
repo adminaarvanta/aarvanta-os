@@ -6,7 +6,7 @@ import {
   isElevenLabsVoiceAlreadyTuned,
 } from "@/lib/channels/elevenlabs-relay-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
-import { defaultVoiceIdFor } from "@/lib/channels/voice-catalog";
+import { defaultVoiceIdFor, voicesForProvider } from "@/lib/channels/voice-catalog";
 import { DEFAULT_ELEVENLABS_VOICE_ID } from "@/lib/channels/voice-relay-tts";
 
 describe("ElevenLabs ConversationRelay phone quality", () => {
@@ -29,6 +29,10 @@ describe("ElevenLabs ConversationRelay phone quality", () => {
   it("defaults ElevenLabs en-US to Jessica, not Mark", () => {
     assert.equal(defaultVoiceIdFor("ElevenLabs", "en-US"), DEFAULT_ELEVENLABS_VOICE_ID);
     assert.equal(DEFAULT_ELEVENLABS_VOICE_ID, "cgSgspJ2msm6clMCkdW9");
+  });
+
+  it("lists Jessica first for ElevenLabs en-US", () => {
+    assert.equal(voicesForProvider("ElevenLabs", "en-US")[0]?.id, DEFAULT_ELEVENLABS_VOICE_ID);
   });
 
   it("applies Turbo tuning when resolving workspace ElevenLabs config", () => {
