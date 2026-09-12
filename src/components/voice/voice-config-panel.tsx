@@ -211,13 +211,15 @@ export function VoiceConfigPanel({
               </p>
               {!compact ? (
                 <p className="mt-0.5 text-xs text-muted">
-                  Provider, language, and recording for catalog TTS. Pick a
-                  primary Voice Agent so Dialer, inbound, and scheduled calls
-                  use that persona (and its custom clone, if any).
+                  Default is ElevenLabs Jessica on Turbo 2.5 (paid, more
+                  human than Flash). Sarah, Lily, Matilda, and Alice are the
+                  other warm catalog picks. Mark flash is faster but flatter.
+                  A custom clone uses your ElevenLabs key for multilingual v2.
                 </p>
               ) : (
                 <p className="mt-0.5 text-[11px] text-muted">
-                  Sarah/Rachel sound most natural for reception.
+                  Jessica / Sarah / Lily use ElevenLabs Turbo 2.5 on live
+                  calls (paid ConversationRelay). Mark flash is faster but flatter.
                 </p>
               )}
             </div>

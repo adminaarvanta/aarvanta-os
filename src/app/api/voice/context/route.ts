@@ -11,6 +11,7 @@ import {
   voiceKnowledgeMode,
 } from "@/lib/calling/voice-knowledge";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
+import { elevenLabsVoiceBaseId } from "@/lib/channels/elevenlabs-relay-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
@@ -180,6 +181,10 @@ export async function POST(req: Request) {
     campaignId: parsed.data.campaignId,
     queueId: parsed.data.queueId,
     clonedVoiceId: clonedVoiceId ?? "",
+    ttsVoiceId:
+      voicePrefs.provider === "ElevenLabs"
+        ? elevenLabsVoiceBaseId(voicePrefs.voice)
+        : "",
     recordingNotice,
   });
 }
