@@ -11,6 +11,11 @@
  * @see https://www.twilio.com/docs/voice/conversationrelay/voice-configuration
  */
 
+import { DEFAULT_ELEVENLABS_VOICE_ID } from "@/lib/channels/voice-relay-tts";
+
+/** Legacy Twilio catalog Rachel — remapped to Jessica at resolve time. */
+export const LEGACY_ELEVENLABS_RACHEL_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+
 export const ELEVENLABS_PHONE_MODEL = "turbo_v2_5";
 /** Slightly under 1.0 so the line doesn't rush. Range 0.7–1.2. */
 export const ELEVENLABS_PHONE_SPEED = "0.95";
@@ -30,6 +35,20 @@ export function elevenLabsVoiceBaseId(voiceId: string): string {
 export function isElevenLabsVoiceAlreadyTuned(voiceId: string): boolean {
   const match = TUNED_RE.exec(voiceId.trim());
   return Boolean(match?.[2] || match?.[3]);
+}
+
+/**
+ * Workspace / env still store Rachel from older defaults. Live TwiML should
+ * use Jessica (DEFAULT_ELEVENLABS_VOICE_ID). Already-tuned custom IDs and
+ * other catalog voices are left alone.
+ */
+export function upgradeLegacyRachelVoice(voiceId: string): string {
+  const trimmed = voiceId.trim();
+  if (!trimmed) return trimmed;
+  if (elevenLabsVoiceBaseId(trimmed) === LEGACY_ELEVENLABS_RACHEL_VOICE_ID) {
+    return DEFAULT_ELEVENLABS_VOICE_ID;
+  }
+  return trimmed;
 }
 
 /** ConversationRelay `voice=` value — Turbo 2.5 + human phone tuning. */
