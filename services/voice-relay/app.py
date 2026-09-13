@@ -79,10 +79,15 @@ REPLY_PRESENCE_PENALTY = float(os.getenv("VOICE_RELAY_PRESENCE_PENALTY", "0.2"))
 CONTEXT_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_CONTEXT_TIMEOUT", "1.5"))
 TOOL_FETCH_TIMEOUT = float(os.getenv("VOICE_RELAY_TOOL_TIMEOUT", "8"))
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "").strip()
+ELEVENLABS_TTS_MODEL = (
+    os.getenv("ELEVENLABS_TTS_MODEL", "eleven_multilingual_v2").strip()
+    or "eleven_multilingual_v2"
+)
+PREMIUM_TTS = os.getenv("VOICE_RELAY_PREMIUM_TTS", "true").lower() != "false"
 TTS_DIR = Path(os.getenv("VOICE_RELAY_TTS_DIR", "/tmp/aarvanta-voice-tts"))
 TTS_TTL_SECONDS = int(os.getenv("VOICE_RELAY_TTS_TTL", "120"))
-CLONE_TTS_TIMEOUT = float(os.getenv("VOICE_RELAY_CLONE_TTS_TIMEOUT", "6"))
-SERVICE_VERSION = "1.9.3"
+CLONE_TTS_TIMEOUT = float(os.getenv("VOICE_RELAY_CLONE_TTS_TIMEOUT", "10"))
+SERVICE_VERSION = "1.9.4"
 MAX_TOOL_ROUNDS = 3
 
 app = FastAPI(title="Aarvanta Voice Relay", version=SERVICE_VERSION)
@@ -344,23 +349,65 @@ def _cleanup_tts_dir() -> None:
 
 _tts_url_cache: dict[str, tuple[float, str]] = {}
 
+_ELEVEN_VOICE_ID_RE = re.compile(
+    r"^([A-Za-z0-9]+)(?:-(?:flash_v2_5|flash_v2|turbo_v2_5|turbo_v2))?"
+    r"(?:-\d+(?:\.\d+)?_\d+(?:\.\d+)?_\d+(?:\.\d+)?)?$"
+)
+
+
+def elevenlabs_voice_base_id(voice_id: str) -> str:
+    """Strip ConversationRelay model/tuning suffix so the API gets a raw voice id."""
+    trimmed = (voice_id or "").strip()
+    match = _ELEVEN_VOICE_ID_RE.match(trimmed)
+    if match:
+        return match.group(1)
+    return trimmed.split("-")[0] if trimmed else ""
+
+
+def premium_tts_voice_id(call_context: dict[str, Any] | None) -> str:
+    """Clone first, then catalog voice — only when we can hit ElevenLabs + /tts."""
+    if not ELEVENLABS_API_KEY or not PREMIUM_TTS:
+        return ""
+    ctx = call_context or {}
+    cloned = str(ctx.get("clonedVoiceId") or "").strip()
+    if cloned:
+        return elevenlabs_voice_base_id(cloned)
+    catalog = str(ctx.get("ttsVoiceId") or "").strip()
+    if catalog:
+        return elevenlabs_voice_base_id(catalog)
+    return ""
+
 
 def synthesize_cloned_mp3(voice_id: str, text: str) -> str | None:
-    """ElevenLabs TTS → short-lived public MP3 URL for ConversationRelay play."""
+    """ElevenLabs multilingual v2 → short-lived public MP3 URL for ConversationRelay play."""
+    voice_id = elevenlabs_voice_base_id(voice_id)
     if not ELEVENLABS_API_KEY or not voice_id or not text.strip():
         return None
     public_base = resolve_tts_public_base()
     if not public_base:
         log.warning("cloned TTS skipped — VOICE_RELAY_WSS_URL / TTS public base unset")
         return None
-    cache_key = hashlib.sha256(f"{voice_id}:{text.strip()}".encode()).hexdigest()
+    cache_key = hashlib.sha256(
+        f"{voice_id}:{ELEVENLABS_TTS_MODEL}:{text.strip()}".encode()
+    ).hexdigest()
     cached = _tts_url_cache.get(cache_key)
     if cached and time.time() - cached[0] < TTS_TTL_SECONDS:
         return cached[1]
     TTS_DIR.mkdir(parents=True, exist_ok=True)
     _cleanup_tts_dir()
     payload = json.dumps(
-        {"text": text.strip(), "model_id": "eleven_flash_v2_5"}
+        {
+            "text": text.strip(),
+            "model_id": ELEVENLABS_TTS_MODEL,
+            "apply_text_normalization": "on",
+            "voice_settings": {
+                "stability": 0.38,
+                "similarity_boost": 0.82,
+                "style": 0.35,
+                "use_speaker_boost": True,
+                "speed": 0.95,
+            },
+        }
     ).encode("utf-8")
     req = urlrequest.Request(
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
@@ -692,15 +739,15 @@ async def _speak_stream(ws: WebSocket, reply: str) -> None:
 
 
 async def speak(ws: WebSocket, reply: str, call_context: dict[str, Any] | None = None) -> None:
-    """Speak via cloned ElevenLabs play, or catalog ConversationRelay TTS."""
+    """Speak via ElevenLabs API play (clone or catalog), else ConversationRelay TTS."""
     text = _cap_reply((reply or "").strip() or "Sorry — could you repeat that?")
-    cloned = str((call_context or {}).get("clonedVoiceId") or "").strip()
-    if cloned:
-        url = await asyncio.to_thread(synthesize_cloned_mp3, cloned, text)
+    voice_id = premium_tts_voice_id(call_context)
+    if voice_id:
+        url = await asyncio.to_thread(synthesize_cloned_mp3, voice_id, text)
         if url:
             await send_play(ws, url)
             return
-        log.warning("cloned TTS failed — falling back to catalog voice")
+        log.warning("premium ElevenLabs TTS failed — falling back to catalog voice")
     await _speak_stream(ws, text)
 
 
@@ -956,6 +1003,10 @@ async def health() -> JSONResponse:
             "presencePenalty": REPLY_PRESENCE_PENALTY,
             "brand": BRAND_NAME,
             "clonedTts": bool(ELEVENLABS_API_KEY and resolve_tts_public_base()),
+            "premiumTts": bool(
+                ELEVENLABS_API_KEY and PREMIUM_TTS and resolve_tts_public_base()
+            ),
+            "elevenLabsTtsModel": ELEVENLABS_TTS_MODEL,
             "elevenLabsApiKeyConfigured": bool(ELEVENLABS_API_KEY),
         }
     )
@@ -1050,11 +1101,14 @@ async def conversation_relay(websocket: WebSocket) -> None:
                         or context.get("clonedVoiceId")
                         or ""
                     ).strip(),
+                    "ttsVoiceId": str(
+                        params.get("ttsVoiceId") or context.get("ttsVoiceId") or ""
+                    ).strip(),
                 }
                 session["callContext"] = call_context
                 direction = str(params.get("direction") or "").lower()
                 log.info(
-                    "setup callSid=%s from=%s direction=%s brand=%s knowledge=%s contact=%s tools=%s clone=%s",
+                    "setup callSid=%s from=%s direction=%s brand=%s knowledge=%s contact=%s tools=%s clone=%s premiumTts=%s",
                     session.get("callSid"),
                     session.get("from"),
                     direction or "-",
@@ -1063,6 +1117,7 @@ async def conversation_relay(websocket: WebSocket) -> None:
                     call_context.get("contactId") or "-",
                     "yes" if resolve_api_base() and AARVANTA_CALLBACK_SECRET else "no",
                     "yes" if call_context.get("clonedVoiceId") else "no",
+                    "yes" if premium_tts_voice_id(call_context) else "no",
                 )
                 skip_opening = str(params.get("skipOpening") or "").strip().lower() in (
                     "1",

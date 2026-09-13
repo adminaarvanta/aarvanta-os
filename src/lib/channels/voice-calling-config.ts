@@ -6,6 +6,7 @@ import {
   VOICE_CATALOG,
   VOICE_LANGUAGES,
 } from "@/lib/channels/voice-catalog";
+import { applyElevenLabsPhoneQuality } from "@/lib/channels/elevenlabs-relay-voice";
 import {
   getConversationRelayTtsFromEnv,
   isVoiceRelayBudgetMode,
@@ -81,12 +82,16 @@ export function resolveVoiceCallingConfig(
   const custom =
     customRaw && !isDemoClonedVoiceId(customRaw) ? customRaw : "";
   const curated = settings?.voiceId?.trim();
-  const voice =
+  const rawVoice =
     custom ||
     (curated && curated !== CUSTOM_VOICE_OPTION_ID
       ? curated
       : defaultVoiceIdFor(provider, language)) ||
     envTts.voice;
+  const voice =
+    provider === "ElevenLabs"
+      ? applyElevenLabsPhoneQuality(rawVoice)
+      : rawVoice;
 
   const announce = settings?.callRecordingAnnounce !== false;
 
