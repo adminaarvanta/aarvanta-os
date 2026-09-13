@@ -5,7 +5,10 @@ import {
   forbidden,
 } from "@/lib/api/request";
 import { isDemoMode } from "@/lib/config/app-mode";
-import { hasLiveGoogleCalendar } from "@/lib/calendar/google-calendar";
+import {
+  hasCalendarAvailabilitySource,
+  storeGoogleCalendarIcsFeed,
+} from "@/lib/calendar/google-calendar";
 import {
   assertActiveMember,
   isGoogleCalendarOAuthConfigured,
@@ -31,7 +34,7 @@ export async function GET() {
     return NextResponse.json({
       oauthConfigured: isGoogleCalendarOAuthConfigured(),
       demoMode: isDemoMode(),
-      liveSync: await hasLiveGoogleCalendar(ctx.scope, ctx.userId),
+      liveSync: await hasCalendarAvailabilitySource(ctx.scope, ctx.userId),
       currentUser: mine,
       team,
     });
@@ -44,11 +47,31 @@ export async function GET() {
   }
 }
 
-/** Demo / fallback connect — production with OAuth uses the Google redirect. */
-export async function POST() {
+/** Demo / ICS connect — production Google sign-in uses the OAuth redirect. */
+export async function POST(req: Request) {
   try {
     const ctx = await getSessionContext();
     assertActiveMember(ctx);
+
+    let icsUrl: string | undefined;
+    const text = await req.text();
+    if (text.trim()) {
+      try {
+        const body = JSON.parse(text) as { icsUrl?: string };
+        icsUrl = body.icsUrl?.trim();
+      } catch {
+        return apiError("INVALID_JSON", "Invalid JSON body", 400);
+      }
+    }
+
+    if (icsUrl) {
+      const connection = await storeGoogleCalendarIcsFeed(
+        ctx.scope,
+        icsUrl,
+        ctx.userId
+      );
+      return NextResponse.json({ connection });
+    }
 
     if (isGoogleCalendarOAuthConfigured()) {
       return NextResponse.json({
@@ -70,7 +93,11 @@ export async function POST() {
     if (auth) return auth;
     const message = error instanceof Error ? error.message : "Connect failed";
     if (message === "Forbidden") return forbidden();
-    return apiError("CALENDAR_ERROR", message, 500);
+    const clientError =
+      /iCal|calendar link|not allowed|https|credentials|did not return|too large|redirected/i.test(
+        message
+      );
+    return apiError("CALENDAR_ERROR", message, clientError ? 400 : 500);
   }
 }
 

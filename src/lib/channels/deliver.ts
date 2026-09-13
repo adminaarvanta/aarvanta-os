@@ -17,6 +17,11 @@ export interface DeliveryContext {
   html?: string;
   emailInReplyTo?: string;
   emailMessageId?: string;
+  icalEvent?: {
+    filename?: string;
+    method?: "REQUEST" | "CANCEL" | "PUBLISH";
+    content: string;
+  };
   /** Correlate Twilio ConversationRelay session with Voice OS thread */
   conversationId?: string;
   voiceDirection?: "inbound" | "outbound";
@@ -221,6 +226,7 @@ export async function deliverOutbound(ctx: DeliveryContext): Promise<DeliveryRes
         html: ctx.html,
         inReplyTo: ctx.emailInReplyTo,
         messageId: ctx.emailMessageId,
+        icalEvent: ctx.icalEvent,
       });
       return {};
     }

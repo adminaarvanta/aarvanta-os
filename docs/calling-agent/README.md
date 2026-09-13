@@ -12,7 +12,7 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 | `/voice/live` | Live call monitor |
 | `/voice/queue` | Kanban queue |
 | `/voice/meetings` | Booked meetings |
-| `/voice/calendar` | Per-user Google Calendar connect + sync, team status, slot picker |
+| `/voice/calendar` | Per-user Google Calendar connect (OAuth or secret iCal link) + sync, team status, slot picker |
 | `/voice/history` | Conversation replay |
 | `/voice/insights` | Funnel + performance + insights |
 | `/voice/dialer` | Manual dialer (CRM person picker + Voice Agent + Call now / Schedule) |
@@ -28,9 +28,9 @@ Outbound AI calling campaigns live entirely inside **Voice OS** (`/voice`).
 - Starting or resuming a campaign places the first in-hours batch immediately
 - Vercel Hobby can only run crons once a day, so leftover queue is swept at 14:00 UTC (US/EU hours) and 05:00 UTC (South Asia hours). Upgrade to Pro for minute cadence.
 - Deploy Firestore indexes (`firebase deploy --only firestore:indexes`) so `call_queue` due-item queries succeed
-- `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` (or SSO Google client vars) for FreeBusy + event create
+- `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` (or SSO Google client vars) for FreeBusy + event create. OAuth consent must be **In production** (see `docs/GOOGLE_CALENDAR.md`). Customers can also connect a secret iCal link when Google blocks unverified apps.
 - `NEXT_PUBLIC_APP_URL` — OAuth redirect + TwiML
 
 ## Demo
 
-With `APP_MODE` unset (demo), seeded campaign/queue/sessions/meetings load from memory. Any **active** workspace member can connect their own calendar from `/voice/calendar` or `/voice/settings`. Demo mode simulates the connection and local sync; with Google OAuth configured, production stores tokens per user and uses that calendar for FreeBusy + event create. Suspended members cannot connect. Calendar booking uses synthetic slots when Google is not live.
+With `APP_MODE` unset (demo), seeded campaign/queue/sessions/meetings load from memory. Any **active** workspace member can connect their own calendar from `/voice/calendar` or `/voice/settings`. Demo mode simulates the connection and local sync; with Google OAuth configured, production stores tokens per user and uses that calendar for FreeBusy + event create. If Google blocks sign-in (unverified / testing app), paste the calendar’s **Secret address in iCal format** — availability syncs from that feed and bookings are emailed as `.ics` invites. Suspended members cannot connect. Calendar booking uses synthetic slots when no live calendar is connected.

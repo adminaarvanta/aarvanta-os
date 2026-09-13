@@ -15,7 +15,7 @@ export async function GET() {
         userId: ctx.userId,
       })
     ).toString("base64url");
-    const url = getGoogleCalendarAuthUrl(state);
+    const url = getGoogleCalendarAuthUrl(state, ctx.email);
     return NextResponse.redirect(url);
   } catch (error) {
     const message = error instanceof Error ? error.message : "OAuth start failed";

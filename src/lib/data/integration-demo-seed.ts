@@ -93,7 +93,8 @@ export const INTEGRATION_DEFINITIONS = [
   {
     provider: "google_calendar" as const,
     name: "Google Calendar",
-    description: "Connect your own calendar for Voice OS booking and sync",
+    description:
+      "Connect your own Google Calendar (sign-in or secret iCal link) for Voice OS booking",
     category: "calendar" as const,
   },
   {

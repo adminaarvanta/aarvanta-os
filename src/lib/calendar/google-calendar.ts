@@ -1,6 +1,14 @@
 import { getIntegrationRepository } from "@/lib/data/integration-store";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { crmNow } from "@/lib/data/crm-helpers";
+import {
+  assertGoogleCalendarFeedUrl,
+  emailFromIcsText,
+  emailFromIcsUrl,
+  fetchCalendarIcs,
+  maskIcsUrl,
+  parseIcsBusyIntervals,
+} from "@/lib/calendar/ics-feed";
 import { getUserCalendarConnection } from "@/lib/calendar/user-calendar";
 import type { TenantScope } from "@/types/communication";
 import type { IntegrationConnection } from "@/types/integration";
@@ -36,7 +44,7 @@ function clientConfig() {
   };
 }
 
-export function getGoogleCalendarAuthUrl(state: string) {
+export function getGoogleCalendarAuthUrl(state: string, loginHint?: string) {
   const { clientId, redirectUri } = clientConfig();
   const params = new URLSearchParams({
     client_id: clientId,
@@ -44,15 +52,39 @@ export function getGoogleCalendarAuthUrl(state: string) {
     response_type: "code",
     access_type: "offline",
     prompt: "consent",
+    // events = write bookings; freebusy = availability (narrower than calendar.readonly)
     scope: [
       "https://www.googleapis.com/auth/calendar.events",
-      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/calendar.freebusy",
       "openid",
       "email",
     ].join(" "),
     state,
   });
+  if (loginHint) params.set("login_hint", loginHint);
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+export function googleCalendarOAuthErrorStatus(
+  error: string | null
+): "denied" | "error" | null {
+  if (!error) return null;
+  if (error === "access_denied") return "denied";
+  return "error";
+}
+
+export function calendarConnectMode(
+  conn: IntegrationConnection | null | undefined
+): "oauth" | "ics" | "local" | null {
+  if (!conn || conn.status !== "connected") return null;
+  if (conn.metadata?.mode === "ics" || conn.metadata?.icsUrl) return "ics";
+  if (conn.metadata?.refreshToken || conn.metadata?.accessToken) return "oauth";
+  return "local";
+}
+
+function icsUrlFromConnection(conn: IntegrationConnection | null): string | undefined {
+  const raw = conn?.metadata?.icsUrl?.trim();
+  return raw || undefined;
 }
 
 export async function exchangeGoogleCalendarCode(code: string) {
@@ -184,6 +216,52 @@ export async function storeGoogleCalendarTokens(
   await saveTokens(scope, tokens, userId);
 }
 
+export async function storeGoogleCalendarIcsFeed(
+  scope: TenantScope,
+  icsUrl: string,
+  userId?: string
+): Promise<IntegrationConnection> {
+  const normalized = assertGoogleCalendarFeedUrl(icsUrl);
+  const ics = await fetchCalendarIcs(normalized);
+  if (!/BEGIN:VCALENDAR/i.test(ics)) {
+    throw new Error("That link did not return a Google Calendar feed.");
+  }
+  parseIcsBusyIntervals(ics, new Date(), new Date(Date.now() + 86_400_000));
+
+  const email =
+    emailFromIcsUrl(normalized) || emailFromIcsText(ics) || undefined;
+  const repo = getIntegrationRepository();
+  const conn = await repo.connect(
+    scope.tenantId,
+    scope.workspaceId,
+    "google_calendar",
+    email ?? maskIcsUrl(normalized),
+    userId
+  );
+  const metadata = {
+    mode: "ics",
+    icsUrl: normalized,
+    email: email ?? "",
+  };
+  const updated: IntegrationConnection = {
+    ...conn,
+    userId: userId ?? conn.userId,
+    status: "connected",
+    accountLabel: email ?? maskIcsUrl(normalized),
+    metadata,
+    lastSyncAt: crmNow(),
+    lastSyncError: undefined,
+    connectedAt: new Date().toISOString(),
+  };
+  await persistConnection(updated);
+  conn.metadata = metadata;
+  conn.userId = updated.userId;
+  conn.accountLabel = updated.accountLabel;
+  conn.lastSyncAt = updated.lastSyncAt;
+  conn.lastSyncError = undefined;
+  return updated;
+}
+
 async function refreshAccessToken(
   scope: TenantScope,
   refreshToken: string,
@@ -267,14 +345,38 @@ export async function hasLiveGoogleCalendar(
   });
 }
 
+/** OAuth FreeBusy/events or a secret iCal feed — either can drive availability. */
+export async function hasCalendarAvailabilitySource(
+  scope: TenantScope,
+  userId?: string
+): Promise<boolean> {
+  if (await hasLiveGoogleCalendar(scope, userId)) return true;
+  const conn = await getUserCalendarConnection(scope, userId);
+  return calendarConnectMode(conn) === "ics";
+}
+
+async function fetchIcsFreeBusy(
+  conn: IntegrationConnection,
+  timeMin: string,
+  timeMax: string
+): Promise<{ start: string; end: string }[]> {
+  const icsUrl = icsUrlFromConnection(conn);
+  if (!icsUrl) return [];
+  const ics = await fetchCalendarIcs(icsUrl);
+  return parseIcsBusyIntervals(ics, new Date(timeMin), new Date(timeMax));
+}
+
 export async function fetchGoogleFreeBusy(
   scope: TenantScope,
   timeMin: string,
   timeMax: string,
   userId?: string
 ): Promise<{ start: string; end: string }[]> {
+  const conn = await getUserCalendarConnection(scope, userId);
   const accessToken = await getAccessToken(scope, userId);
-  if (!accessToken) return [];
+  if (!accessToken) {
+    return conn ? fetchIcsFreeBusy(conn, timeMin, timeMax) : [];
+  }
 
   const res = await fetch(`${CALENDAR_API}/freeBusy`, {
     method: "POST",
@@ -289,6 +391,9 @@ export async function fetchGoogleFreeBusy(
     }),
   });
   if (!res.ok) {
+    if (conn && icsUrlFromConnection(conn)) {
+      return fetchIcsFreeBusy(conn, timeMin, timeMax);
+    }
     throw new Error(`FreeBusy failed: ${await res.text()}`);
   }
   const data = (await res.json()) as {
@@ -453,7 +558,7 @@ export async function syncUserGoogleCalendar(
   );
   if (!connection) return null;
 
-  if (await hasLiveGoogleCalendar(scope, userId)) {
+  if (await hasCalendarAvailabilitySource(scope, userId)) {
     try {
       const timeMin = new Date().toISOString();
       const timeMax = new Date(Date.now() + 7 * 86_400_000).toISOString();

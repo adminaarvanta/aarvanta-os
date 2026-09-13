@@ -36,9 +36,16 @@ export async function sendMeetingConfirmationEmail(
   meeting: MeetingBooking,
   contact: CrmContact,
   _scope: TenantScope,
-  opts?: { reschedule?: boolean; reminder?: boolean }
+  opts?: { reschedule?: boolean; reminder?: boolean; extraEmails?: string[] }
 ) {
-  if (!contact.email) return;
+  const recipients = [
+    ...new Set(
+      [contact.email, ...(opts?.extraEmails ?? [])]
+        .map((email) => email?.trim())
+        .filter((email): email is string => Boolean(email && email.includes("@")))
+    ),
+  ];
+  if (recipients.length === 0) return;
 
   const when = new Date(meeting.meetingStart).toLocaleString("en-US", {
     weekday: "long",
@@ -82,19 +89,26 @@ export async function sendMeetingConfirmationEmail(
   const ics = buildIcs(meeting, contact);
 
   if (isDemoMode()) {
-    console.info("[meeting-email:demo]", { to: contact.email, subject });
+    console.info("[meeting-email:demo]", { to: recipients, subject });
     return;
   }
 
-  await deliverOutbound({
-    channel: "email",
-    contact: {
-      id: contact.id,
-      name: contactDisplayName(contact),
-      email: contact.email,
-      phone: contact.phone,
-    },
-    subject,
-    content: `${text}\n\n---\nCalendar invite (.ics):\n${ics}`,
-  });
+  for (const email of recipients) {
+    await deliverOutbound({
+      channel: "email",
+      contact: {
+        id: contact.id,
+        name: contactDisplayName(contact),
+        email,
+        phone: contact.phone,
+      },
+      subject,
+      content: text,
+      icalEvent: {
+        filename: "invite.ics",
+        method: "REQUEST",
+        content: ics,
+      },
+    });
+  }
 }

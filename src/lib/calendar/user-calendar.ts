@@ -17,6 +17,7 @@ export type TeamCalendarRow = {
   accountLabel?: string;
   lastSyncAt?: string;
   lastSyncError?: string;
+  connectMode?: "oauth" | "ics" | "local";
   isCurrentUser: boolean;
 };
 
@@ -94,6 +95,14 @@ export async function listTeamCalendars(
     .filter((m) => m.status === "active")
     .map((m) => {
       const conn = pickCalendarConnection(connections, m.userId);
+      const connectMode =
+        conn?.status === "connected"
+          ? conn.metadata?.mode === "ics" || conn.metadata?.icsUrl
+            ? "ics"
+            : conn.metadata?.refreshToken || conn.metadata?.accessToken
+              ? "oauth"
+              : "local"
+          : undefined;
       return {
         userId: m.userId,
         name: m.name,
@@ -103,6 +112,7 @@ export async function listTeamCalendars(
         accountLabel: conn?.accountLabel,
         lastSyncAt: conn?.lastSyncAt,
         lastSyncError: conn?.lastSyncError,
+        connectMode,
         isCurrentUser: m.userId === currentUserId,
       };
     })

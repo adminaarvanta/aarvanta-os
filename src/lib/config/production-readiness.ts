@@ -287,7 +287,8 @@ export function getProductionReadiness(): ProductionReadiness {
       id: "google_calendar",
       label: "Google Calendar",
       status: "ok",
-      detail: "OAuth client configured — each active user can connect their calendar",
+      detail:
+        "OAuth client configured — users can also paste a secret iCal link if Google verification is pending",
     });
   } else {
     warnings.push(

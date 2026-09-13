@@ -4,6 +4,7 @@ import {
   hasLiveGoogleCalendar,
   updateGoogleCalendarEvent,
 } from "@/lib/calendar/google-calendar";
+import { getUserCalendarConnection } from "@/lib/calendar/user-calendar";
 import { syncMeetingToCrm } from "@/lib/calling/crm-sync";
 import { scheduleMeetingReminders } from "@/lib/calling/reminders";
 import { sendMeetingConfirmationEmail } from "@/lib/calling/meeting-email";
@@ -48,23 +49,30 @@ export async function bookMeeting(input: {
     !isDemoMode() &&
     (await hasLiveGoogleCalendar(input.scope, input.ownerId))
   ) {
-    const event = await createGoogleCalendarEvent(
-      input.scope,
-      {
-        title,
-        description: "Booked by Aarvanta AI calling agent",
-        start: input.meetingStart,
-        end: input.meetingEnd,
-        timezone: input.timezone,
-        attendeeEmail: contact.email,
-      },
-      input.ownerId
-    );
-    calendarEventId = event.eventId;
-    meetLink = event.meetLink;
-  } else {
+    try {
+      const event = await createGoogleCalendarEvent(
+        input.scope,
+        {
+          title,
+          description: "Booked by Aarvanta AI calling agent",
+          start: input.meetingStart,
+          end: input.meetingEnd,
+          timezone: input.timezone,
+          attendeeEmail: contact.email,
+        },
+        input.ownerId
+      );
+      calendarEventId = event.eventId;
+      meetLink = event.meetLink;
+    } catch (error) {
+      console.warn("[book-meeting] Google event create failed", error);
+    }
+  }
+  if (!calendarEventId) {
     calendarEventId = `local_${Date.now()}`;
-    meetLink = "https://meet.google.com/aar-vanta-demo";
+    meetLink = isDemoMode()
+      ? "https://meet.google.com/aar-vanta-demo"
+      : fallbackMeetLink();
   }
 
   const meeting = await getCallingAgentRepository().createMeeting(
@@ -124,7 +132,9 @@ export async function bookMeeting(input: {
   await scheduleMeetingReminders(meeting, input.scope);
 
   try {
-    await sendMeetingConfirmationEmail(meeting, contact, input.scope);
+    await sendMeetingConfirmationEmail(meeting, contact, input.scope, {
+      extraEmails: await calendarInviteEmails(input.scope, input.ownerId, contact.email),
+    });
   } catch (err) {
     console.warn("[book-meeting] confirmation email failed", err);
   }
@@ -149,17 +159,21 @@ export async function rescheduleMeeting(input: {
     !existing.calendarEventId.startsWith("local_") &&
     (await hasLiveGoogleCalendar(input.scope, existing.ownerId))
   ) {
-    await updateGoogleCalendarEvent(
-      input.scope,
-      existing.calendarEventId,
-      {
-        start: input.meetingStart,
-        end: input.meetingEnd,
-        timezone,
-        title: existing.title,
-      },
-      existing.ownerId
-    );
+    try {
+      await updateGoogleCalendarEvent(
+        input.scope,
+        existing.calendarEventId,
+        {
+          start: input.meetingStart,
+          end: input.meetingEnd,
+          timezone,
+          title: existing.title,
+        },
+        existing.ownerId
+      );
+    } catch (error) {
+      console.warn("[book-meeting] Google event update failed", error);
+    }
   }
 
   const updated = await repo.updateMeeting(
@@ -188,6 +202,11 @@ export async function rescheduleMeeting(input: {
       try {
         await sendMeetingConfirmationEmail(updated, contact, input.scope, {
           reschedule: true,
+          extraEmails: await calendarInviteEmails(
+            input.scope,
+            existing.ownerId,
+            contact.email
+          ),
         });
       } catch {
         /* ignore */
@@ -211,11 +230,15 @@ export async function cancelMeeting(input: {
     !existing.calendarEventId.startsWith("local_") &&
     (await hasLiveGoogleCalendar(input.scope, existing.ownerId))
   ) {
-    await deleteGoogleCalendarEvent(
-      input.scope,
-      existing.calendarEventId,
-      existing.ownerId
-    );
+    try {
+      await deleteGoogleCalendarEvent(
+        input.scope,
+        existing.calendarEventId,
+        existing.ownerId
+      );
+    } catch (error) {
+      console.warn("[book-meeting] Google event delete failed", error);
+    }
   }
 
   const reminders = await repo.listReminders(input.scope, {
@@ -228,4 +251,23 @@ export async function cancelMeeting(input: {
   }
 
   return repo.updateMeeting(input.meetingId, { status: "cancelled" }, input.scope);
+}
+
+function fallbackMeetLink() {
+  const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  return `https://meet.jit.si/aarvanta-${id}`;
+}
+
+async function calendarInviteEmails(
+  scope: TenantScope,
+  ownerId: string | undefined,
+  contactEmail?: string
+): Promise<string[]> {
+  const conn = await getUserCalendarConnection(scope, ownerId);
+  const ownerEmail = (conn?.metadata?.email || conn?.accountLabel || "").trim();
+  if (!ownerEmail.includes("@")) return [];
+  if (contactEmail && ownerEmail.toLowerCase() === contactEmail.toLowerCase()) {
+    return [];
+  }
+  return [ownerEmail];
 }
