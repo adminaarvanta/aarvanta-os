@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * Push Voice Relay env vars to Vercel (Production + Preview) for aarvanta-os.
+ * Also upserts ELEVENLABS_API_KEY when present (encrypted). Never logs secret values.
  *
  * Requires a token with access to team "AARVANTA's projects":
  *   https://vercel.com/account/tokens
@@ -25,11 +26,26 @@ const vars = {
   VOICE_RELAY_WSS_URL:
     process.env.VOICE_RELAY_WSS_URL?.trim() ||
     "wss://orbit.aarvanta.co/voice-relay/ws",
-  VOICE_RELAY_CALLBACK_SECRET: process.env.VOICE_RELAY_CALLBACK_SECRET?.trim(),
 };
 
-if (!vars.VOICE_RELAY_CALLBACK_SECRET) {
-  console.error("VOICE_RELAY_CALLBACK_SECRET missing in env / .env.local");
+const callbackSecret = process.env.VOICE_RELAY_CALLBACK_SECRET?.trim();
+if (callbackSecret) {
+  vars.VOICE_RELAY_CALLBACK_SECRET = callbackSecret;
+}
+
+const elevenLabsKey = process.env.ELEVENLABS_API_KEY?.trim();
+if (elevenLabsKey) {
+  vars.ELEVENLABS_API_KEY = elevenLabsKey;
+} else {
+  console.warn(
+    "ELEVENLABS_API_KEY missing — skip (set it in .env.local to push the paid TTS key)"
+  );
+}
+
+if (!callbackSecret && !elevenLabsKey) {
+  console.error(
+    "Need VOICE_RELAY_CALLBACK_SECRET and/or ELEVENLABS_API_KEY in env / .env.local"
+  );
   process.exit(1);
 }
 
@@ -79,6 +95,7 @@ async function upsertEnv(name, value) {
 }
 
 for (const [name, value] of Object.entries(vars)) {
+  if (!value) continue;
   await upsertEnv(name, value);
 }
 
@@ -87,3 +104,4 @@ console.log("  vercel --prod --scope aarvanta-s-projects");
 console.log("  OR Vercel dashboard → Deployments → Redeploy");
 console.log("\nThen verify:");
 console.log("  curl -s https://os.aarvanta.co/api/health | jq .voiceRelay");
+console.log("  elevenLabsApiKeyConfigured should be true after redeploy");

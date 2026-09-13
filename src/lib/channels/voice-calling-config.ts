@@ -6,7 +6,10 @@ import {
   VOICE_CATALOG,
   VOICE_LANGUAGES,
 } from "@/lib/channels/voice-catalog";
-import { applyElevenLabsPhoneQuality } from "@/lib/channels/elevenlabs-relay-voice";
+import {
+  applyElevenLabsPhoneQuality,
+  upgradeLegacyRachelVoice,
+} from "@/lib/channels/elevenlabs-relay-voice";
 import {
   getConversationRelayTtsFromEnv,
   isVoiceRelayBudgetMode,
@@ -90,7 +93,7 @@ export function resolveVoiceCallingConfig(
     envTts.voice;
   const voice =
     provider === "ElevenLabs"
-      ? applyElevenLabsPhoneQuality(rawVoice)
+      ? applyElevenLabsPhoneQuality(upgradeLegacyRachelVoice(rawVoice))
       : rawVoice;
 
   const announce = settings?.callRecordingAnnounce !== false;

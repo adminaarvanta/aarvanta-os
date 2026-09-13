@@ -9,6 +9,10 @@ import { elevenLabsVoiceBaseId } from "@/lib/channels/elevenlabs-relay-voice";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
+import {
+  decideTwimlGreeting,
+  fetchVoiceRelayHealth,
+} from "@/lib/channels/voice-relay-health";
 import { isVoiceRelayBudgetMode } from "@/lib/channels/voice-relay-tts";
 import { getWorkspaceSettings } from "@/lib/settings/workspace-settings";
 import { getWebhookTenantScope } from "@/lib/tenant/context";
@@ -104,16 +108,21 @@ async function twimlResponse(req: Request) {
   const relayUrl =
     mode === "say" || isVoiceRelayBudgetMode() ? null : getVoiceRelayWssUrl();
 
-  // Always speak identity immediately via catalog TTS (~1s). Waiting for the
-  // relay opening (OpenAI + optional clone synth) is what made calls sit silent
-  // for ~20s. Cloned audio, when configured, starts on the next turn.
-  let welcome = defaultWelcome;
-  if (voice.callRecordingEnabled && voice.callRecordingAnnounce) {
-    welcome = `${voice.recordingNotice} ${welcome}`;
-  }
+  // Modern relay (1.9.2+) honors skipOpening, so TwiML can greet immediately.
+  // Orbit is still 1.7.2: it ignores skipOpening and always speaks an LLM
+  // opening. Greeting here as well introduces Ava twice.
+  const relayHealth = relayUrl ? await fetchVoiceRelayHealth() : null;
+  const greeting = decideTwimlGreeting({
+    relayHonorsSkipOpening: Boolean(relayHealth?.honorsSkipOpening),
+    identityGreeting: defaultWelcome,
+    recordingNotice:
+      voice.callRecordingEnabled && voice.callRecordingAnnounce
+        ? voice.recordingNotice
+        : undefined,
+  });
 
   const twiml = relayUrl
-    ? buildConversationRelayTwiml(relayUrl, welcome, {
+    ? buildConversationRelayTwiml(relayUrl, greeting.welcome, {
         direction,
         conversationId,
         goal,
@@ -132,10 +141,10 @@ async function twimlResponse(req: Request) {
           voice.provider === "ElevenLabs"
             ? elevenLabsVoiceBaseId(voice.voice)
             : undefined,
-        skipOpening: true,
+        skipOpening: greeting.skipOpening,
       })
     : buildSayTwiml(
-        welcome.slice(0, 280),
+        (greeting.welcome || defaultWelcome).slice(0, 280),
         voice.provider === "Amazon" ? voice.voice : "Polly.Joanna"
       );
 
