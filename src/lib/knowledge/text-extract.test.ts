@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import "@/lib/knowledge/pdf-dom-polyfill";
 import {
   detectFileType,
   extractTextFromBuffer,
@@ -54,6 +55,16 @@ describe("knowledge text extract", () => {
       "txt"
     );
     assert.equal(text, "Knowledge Hub notes");
+  });
+
+  it("polyfills DOMMatrix so pdfjs-dist can load in Node", () => {
+    assert.equal(typeof globalThis.DOMMatrix, "function");
+    const matrix = new DOMMatrix([1, 0, 0, 1, 10, 20]);
+    assert.equal(matrix.e, 10);
+    assert.equal(matrix.f, 20);
+    const inverted = matrix.inverse();
+    assert.equal(inverted.e, -10);
+    assert.equal(inverted.f, -20);
   });
 
   it("extracts PDF text in Node without a browser DOMMatrix", async () => {
