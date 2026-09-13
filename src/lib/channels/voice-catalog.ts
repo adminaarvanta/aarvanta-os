@@ -1,4 +1,7 @@
-import type { ConversationRelayTtsProvider } from "@/lib/channels/voice-relay-tts";
+import {
+  DEFAULT_ELEVENLABS_VOICE_ID,
+  type ConversationRelayTtsProvider,
+} from "@/lib/channels/voice-relay-tts";
 
 export type VoiceLanguageOption = {
   id: string;
@@ -76,27 +79,51 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
 /** Curated Twilio ConversationRelay voices. Empty `languages` = multilingual. */
 export const VOICE_CATALOG: VoiceCatalogEntry[] = [
   {
+    id: "cgSgspJ2msm6clMCkdW9",
+    label: "ElevenLabs — Jessica (conversational, recommended)",
+    provider: "ElevenLabs",
+    languages: [],
+  },
+  {
     id: "EXAVITQu4vr4xnSDxMaL",
-    label: "ElevenLabs — Sarah (multilingual)",
+    label: "ElevenLabs — Sarah (soft, approachable)",
+    provider: "ElevenLabs",
+    languages: [],
+  },
+  {
+    id: "pFZP5JQG7iQjIQuC4Bku",
+    label: "ElevenLabs — Lily (warm British)",
+    provider: "ElevenLabs",
+    languages: [],
+  },
+  {
+    id: "XrExE9yKIg1WjnnlVkGX",
+    label: "ElevenLabs — Matilda (warm, friendly)",
+    provider: "ElevenLabs",
+    languages: [],
+  },
+  {
+    id: "Xb7hH8MSUJpSbSDYk0k2",
+    label: "ElevenLabs — Alice (confident British)",
     provider: "ElevenLabs",
     languages: [],
   },
   {
     id: "21m00Tcm4TlvDq8ikWAM",
-    label: "ElevenLabs — Rachel (multilingual)",
+    label: "ElevenLabs — Rachel (legacy)",
     provider: "ElevenLabs",
     languages: [],
   },
   {
-    // flash_v2_5 is lower latency but flatter / more robotic than Sarah/Rachel
+    // flash_v2_5 is lower latency but flatter / more robotic than Turbo
     id: "UgBBYS2sOqTuMpoF3BR0-flash_v2_5-0.95_0.65_0.8",
-    label: "ElevenLabs — Mark (fast, multilingual)",
+    label: "ElevenLabs — Mark (fast / flatter)",
     provider: "ElevenLabs",
     languages: [],
   },
   {
     id: "UgBBYS2sOqTuMpoF3BR0",
-    label: "ElevenLabs — Mark (en-US default)",
+    label: "ElevenLabs — Mark (male, en-US)",
     provider: "ElevenLabs",
     languages: ["en-US", "multi"],
   },
@@ -542,9 +569,10 @@ export function voicesForProvider(
     return languageMatches(v.languages, language);
   });
 
-  if (!language || language === "multi") return matches;
+  // Keep ElevenLabs catalog order (Jessica first). Locale-specific Amazon/Google
+  // voices still sort ahead of generic ones so the default pick is right.
+  if (!language || language === "multi" || provider === "ElevenLabs") return matches;
 
-  // Prefer locale-specific voices, then multilingual, so the default pick is right.
   return [...matches].sort((a, b) => {
     const aSpecific = a.languages.includes(language) ? 0 : 1;
     const bSpecific = b.languages.includes(language) ? 0 : 1;
@@ -556,6 +584,14 @@ export function defaultVoiceIdFor(
   provider: ConversationRelayTtsProvider,
   language?: string
 ): string {
+  if (provider === "ElevenLabs") {
+    const recommended = VOICE_CATALOG.find(
+      (v) => v.id === DEFAULT_ELEVENLABS_VOICE_ID
+    );
+    if (recommended && languageMatches(recommended.languages, language)) {
+      return recommended.id;
+    }
+  }
   const match = voicesForProvider(provider, language)[0];
   if (match) return match.id;
   const any = VOICE_CATALOG.find((v) => v.provider === provider);

@@ -5,6 +5,7 @@ import {
   spokenVoiceBrand,
   voiceIdentityGreeting,
 } from "@/lib/calling/voice-knowledge";
+import { elevenLabsVoiceBaseId } from "@/lib/channels/elevenlabs-relay-voice";
 import { liveClonedVoiceId } from "@/lib/channels/cloned-voice";
 import { resolveVoiceCallingConfig } from "@/lib/channels/voice-calling-config";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
@@ -127,6 +128,10 @@ async function twimlResponse(req: Request) {
         contactId,
         voiceAgentId: resolvedAgentId,
         clonedVoiceId: clonedOnCall ? liveClonedVoiceId(agent) : undefined,
+        ttsVoiceId:
+          voice.provider === "ElevenLabs"
+            ? elevenLabsVoiceBaseId(voice.voice)
+            : undefined,
         skipOpening: true,
       })
     : buildSayTwiml(
@@ -171,6 +176,7 @@ function buildConversationRelayTwiml(
     contactId?: string;
     voiceAgentId?: string;
     clonedVoiceId?: string;
+    ttsVoiceId?: string;
     skipOpening?: boolean;
   }
 ) {
@@ -198,6 +204,9 @@ function buildConversationRelayTwiml(
     params.clonedVoiceId
       ? `<Parameter name="clonedVoiceId" value="${escapeXml(params.clonedVoiceId)}" />`
       : "",
+    params.ttsVoiceId
+      ? `<Parameter name="ttsVoiceId" value="${escapeXml(params.ttsVoiceId)}" />`
+      : "",
     params.skipOpening
       ? `<Parameter name="skipOpening" value="true" />`
       : "",
@@ -208,7 +217,7 @@ function buildConversationRelayTwiml(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <ConversationRelay url="${escapeXml(wssUrl)}"${welcomeAttr} language="${escapeXml(params.language)}" ttsProvider="${escapeXml(params.provider)}" voice="${escapeXml(params.voiceId)}"${elevenNorm} transcriptionProvider="Deepgram" interruptible="any" sessionTimeout="900">
+    <ConversationRelay url="${escapeXml(wssUrl)}"${welcomeAttr} language="${escapeXml(params.language)}" ttsProvider="${escapeXml(params.provider)}" voice="${escapeXml(params.voiceId)}"${elevenNorm} transcriptionProvider="Deepgram" speechModel="nova-3-general" interruptible="any" interruptSensitivity="medium" ignoreBackchannel="true" sessionTimeout="900">
       <Parameter name="goal" value="${escapeXml(params.goal)}" />
       <Parameter name="direction" value="${escapeXml(params.direction)}" />
       <Parameter name="conversationId" value="${escapeXml(params.conversationId)}" />

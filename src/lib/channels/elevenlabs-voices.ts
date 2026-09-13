@@ -170,9 +170,17 @@ export async function synthesizeElevenLabsMp3(input: {
       },
       body: JSON.stringify({
         text: input.text,
-        model_id: "eleven_flash_v2_5",
+        model_id: "eleven_multilingual_v2",
+        apply_text_normalization: "on",
+        voice_settings: {
+          stability: 0.38,
+          similarity_boost: 0.82,
+          style: 0.35,
+          use_speaker_boost: true,
+          speed: 0.95,
+        },
       }),
-      signal: AbortSignal.timeout(6_000),
+      signal: AbortSignal.timeout(10_000),
     }
   );
   if (!res.ok) {
