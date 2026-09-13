@@ -21,6 +21,43 @@ export function validateUpload(file: File) {
   return fileType;
 }
 
+/**
+ * pdfjs-dist (used by pdf-parse v2) constructs `DOMMatrix` while the module
+ * evaluates. Polyfill browser canvas APIs *before* importing pdf-parse, then
+ * pass the Node CanvasFactory so text extraction works in Next.js/Node.
+ */
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  await ensurePdfDomPolyfills();
+  const { CanvasFactory, getData } = await import("pdf-parse/worker");
+  const { PDFParse } = await import("pdf-parse");
+  PDFParse.setWorker(getData());
+
+  const parser = new PDFParse({
+    data: new Uint8Array(buffer),
+    CanvasFactory,
+  });
+  try {
+    const result = await parser.getText();
+    return (result.text ?? "").trim();
+  } finally {
+    await parser.destroy();
+  }
+}
+
+async function ensurePdfDomPolyfills() {
+  if (typeof globalThis.DOMMatrix !== "undefined") return;
+
+  const canvas = await import("@napi-rs/canvas");
+  const globals = globalThis as typeof globalThis & {
+    DOMMatrix?: typeof canvas.DOMMatrix;
+    ImageData?: typeof canvas.ImageData;
+    Path2D?: typeof canvas.Path2D;
+  };
+  globals.DOMMatrix ??= canvas.DOMMatrix;
+  globals.ImageData ??= canvas.ImageData;
+  globals.Path2D ??= canvas.Path2D;
+}
+
 export async function extractTextFromBuffer(
   buffer: Buffer,
   fileType: KnowledgeFileType
@@ -35,14 +72,7 @@ export async function extractTextFromBuffer(
     return result.value.trim();
   }
 
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
-  try {
-    const result = await parser.getText();
-    return (result.text ?? "").trim();
-  } finally {
-    await parser.destroy();
-  }
+  return extractPdfText(buffer);
 }
 
 export async function extractTextFromFile(file: File): Promise<string> {
