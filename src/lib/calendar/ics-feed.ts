@@ -94,7 +94,10 @@ export function emailFromIcsUrl(url: string): string | undefined {
     const match = path.match(/\/ical\/([^/]+)\//i);
     if (!match?.[1]) return undefined;
     const value = match[1];
-    if (value.includes("@") && !value.includes("group.calendar.google.com")) {
+    if (
+      value.includes("@") &&
+      !/group\.v?\.?calendar\.google\.com/i.test(value)
+    ) {
       return value;
     }
     return undefined;

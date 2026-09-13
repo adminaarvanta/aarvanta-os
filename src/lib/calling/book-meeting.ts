@@ -265,7 +265,12 @@ async function calendarInviteEmails(
 ): Promise<string[]> {
   const conn = await getUserCalendarConnection(scope, ownerId);
   const ownerEmail = (conn?.metadata?.email || conn?.accountLabel || "").trim();
-  if (!ownerEmail.includes("@")) return [];
+  if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail) ||
+    /group\.v?\.?calendar\.google\.com/i.test(ownerEmail)
+  ) {
+    return [];
+  }
   if (contactEmail && ownerEmail.toLowerCase() === contactEmail.toLowerCase()) {
     return [];
   }

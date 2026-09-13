@@ -11,7 +11,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const stateRaw = url.searchParams.get("state");
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    new URL(req.url).origin;
   const oauthError = googleCalendarOAuthErrorStatus(url.searchParams.get("error"));
   if (oauthError) {
     return NextResponse.redirect(`${appUrl}/voice/calendar?gcal=${oauthError}`);
