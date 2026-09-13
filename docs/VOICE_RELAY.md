@@ -65,8 +65,8 @@ VOICE_RELAY_CALLBACK_SECRET=same-as-ec2
 # Keep OFF for two-way human AI (budget mode = one-shot Polly, no ConversationRelay)
 # VOICE_RELAY_BUDGET_MODE=true
 VOICE_RELAY_TTS_PROVIDER=ElevenLabs
-VOICE_RELAY_TTS_VOICE=EXAVITQu4vr4xnSDxMaL
-# Custom Voice Agent clones (upload on /voice/agents/:id/flow)
+VOICE_RELAY_TTS_VOICE=cgSgspJ2msm6clMCkdW9
+# Custom Voice Agent clones + paid eleven_multilingual_v2 (same key as EC2)
 ELEVENLABS_API_KEY=
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
@@ -175,7 +175,7 @@ In **`/voice`** (and compact on **`/calling`**), operators can set:
 
 - **Provider** — ElevenLabs, Google, or Amazon Polly
 - **Language** — e.g. `en-US`, `en-GB`, `hi-IN`. ConversationRelay gets the **workspace** locale (not the agent picker). `multi` (auto-detect) is only sent with ElevenLabs; Amazon/Google fall back to `en-US` so the session does not drop.
-- **Voice** — curated list (default **Jessica**), or paste a **custom Twilio/ElevenLabs voice ID**. Jessica / Sarah / Lily / Matilda / Alice are the human catalog picks. Bare IDs are sent as `{id}-turbo_v2_5-0.95_0.38_0.82` (Twilio’s highest-quality ConversationRelay model + expressive stability). Mark (fast) stays on `flash_v2_5`. Rachel is legacy.
+- **Voice** — curated list (default **Jessica**), or paste a **custom Twilio/ElevenLabs voice ID**. Jessica / Sarah / Lily / Matilda / Alice are the human catalog picks. Bare IDs are sent as `{id}-turbo_v2_5-0.95_0.38_0.82` (Twilio’s highest-quality ConversationRelay model + expressive stability). Mark (fast) stays on `flash_v2_5`. Saved legacy Rachel (`21m00Tcm4TlvDq8ikWAM`) is remapped to Jessica at TwiML resolve time.
 - **Primary Voice Agent** — persona used for inbound, Dialer, and scheduled calls when none is specified. A custom clone on that agent is what speaks on live calls.
 - **Record calls** — opt-in (default off); optional spoken consent notice
 
