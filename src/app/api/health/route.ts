@@ -7,6 +7,7 @@ import {
 } from "@/lib/channels/config";
 import { elevenLabsConfigured } from "@/lib/channels/elevenlabs-voices";
 import { getVoiceRelayWssUrl } from "@/lib/channels/voice-relay";
+import { fetchVoiceRelayHealth } from "@/lib/channels/voice-relay-health";
 import {
   getConversationRelayTts,
   isVoiceRelayBudgetMode,
@@ -23,15 +24,18 @@ import { getAdminFirestore, isFirebaseConfigured } from "@/lib/firebase/admin";
 import { getActiveDatastore, ensureDatastoreReady } from "@/lib/data/datastore";
 import { isProductionMode } from "@/lib/config/app-mode";
 
-function voiceRelayPayload() {
+async function voiceRelayPayload() {
   const wssUrl = getVoiceRelayWssUrl();
   const tts = getConversationRelayTts();
+  const sidecar = await fetchVoiceRelayHealth();
   return {
     configured: Boolean(wssUrl),
     wssUrl,
     budgetMode: isVoiceRelayBudgetMode(),
     tts: { provider: tts.provider, voice: tts.voice },
     elevenLabsApiKeyConfigured: elevenLabsConfigured(),
+    sidecarVersion: sidecar?.version ?? null,
+    sidecarHonorsSkipOpening: Boolean(sidecar?.honorsSkipOpening),
   };
 }
 
@@ -56,7 +60,7 @@ export async function GET() {
       channels,
       whatsappManagement,
       webhooks,
-      voiceRelay: voiceRelayPayload(),
+      voiceRelay: await voiceRelayPayload(),
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -78,7 +82,7 @@ export async function GET() {
         channels,
         whatsappManagement,
         webhooks,
-        voiceRelay: voiceRelayPayload(),
+        voiceRelay: await voiceRelayPayload(),
         ai,
         emailSync: gmailSyncStatus,
         emailInbound,
@@ -99,7 +103,7 @@ export async function GET() {
       channels,
       whatsappManagement,
       webhooks,
-      voiceRelay: voiceRelayPayload(),
+      voiceRelay: await voiceRelayPayload(),
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -119,7 +123,7 @@ export async function GET() {
           channels,
           whatsappManagement,
           webhooks,
-          voiceRelay: voiceRelayPayload(),
+          voiceRelay: await voiceRelayPayload(),
           ai,
           emailSync: gmailSyncStatus,
           emailInbound,
@@ -139,7 +143,7 @@ export async function GET() {
       channels,
       whatsappManagement,
       webhooks,
-      voiceRelay: voiceRelayPayload(),
+      voiceRelay: await voiceRelayPayload(),
       ai,
       emailSync: gmailSyncStatus,
       emailInbound,
@@ -155,7 +159,7 @@ export async function GET() {
         channels,
         whatsappManagement,
         webhooks,
-        voiceRelay: voiceRelayPayload(),
+        voiceRelay: await voiceRelayPayload(),
         ai,
         emailSync: gmailSyncStatus,
         emailInbound,
