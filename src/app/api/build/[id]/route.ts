@@ -60,10 +60,32 @@ export async function PATCH(req: Request, context: RouteContext) {
     );
   }
 
+  // Merge with the saved draft so PATCH from the wizard cannot wipe design
+  // options, brand, or site-type priors needed for refine / resume.
   const preferences = normalizeSitePreferences({
     ...parsed.data,
-    categoryId: parsed.data.categoryId ?? job.preferences.categoryId ?? "saas",
-    templateId: parsed.data.templateId ?? job.preferences.templateId ?? "saas_launch",
+    categoryId:
+      parsed.data.categoryId ??
+      job.preferences.categoryId ??
+      "professional",
+    templateId:
+      parsed.data.templateId ??
+      job.preferences.templateId ??
+      "local_trust",
+    siteType: parsed.data.siteType ?? job.preferences.siteType,
+    ctaGoal: parsed.data.ctaGoal ?? job.preferences.ctaGoal,
+    pages: parsed.data.pages?.length ? parsed.data.pages : job.preferences.pages,
+    designOptions: parsed.data.designOptions?.length
+      ? parsed.data.designOptions
+      : job.preferences.designOptions,
+    selectedDesignOptionId:
+      parsed.data.selectedDesignOptionId ??
+      job.preferences.selectedDesignOptionId,
+    businessProfile:
+      parsed.data.businessProfile ?? job.preferences.businessProfile,
+    brandSystem: parsed.data.brandSystem ?? job.preferences.brandSystem,
+    pageCandidates:
+      parsed.data.pageCandidates ?? job.preferences.pageCandidates,
     // Preserve previously stored screenshots if client omits them (size/local cache).
     referenceScreenshots:
       parsed.data.referenceScreenshots?.length

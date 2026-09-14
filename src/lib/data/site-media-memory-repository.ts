@@ -13,7 +13,16 @@ type Stored = SiteClientMedia & { dataBase64: string } & {
   companyId: string;
 };
 
-const records: Stored[] = [];
+const globalStore = globalThis as typeof globalThis & {
+  __aarvantaSiteMediaRecords?: Stored[];
+};
+
+function records(): Stored[] {
+  if (!globalStore.__aarvantaSiteMediaRecords) {
+    globalStore.__aarvantaSiteMediaRecords = [];
+  }
+  return globalStore.__aarvantaSiteMediaRecords;
+}
 
 function toRef(record: Stored): SiteClientMedia {
   return toClientMediaRefs([record])[0]!;
@@ -21,14 +30,14 @@ function toRef(record: Stored): SiteClientMedia {
 
 export const siteMediaMemoryRepository: SiteMediaRepository = {
   async listByJob(jobId, scope) {
-    return records
+    return records()
       .filter((item) => item.jobId === jobId && inCrmScope(item, scope))
       .sort((a, b) => a.uploadedAt.localeCompare(b.uploadedAt))
       .map(toRef);
   },
 
   async getBlob(jobId, id) {
-    const item = records.find((record) => record.jobId === jobId && record.id === id);
+    const item = records().find((record) => record.jobId === jobId && record.id === id);
     return item
       ? {
           ...toRef(item),
@@ -41,7 +50,7 @@ export const siteMediaMemoryRepository: SiteMediaRepository = {
     if (input.bytes.length > SITE_MEDIA_MAX_BYTES) {
       throw new Error(`Photo must be under ${Math.round(SITE_MEDIA_MAX_BYTES / 1024)}KB.`);
     }
-    const existing = records.filter(
+    const existing = records().filter(
       (item) => item.jobId === input.jobId && inCrmScope(item, scope)
     );
     if (existing.length >= SITE_MEDIA_MAX_PER_JOB) {
@@ -62,12 +71,12 @@ export const siteMediaMemoryRepository: SiteMediaRepository = {
       uploadedAt: crmNow(),
       dataBase64: input.bytes.toString("base64"),
     };
-    records.push(stored);
+    records().push(stored);
     return toRef(stored);
   },
 
   async update(jobId, id, scope, patch) {
-    const item = records.find(
+    const item = records().find(
       (record) => record.jobId === jobId && record.id === id && inCrmScope(record, scope)
     );
     if (!item) return null;
@@ -79,20 +88,20 @@ export const siteMediaMemoryRepository: SiteMediaRepository = {
   },
 
   async remove(jobId, id, scope) {
-    const idx = records.findIndex(
+    const idx = records().findIndex(
       (record) => record.jobId === jobId && record.id === id && inCrmScope(record, scope)
     );
     if (idx === -1) return false;
-    records.splice(idx, 1);
+    records().splice(idx, 1);
     return true;
   },
 
   async removeByJob(jobId, scope) {
     let removed = 0;
-    for (let i = records.length - 1; i >= 0; i--) {
-      const item = records[i]!;
+    for (let i = records().length - 1; i >= 0; i--) {
+      const item = records()[i]!;
       if (item.jobId === jobId && inCrmScope(item, scope)) {
-        records.splice(i, 1);
+        records().splice(i, 1);
         removed += 1;
       }
     }
