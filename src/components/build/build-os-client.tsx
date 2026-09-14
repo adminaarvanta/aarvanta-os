@@ -575,7 +575,18 @@ export function BuildOsClient({
               finalJob = payload.job;
               setUsedAi(payload.usedAi ?? false);
             } else if (payload.type === "error") {
-              setError((payload as { message?: string }).message ?? "Generation failed.");
+              const err = payload as {
+                message?: string;
+                code?: string;
+                job?: import("@/types/site-builder").SiteBuildJob;
+              };
+              if (err.job) {
+                finalJob = err.job;
+                setJob(err.job);
+              }
+              if (err.code !== "REFINE_NOOP") {
+                setError(err.message ?? "Generation failed.");
+              }
             }
           } catch {
             /* ignore */
@@ -593,10 +604,18 @@ export function BuildOsClient({
         setSelectedDesignOptionId(
           finalJob.preferences.selectedDesignOptionId ?? selectedDesignOptionId
         );
-        if (isRefine) {
+        const refineFailed = Boolean(
+          isRefine &&
+            [...(finalJob.refineChat ?? [])]
+              .reverse()
+              .find((turn) => turn.role === "assistant")?.status === "failed"
+        );
+        if (isRefine && !refineFailed) {
           setRefineInput("");
           setStatusMessage("Site updated with your changes.");
-        } else {
+        } else if (isRefine && refineFailed) {
+          setStatusMessage(null);
+        } else if (!isRefine) {
           setStudioRightTab("photos");
           setStatusMessage(
             (finalJob.clientMedia ?? clientMedia).length
@@ -604,9 +623,11 @@ export function BuildOsClient({
               : "Website ready. Add real work photos in the Photos tab to replace stock."
           );
         }
-        syncLocalCache(finalJob.id, "generate");
-        router.replace(`/build?job=${finalJob.id}`);
-        void refreshJobList();
+        if (!refineFailed) {
+          syncLocalCache(finalJob.id, "generate");
+          router.replace(`/build?job=${finalJob.id}`);
+          void refreshJobList();
+        }
       }
     } finally {
       setBusy(false);

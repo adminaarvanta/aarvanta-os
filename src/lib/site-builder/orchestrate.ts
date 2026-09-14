@@ -5,6 +5,7 @@ import {
 } from "@/lib/site-builder/agents/pipeline";
 import { generateDesignOptions } from "@/lib/site-builder/agents/design-options";
 import { applyClientMediaToSite } from "@/lib/site-builder/apply-client-media";
+import { isRefineNoopError } from "@/lib/site-builder/apply-refine";
 import { planSiteFromPreferences } from "@/lib/site-builder/plan-site";
 import { generateSiteFromPlan } from "@/lib/site-builder/generate-site";
 import { resolveSiteThemeWithBrand } from "@/lib/site-builder/theme-presets";
@@ -98,6 +99,7 @@ export async function generateSitePlan(
     const result = await runGenerationPipeline(planning, onProgress);
     return result.job;
   } catch (error) {
+    if (isRefineNoopError(error)) throw error;
     const message =
       error instanceof Error ? error.message : "Site generation failed.";
     return {

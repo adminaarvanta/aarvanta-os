@@ -15,7 +15,17 @@ import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
 import { buildEc2DeployNotes } from "@/lib/site-builder/ec2-deploy-notes";
 import { applyClientMediaToSite } from "@/lib/site-builder/apply-client-media";
-import { applyBrandRefine, applyRefineHeuristics } from "@/lib/site-builder/apply-refine";
+import {
+  applyBrandRefine,
+  applyRefineHeuristics,
+  applyStudioRefine,
+  compactSiteCopy,
+  didSiteVisiblyChange,
+  mergeCopyPatch,
+  RefineNoopError,
+  REFINE_NOOP_HINT,
+  type SiteCopyPatch,
+} from "@/lib/site-builder/apply-refine";
 import {
   isCopyRefine,
   isImageRefine,
@@ -161,9 +171,10 @@ export async function runGenerationPipeline(
         ],
       };
     }
-    site = applyRefineHeuristics(site, refineText);
+    const heuristic = applyStudioRefine(site, refineText);
+    site = heuristic.site;
 
-    // Light AI hero refresh for copy-oriented (or unmatched free-form) prompts.
+    // Optional AI pass — any page/section, but only fields the request needs.
     if (
       isAiConfigured() &&
       (isCopyRefine(refineText) ||
@@ -172,59 +183,33 @@ export async function runGenerationPipeline(
           !isImageRefine(refineText)))
     ) {
       try {
-        const home = site.pages.find((p) => p.slug === "home" || p.slug === "");
-        const hero = home?.blocks.find((b) => b.type === "hero");
-        if (hero && home) {
-          const heroCopy = await completeJson<{
-            headline?: string;
-            subheadline?: string;
-            cta?: string;
-          }>({
-            system: `Update homepage hero copy to satisfy the change request. Return JSON with headline, subheadline, cta. Keep brand voice. Apply exactly: ${refineText}`,
-            user: JSON.stringify({
-              businessName: preferences.businessName,
-              idea: preferences.businessIdea,
-              current: {
-                headline: hero.props.headline,
-                subheadline: hero.props.subheadline,
-                cta: hero.props.cta,
-              },
-            }),
-            temperature: 0.5,
-          });
-          usedAi = true;
-          site = {
-            ...site,
-            pages: site.pages.map((page) =>
-              page.slug === home.slug
-                ? {
-                    ...page,
-                    blocks: page.blocks.map((block) =>
-                      block.id === hero.id
-                        ? {
-                            ...block,
-                            props: {
-                              ...block.props,
-                              ...(heroCopy.headline
-                                ? { headline: heroCopy.headline }
-                                : {}),
-                              ...(heroCopy.subheadline
-                                ? { subheadline: heroCopy.subheadline }
-                                : {}),
-                              ...(heroCopy.cta ? { cta: heroCopy.cta } : {}),
-                            },
-                          }
-                        : block
-                    ),
-                  }
-                : page
-            ),
-          };
-          site = applyRefineHeuristics(site, refineText);
+        const copyPatch = await completeJson<SiteCopyPatch>({
+          system: `You edit copy on an existing website. Return JSON patches only for text that must change to satisfy the user request.
+Rules:
+- Only include fields you are changing (tagline, footerNote, navigation labels, page titles, block props).
+- You may update About, Contact, footer, nav, FAQ, pricing, or any other section — not only the home hero.
+- Do not invent new pages or block ids. If the request cannot be applied to the current site, return {}.
+Apply exactly: ${refineText}`,
+          user: JSON.stringify({
+            businessName: preferences.businessName,
+            idea: preferences.businessIdea,
+            current: compactSiteCopy(site),
+          }),
+          temperature: 0.4,
+        });
+        usedAi = true;
+        const merged = mergeCopyPatch(site, copyPatch);
+        if (didSiteVisiblyChange(site, merged)) {
+          const again = applyStudioRefine(merged, refineText);
+          site = again.changed ? again.site : merged;
         }
       } catch {
         /* heuristics already applied */
       }
+    }
+
+    if (!didSiteVisiblyChange(priorSite, site)) {
+      throw new RefineNoopError(heuristic.hint ?? REFINE_NOOP_HINT);
     }
 
     site = overlayClientPhotos(
