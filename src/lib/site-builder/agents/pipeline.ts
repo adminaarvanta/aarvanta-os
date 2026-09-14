@@ -31,6 +31,7 @@ import {
   isImageRefine,
   isStructuralRefine,
   isThemeRefine,
+  latestRefineTurn,
 } from "@/lib/site-builder/refine-history";
 import { ensureShareToken } from "@/lib/site-builder/share-token";
 import { resolveTemplatePrior } from "@/lib/site-builder/templates/resolve-template";
@@ -90,7 +91,8 @@ export async function runGenerationPipeline(
   let preferences = { ...job.preferences };
   let usedAi = false;
   const priorSite = job.generatedSite;
-  const refineText = preferences.refineInstructions?.trim();
+  const refineBundle = preferences.refineInstructions?.trim();
+  const refineText = latestRefineTurn(refineBundle);
   const isRefinePass = Boolean(refineText && priorSite);
 
   const emit = async (
@@ -189,7 +191,8 @@ Rules:
 - Only include fields you are changing (tagline, footerNote, navigation labels, page titles, block props).
 - You may update About, Contact, footer, nav, FAQ, pricing, or any other section — not only the home hero.
 - Do not invent new pages or block ids. If the request cannot be applied to the current site, return {}.
-Apply exactly: ${refineText}`,
+Apply exactly this latest request: ${refineText}
+Prior requests (already applied to the current site, do not re-apply): ${refineBundle && refineBundle !== refineText ? refineBundle : "none"}`,
           user: JSON.stringify({
             businessName: preferences.businessName,
             idea: preferences.businessIdea,
@@ -298,7 +301,7 @@ Apply exactly: ${refineText}`,
     brand = brandResult.brand;
   }
   // Studio refine can override colours without changing layout.
-  brand = applyBrandRefine(brand, preferences.refineInstructions);
+  brand = applyBrandRefine(brand, refineText);
   if (preferences.brandLogo?.dataUrl) {
     brand = { ...brand, logoUrl: preferences.brandLogo.dataUrl };
   }
@@ -457,7 +460,7 @@ Apply exactly: ${refineText}`,
 
   site = overlayClientPhotos(
     {
-      ...applyRefineHeuristics(site, preferences.refineInstructions),
+      ...applyRefineHeuristics(site, refineText),
       brand,
       theme,
       generatedAt: crmNow(),

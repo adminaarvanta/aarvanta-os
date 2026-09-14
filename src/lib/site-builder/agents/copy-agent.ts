@@ -1,6 +1,7 @@
 import { isAiConfigured } from "@/lib/ai/config";
 import { completeJson } from "@/lib/ai/provider";
 import { applyRefineHeuristics } from "@/lib/site-builder/apply-refine";
+import { latestRefineTurn } from "@/lib/site-builder/refine-history";
 import { buildContentBrief } from "@/lib/site-builder/content-brief";
 import { preferSampleFilledSite } from "@/lib/site-builder/ensure-sample-data";
 import { generateSiteFromPlan } from "@/lib/site-builder/generate-site";
@@ -38,9 +39,11 @@ export async function runCopyAgent(
     version: 1,
   };
 
+  const refine = latestRefineTurn(preferences.refineInstructions);
+
   if (!isAiConfigured()) {
     return {
-      site: applyRefineHeuristics(enriched, preferences.refineInstructions),
+      site: applyRefineHeuristics(enriched, refine),
       usedAi,
     };
   }
@@ -51,12 +54,10 @@ export async function runCopyAgent(
     const hero = home?.blocks.find((b) => b.type === "hero");
     if (!hero) {
       return {
-        site: applyRefineHeuristics(enriched, preferences.refineInstructions),
+        site: applyRefineHeuristics(enriched, refine),
         usedAi,
       };
     }
-
-    const refine = preferences.refineInstructions?.trim();
     const heroCopy = await completeJson<{
       eyebrow?: string;
       headline: string;
@@ -98,12 +99,12 @@ export async function runCopyAgent(
 
     enriched = preferSampleFilledSite(enriched, { ...enriched, pages: nextPages });
     return {
-      site: applyRefineHeuristics(enriched, preferences.refineInstructions),
+      site: applyRefineHeuristics(enriched, refine),
       usedAi: true,
     };
   } catch {
     return {
-      site: applyRefineHeuristics(enriched, preferences.refineInstructions),
+      site: applyRefineHeuristics(enriched, refine),
       usedAi,
     };
   }
