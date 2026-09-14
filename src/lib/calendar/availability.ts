@@ -1,9 +1,8 @@
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
-import { isDemoMode } from "@/lib/config/app-mode";
 import type { TenantScope } from "@/types/communication";
 import {
   fetchTeamGoogleFreeBusy,
-  hasLiveGoogleCalendar,
+  hasCalendarAvailabilitySource,
 } from "@/lib/calendar/google-calendar";
 
 export type DayAvailability = {
@@ -60,10 +59,7 @@ export async function getAvailabilityDays(input: {
   });
 
   let busy: { start: string; end: string }[] = [];
-  if (
-    !isDemoMode() &&
-    (await hasLiveGoogleCalendar(input.scope, input.userId))
-  ) {
+  if (await hasCalendarAvailabilitySource(input.scope, input.userId)) {
     try {
       const timeMin = dates[0].toISOString();
       const timeMax = new Date(dates[dates.length - 1]);
@@ -101,10 +97,7 @@ export async function getDaySlots(input: {
   });
 
   let busy: { start: string; end: string }[] = [];
-  if (
-    !isDemoMode() &&
-    (await hasLiveGoogleCalendar(input.scope, input.userId))
-  ) {
+  if (await hasCalendarAvailabilitySource(input.scope, input.userId)) {
     try {
       const start = new Date(input.date);
       start.setHours(0, 0, 0, 0);

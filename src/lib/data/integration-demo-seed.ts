@@ -26,6 +26,7 @@ export function buildDemoIntegrations(): IntegrationConnection[] {
       accountLabel: "pavan@aarvanta.com",
       lastSyncAt: now,
       connectedAt: now,
+      metadata: { mode: "invite", email: "pavan@aarvanta.com" },
     },
     {
       id: "int_slack",
@@ -93,7 +94,8 @@ export const INTEGRATION_DEFINITIONS = [
   {
     provider: "google_calendar" as const,
     name: "Google Calendar",
-    description: "Connect your own calendar for Voice OS booking and sync",
+    description:
+      "Connect your calendar with one click (email invites). Optional secret iCal link for live busy times.",
     category: "calendar" as const,
   },
   {
