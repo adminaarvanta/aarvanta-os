@@ -44,7 +44,15 @@ export function isCopyRefine(refineInstructions?: string): boolean {
   );
 }
 
-/** Join applied user turns so multi-step studio edits compound. */
+/** Latest user request from accumulated refine text (joined with newlines). */
+export function latestRefineTurn(refineInstructions?: string): string | undefined {
+  if (!refineInstructions?.trim()) return undefined;
+  const parts = refineInstructions
+    .split("\n")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.at(-1) ?? refineInstructions.trim();
+}
 export function accumulateRefineInstructions(
   chat: SiteRefineTurn[] | undefined,
   latest?: string

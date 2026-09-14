@@ -5,6 +5,7 @@ import {
   applyStudioRefine,
   didSiteVisiblyChange,
 } from "@/lib/site-builder/apply-refine";
+import { latestRefineTurn } from "@/lib/site-builder/refine-history";
 import type { GeneratedSite } from "@/types/site-builder";
 
 function sampleSite(): GeneratedSite {
@@ -139,6 +140,19 @@ describe("applyRefineHeuristics", () => {
     );
   });
 
+  it("applies only the latest instruction when history is accumulated", () => {
+    const withHeadline = applyRefineHeuristics(
+      sampleSite(),
+      'Change the headline to "Welcome to Bright Smile Dental"'
+    );
+    const next = applyRefineHeuristics(
+      withHeadline,
+      'Change the About title to "Our clinic story"'
+    );
+    assert.equal(next.pages[0]?.blocks[0]?.props.headline, "Welcome to Bright Smile Dental");
+    assert.equal(next.pages[1]?.blocks[0]?.props.title, "Our clinic story");
+  });
+
   it("updates contact description", () => {
     const next = applyRefineHeuristics(
       sampleSite(),
@@ -172,5 +186,16 @@ describe("applyStudioRefine honesty", () => {
     assert.equal(result.changed, false);
     assert.match(result.hint ?? "", /no pricing page/i);
     assert.equal(result.site.pages[0]?.blocks[0]?.props.headline, "Old headline");
+  });
+});
+
+describe("latestRefineTurn", () => {
+  it("returns the last accumulated user request", () => {
+    assert.equal(
+      latestRefineTurn(
+        'Change the headline to "Welcome to Bright Smile Dental"\nChange the About title to "Our clinic story"'
+      ),
+      'Change the About title to "Our clinic story"'
+    );
   });
 });

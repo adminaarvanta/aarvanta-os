@@ -483,7 +483,10 @@ export function BuildOsClient({
   }
 
   async function generate(extraPrompt?: string) {
-    if (!selectedDesignOptionId) {
+    const canRefineExisting = Boolean(
+      extraPrompt?.trim() && jobRef.current?.generatedSite
+    );
+    if (!selectedDesignOptionId && !canRefineExisting) {
       setError("Pick a design direction first.");
       setStep("designs");
       return;
@@ -494,6 +497,7 @@ export function BuildOsClient({
     setError(null);
     setStatusMessage(null);
     setStep("generate");
+    if (isRefine) setStudioRightTab("assistant");
     setGenProgress({ stage: "business", percent: 0, message: "Starting…" });
     // Optimistic chat bubble so the prompt never "disappears" mid-request.
     if (isRefine && extraPrompt?.trim()) {
