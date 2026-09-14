@@ -34,9 +34,9 @@ export function DomainPurchasePanel({
     domain.status === "external" ? "existing" : "buy"
   );
   const [listings, setListings] = useState<SiteDomainListing[]>([]);
-  const [source, setSource] = useState<"namecom" | "opensrs" | "demo" | null>(
-    null
-  );
+  const [source, setSource] = useState<
+    "namecom" | "opensrs" | "demo" | "unavailable" | null
+  >(null);
   const [query, setQuery] = useState("");
   const [existingInput, setExistingInput] = useState(domain.selectedDomain ?? "");
   const [busy, setBusy] = useState(false);
@@ -70,10 +70,14 @@ export function DomainPurchasePanel({
       }
       const data = (await res.json()) as {
         listings: SiteDomainListing[];
-        source?: "namecom" | "opensrs" | "demo";
+        source?: "namecom" | "opensrs" | "demo" | "unavailable";
+        message?: string;
       };
       setListings(data.listings);
       setSource(data.source ?? null);
+      if (data.source === "unavailable") {
+        setError(data.message ?? "Live domain search is not connected.");
+      }
     } finally {
       setBusy(false);
     }
@@ -225,9 +229,17 @@ export function DomainPurchasePanel({
               <p className="text-[11px] font-medium text-gold">
                 Live availability &amp; pricing from name.com
               </p>
+            ) : source === "opensrs" ? (
+              <p className="text-[11px] font-medium text-gold">
+                Live availability &amp; pricing from OpenSRS
+              </p>
             ) : source === "demo" ? (
               <p className="text-[11px] font-medium text-amber-200/90">
-                Demo catalog — name.com is not connected on this environment
+                Demo catalog — sample names and prices, not live registrar quotes
+              </p>
+            ) : source === "unavailable" ? (
+              <p className="text-[11px] font-medium text-amber-200/90">
+                Live registrar is not connected — real names and prices are unavailable
               </p>
             ) : null}
           </div>
@@ -405,12 +417,22 @@ export function DomainPurchasePanel({
           </div>
 
           {busy && listings.length === 0 ? (
-            <p className="text-xs text-muted">Searching name.com…</p>
+            <p className="text-xs text-muted">
+              {source === "namecom"
+                ? "Searching name.com…"
+                : source === "opensrs"
+                  ? "Searching OpenSRS…"
+                  : source === "demo"
+                    ? "Searching demo catalog…"
+                    : "Searching domains…"}
+            </p>
           ) : null}
 
           {!busy && listings.length === 0 ? (
             <p className="text-xs text-muted">
-              No domains found — try a different name.
+              {source === "unavailable"
+                ? "Live domain search is not connected on this environment."
+                : "No domains found — try a different name."}
             </p>
           ) : null}
 
@@ -442,9 +464,13 @@ export function DomainPurchasePanel({
                         >
                           {selected ? <Check className="h-3.5 w-3.5" /> : "Select"}
                         </Button>
-                        <Button type="button" onClick={() => void purchaseDomain(listing)} disabled={busy}>
-                          Buy with Stripe
-                        </Button>
+                        {listing.priceAnnual > 0 ? (
+                          <Button type="button" onClick={() => void purchaseDomain(listing)} disabled={busy}>
+                            Buy with Stripe
+                          </Button>
+                        ) : (
+                          <StatusPill variant="default">Price unavailable</StatusPill>
+                        )}
                       </>
                     ) : (
                       <StatusPill variant="default">Unavailable</StatusPill>

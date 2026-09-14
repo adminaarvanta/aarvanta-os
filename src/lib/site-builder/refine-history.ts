@@ -34,11 +34,11 @@ export function isStructuralRefine(refineInstructions?: string): boolean {
 export function isCopyRefine(refineInstructions?: string): boolean {
   if (!refineInstructions?.trim()) return false;
   const lower = refineInstructions.toLowerCase();
-  if (isThemeRefine(refineInstructions) && !/headline|subhead|cta|copy|text|tagline|button/.test(lower)) {
+  if (isThemeRefine(refineInstructions) && !/headline|subhead|cta|copy|text|tagline|button|footer|about|contact|title|heading/.test(lower)) {
     return false;
   }
   return (
-    /headline|title|hero\s*text|main\s*heading|subhead|sub-?headline|tagline|supporting|\bcta\b|call to action|button\s*label|copy|wording|rewrite|change\s+the\s+text|update\s+(the\s+)?(hero|copy|text|headline)|make\s+(the\s+)?(hero|headline)|say\s+that|rename/.test(
+    /headline|title|hero\s*text|main\s*heading|subhead|sub-?headline|tagline|supporting|\bcta\b|call to action|button\s*label|copy|wording|rewrite|change\s+the\s+text|update\s+(the\s+)?(hero|copy|text|headline|about|contact|footer|title)|make\s+(the\s+)?(hero|headline)|say\s+that|rename|footer|about\s+page|contact\s+page|nav(?:igation)?/.test(
       lower
     ) || /["“']([^"”']{3,120})["”']/.test(refineInstructions)
   );

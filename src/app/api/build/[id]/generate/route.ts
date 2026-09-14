@@ -13,6 +13,12 @@ import {
   appendRefineTurn,
   markLatestUserRefine,
 } from "@/lib/site-builder/refine-history";
+import {
+  didSiteVisiblyChange,
+  isRefineNoopError,
+  RefineNoopError,
+  REFINE_NOOP_HINT,
+} from "@/lib/site-builder/apply-refine";
 import { sitePreferencesSchema } from "@/lib/site-builder/schemas";
 import { crmNow } from "@/lib/data/crm-helpers";
 import { getTenantScope } from "@/lib/tenant/context";
@@ -196,12 +202,29 @@ export async function POST(req: Request, context: RouteContext) {
           }
         );
 
+        if (resultJob.status === "failed") {
+          throw new Error(resultJob.error ?? "Generation failed.");
+        }
+
         let saved: SiteBuildJob = {
           ...resultJob,
           refineChat: working.refineChat ?? resultJob.refineChat,
         };
 
-        if (working.preferences.refineInstructions?.trim()) {
+        const priorGenerated = job.generatedSite;
+        const refineAttempt = Boolean(
+          working.preferences.refineInstructions?.trim() && priorGenerated
+        );
+        if (
+          refineAttempt &&
+          priorGenerated &&
+          saved.generatedSite &&
+          !didSiteVisiblyChange(priorGenerated, saved.generatedSite)
+        ) {
+          throw new RefineNoopError(REFINE_NOOP_HINT);
+        }
+
+        if (refineAttempt) {
           saved = markLatestUserRefine(saved, {
             status: "applied",
             resultVersion: saved.generatedSite?.version,
@@ -223,21 +246,26 @@ export async function POST(req: Request, context: RouteContext) {
         });
       } catch (error) {
         const { isPlanEntitlementError } = await import("@/lib/billing/errors");
+        const noop = isRefineNoopError(error);
         const message =
           error instanceof Error ? error.message : "Generation failed.";
         // Keep a previously generated site usable after a failed refine.
         const keepGenerated = Boolean(working.generatedSite);
         let failed: SiteBuildJob = {
           ...working,
-          status: keepGenerated ? "generated" : "failed",
-          error: message,
+          generatedSite: job.generatedSite ?? working.generatedSite,
+          status: keepGenerated || Boolean(job.generatedSite) ? "generated" : "failed",
+          error: noop ? undefined : message,
           updatedAt: crmNow(),
         };
         if (working.preferences.refineInstructions?.trim()) {
-          failed = markLatestUserRefine(failed, { status: "failed" });
+          failed = markLatestUserRefine(failed, {
+            status: "failed",
+            applied: false,
+          });
           failed = appendRefineTurn(failed, {
             role: "assistant",
-            content: `Could not apply that change: ${message}`,
+            content: noop ? message : `Could not apply that change: ${message}`,
             status: "failed",
           });
         }
@@ -246,6 +274,7 @@ export async function POST(req: Request, context: RouteContext) {
           type: "error",
           message,
           job: failed,
+          ...(noop ? { code: "REFINE_NOOP" } : {}),
           ...(isPlanEntitlementError(error)
             ? { code: error.code, upgradeHint: error.upgradeHint }
             : {}),

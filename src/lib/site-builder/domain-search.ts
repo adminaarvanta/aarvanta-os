@@ -7,37 +7,33 @@ import type { SiteDomainListing } from "@/types/site-builder";
 
 /** Server-only domain search — may call name.com / OpenSRS. Do not import from client components. */
 
-export type DomainSearchSource = "namecom" | "opensrs" | "demo";
+export type DomainSearchSource = "namecom" | "opensrs" | "demo" | "unavailable";
 
 export type DomainSearchResult = {
   listings: SiteDomainListing[];
   source: DomainSearchSource;
+  message?: string;
 };
+
+const REGISTRAR_NOT_CONNECTED =
+  "Live domain names and prices need name.com or OpenSRS credentials. Sample catalog is only shown in demo mode.";
+
+const REGISTRAR_SEARCH_FAILED =
+  "Live registrar search failed. Sample prices are not shown in production — retry or check credentials.";
+
+function isProductionAppMode(): boolean {
+  return process.env.APP_MODE === "production";
+}
+
+function registrarLabel(source: DomainSearchSource): string {
+  if (source === "opensrs") return "OpenSRS";
+  if (source === "namecom") return "name.com";
+  return "the registrar";
+}
 
 function currencyForCountry(countryBase: string): "GBP" | "USD" {
   const c = countryBase.toUpperCase();
   return c === "UK" || c === "GB" ? "GBP" : "USD";
-}
-
-function priceForTld(tld: string, currency: "GBP" | "USD"): number {
-  const gbp: Record<string, number> = {
-    ".co.uk": 9.99,
-    ".com": 12.99,
-    ".uk": 8.99,
-    ".shop": 14.99,
-    ".store": 14.99,
-    ".io": 34.99,
-    ".co": 24.99,
-  };
-  const usd: Record<string, number> = {
-    ".com": 12.99,
-    ".co": 24.99,
-    ".shop": 14.99,
-    ".store": 14.99,
-    ".io": 34.99,
-    ".net": 11.99,
-  };
-  return (currency === "GBP" ? gbp : usd)[tld] ?? 12.99;
 }
 
 function defaultTlds(countryBase: string): string[] {
@@ -107,30 +103,39 @@ function tldFromDomain(domain: string): string {
   return "";
 }
 
+function retailFromWholesale(
+  wholesale: number | undefined,
+  currency: "GBP" | "USD"
+): number {
+  if (wholesale == null || !Number.isFinite(wholesale)) return 0;
+  return wholesaleToRetail({ wholesaleUsd: wholesale, currency });
+}
+
 function toListings(
   results: DomainAvailabilityResult[],
-  currency: "GBP" | "USD"
+  currency: "GBP" | "USD",
+  source: DomainSearchSource
 ): SiteDomainListing[] {
+  const label = registrarLabel(source);
   // Preserve caller order (preferred TLDs first, then suggestions).
   return results.slice(0, 25).map((hit, index) => {
     const tld = tldFromDomain(hit.domain);
-    const wholesale = hit.wholesalePriceUsd;
-    const priceAnnual =
-      wholesale != null
-        ? wholesaleToRetail({ wholesaleUsd: wholesale, currency })
-        : priceForTld(tld || ".com", currency);
+    const priceAnnual = retailFromWholesale(hit.wholesalePriceUsd, currency);
+    const hasLivePrice = priceAnnual > 0;
 
     let note: string;
     if (!hit.available) {
       note = hit.reason?.includes("Premium")
         ? "Unavailable (premium / restricted) — try another name"
         : "Unavailable — try another name or TLD";
+    } else if (!hasLivePrice) {
+      note = `Available on ${label} — live price not returned; confirm at checkout`;
     } else if (hit.isPremium) {
-      note = "Premium domain — priced at registry rate + markup";
+      note = `Premium domain — live ${label} registry rate + markup`;
     } else if (index < 2) {
-      note = "Recommended — live price from name.com";
+      note = `Recommended — live price from ${label}`;
     } else {
-      note = "Available — live price from name.com";
+      note = `Available — live price from ${label}`;
     }
 
     return {
@@ -144,9 +149,45 @@ function toListings(
   });
 }
 
+function listingFromHit(
+  domain: string,
+  tld: string,
+  hit: DomainAvailabilityResult | undefined,
+  currency: "GBP" | "USD",
+  source: DomainSearchSource,
+  index: number
+): SiteDomainListing {
+  const available = hit?.available ?? false;
+  const priceAnnual = retailFromWholesale(hit?.wholesalePriceUsd, currency);
+  const hasLivePrice = priceAnnual > 0;
+  const label = registrarLabel(source);
+  let note: string;
+  if (!available) {
+    note = hit?.reason?.includes("Premium")
+      ? "Unavailable (premium / restricted) — try another name"
+      : "Unavailable — try another name or TLD";
+  } else if (!hasLivePrice) {
+    note = `Available on ${label} — live price not returned; confirm at checkout`;
+  } else if (hit?.isPremium) {
+    note = `Premium domain — live ${label} registry rate + markup`;
+  } else if (index < 2) {
+    note = `Recommended — live price from ${label}`;
+  } else {
+    note = `Available — live price from ${label}`;
+  }
+  return {
+    domain,
+    tld,
+    available,
+    priceAnnual,
+    currency,
+    note,
+  };
+}
+
 /**
  * Search domains via the live registrar when configured; otherwise the demo catalog.
- * Prefer name.com keyword search so users see a real suggestion list.
+ * Production never substitutes hardcoded TLD prices as if they were live quotes.
  */
 export async function searchDomainListingsAsync(input: {
   businessName: string;
@@ -154,6 +195,13 @@ export async function searchDomainListingsAsync(input: {
   query?: string;
 }): Promise<DomainSearchResult> {
   if (!isLiveDomainRegistrar()) {
+    if (isProductionAppMode()) {
+      return {
+        listings: [],
+        source: "unavailable",
+        message: REGISTRAR_NOT_CONNECTED,
+      };
+    }
     return { listings: searchDomainListings(input), source: "demo" };
   }
 
@@ -165,6 +213,17 @@ export async function searchDomainListingsAsync(input: {
       : registrar.id === "opensrs"
         ? "opensrs"
         : "demo";
+
+  if (source === "demo") {
+    if (isProductionAppMode()) {
+      return {
+        listings: [],
+        source: "unavailable",
+        message: REGISTRAR_NOT_CONNECTED,
+      };
+    }
+    return { listings: searchDomainListings(input), source: "demo" };
+  }
 
   try {
     const keyword = keywordFromInput(input);
@@ -202,7 +261,7 @@ export async function searchDomainListingsAsync(input: {
           (h) => !preferredSet.has(h.domain.toLowerCase())
         ),
       ];
-      return { listings: toListings(merged, currency), source };
+      return { listings: toListings(merged, currency, source), source };
     }
 
     const candidates = candidateDomains(input);
@@ -211,44 +270,24 @@ export async function searchDomainListingsAsync(input: {
     );
     const fallbackMap = new Map(results.map((r) => [r.domain.toLowerCase(), r]));
 
-    const listings = candidates.map(({ domain, tld }, index) => {
-      const hit = fallbackMap.get(domain.toLowerCase());
-      const available = hit?.available ?? false;
-      const wholesale = hit?.wholesalePriceUsd;
-      const priceAnnual =
-        wholesale != null
-          ? wholesaleToRetail({ wholesaleUsd: wholesale, currency })
-          : priceForTld(tld, currency);
-
-      let note: string;
-      if (!available) {
-        note = hit?.reason?.includes("Premium")
-          ? "Unavailable (premium / restricted) — try another name"
-          : "Unavailable — try another name or TLD";
-      } else if (hit?.isPremium) {
-        note = "Premium domain — priced at registry rate + markup";
-      } else if (index < 2) {
-        note = "Recommended — live price from name.com";
-      } else {
-        note = "Available — live price from name.com";
-      }
-
-      return {
-        domain,
-        tld,
-        available,
-        priceAnnual,
-        currency,
-        note,
-      };
-    });
+    const listings = candidates.map(({ domain, tld }, index) =>
+      listingFromHit(domain, tld, fallbackMap.get(domain.toLowerCase()), currency, source, index)
+    );
 
     return { listings, source };
   } catch (err) {
-    console.error(
-      "[domains] Live registrar search failed, falling back to demo catalog",
-      err
-    );
-    return { listings: searchDomainListings(input), source: "demo" };
+    console.error("[domains] Live registrar search failed", err);
+    if (isProductionAppMode()) {
+      return {
+        listings: [],
+        source: "unavailable",
+        message: REGISTRAR_SEARCH_FAILED,
+      };
+    }
+    return {
+      listings: searchDomainListings(input),
+      source: "demo",
+      message: "Live registrar search failed — showing the demo catalog instead.",
+    };
   }
 }

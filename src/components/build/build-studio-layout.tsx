@@ -276,8 +276,8 @@ export function BuildStudioLayout({
           <div className="flex min-h-0 flex-1 flex-col p-4">
             <div className="flex-1 space-y-3 overflow-y-auto text-sm">
               <div className="rounded-xl bg-surface-muted px-3 py-2 text-muted">
-                Try “make the theme green”, “use blue buttons”, or “change the headline to …”.
-                Your prompts are saved with this site.
+                Try “make the theme green”, “change the About title to …”, or “change the footer to …”.
+                Your prompts are saved with this site. If nothing on the site matches, the assistant will say so instead of claiming success.
               </div>
               {refineChat.map((turn) =>
                 turn.role === "user" ? (

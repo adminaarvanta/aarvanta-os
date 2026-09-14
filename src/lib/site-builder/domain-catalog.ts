@@ -104,9 +104,9 @@ export function searchDomainListings(input: {
       currency,
       note: available
         ? index < 2
-          ? "Recommended — available via Aarvanta Domain Store"
-          : "Available via Aarvanta Domain Store"
-        : "Unavailable — try a variation",
+          ? "Sample demo price — not a live registrar quote"
+          : "Sample demo price — availability is simulated"
+        : "Unavailable in demo catalog (not a live WHOIS check)",
     };
   });
 }

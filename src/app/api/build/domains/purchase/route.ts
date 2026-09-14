@@ -29,16 +29,29 @@ export async function POST(req: Request) {
   }
 
   // Live registrar registrations must go through Stripe checkout → webhook fulfillment.
-  if (!isDemoMode() && isLiveDomainRegistrar()) {
+  // Production never completes a stub purchase without a real registrar.
+  if (!isDemoMode()) {
+    if (isLiveDomainRegistrar()) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "USE_CHECKOUT",
+            message:
+              "Domain registration requires Stripe checkout. Use POST /api/build/checkout with kind=domain.",
+          },
+        },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       {
         error: {
-          code: "USE_CHECKOUT",
+          code: "REGISTRAR_NOT_CONFIGURED",
           message:
-            "Domain registration requires Stripe checkout. Use POST /api/build/checkout with kind=domain.",
+            "Domain registration requires name.com or OpenSRS credentials in production.",
         },
       },
-      { status: 400 }
+      { status: 503 }
     );
   }
 
