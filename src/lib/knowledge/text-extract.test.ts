@@ -72,4 +72,14 @@ describe("knowledge text extract", () => {
     const text = await extractTextFromBuffer(buffer, "pdf");
     assert.match(text, /Knowledge Hub PDF/);
   });
+
+  it("does not depend on pdf-parse/worker (avoids hard @napi-rs/canvas import)", async () => {
+    // Regression: importing pdf-parse/worker fails on Vercel when canvas is
+    // excluded from the serverless trace (ERR_MODULE_NOT_FOUND).
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile(new URL("./text-extract.ts", import.meta.url), "utf8")
+    );
+    assert.equal(/import\([^)]*pdf-parse\/worker/.test(source), false);
+    assert.equal(/from\s+["']pdf-parse\/worker["']/.test(source), false);
+  });
 });

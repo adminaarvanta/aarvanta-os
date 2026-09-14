@@ -1,8 +1,9 @@
 /**
  * pdfjs-dist (via pdf-parse v2) constructs `DOMMatrix` while the module
- * evaluates. Node/Next.js have no browser canvas APIs, and pulling in
- * `@napi-rs/canvas` bloats serverless deploys. A 2D matrix + stubs is
- * enough for text extraction.
+ * evaluates. Node/Next.js have no browser canvas APIs. We intentionally do
+ * **not** ship `@napi-rs/canvas` (or import `pdf-parse/worker`, which hard-
+ * requires it) — native canvas breaks / bloats Vercel serverless traces.
+ * A 2D matrix + stubs is enough for text extraction.
  */
 
 type Matrix2D = { a: number; b: number; c: number; d: number; e: number; f: number };
