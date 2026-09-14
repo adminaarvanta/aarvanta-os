@@ -14,9 +14,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
-  // pdf-parse v2 embeds a pdf.js worker; keep it external so Next/Turbopack
-  // does not rewrite worker imports. Canvas is excluded — we polyfill DOMMatrix
-  // in JS instead of shipping the native Skia addon.
+  // Keep pdf-parse external so Next does not rewrite its pdf.js imports.
+  // Never pull in pdf-parse/worker or @napi-rs/canvas — text extraction uses a
+  // JS DOMMatrix polyfill instead (see src/lib/knowledge/pdf-dom-polyfill.ts).
   serverExternalPackages: ["pdf-parse"],
   outputFileTracingExcludes: {
     "/*": [
@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
       "./node_modules/@napi-rs/canvas-linux-x64-musl/**/*",
       "./node_modules/@napi-rs/canvas-linux-arm64-gnu/**/*",
       "./node_modules/@napi-rs/canvas-linux-arm64-musl/**/*",
+      "./node_modules/pdf-parse/dist/worker/**/*",
     ],
   },
   experimental: {

@@ -23,9 +23,11 @@ export function validateUpload(file: File) {
 }
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  const { getData } = await import("pdf-parse/worker");
+  // Do not import `pdf-parse/worker` — that entry hard-requires `@napi-rs/canvas`.
+  // On Vercel the native addon is excluded from the serverless trace, so loading
+  // the worker module fails with ERR_MODULE_NOT_FOUND. The JS DOM polyfill above
+  // is enough for text extraction; pdfjs only warns if canvas is missing.
   const { PDFParse } = await import("pdf-parse");
-  PDFParse.setWorker(getData());
 
   const parser = new PDFParse({ data: new Uint8Array(buffer) });
   try {
