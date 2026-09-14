@@ -117,6 +117,11 @@ export async function sendGmailEmail(input: {
   html?: string;
   inReplyTo?: string;
   messageId?: string;
+  icalEvent?: {
+    filename?: string;
+    method?: "REQUEST" | "CANCEL" | "PUBLISH";
+    content: string;
+  };
 }): Promise<GmailSendResult> {
   const creds = getGmailCredentials();
   if (!creds) throw new Error("Gmail is not configured (GMAIL_APP_PASSWORD for admin@aarvanta.co).");
@@ -150,6 +155,13 @@ export async function sendGmailEmail(input: {
     text: input.text,
     html: input.html,
     headers,
+    icalEvent: input.icalEvent
+      ? {
+          filename: input.icalEvent.filename ?? "invite.ics",
+          method: input.icalEvent.method ?? "REQUEST",
+          content: input.icalEvent.content,
+        }
+      : undefined,
   });
 
   return { id: info.messageId ?? messageId, messageId };

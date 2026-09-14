@@ -287,7 +287,8 @@ export function getProductionReadiness(): ProductionReadiness {
       id: "google_calendar",
       label: "Google Calendar",
       status: "ok",
-      detail: "OAuth client configured — each active user can connect their calendar",
+      detail:
+        "OAuth client configured — Google sign-in stays off until GOOGLE_CALENDAR_OAUTH_PUBLIC=true. Default Connect emails calendar invites.",
     });
   } else {
     warnings.push(

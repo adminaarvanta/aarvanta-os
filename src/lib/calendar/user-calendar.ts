@@ -1,3 +1,4 @@
+import { calendarConnectMode } from "@/lib/calendar/connect-mode";
 import { isDemoMode } from "@/lib/config/app-mode";
 import { getCallingAgentRepository } from "@/lib/data/calling-agent-store";
 import { getCrmRepository } from "@/lib/data/crm-store";
@@ -17,8 +18,13 @@ export type TeamCalendarRow = {
   accountLabel?: string;
   lastSyncAt?: string;
   lastSyncError?: string;
+  connectMode?: "oauth" | "ics" | "invite" | "local";
   isCurrentUser: boolean;
 };
+
+export function isGoogleCalendarOAuthPublic(): boolean {
+  return process.env.GOOGLE_CALENDAR_OAUTH_PUBLIC?.trim() === "true";
+}
 
 export function isGoogleCalendarOAuthConfigured(): boolean {
   const clientId =
@@ -94,6 +100,7 @@ export async function listTeamCalendars(
     .filter((m) => m.status === "active")
     .map((m) => {
       const conn = pickCalendarConnection(connections, m.userId);
+      const connectMode = calendarConnectMode(conn) ?? undefined;
       return {
         userId: m.userId,
         name: m.name,
@@ -103,6 +110,7 @@ export async function listTeamCalendars(
         accountLabel: conn?.accountLabel,
         lastSyncAt: conn?.lastSyncAt,
         lastSyncError: conn?.lastSyncError,
+        connectMode,
         isCurrentUser: m.userId === currentUserId,
       };
     })
