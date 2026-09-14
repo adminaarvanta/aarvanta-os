@@ -217,6 +217,7 @@ export async function POST(req: Request, context: RouteContext) {
         );
         if (
           refineAttempt &&
+          priorGenerated &&
           saved.generatedSite &&
           !didSiteVisiblyChange(priorGenerated, saved.generatedSite)
         ) {
