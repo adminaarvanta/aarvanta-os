@@ -1,3 +1,4 @@
+import "@/lib/knowledge/pdf-dom-polyfill";
 import type { KnowledgeFileType } from "@/types/knowledge";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -21,6 +22,20 @@ export function validateUpload(file: File) {
   return fileType;
 }
 
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  const { getData } = await import("pdf-parse/worker");
+  const { PDFParse } = await import("pdf-parse");
+  PDFParse.setWorker(getData());
+
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  try {
+    const result = await parser.getText();
+    return (result.text ?? "").trim();
+  } finally {
+    await parser.destroy();
+  }
+}
+
 export async function extractTextFromBuffer(
   buffer: Buffer,
   fileType: KnowledgeFileType
@@ -35,14 +50,7 @@ export async function extractTextFromBuffer(
     return result.value.trim();
   }
 
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
-  try {
-    const result = await parser.getText();
-    return (result.text ?? "").trim();
-  } finally {
-    await parser.destroy();
-  }
+  return extractPdfText(buffer);
 }
 
 export async function extractTextFromFile(file: File): Promise<string> {
