@@ -7,11 +7,14 @@ import {
 import { isDemoMode } from "@/lib/config/app-mode";
 import {
   hasCalendarAvailabilitySource,
+  looksLikeCalendarMailbox,
   storeGoogleCalendarIcsFeed,
+  storeGoogleCalendarInviteMailbox,
 } from "@/lib/calendar/google-calendar";
 import {
   assertActiveMember,
   isGoogleCalendarOAuthConfigured,
+  isGoogleCalendarOAuthPublic,
   listTeamCalendars,
 } from "@/lib/calendar/user-calendar";
 import { getIntegrationRepository } from "@/lib/data/integration-store";
@@ -33,6 +36,7 @@ export async function GET() {
 
     return NextResponse.json({
       oauthConfigured: isGoogleCalendarOAuthConfigured(),
+      oauthPublic: isGoogleCalendarOAuthPublic(),
       demoMode: isDemoMode(),
       liveSync: await hasCalendarAvailabilitySource(ctx.scope, ctx.userId),
       currentUser: mine,
@@ -47,18 +51,26 @@ export async function GET() {
   }
 }
 
-/** Demo / ICS connect — production Google sign-in uses the OAuth redirect. */
+/** Persist invite mailbox (default), iCal feed, or OAuth when publicly enabled. */
 export async function POST(req: Request) {
   try {
     const ctx = await getSessionContext();
     assertActiveMember(ctx);
 
     let icsUrl: string | undefined;
+    let mode: string | undefined;
+    let email: string | undefined;
     const text = await req.text();
     if (text.trim()) {
       try {
-        const body = JSON.parse(text) as { icsUrl?: string };
+        const body = JSON.parse(text) as {
+          icsUrl?: string;
+          mode?: string;
+          email?: string;
+        };
         icsUrl = body.icsUrl?.trim();
+        mode = body.mode?.trim();
+        email = body.email?.trim();
       } catch {
         return apiError("INVALID_JSON", "Invalid JSON body", 400);
       }
@@ -73,18 +85,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ connection });
     }
 
-    if (isGoogleCalendarOAuthConfigured()) {
+    if (mode === "oauth") {
+      if (!isGoogleCalendarOAuthPublic()) {
+        return apiError(
+          "OAUTH_BLOCKED",
+          "Google sign-in is blocked until Aarvanta finishes Google verification. Connect with your calendar email instead.",
+          409
+        );
+      }
       return NextResponse.json({
         redirect: "/api/integrations/google-calendar/oauth/start",
       });
     }
 
-    const repo = getIntegrationRepository();
-    const connection = await repo.connect(
-      ctx.scope.tenantId,
-      ctx.scope.workspaceId,
-      "google_calendar",
-      ctx.email,
+    const mailbox = email || ctx.email;
+    if (!looksLikeCalendarMailbox(mailbox)) {
+      return apiError(
+        "VALIDATION_ERROR",
+        "Your account needs an email address to receive calendar invites.",
+        400
+      );
+    }
+    const connection = await storeGoogleCalendarInviteMailbox(
+      ctx.scope,
+      mailbox,
       ctx.userId
     );
     return NextResponse.json({ connection });
@@ -94,7 +118,7 @@ export async function POST(req: Request) {
     const message = error instanceof Error ? error.message : "Connect failed";
     if (message === "Forbidden") return forbidden();
     const clientError =
-      /iCal|calendar link|not allowed|https|credentials|did not return|too large|redirected/i.test(
+      /iCal|calendar link|not allowed|https|credentials|did not return|too large|redirected|email address/i.test(
         message
       );
     return apiError("CALENDAR_ERROR", message, clientError ? 400 : 500);

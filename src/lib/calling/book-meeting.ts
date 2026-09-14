@@ -2,6 +2,7 @@ import {
   createGoogleCalendarEvent,
   deleteGoogleCalendarEvent,
   hasLiveGoogleCalendar,
+  looksLikeCalendarMailbox,
   updateGoogleCalendarEvent,
 } from "@/lib/calendar/google-calendar";
 import { getUserCalendarConnection } from "@/lib/calendar/user-calendar";
@@ -265,10 +266,7 @@ async function calendarInviteEmails(
 ): Promise<string[]> {
   const conn = await getUserCalendarConnection(scope, ownerId);
   const ownerEmail = (conn?.metadata?.email || conn?.accountLabel || "").trim();
-  if (
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail) ||
-    /group\.v?\.?calendar\.google\.com/i.test(ownerEmail)
-  ) {
+  if (!looksLikeCalendarMailbox(ownerEmail)) {
     return [];
   }
   if (contactEmail && ownerEmail.toLowerCase() === contactEmail.toLowerCase()) {

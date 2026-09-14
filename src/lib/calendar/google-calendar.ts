@@ -9,9 +9,15 @@ import {
   maskIcsUrl,
   parseIcsBusyIntervals,
 } from "@/lib/calendar/ics-feed";
+import {
+  calendarConnectMode,
+  looksLikeCalendarMailbox,
+} from "@/lib/calendar/connect-mode";
 import { getUserCalendarConnection } from "@/lib/calendar/user-calendar";
 import type { TenantScope } from "@/types/communication";
 import type { IntegrationConnection } from "@/types/integration";
+
+export { calendarConnectMode, looksLikeCalendarMailbox };
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
@@ -71,15 +77,6 @@ export function googleCalendarOAuthErrorStatus(
   if (!error) return null;
   if (error === "access_denied") return "denied";
   return "error";
-}
-
-export function calendarConnectMode(
-  conn: IntegrationConnection | null | undefined
-): "oauth" | "ics" | "local" | null {
-  if (!conn || conn.status !== "connected") return null;
-  if (conn.metadata?.mode === "ics" || conn.metadata?.icsUrl) return "ics";
-  if (conn.metadata?.refreshToken || conn.metadata?.accessToken) return "oauth";
-  return "local";
 }
 
 function icsUrlFromConnection(conn: IntegrationConnection | null): string | undefined {
@@ -248,6 +245,46 @@ export async function storeGoogleCalendarIcsFeed(
     userId: userId ?? conn.userId,
     status: "connected",
     accountLabel: email ?? maskIcsUrl(normalized),
+    metadata,
+    lastSyncAt: crmNow(),
+    lastSyncError: undefined,
+    connectedAt: new Date().toISOString(),
+  };
+  await persistConnection(updated);
+  conn.metadata = metadata;
+  conn.userId = updated.userId;
+  conn.accountLabel = updated.accountLabel;
+  conn.lastSyncAt = updated.lastSyncAt;
+  conn.lastSyncError = undefined;
+  return updated;
+}
+
+export async function storeGoogleCalendarInviteMailbox(
+  scope: TenantScope,
+  email: string,
+  userId?: string
+): Promise<IntegrationConnection> {
+  const mailbox = email.trim().toLowerCase();
+  if (!looksLikeCalendarMailbox(mailbox)) {
+    throw new Error("Enter a valid Google Calendar email address.");
+  }
+  const repo = getIntegrationRepository();
+  const conn = await repo.connect(
+    scope.tenantId,
+    scope.workspaceId,
+    "google_calendar",
+    mailbox,
+    userId
+  );
+  const metadata = {
+    mode: "invite",
+    email: mailbox,
+  };
+  const updated: IntegrationConnection = {
+    ...conn,
+    userId: userId ?? conn.userId,
+    status: "connected",
+    accountLabel: mailbox,
     metadata,
     lastSyncAt: crmNow(),
     lastSyncError: undefined,

@@ -23,12 +23,13 @@ type CalendarRow = {
   accountLabel?: string;
   lastSyncAt?: string;
   lastSyncError?: string;
-  connectMode?: "oauth" | "ics" | "local";
+  connectMode?: "oauth" | "ics" | "invite" | "local";
   isCurrentUser: boolean;
 };
 
 type CalendarStatus = {
   oauthConfigured: boolean;
+  oauthPublic?: boolean;
   demoMode: boolean;
   liveSync: boolean;
   currentUser: CalendarRow;
@@ -42,6 +43,7 @@ type CalendarContextValue = {
   message: string | null;
   highlightIcs: boolean;
   connect: () => Promise<void>;
+  connectOAuth: () => Promise<void>;
   connectIcs: (icsUrl: string) => Promise<void>;
   syncNow: () => Promise<void>;
   disconnect: () => Promise<void>;
@@ -94,12 +96,12 @@ export function UserCalendarProvider({ children }: { children: ReactNode }) {
     if (gcal === "denied") {
       setHighlightIcs(true);
       setMessage(
-        "Google blocked sign-in because Aarvanta has not finished Google’s verification. Connect with your secret iCal link below instead."
+        "Google blocked sign-in because Aarvanta has not finished Google’s verification. Click Connect calendar — bookings go to your Google account as invites."
       );
     } else if (gcal === "error") {
       setHighlightIcs(true);
       setMessage(
-        "Google Calendar sign-in failed. You can still sync with a secret iCal link."
+        "Google Calendar sign-in failed. Click Connect calendar instead."
       );
     } else if (gcal === "connected") {
       setMessage("Your Google Calendar is connected.");
@@ -111,24 +113,49 @@ export function UserCalendarProvider({ children }: { children: ReactNode }) {
     setBusy("connect");
     setMessage(null);
     try {
-      if (data.oauthConfigured) {
-        window.location.href = "/api/integrations/google-calendar/oauth/start";
-        return;
-      }
-      const res = await fetch("/api/voice/calendar", { method: "POST" });
+      const res = await fetch("/api/voice/calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "invite" }),
+      });
       if (!res.ok) {
         const body = (await res.json()) as { error?: { message?: string } };
         throw new Error(body.error?.message ?? "Connect failed");
       }
       await load();
       setMessage(
-        data.demoMode
-          ? "Connected. Demo mode syncs locally until Google OAuth is configured."
-          : "Your calendar is connected."
+        "Connected. Bookings will be emailed to your Google Calendar as invites."
       );
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Connect failed");
     } finally {
+      setBusy(null);
+    }
+  }
+
+  async function connectOAuth() {
+    setBusy("oauth");
+    setMessage(null);
+    try {
+      const res = await fetch("/api/voice/calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "oauth" }),
+      });
+      const body = (await res.json()) as {
+        redirect?: string;
+        error?: { message?: string };
+      };
+      if (!res.ok) {
+        throw new Error(body.error?.message ?? "Google sign-in is not available");
+      }
+      if (body.redirect) {
+        window.location.href = body.redirect;
+        return;
+      }
+      throw new Error("Google sign-in is not available");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Google sign-in failed");
       setBusy(null);
     }
   }
@@ -201,6 +228,7 @@ export function UserCalendarProvider({ children }: { children: ReactNode }) {
         message,
         highlightIcs,
         connect,
+        connectOAuth,
         connectIcs,
         syncNow,
         disconnect,
@@ -219,6 +247,7 @@ export function UserCalendarStatus() {
     message,
     highlightIcs,
     connect,
+    connectOAuth,
     connectIcs,
     syncNow,
     disconnect,
@@ -248,13 +277,16 @@ export function UserCalendarStatus() {
     ? mine.accountLabel || mine.email
     : "Not linked";
   const syncLabel = mine.lastSyncAt ? formatRelative(mine.lastSyncAt) : "Never";
-  const mode = mine.connectMode === "ics"
-    ? "Calendar link"
-    : data.liveSync
-      ? "Live"
-      : data.demoMode
-        ? "Demo"
-        : "Local";
+  const mode =
+    mine.connectMode === "ics"
+      ? "Calendar link"
+      : mine.connectMode === "invite"
+        ? "Invites"
+        : data.liveSync
+          ? "Live"
+          : data.demoMode
+            ? "Demo"
+            : "Local";
 
   return (
     <div
@@ -283,18 +315,27 @@ export function UserCalendarStatus() {
         </p>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           {!mine.connected ? (
-            <Button
-              size="sm"
-              className="h-7 px-2 text-[11px]"
-              disabled={busy !== null}
-              onClick={() => void connect()}
-            >
-              {busy === "connect"
-                ? "Connecting…"
-                : data.oauthConfigured
-                  ? "Continue with Google"
-                  : "Connect"}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                className="h-7 px-2 text-[11px]"
+                disabled={busy !== null}
+                onClick={() => void connect()}
+              >
+                {busy === "connect" ? "Connecting…" : "Connect calendar"}
+              </Button>
+              {data.oauthPublic ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-7 px-2 text-[11px]"
+                  disabled={busy !== null}
+                  onClick={() => void connectOAuth()}
+                >
+                  {busy === "oauth" ? "Redirecting…" : "Continue with Google"}
+                </Button>
+              ) : null}
+            </>
           ) : (
             <>
               <Button
@@ -330,12 +371,31 @@ export function UserCalendarStatus() {
           }}
         >
           <p className="text-[11px] font-medium text-foreground">
-            Google blocked sign-in? Paste your secret iCal link
+            Connect without Google sign-in
           </p>
           <p className="text-[11px] leading-relaxed text-muted">
-            Google Calendar → Settings → your calendar → Integrate calendar →
-            copy <span className="text-foreground">Secret address in iCal format</span>.
-            Treat that URL like a password.
+            {data.oauthPublic ? (
+              <>
+                <span className="text-foreground">Connect calendar</span> sends
+                bookings to{" "}
+                <span className="text-foreground">{mine.email}</span> as
+                calendar invites. Continue with Google syncs live busy times.
+              </>
+            ) : (
+              <>
+                Google currently blocks Aarvanta’s sign-in until verification
+                finishes.{" "}
+                <span className="text-foreground">Connect calendar</span> sends
+                bookings to{" "}
+                <span className="text-foreground">{mine.email}</span> as
+                calendar invites — Google Calendar adds those automatically.
+              </>
+            )}
+          </p>
+          <p className="text-[11px] text-muted">
+            Optional live busy times: Google Calendar → Settings → Integrate
+            calendar → copy{" "}
+            <span className="text-foreground">Secret address in iCal format</span>.
           </p>
           <div className="flex flex-col gap-1.5 sm:flex-row">
             <input
@@ -405,7 +465,9 @@ export function TeamCalendars() {
               {row.connected
                 ? row.connectMode === "ics"
                   ? "Link"
-                  : "Synced"
+                  : row.connectMode === "invite"
+                    ? "Invites"
+                    : "Synced"
                 : "Not connected"}
             </Badge>
           </li>
